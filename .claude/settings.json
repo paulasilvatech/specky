@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/paulasilva/**)",
+      "Bash(git rm:*)",
+      "Bash(find /Users/paulasilva -maxdepth 3 -name *.code-workspace)",
+      "Bash(ls /Users/paulasilva/Documents/1A_GBB_Customer_Engagements/workspaces/specky/*.code-workspace)"
+    ],
+    "additionalDirectories": [
+      "/Users/paulasilva/Documents/1A_GBB_Customer_Engagements/workspaces/specky/.vscode",
+      "/Users/paulasilva/Library/Application Support/Code - Insiders/User",
+      "/Users/paulasilva/Library/Application Support/Code/User"
+    ]
+  }
+}
