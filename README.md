@@ -39,6 +39,13 @@ Specky adds a **deterministic engine** between your intent and your code:
 
 ### Differentiators
 
+<p align="center">
+  <img src="media/comparison-matrix.svg" alt="Specky vs Spec-Kit vs Kiro vs Cursor" width="100%"/>
+</p>
+
+<details>
+<summary>View as table</summary>
+
 | Capability | Spec-Kit | Kiro | Cursor | **Specky** |
 |---|---|---|---|---|
 | Any input (PDF/DOCX/PPTX/transcript) to spec | No | No | No | **Yes** |
@@ -58,6 +65,8 @@ Specky adds a **deterministic engine** between your intent and your code:
 | Educative outputs | No | No | No | **Yes** |
 | 42 MCP tools | N/A | N/A | N/A | **Yes** |
 | Works in ANY IDE via MCP | Templates | IDE-locked | IDE-locked | **Yes** |
+
+</details>
 
 ---
 
@@ -162,9 +171,9 @@ docker run -v $(pwd):/workspace ghcr.io/paulasilvatech/specky:latest
 
 ## The 10-Phase Pipeline
 
-```
-Init --> Discover --> Specify --> Clarify --> Design --> Tasks --> Analyze --> Implement --> Verify --> Release
-```
+<p align="center">
+  <img src="media/pipeline-10-phases.svg" alt="Specky 10-Phase Pipeline" width="100%"/>
+</p>
 
 Each phase is **mandatory**. The state machine blocks advancement until prerequisites are met.
 
@@ -276,6 +285,10 @@ Each phase is **mandatory**. The state machine blocks advancement until prerequi
 
 ## MCP Integration Architecture
 
+<p align="center">
+  <img src="media/architecture-mcp-ecosystem.svg" alt="Specky MCP Ecosystem Architecture" width="100%"/>
+</p>
+
 Specky outputs structured JSON with routing instructions. Your AI client calls the appropriate external MCP server:
 
 ```
@@ -344,6 +357,16 @@ Every tool response includes structured guidance:
   "diagram": "Mermaid diagram relevant to the output"
 }
 ```
+
+---
+
+## End-to-End Flow
+
+<p align="center">
+  <img src="media/end-to-end-flow.svg" alt="Specky End-to-End Development Flow" width="100%"/>
+</p>
+
+From any input to production — fully automated, MCP-orchestrated, with artifacts and diagrams generated at every step.
 
 ---
 

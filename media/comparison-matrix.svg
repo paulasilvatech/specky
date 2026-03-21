@@ -1,0 +1,342 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <filter id="shadow" x="-2%" y="-2%" width="104%" height="104%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#2C2C2A" flood-opacity="0.08"/>
+    </filter>
+    <linearGradient id="headerGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0078D4" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#0078D4" stop-opacity="0.03"/>
+    </linearGradient>
+    <linearGradient id="badgeGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0078D4"/>
+      <stop offset="100%" stop-color="#005A9E"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="900" fill="white"/>
+
+  <!-- Title section -->
+  <text x="600" y="52" text-anchor="middle" font-size="28" font-weight="700" fill="#2C2C2A" letter-spacing="-0.5">SDD Platform Comparison</text>
+  <text x="600" y="78" text-anchor="middle" font-size="15" font-weight="400" fill="#5F5E5A">Specky vs Spec-Kit vs Kiro vs Cursor</text>
+
+  <!-- 4-color accent bar -->
+  <rect x="420" y="90" width="90" height="3" rx="1.5" fill="#0078D4"/>
+  <rect x="510" y="90" width="90" height="3" rx="1.5" fill="#7FBA00"/>
+  <rect x="600" y="90" width="90" height="3" rx="1.5" fill="#FFB900"/>
+  <rect x="690" y="90" width="90" height="3" rx="1.5" fill="#F25022"/>
+
+  <!-- Table container -->
+  <g transform="translate(60, 115)" filter="url(#shadow)">
+    <!-- Table outer border -->
+    <rect x="0" y="0" width="1080" height="688" rx="8" fill="white" stroke="#D3D1C7" stroke-width="1"/>
+
+    <!-- Column positions: Capability=0, Spec-Kit=480, Kiro=620, Cursor=740, Specky=880 -->
+    <!-- Row height: 48, Header height: 52 -->
+
+    <!-- Header row background -->
+    <rect x="1" y="1" width="1078" height="52" rx="7" fill="url(#headerGrad)"/>
+    <rect x="1" y="45" width="1078" height="8" fill="url(#headerGrad)"/>
+
+    <!-- Header text -->
+    <text x="30" y="33" font-size="13" font-weight="700" fill="#2C2C2A" text-transform="uppercase" letter-spacing="0.8">CAPABILITY</text>
+    <text x="540" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#5F5E5A" letter-spacing="0.8">SPEC-KIT</text>
+    <text x="670" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#5F5E5A" letter-spacing="0.8">KIRO</text>
+    <text x="800" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#5F5E5A" letter-spacing="0.8">CURSOR</text>
+    <text x="970" y="33" text-anchor="middle" font-size="13" font-weight="700" fill="#0078D4" letter-spacing="0.8">SPECKY v2</text>
+
+    <!-- Header separator -->
+    <line x1="0" y1="52" x2="1080" y2="52" stroke="#D3D1C7" stroke-width="1"/>
+
+    <!-- Column separators -->
+    <line x1="480" y1="52" x2="480" y2="688" stroke="#D3D1C7" stroke-width="0.5" stroke-opacity="0.5"/>
+    <line x1="610" y1="52" x2="610" y2="688" stroke="#D3D1C7" stroke-width="0.5" stroke-opacity="0.5"/>
+    <line x1="740" y1="52" x2="740" y2="688" stroke="#D3D1C7" stroke-width="0.5" stroke-opacity="0.5"/>
+    <line x1="870" y1="52" x2="870" y2="688" stroke="#D3D1C7" stroke-width="0.5" stroke-opacity="0.5"/>
+
+    <!-- Specky column highlight -->
+    <rect x="870" y="52" width="209" height="636" fill="#0078D4" opacity="0.02"/>
+
+    <!-- Row 1 (white) y=52 -->
+    <text x="30" y="83" font-size="13.5" fill="#2C2C2A" font-weight="500">Any input to spec (PDF / DOCX / Transcript)</text>
+    <!-- Spec-Kit: No -->
+    <g transform="translate(540, 78)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <!-- Kiro: No -->
+    <g transform="translate(670, 78)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <!-- Cursor: No -->
+    <g transform="translate(800, 78)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <!-- Specky: Yes -->
+    <g transform="translate(970, 78)">
+      <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#7FBA00" opacity="0.1"/>
+      <path d="M-8,0 L-2,6 L8,-4" stroke="#7FBA00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Row 2 (gray) y=100 -->
+    <rect x="1" y="100" width="1078" height="48" fill="#B4B2A9" opacity="0.06"/>
+    <text x="30" y="131" font-size="13.5" fill="#2C2C2A" font-weight="500">EARS validation (programmatic)</text>
+    <g transform="translate(540, 126)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <!-- Kiro: AI-tries (amber) -->
+    <g transform="translate(670, 126)">
+      <rect x="-32" y="-12" width="64" height="24" rx="12" fill="#FFB900" opacity="0.12"/>
+      <text x="0" y="4" text-anchor="middle" font-size="10.5" fill="#8A6500" font-weight="600">AI-tries</text>
+    </g>
+    <g transform="translate(800, 126)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(970, 126)">
+      <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#7FBA00" opacity="0.1"/>
+      <path d="M-8,0 L-2,6 L8,-4" stroke="#7FBA00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Row 3 (white) y=148 -->
+    <text x="30" y="179" font-size="13.5" fill="#2C2C2A" font-weight="500">State machine (10 phases)</text>
+    <g transform="translate(540, 174)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(670, 174)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(800, 174)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(970, 174)">
+      <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#7FBA00" opacity="0.1"/>
+      <path d="M-8,0 L-2,6 L8,-4" stroke="#7FBA00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Row 4 (gray) y=196 -->
+    <rect x="1" y="196" width="1078" height="48" fill="#B4B2A9" opacity="0.06"/>
+    <text x="30" y="227" font-size="13.5" fill="#2C2C2A" font-weight="500">Auto-diagrams every phase</text>
+    <g transform="translate(540, 222)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(670, 222)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(800, 222)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(970, 222)">
+      <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#7FBA00" opacity="0.1"/>
+      <path d="M-8,0 L-2,6 L8,-4" stroke="#7FBA00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Row 5 (white) y=244 -->
+    <text x="30" y="275" font-size="13.5" fill="#2C2C2A" font-weight="500">Terraform IaC generation</text>
+    <g transform="translate(540, 270)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(670, 270)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(800, 270)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(970, 270)">
+      <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#7FBA00" opacity="0.1"/>
+      <path d="M-8,0 L-2,6 L8,-4" stroke="#7FBA00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Row 6 (gray) y=292 -->
+    <rect x="1" y="292" width="1078" height="48" fill="#B4B2A9" opacity="0.06"/>
+    <text x="30" y="323" font-size="13.5" fill="#2C2C2A" font-weight="500">Azure Boards + Jira + GitHub</text>
+    <!-- Spec-Kit: Ext (amber) -->
+    <g transform="translate(540, 318)">
+      <rect x="-20" y="-12" width="40" height="24" rx="12" fill="#FFB900" opacity="0.12"/>
+      <text x="0" y="4" text-anchor="middle" font-size="10.5" fill="#8A6500" font-weight="600">Ext</text>
+    </g>
+    <g transform="translate(670, 318)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(800, 318)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(970, 318)">
+      <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#7FBA00" opacity="0.1"/>
+      <path d="M-8,0 L-2,6 L8,-4" stroke="#7FBA00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Row 7 (white) y=340 -->
+    <text x="30" y="371" font-size="13.5" fill="#2C2C2A" font-weight="500">Figma integration</text>
+    <g transform="translate(540, 366)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(670, 366)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(800, 366)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(970, 366)">
+      <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#7FBA00" opacity="0.1"/>
+      <path d="M-8,0 L-2,6 L8,-4" stroke="#7FBA00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Row 8 (gray) y=388 -->
+    <rect x="1" y="388" width="1078" height="48" fill="#B4B2A9" opacity="0.06"/>
+    <text x="30" y="419" font-size="13.5" fill="#2C2C2A" font-weight="500">Compliance (HIPAA / SOC2 / GDPR)</text>
+    <g transform="translate(540, 414)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(670, 414)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(800, 414)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(970, 414)">
+      <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#7FBA00" opacity="0.1"/>
+      <path d="M-8,0 L-2,6 L8,-4" stroke="#7FBA00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Row 9 (white) y=436 -->
+    <text x="30" y="467" font-size="13.5" fill="#2C2C2A" font-weight="500">Cross-artifact analysis</text>
+    <!-- Spec-Kit: Yes -->
+    <g transform="translate(540, 462)">
+      <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#7FBA00" opacity="0.1"/>
+      <path d="M-8,0 L-2,6 L8,-4" stroke="#7FBA00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g transform="translate(670, 462)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(800, 462)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(970, 462)">
+      <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#7FBA00" opacity="0.1"/>
+      <path d="M-8,0 L-2,6 L8,-4" stroke="#7FBA00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Row 10 (gray) y=484 -->
+    <rect x="1" y="484" width="1078" height="48" fill="#B4B2A9" opacity="0.06"/>
+    <text x="30" y="515" font-size="13.5" fill="#2C2C2A" font-weight="500">Phantom task detection</text>
+    <!-- Spec-Kit: Ext (amber) -->
+    <g transform="translate(540, 510)">
+      <rect x="-20" y="-12" width="40" height="24" rx="12" fill="#FFB900" opacity="0.12"/>
+      <text x="0" y="4" text-anchor="middle" font-size="10.5" fill="#8A6500" font-weight="600">Ext</text>
+    </g>
+    <g transform="translate(670, 510)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(800, 510)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(970, 510)">
+      <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#7FBA00" opacity="0.1"/>
+      <path d="M-8,0 L-2,6 L8,-4" stroke="#7FBA00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Row 11 (white) y=532 -->
+    <text x="30" y="563" font-size="13.5" fill="#2C2C2A" font-weight="500">Auto-documentation</text>
+    <g transform="translate(540, 558)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(670, 558)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(800, 558)">
+      <line x1="-6" y1="-6" x2="6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <line x1="6" y1="-6" x2="-6" y2="6" stroke="#F25022" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+    </g>
+    <g transform="translate(970, 558)">
+      <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#7FBA00" opacity="0.1"/>
+      <path d="M-8,0 L-2,6 L8,-4" stroke="#7FBA00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Row 12 (gray) y=580 -->
+    <rect x="1" y="580" width="1078" height="48" fill="#B4B2A9" opacity="0.06"/>
+    <text x="30" y="611" font-size="13.5" fill="#2C2C2A" font-weight="500">42 MCP tools, any IDE</text>
+    <!-- Spec-Kit: N/A -->
+    <g transform="translate(540, 606)">
+      <text x="0" y="4" text-anchor="middle" font-size="11" fill="#888780" font-weight="500">N/A</text>
+    </g>
+    <!-- Kiro: IDE -->
+    <g transform="translate(670, 606)">
+      <rect x="-20" y="-12" width="40" height="24" rx="12" fill="#FFB900" opacity="0.12"/>
+      <text x="0" y="4" text-anchor="middle" font-size="10.5" fill="#8A6500" font-weight="600">IDE</text>
+    </g>
+    <!-- Cursor: IDE -->
+    <g transform="translate(800, 606)">
+      <rect x="-20" y="-12" width="40" height="24" rx="12" fill="#FFB900" opacity="0.12"/>
+      <text x="0" y="4" text-anchor="middle" font-size="10.5" fill="#8A6500" font-weight="600">IDE</text>
+    </g>
+    <g transform="translate(970, 606)">
+      <rect x="-28" y="-14" width="56" height="28" rx="14" fill="#7FBA00" opacity="0.1"/>
+      <path d="M-8,0 L-2,6 L8,-4" stroke="#7FBA00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Summary row -->
+    <rect x="1" y="636" width="1078" height="51" rx="0" fill="#0078D4" opacity="0.04"/>
+    <line x1="0" y1="636" x2="1080" y2="636" stroke="#D3D1C7" stroke-width="1"/>
+    <text x="30" y="667" font-size="13" font-weight="700" fill="#2C2C2A">Total native capabilities (of 12)</text>
+    <text x="540" y="667" text-anchor="middle" font-size="15" font-weight="700" fill="#5F5E5A">2</text>
+    <text x="670" y="667" text-anchor="middle" font-size="15" font-weight="700" fill="#5F5E5A">0</text>
+    <text x="800" y="667" text-anchor="middle" font-size="15" font-weight="700" fill="#5F5E5A">0</text>
+    <text x="970" y="667" text-anchor="middle" font-size="18" font-weight="800" fill="#0078D4">12</text>
+  </g>
+
+  <!-- 42 Tools Badge (bottom-right) -->
+  <g transform="translate(1060, 840)">
+    <rect x="-52" y="-24" width="104" height="48" rx="24" fill="url(#badgeGrad)" filter="url(#shadow)"/>
+    <text x="0" y="-2" text-anchor="middle" font-size="18" font-weight="800" fill="white">42</text>
+    <text x="0" y="14" text-anchor="middle" font-size="10" font-weight="600" fill="white" opacity="0.85">TOOLS</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(60, 830)">
+    <g transform="translate(0, 0)">
+      <rect x="0" y="-8" width="16" height="16" rx="8" fill="#7FBA00" opacity="0.15"/>
+      <path d="M4,0 L7,3 L12,-2" stroke="#7FBA00" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="22" y="4" font-size="11.5" fill="#5F5E5A">Native support</text>
+    </g>
+    <g transform="translate(140, 0)">
+      <rect x="0" y="-8" width="16" height="16" rx="8" fill="#FFB900" opacity="0.15"/>
+      <text x="8" y="3" text-anchor="middle" font-size="9" fill="#8A6500" font-weight="700">~</text>
+      <text x="22" y="4" font-size="11.5" fill="#5F5E5A">Partial / Extension</text>
+    </g>
+    <g transform="translate(310, 0)">
+      <line x1="2" y1="-4" x2="14" y2="8" stroke="#F25022" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+      <line x1="14" y1="-4" x2="2" y2="8" stroke="#F25022" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+      <text x="22" y="4" font-size="11.5" fill="#5F5E5A">Not available</text>
+    </g>
+  </g>
+
+  <!-- Footer text -->
+  <text x="600" y="888" text-anchor="middle" font-size="10.5" fill="#888780">Specky v2 MCP Server  --  spec-driven development for any IDE</text>
+</svg>
