@@ -1,94 +1,88 @@
-# Specky
+<div align="center">
+  <h1>Specky</h1>
+  <h3>The Complete Spec-Driven Development Platform</h3>
+  <p><strong>42 MCP tools. 10-phase pipeline. Works in any IDE.</strong></p>
 
-**The open-source MCP server for Spec-Driven Development (SDD).**
-
-*The fun name, the serious engine.*
-
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
-![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)
-![MCP](https://img.shields.io/badge/MCP-compatible-purple.svg)
-![Tools](https://img.shields.io/badge/MCP_tools-17-orange.svg)
-
-**Created by [Paula Silva](https://github.com/paulasilvatech)** ([@paulanunes85](https://twitter.com/paulanunes85)) | Americas Software GBB
+  <p>
+    <a href="https://www.npmjs.com/package/specky-sdd"><img src="https://img.shields.io/npm/v/specky-sdd" alt="npm"/></a>
+    <a href="https://github.com/paulasilvatech/specky"><img src="https://img.shields.io/github/stars/paulasilvatech/specky?style=social" alt="Stars"/></a>
+    <a href="https://github.com/paulasilvatech/specky/blob/main/LICENSE"><img src="https://img.shields.io/github/license/paulasilvatech/specky" alt="License"/></a>
+  </p>
+</div>
 
 ---
 
 ## What is Specky?
 
-Specky is an **MCP server** that transforms natural language project ideas — or meeting transcripts — into production-grade specifications. It enforces **EARS notation** (Easy Approach to Requirements Syntax), maintains a **state machine** across 7 pipeline phases, and writes real files to disk.
+Specky is an open-source MCP (Model Context Protocol) server that transforms how software is built. It provides a complete, deterministic pipeline from any input -- meeting transcripts, documents, designs, or user prompts -- through specifications, architecture, infrastructure as code, implementation, and deployment.
 
-```
-You ──→ AI Assistant ──→ Specky (17 tools) ──→ .specs/ files on disk
-        (Copilot/Claude)                       CONSTITUTION.md
-                                               SPECIFICATION.md
-                                               DESIGN.md
-                                               TASKS.md
-                                               ANALYSIS.md
-```
+Unlike template-based tools, Specky enforces every step programmatically: a state machine blocks phase-skipping, an EARS validator ensures testable requirements, cross-artifact analysis catches drift, and compliance engines validate against frameworks like HIPAA and SOC2.
 
-### What is MCP?
+**Specky works inside the tools you already use** -- VS Code with GitHub Copilot, Claude Code, Cursor, Windsurf, or any AI agent that supports MCP.
 
-**MCP (Model Context Protocol)** is an open standard that lets AI assistants call external tools. Think of it like USB — a universal plug between any AI and any tool. Specky is a "device" that speaks MCP, giving Copilot and Claude the ability to create structured specification files.
+---
 
-### Key Features
+## Why Specky?
 
-- **17 MCP tools** for the full specification lifecycle
-- **EARS notation** validation with 6 pattern types and improvement suggestions
-- **7-phase pipeline** with state machine enforcement
-- **Meeting transcript → full spec** — VTT, SRT, TXT, MD formats
-- **Power Automate + OneDrive** integration for automated workflows
-- **Quality gates** with traceability matrix and coverage analysis
-- **Atomic file writes** — safe, no corruption on crash
-- **Auto-steering** — scans your codebase to tailor discovery questions
-- **Zero external dependencies** — runs entirely local, no API calls
-- **GitHub Copilot agents** + **Claude Code commands** included
+### The Problem
 
-### Two Ways to Use
+AI coding assistants are fast but chaotic. They skip requirements, ignore architecture, and produce code that drifts from the original intent. Template-based approaches help but rely on the AI to follow instructions -- with no programmatic enforcement.
 
-| Mode | How | Best For |
-|------|-----|----------|
-| **Interactive** | Conversation with AI, step by step | New projects, learning SDD |
-| **Transcript** | Feed a meeting recording, get full spec | Existing meetings, automation |
+### The Solution
+
+Specky adds a **deterministic engine** between your intent and your code:
+
+- **State Machine** -- 10 mandatory phases, no skipping. Init, Discover, Specify, Clarify, Design, Tasks, Analyze, Implement, Verify, Release.
+- **EARS Validator** -- Every requirement validated against 6 patterns (Ubiquitous, Event-driven, State-driven, Optional, Unwanted, Complex). No vague statements pass.
+- **Cross-Artifact Analysis** -- Automatic alignment checking between spec, design, and tasks. Orphaned requirements are flagged instantly.
+- **MCP-to-MCP Architecture** -- Specky outputs structured JSON that your AI client routes to GitHub, Azure DevOps, Jira, Terraform, Figma, and Docker MCP servers. No vendor lock-in.
+
+### Differentiators
+
+| Capability | Spec-Kit | Kiro | Cursor | **Specky** |
+|---|---|---|---|---|
+| Any input (PDF/DOCX/PPTX/transcript) to spec | No | No | No | **Yes** |
+| EARS validation (programmatic) | No | AI-tries | No | **Yes** |
+| State machine (10 phases) | No | No | No | **Yes** |
+| Auto-diagrams every phase (Mermaid) | No | No | No | **Yes** |
+| Terraform IaC generation | No | No | No | **Yes** |
+| Azure Boards + Jira + GitHub Issues (MCP) | Extension | No | No | **Yes** |
+| Figma design to spec (reverse) | No | No | No | **Yes** |
+| FigJam diagram generation | No | No | No | **Yes** |
+| Docker dev environment | No | No | No | **Yes** |
+| Codespaces setup | No | No | No | **Yes** |
+| Cross-artifact analysis | Yes | No | No | **Yes** |
+| Compliance (HIPAA/SOC2/GDPR) | No | No | No | **Yes** |
+| Phantom task detection | Extension | No | No | **Yes** |
+| Complete auto-documentation | No | No | No | **Yes** |
+| Educative outputs | No | No | No | **Yes** |
+| 42 MCP tools | N/A | N/A | N/A | **Yes** |
+| Works in ANY IDE via MCP | Templates | IDE-locked | IDE-locked | **Yes** |
 
 ---
 
 ## Quick Start
 
-### npx (recommended)
+### Install
 
 ```bash
-npx specky
+# npm (recommended)
+npx specky-sdd
+
+# Or install globally
+npm install -g specky-sdd
 ```
 
-### npm global install
+### Configure in VS Code (GitHub Copilot)
 
-```bash
-npm install -g specky
-specky
-```
-
-### Docker
-
-```bash
-docker compose up
-# Server starts on http://localhost:3200
-```
-
----
-
-## Setup
-
-### VS Code (GitHub Copilot)
-
-Create or update `.vscode/mcp.json`:
+Create `.vscode/mcp.json` in your project:
 
 ```json
 {
   "servers": {
     "specky": {
       "command": "npx",
-      "args": ["-y", "specky"],
+      "args": ["-y", "specky-sdd"],
       "env": {
         "SDD_WORKSPACE": "${workspaceFolder}"
       }
@@ -97,21 +91,22 @@ Create or update `.vscode/mcp.json`:
 }
 ```
 
-### Claude Code
+Open Copilot Chat -- Specky's 42 tools are now available.
+
+### Configure in Claude Code
 
 ```bash
-# Quick setup (one command):
-claude mcp add specky npx -y specky --env SDD_WORKSPACE=$(pwd)
+claude mcp add specky -- npx -y specky-sdd
 ```
 
-Or manually add to MCP settings:
+Or add to your MCP settings manually:
 
 ```json
 {
   "mcpServers": {
     "specky": {
       "command": "npx",
-      "args": ["-y", "specky"],
+      "args": ["-y", "specky-sdd"],
       "env": {
         "SDD_WORKSPACE": "/path/to/your/project"
       }
@@ -120,7 +115,7 @@ Or manually add to MCP settings:
 }
 ```
 
-### Claude Desktop
+### Configure in Claude Desktop
 
 Add to `claude_desktop_config.json`:
 
@@ -135,7 +130,7 @@ Add to `claude_desktop_config.json`:
   "mcpServers": {
     "specky": {
       "command": "npx",
-      "args": ["-y", "specky"],
+      "args": ["-y", "specky-sdd"],
       "env": {
         "SDD_WORKSPACE": "/path/to/your/project"
       }
@@ -144,202 +139,211 @@ Add to `claude_desktop_config.json`:
 }
 ```
 
----
+### Configure in Cursor
 
-## Meeting Transcript to Specs (Auto Pipeline)
-
-**One command. Full specification from a Teams/Zoom meeting.**
-
-```
-/sdd:transcript meeting.vtt my-project
-```
-
-Or call the tool directly:
+Add to Cursor's MCP settings (Settings > MCP Servers):
 
 ```json
 {
-  "name": "sdd_auto_pipeline",
-  "arguments": {
-    "file_path": "meeting.vtt",
-    "project_name": "my-project"
+  "specky": {
+    "command": "npx",
+    "args": ["-y", "specky-sdd"]
   }
 }
 ```
 
-**What happens automatically:**
+### Docker
 
-1. Parses the VTT/SRT/TXT/MD transcript
-2. Extracts participants, topics, decisions, action items
-3. Generates EARS requirements from meeting content
-4. Creates all 6 spec files in one call:
-
-| File | Content |
-|------|---------|
-| `CONSTITUTION.md` | Project charter with principles from the meeting |
-| `SPECIFICATION.md` | EARS requirements extracted from decisions and discussions |
-| `DESIGN.md` | Architecture overview based on topics discussed |
-| `TASKS.md` | Implementation tasks from requirements + action items |
-| `ANALYSIS.md` | Traceability matrix and quality gate |
-| `TRANSCRIPT.md` | Clean markdown version of the meeting |
-
-**Supported formats:**
-
-| Format | Source | Extension |
-|--------|--------|-----------|
-| WebVTT | Microsoft Teams | `.vtt` |
-| SubRip | Zoom | `.srt` |
-| Plain text | Otter.ai, manual notes | `.txt` |
-| Markdown | Any structured notes | `.md` |
-
-### Power Automate + OneDrive Integration
-
-For fully automated meeting-to-spec workflows:
-
+```bash
+docker run -v $(pwd):/workspace ghcr.io/paulasilvatech/specky:latest
 ```
-Teams Meeting → Power Automate → OneDrive/Transcripts/ → sdd_batch_transcripts → .specs/
-```
-
-**Power Automate flow:**
-1. Trigger: "When a Teams meeting recording is available"
-2. Action: Get the meeting transcript
-3. Action: Convert to Markdown
-4. Action: Save to `OneDrive/Transcripts/{meeting-title}.md`
-
-**Specky picks up from there:**
-
-```json
-{
-  "name": "sdd_batch_transcripts",
-  "arguments": {
-    "transcripts_dir": "~/OneDrive/Transcripts"
-  }
-}
-```
-
-Each transcript in the folder becomes its own numbered feature spec package (`001-sprint-planning/`, `002-architecture-review/`, etc.) with 6 files each.
 
 ---
 
-## Pipeline Overview
+## The 10-Phase Pipeline
 
 ```
-sdd_init → sdd_discover → sdd_write_spec → sdd_clarify → sdd_write_design → sdd_write_tasks → sdd_run_analysis
+Init --> Discover --> Specify --> Clarify --> Design --> Tasks --> Analyze --> Implement --> Verify --> Release
 ```
 
-Each phase produces a Markdown artifact in `.specs/001-your-feature/`:
+Each phase is **mandatory**. The state machine blocks advancement until prerequisites are met.
 
-| Phase | Tool | Output |
-|-------|------|--------|
-| Init | `sdd_init` | `CONSTITUTION.md` |
-| Discover | `sdd_discover` | 7 structured questions (JSON) |
-| Specify | `sdd_write_spec` | `SPECIFICATION.md` |
-| Clarify | `sdd_clarify` | 5 disambiguation questions (JSON) |
-| Design | `sdd_write_design` | `DESIGN.md` |
-| Tasks | `sdd_write_tasks` | `TASKS.md` |
-| Analyze | `sdd_run_analysis` | `ANALYSIS.md` + gate decision |
+| Phase | What Happens | Required Output |
+|-------|-------------|----------------|
+| **Init** | Create project structure, constitution, scan codebase | CONSTITUTION.md |
+| **Discover** | Interactive discovery: 7 structured questions about scope, users, constraints | Discovery answers |
+| **Specify** | Write EARS requirements with acceptance criteria | SPECIFICATION.md |
+| **Clarify** | Resolve ambiguities, generate decision tree | Updated SPECIFICATION.md |
+| **Design** | Architecture, data model, API contracts, research unknowns | DESIGN.md, RESEARCH.md |
+| **Tasks** | Implementation breakdown by user story, dependency graph | TASKS.md |
+| **Analyze** | Cross-artifact analysis, quality checklist, compliance check | ANALYSIS.md, CHECKLIST.md, CROSS_ANALYSIS.md |
+| **Implement** | Ordered execution with checkpoints per user story | Implementation progress |
+| **Verify** | Drift detection, phantom task detection | VERIFICATION.md |
+| **Release** | PR generation, work item export, documentation | Complete package |
 
 ---
 
-## Tool Reference
+## All 42 Tools
 
-### Pipeline Tools (8)
+### Input and Conversion (5)
 
-| Tool | Description | R/W |
-|------|-------------|-----|
-| `sdd_init` | Creates `.specs/` directory, writes CONSTITUTION.md, initializes state machine | Write |
-| `sdd_discover` | Returns 7 tailored discovery questions based on your project idea | Read |
-| `sdd_write_spec` | Validates EARS notation and writes SPECIFICATION.md | Write |
-| `sdd_clarify` | Identifies ambiguous requirements, returns disambiguation questions | Read |
-| `sdd_write_design` | Writes DESIGN.md with Mermaid diagrams, ADRs, and API contracts | Write |
-| `sdd_write_tasks` | Writes TASKS.md with gates, parallel markers, and traceability | Write |
-| `sdd_run_analysis` | Generates traceability matrix, returns APPROVE/CHANGES_NEEDED/BLOCK | Write |
-| `sdd_advance_phase` | Validates prerequisites and advances the state machine | Write |
+| Tool | Description |
+|------|-------------|
+| `sdd_import_document` | Convert PDF, DOCX, PPTX, TXT, MD to Markdown |
+| `sdd_import_transcript` | Parse meeting transcripts (Teams, Zoom, Google Meet) |
+| `sdd_auto_pipeline` | Any input to complete spec pipeline (all documents) |
+| `sdd_batch_import` | Process folder of mixed documents |
+| `sdd_figma_to_spec` | Figma design to requirements specification |
 
-### Utility Tools (6)
+### Pipeline Core (8)
 
-| Tool | Description | R/W |
-|------|-------------|-----|
-| `sdd_get_status` | Returns current phase, completion %, files on disk, next action | Read |
-| `sdd_get_template` | Returns raw template with {{placeholders}} intact | Read |
-| `sdd_write_bugfix` | Writes BUGFIX_SPEC.md (not gated by state machine) | Write |
-| `sdd_check_sync` | Compares spec requirements vs code references, reports drift | Read |
-| `sdd_scan_codebase` | Scans project structure, detects tech stack for auto-steering | Read |
-| `sdd_amend` | Appends amendment to CONSTITUTION.md changelog | Write |
+| Tool | Description |
+|------|-------------|
+| `sdd_init` | Initialize project with constitution and scope diagram |
+| `sdd_discover` | Interactive discovery with stakeholder mapping |
+| `sdd_write_spec` | Write EARS requirements with flow diagrams |
+| `sdd_clarify` | Resolve ambiguities with decision tree |
+| `sdd_write_design` | Architecture with sequence diagrams, ERD, API flow |
+| `sdd_write_tasks` | Task breakdown with dependency graph |
+| `sdd_run_analysis` | Quality gate analysis with coverage heatmap |
+| `sdd_advance_phase` | Move to next pipeline phase |
 
-### Transcript Automation Tools (3)
+### Quality and Validation (5)
 
-| Tool | Description | R/W |
-|------|-------------|-----|
-| `sdd_import_transcript` | Parses VTT/SRT/TXT/MD, extracts topics, decisions, requirements | Read |
-| `sdd_auto_pipeline` | FULL AUTOMATION: transcript → all 6 spec files in one call | Write |
-| `sdd_batch_transcripts` | Scan folder for transcripts, process ALL in one call (Power Automate + OneDrive) | Write |
+| Tool | Description |
+|------|-------------|
+| `sdd_checklist` | Mandatory quality checklist (security, accessibility, etc.) |
+| `sdd_verify_tasks` | Detect phantom completions |
+| `sdd_compliance_check` | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 validation |
+| `sdd_cross_analyze` | Spec-design-tasks alignment with consistency score |
+| `sdd_validate_ears` | Batch EARS requirement validation |
+
+### Diagrams and Visualization (4)
+
+| Tool | Description |
+|------|-------------|
+| `sdd_generate_diagram` | Single Mermaid diagram (10 types) |
+| `sdd_generate_all_diagrams` | All diagrams for a feature at once |
+| `sdd_generate_user_stories` | User stories with flow diagrams |
+| `sdd_figma_diagram` | FigJam-ready diagram via Figma MCP |
+
+### Infrastructure as Code (3)
+
+| Tool | Description |
+|------|-------------|
+| `sdd_generate_iac` | Terraform/Bicep from architecture design |
+| `sdd_validate_iac` | Validation via Terraform MCP + Azure MCP |
+| `sdd_generate_dockerfile` | Dockerfile + docker-compose from tech stack |
+
+### Dev Environment (3)
+
+| Tool | Description |
+|------|-------------|
+| `sdd_setup_local_env` | Docker-based local dev environment |
+| `sdd_setup_codespaces` | GitHub Codespaces configuration |
+| `sdd_generate_devcontainer` | .devcontainer/devcontainer.json generation |
+
+### Integration and Export (5)
+
+| Tool | Description |
+|------|-------------|
+| `sdd_create_branch` | Git branch naming convention |
+| `sdd_export_work_items` | Tasks to GitHub Issues, Azure Boards, or Jira |
+| `sdd_create_pr` | PR payload with spec summary |
+| `sdd_implement` | Ordered implementation plan with checkpoints |
+| `sdd_research` | Resolve unknowns in RESEARCH.md |
+
+### Documentation (4)
+
+| Tool | Description |
+|------|-------------|
+| `sdd_generate_docs` | Complete auto-documentation |
+| `sdd_generate_api_docs` | API documentation from design |
+| `sdd_generate_runbook` | Operational runbook |
+| `sdd_generate_onboarding` | Developer onboarding guide |
+
+### Utility (5)
+
+| Tool | Description |
+|------|-------------|
+| `sdd_get_status` | Pipeline status with guided next action |
+| `sdd_get_template` | Get any template |
+| `sdd_scan_codebase` | Detect tech stack and structure |
+| `sdd_metrics` | Project metrics dashboard |
+| `sdd_amend` | Amend project constitution |
+
+---
+
+## MCP Integration Architecture
+
+Specky outputs structured JSON with routing instructions. Your AI client calls the appropriate external MCP server:
+
+```
+Specky --> sdd_export_work_items(platform: "azure_boards") --> JSON payload
+  --> AI Client --> Azure DevOps MCP --> create_work_item()
+
+Specky --> sdd_validate_iac(provider: "terraform") --> validation payload
+  --> AI Client --> Terraform MCP --> plan/validate
+
+Specky --> sdd_figma_to_spec(file_key: "abc123") --> Figma request
+  --> AI Client --> Figma MCP --> get_design_context()
+```
+
+### Supported External MCP Servers
+
+| MCP Server | Integration |
+|-----------|-------------|
+| **GitHub MCP** | Issues, PRs, Codespaces |
+| **Azure DevOps MCP** | Work Items, Boards |
+| **Jira MCP** | Issues, Projects |
+| **Terraform MCP** | Plan, Validate, Apply |
+| **Azure MCP** | Template validation |
+| **Figma MCP** | Design context, FigJam diagrams |
+| **Docker MCP** | Local dev environments |
 
 ---
 
 ## EARS Notation
 
-Specky validates all requirements against 6 EARS patterns:
+Every requirement in Specky follows EARS (Easy Approach to Requirements Syntax):
 
-| Pattern | Syntax | Example |
+| Pattern | Format | Example |
 |---------|--------|---------|
-| Ubiquitous | The system shall ... | The system shall log all API requests. |
-| Event-driven | When X, the system shall ... | When a user logs in, the system shall create a session. |
-| State-driven | While X, the system shall ... | While in maintenance mode, the system shall reject writes. |
-| Optional | Where X, the system shall ... | Where dark mode is enabled, the system shall use dark theme. |
-| Unwanted | If X, then the system shall ... | If the database is unreachable, then the system shall retry. |
-| Complex | Combination of above | While online, when a message arrives, the system shall notify. |
+| Ubiquitous | The system shall... | The system shall encrypt all data at rest |
+| Event-driven | When [event], the system shall... | When a user submits login, the system shall validate credentials |
+| State-driven | While [state], the system shall... | While offline, the system shall queue requests |
+| Optional | Where [condition], the system shall... | Where 2FA is enabled, the system shall require OTP |
+| Unwanted | If [condition], then the system shall... | If session expires, the system shall redirect to login |
+| Complex | While [state], when [event]... | While in maintenance, when request arrives, queue it |
+
+The EARS validator programmatically checks every requirement against these 6 patterns. Vague terms like "fast", "good", "easy" are flagged automatically.
 
 ---
 
-## GitHub Copilot Agents
+## Compliance Frameworks
 
-Specky ships with 4 GitHub Copilot custom agents in `.github/agents/`:
+Built-in compliance checking against:
 
-| Agent | Role | Tools |
-|-------|------|-------|
-| `@spec-engineer` | Full pipeline orchestrator | All 17 tools |
-| `@design-architect` | Architecture and design | 7 design tools |
-| `@task-planner` | Task decomposition | 5 task tools |
-| `@spec-reviewer` | Quality audit and analysis | 7 analysis tools |
-
----
-
-## Claude Code Commands
-
-| Command | Purpose |
-|---------|---------|
-| `/sdd:spec` | Start specification workflow |
-| `/sdd:design` | Create architecture design |
-| `/sdd:tasks` | Break down into implementation tasks |
-| `/sdd:analyze` | Run quality gate analysis |
-| `/sdd:bugfix` | Create bugfix specification |
-| `/sdd:transcript` | Convert meeting transcript to full spec (VTT/SRT/TXT/MD) |
-| `/sdd:onedrive` | Batch process all transcripts from OneDrive folder |
+- **HIPAA** -- Access control, audit, encryption, PHI protection
+- **SOC 2** -- Logical access, monitoring, change management, incident response
+- **GDPR** -- Lawful processing, right to erasure, data portability, breach notification
+- **PCI-DSS** -- Firewall, stored data protection, encryption, user identification
+- **ISO 27001** -- Security policies, access control, cryptography, incident management
 
 ---
 
-## Environment Variables
+## Educative Outputs
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `SDD_WORKSPACE` | `process.cwd()` | Workspace root for file operations |
-| `PORT` | `3200` | HTTP port (with `--http` flag) |
+Every tool response includes structured guidance:
 
----
-
-## HTTP Mode
-
-For remote deployment or MCP Inspector testing:
-
-```bash
-# Direct
-node dist/index.js --http
-
-# Docker
-docker compose up
+```json
+{
+  "explanation": "What was done and why",
+  "next_steps": "Guided next action with command suggestion",
+  "learning_note": "Educational context about the concept",
+  "diagram": "Mermaid diagram relevant to the output"
+}
 ```
-
-The server listens on `http://localhost:3200/mcp` for Streamable HTTP transport.
 
 ---
 
@@ -347,68 +351,18 @@ The server listens on `http://localhost:3200/mcp` for Streamable HTTP transport.
 
 ```
 .specs/
-  001-your-feature/
-    CONSTITUTION.md      # Project charter, principles, constraints
-    SPECIFICATION.md     # EARS requirements with acceptance criteria
-    DESIGN.md            # Architecture, Mermaid diagrams, ADRs
-    TASKS.md             # Implementation tasks with gates
-    ANALYSIS.md          # Traceability matrix, quality gate
-  .sdd-state.json        # Pipeline state (phase, timestamps)
+  001-feature-name/
+    CONSTITUTION.md       -- Project principles and governance
+    SPECIFICATION.md      -- EARS requirements with acceptance criteria
+    DESIGN.md             -- Architecture, data model, API contracts
+    RESEARCH.md           -- Resolved unknowns and decisions
+    TASKS.md              -- Implementation breakdown
+    ANALYSIS.md           -- Quality gate report
+    CHECKLIST.md          -- Mandatory quality checklist
+    CROSS_ANALYSIS.md     -- Spec-design-tasks alignment
+    COMPLIANCE.md         -- Compliance framework report
+    VERIFICATION.md       -- Phantom detection results
 ```
-
----
-
-## Comparison with Alternatives
-
-| Feature | Specky | Manual Specs | Kiro | Traditional |
-|---------|--------|-------------|------|-------------|
-| MCP native | Yes | No | Yes | No |
-| EARS notation | Yes | Manual | No | No |
-| State machine | Yes | No | Yes | No |
-| File generation | Yes | Manual | Yes | Manual |
-| Quality gates | Yes | Manual | Yes | No |
-| Open source | MIT | N/A | Proprietary | Varies |
-| GitHub Copilot agents | Yes | No | No | No |
-| Claude Code commands | Yes | No | No | No |
-
----
-
-## How It Works Inside
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    SPECKY MCP SERVER                        │
-│                                                             │
-│  Transport: stdio (default) or HTTP (:3200)                 │
-│  Protocol:  JSON-RPC 2.0 (MCP standard)                    │
-│                                                             │
-│  ┌─── 17 Tools ───────────────────────────────────────────┐ │
-│  │  Pipeline (8)  │  Utility (6)  │  Transcript (3)       │ │
-│  └────────────────┴───────────────┴───────────────────────┘ │
-│                          │                                  │
-│  ┌─── 6 Services ────────────────────────────────────────┐  │
-│  │  FileManager       │ StateMachine   │ TemplateEngine   │  │
-│  │  EarsValidator     │ CodebaseScanner│ TranscriptParser  │  │
-│  └────────────────────┴────────────────┴─────────────────┘  │
-│                          │                                  │
-│  ┌─── 7 Templates ──────────────────────────────────────┐   │
-│  │  constitution │ specification │ design │ tasks        │   │
-│  │  analysis     │ bugfix        │ sync-report           │   │
-│  └───────────────┴───────────────┴───────────────────────┘  │
-└─────────────────────────────────────────────────────────────┘
-```
-
-**Key design principle:** Tools are thin (validate input, call service, format output). Services are fat (all business logic). FileManager owns all disk I/O.
-
----
-
-## Documentation
-
-| Document | Purpose |
-|----------|---------|
-| [GETTING-STARTED.md](GETTING-STARTED.md) | Step-by-step tutorial from zero to first spec |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How to add tools, templates, and services |
-| [PUBLISH.md](PUBLISH.md) | How to publish to GitHub, npm, and Docker |
 
 ---
 
@@ -428,19 +382,16 @@ npm run dev
 
 # Verify MCP handshake
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | node dist/index.js 2>/dev/null
-
-# Clean build artifacts
-npm run clean
 ```
+
+---
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture details and how to add tools, templates, or services.
 
 ---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
-
----
-
-**Created by [Paula Silva](https://github.com/paulasilvatech)** ([@paulanunes85](https://twitter.com/paulanunes85)) | Americas Software GBB
-
-*Specky — The fun name, the serious engine.*
+MIT -- Created by [Paula Silva](https://github.com/paulasilvatech) | Americas Software GBB, Microsoft

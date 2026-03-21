@@ -18,7 +18,27 @@ export class StateMachine {
     const statePath = join(specDir, STATE_FILE);
     try {
       const raw = await this.fileManager.readProjectFile(statePath);
-      return JSON.parse(raw) as SddState;
+      const parsed = JSON.parse(raw) as SddState;
+
+      // v1 → v2 migration: add missing phases for 10-phase pipeline
+      if (parsed.version === "3.0.0" || !parsed.phases["implement"]) {
+        for (const phase of PHASE_ORDER) {
+          if (!(phase in parsed.phases)) {
+            parsed.phases[phase] = { status: "pending" };
+          }
+        }
+        parsed.version = "4.0.0";
+        // Auto-save migrated state
+        const statePath = join(specDir, STATE_FILE);
+        await this.fileManager.writeSpecFile(
+          specDir,
+          STATE_FILE,
+          JSON.stringify(parsed, null, 2),
+          true
+        );
+      }
+
+      return parsed;
     } catch {
       return this.createDefaultState("");
     }
@@ -179,7 +199,7 @@ export class StateMachine {
       phases[phase] = { status: "pending" };
     }
     return {
-      version: "3.0.0",
+      version: "4.0.0",
       project_name: projectName,
       current_phase: Phase.Init,
       phases,

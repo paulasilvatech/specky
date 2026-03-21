@@ -22,6 +22,25 @@ import { registerUtilityTools } from "./tools/utility.js";
 import { registerTranscriptTools } from "./tools/transcript.js";
 import { TranscriptParser } from "./services/transcript-parser.js";
 
+// v2.0 imports — new services
+import { DocumentConverter } from "./services/document-converter.js";
+import { DiagramGenerator } from "./services/diagram-generator.js";
+import { IacGenerator } from "./services/iac-generator.js";
+import { WorkItemExporter } from "./services/work-item-exporter.js";
+import { CrossAnalyzer } from "./services/cross-analyzer.js";
+import { ComplianceEngine } from "./services/compliance-engine.js";
+import { DocGenerator } from "./services/doc-generator.js";
+import { GitManager } from "./services/git-manager.js";
+
+// v2.0 imports — new tool groups
+import { registerInputTools } from "./tools/input.js";
+import { registerQualityTools } from "./tools/quality.js";
+import { registerVisualizationTools } from "./tools/visualization.js";
+import { registerInfrastructureTools } from "./tools/infrastructure.js";
+import { registerEnvironmentTools } from "./tools/environment.js";
+import { registerIntegrationTools } from "./tools/integration.js";
+import { registerDocumentationTools } from "./tools/documentation.js";
+
 // Resolve workspace root
 const workspaceRoot = process.env["SDD_WORKSPACE"] || process.cwd();
 console.error(`[specky] Workspace root: ${workspaceRoot}`);
@@ -32,7 +51,7 @@ const server = new McpServer({
   version: VERSION,
 });
 
-// Initialize services
+// Initialize services (v1)
 const fileManager = new FileManager(workspaceRoot);
 const stateMachine = new StateMachine(fileManager);
 const templateEngine = new TemplateEngine(fileManager);
@@ -40,11 +59,31 @@ const earsValidator = new EarsValidator();
 const codebaseScanner = new CodebaseScanner(fileManager);
 const transcriptParser = new TranscriptParser(fileManager);
 
-// Register all tools (16 total)
+// Initialize services (v2)
+const documentConverter = new DocumentConverter(fileManager);
+const diagramGenerator = new DiagramGenerator(fileManager);
+const iacGenerator = new IacGenerator(fileManager);
+const workItemExporter = new WorkItemExporter(fileManager);
+const crossAnalyzer = new CrossAnalyzer(fileManager);
+const complianceEngine = new ComplianceEngine();
+const docGenerator = new DocGenerator(fileManager);
+const gitManager = new GitManager(fileManager);
+
+// Register all tools (42 total)
+// v1 tools (17)
 registerPipelineTools(server, fileManager, stateMachine, templateEngine, earsValidator);
 registerAnalysisTools(server, fileManager, stateMachine, templateEngine);
 registerUtilityTools(server, fileManager, stateMachine, templateEngine, codebaseScanner);
 registerTranscriptTools(server, fileManager, stateMachine, templateEngine, earsValidator, transcriptParser);
+
+// v2 tools (25)
+registerInputTools(server, fileManager, documentConverter, stateMachine);
+registerQualityTools(server, fileManager, stateMachine, templateEngine, complianceEngine, crossAnalyzer);
+registerVisualizationTools(server, fileManager, stateMachine, diagramGenerator);
+registerInfrastructureTools(server, fileManager, stateMachine, iacGenerator);
+registerEnvironmentTools(server, fileManager, stateMachine, iacGenerator, codebaseScanner);
+registerIntegrationTools(server, fileManager, stateMachine, templateEngine, gitManager, workItemExporter);
+registerDocumentationTools(server, fileManager, stateMachine, docGenerator);
 
 // Graceful shutdown
 let isShuttingDown = false;
