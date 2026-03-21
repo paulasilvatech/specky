@@ -113,12 +113,37 @@ export function registerIntegrationTools(
           { project_key, area_path, iteration_path }
         );
 
+        const serverRecommendations: Record<string, { id: string; name: string; purpose: string; install_command: string; install_note: string }> = {
+          github: {
+            id: "github",
+            name: "GitHub MCP Server",
+            purpose: "Create GitHub Issues from the exported work items",
+            install_command: 'VS Code MCP Gallery: search "GitHub"',
+            install_note: "The AI client needs GitHub MCP to create the issues. If you see this message, ensure GitHub MCP is installed in your VS Code MCP settings.",
+          },
+          azure_boards: {
+            id: "azure-devops",
+            name: "Azure DevOps MCP Server",
+            purpose: "Create Work Items in Azure Boards from the exported tasks",
+            install_command: 'npx -y @azure-devops/mcp@latest <your-org> -d work-items',
+            install_note: "The AI client needs Azure DevOps MCP to create work items. Replace <your-org> with your Azure DevOps organization name.",
+          },
+          jira: {
+            id: "jira",
+            name: "Jira MCP Server",
+            purpose: "Create Jira Issues from the exported tasks",
+            install_command: "Search VS Code MCP Gallery for Jira, or use npx @anthropic/jira-mcp-server",
+            install_note: "The AI client needs Jira MCP to create issues. Requires a Jira API token.",
+          },
+        };
+
         const result = {
           status: "work_items_exported",
           platform: exportResult.platform,
           items: exportResult.items,
           metadata: exportResult.metadata,
           routing_instructions: exportResult.routing_instructions,
+          recommended_servers: [serverRecommendations[platform]].filter(Boolean),
           explanation: `Exported ${exportResult.items.length} work items for ${platform}. Route to ${exportResult.routing_instructions.mcp_server} MCP to create them.`,
           next_steps: `The AI client should call ${exportResult.routing_instructions.mcp_server} MCP's ${exportResult.routing_instructions.tool_name} for each item in the items array.`,
           learning_note: "Work items maintain traceability from TASKS.md through to your project management platform via the traces_to field.",

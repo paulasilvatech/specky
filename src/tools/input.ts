@@ -54,6 +54,9 @@ export function registerInputTools(
           ? await documentConverter.convert(file_path, format)
           : documentConverter.convertRawText(raw_text!, "Imported Document");
 
+        const detectedFormat = result.format;
+        const needsMarkitdown = ["pdf", "docx", "pptx"].includes(detectedFormat || format);
+
         const output = {
           markdown: result.markdown,
           metadata: result.metadata,
@@ -69,6 +72,16 @@ export function registerInputTools(
           ],
           learning_note:
             "SDD processes work best with structured Markdown input. Converting documents first ensures consistent parsing and traceability across the pipeline.",
+          recommended_servers: needsMarkitdown ? [{
+            id: "markitdown",
+            name: "Microsoft MarkItDown",
+            purpose: "Enhanced conversion for PDF/DOCX/PPTX with better formatting, tables, and image handling",
+            install_command: "Add to MCP settings: uvx markitdown-mcp",
+            install_note: "Specky used its built-in converter. For better results, install MarkItDown MCP — the AI client will automatically use it when available.",
+            required: false,
+            status: "recommended",
+            enhances: ["sdd_import_document", "sdd_batch_import"]
+          }] : [],
         };
 
         return { content: [{ type: "text" as const, text: truncate(JSON.stringify(output, null, 2)) }] };

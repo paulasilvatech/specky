@@ -544,6 +544,29 @@ export interface DocumentationResult {
   explanation: string;
 }
 
+// ─── MCP Ecosystem Recommendations ───
+
+/** Recommended external MCP server that enhances a Specky tool */
+export interface RecommendedServer {
+  id: string;
+  name: string;
+  purpose: string;
+  install_command: string;
+  install_note: string;
+  required: boolean;
+  status: "available" | "recommended" | "required";
+  enhances: string[];
+}
+
+/** Ecosystem check result */
+export interface EcosystemCheckResult {
+  specky_version: string;
+  total_tools: number;
+  recommended_servers: RecommendedServer[];
+  explanation: string;
+  next_steps: string;
+}
+
 // ─── Educative Output (standard response envelope) ───
 
 /** Standard response fields for educative/interactive outputs */
@@ -552,6 +575,7 @@ export interface EducativeOutput {
   next_steps: string;
   learning_note: string;
   diagram?: string;
+  recommended_servers?: RecommendedServer[];
 }
 
 /** Re-export for convenience */

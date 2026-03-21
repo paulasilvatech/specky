@@ -4,7 +4,8 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { join } from "node:path";
-import { CHARACTER_LIMIT, PHASE_ORDER, DEFAULT_EXCLUDE_PATTERNS } from "../constants.js";
+import { z } from "zod";
+import { CHARACTER_LIMIT, PHASE_ORDER, DEFAULT_EXCLUDE_PATTERNS, VERSION, MCP_ECOSYSTEM, TOTAL_TOOLS } from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
@@ -308,6 +309,48 @@ export function registerUtilityTools(
           isError: true,
         };
       }
+    }
+  );
+
+  // ─── sdd_check_ecosystem ───
+  server.registerTool(
+    "sdd_check_ecosystem",
+    {
+      title: "Check MCP Ecosystem",
+      description:
+        "Reports which external MCP servers are recommended for the full Specky experience. Shows what each server does, which Specky tools it enhances, and how to install it. Run this first to understand what integrations are available.",
+      inputSchema: z.object({}).strict(),
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async () => {
+      const ecosystem = MCP_ECOSYSTEM.map((srv) => ({
+        id: srv.id,
+        name: srv.name,
+        purpose: srv.purpose,
+        install_command: srv.install_command,
+        install_note: srv.install_note,
+        required: srv.required,
+        status: srv.status,
+        enhances: [...srv.enhances],
+      }));
+
+      const result = {
+        specky_version: VERSION,
+        total_tools: TOTAL_TOOLS,
+        recommended_servers: ecosystem,
+        explanation: `Specky v${VERSION} has ${TOTAL_TOOLS} tools that work standalone. For the full experience, ${ecosystem.length} external MCP servers are recommended. Each server unlocks additional integrations — none are required, but they transform Specky from a spec engine into a complete development platform.`,
+        next_steps: "Review the list above. Install the servers relevant to your workflow. GitHub MCP and Azure DevOps MCP are the most commonly used. MarkItDown MCP is recommended for document import (PDF/DOCX/PPTX).",
+        learning_note: "MCP (Model Context Protocol) allows AI clients to orchestrate between multiple servers. Specky produces structured payloads with routing_instructions that tell the AI client which external MCP server to call. This MCP-to-MCP pattern means Specky never needs API keys or credentials for external services — the AI client handles routing.",
+      };
+
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+      };
     }
   );
 }
