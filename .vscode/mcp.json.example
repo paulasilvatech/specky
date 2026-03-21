@@ -1,0 +1,21 @@
+{
+  // Specky MCP Server — VS Code Configuration
+  // Copy this file to .vscode/mcp.json to enable Specky in VS Code with GitHub Copilot.
+  //
+  // Prerequisites:
+  //   npm install -g specky    (or use npx — no install needed)
+  //
+  // Usage:
+  //   In Copilot Chat, type @spec-engineer to start the SDD pipeline.
+  //   The agent will call Specky MCP tools to create spec files in your workspace.
+
+  "servers": {
+    "specky": {
+      "command": "npx",
+      "args": ["-y", "specky"],
+      "env": {
+        "SDD_WORKSPACE": "${workspaceFolder}"
+      }
+    }
+  }
+}

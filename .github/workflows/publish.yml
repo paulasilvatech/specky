@@ -1,0 +1,52 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  npm-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - run: npm ci
+      - run: npm run build
+
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  docker-publish:
+    runs-on: ubuntu-latest
+    needs: npm-publish
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get version from package.json
+        id: pkg
+        run: echo "version=$(node -p 'require(\"./package.json\").version')" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ghcr.io/paulasilvatech/specky:latest \
+            -t ghcr.io/paulasilvatech/specky:${{ steps.pkg.outputs.version }} \
+            .
+
+      - name: Push Docker image
+        run: |
+          docker push ghcr.io/paulasilvatech/specky:latest
+          docker push ghcr.io/paulasilvatech/specky:${{ steps.pkg.outputs.version }}

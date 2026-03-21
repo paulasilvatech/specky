@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.git/
+.specs/
+.github/
+.claude/
+.vscode/
+*.md
+!README.md
+.DS_Store
+coverage/
+.env

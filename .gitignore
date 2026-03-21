@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.tgz
+.env
+.DS_Store
+coverage/
+*.log
+.vscode/mcp.json
+!.vscode/mcp.json.example

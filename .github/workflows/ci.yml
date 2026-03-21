@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Check for ": any" usage in src/
+        run: |
+          if grep -r ": any" src/; then
+            echo "::error::Found ': any' in src/ — please use explicit types"
+            exit 1
+          fi
+
+      - name: MCP initialize handshake test
+        run: |
+          RESPONSE=$(echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0.1.0"}}}' | node dist/index.js 2>/dev/null || true)
+          if echo "$RESPONSE" | grep -qi "specky"; then
+            echo "MCP handshake OK — response contains 'specky'"
+          else
+            echo "::error::MCP handshake failed — response does not contain 'specky'"
+            echo "Response was: $RESPONSE"
+            exit 1
+          fi
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build -t specky .

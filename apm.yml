@@ -1,0 +1,143 @@
+name: sdd-spec-engineer
+version: 3.0.0
+description: >-
+  Spec-Driven Development system with EARS notation, quality gates, traceability matrices,
+  and 4 specialized Custom Agents. Works seamlessly with GitHub Copilot and Claude Code.
+author: paulasilvatech
+license: MIT
+repository: https://github.com/paulasilvatech/sdd-spec-engineer
+homepage: https://github.com/paulasilvatech/sdd-spec-engineer
+documentation: https://github.com/paulasilvatech/sdd-spec-engineer#readme
+keywords:
+  - spec-driven-development
+  - specification
+  - requirements
+  - ears-notation
+  - quality-gates
+  - traceability
+  - custom-agents
+  - acceptance-testing
+  - design-first
+
+targets:
+  - github
+  - claude
+
+agents:
+  - name: spec-engineer
+    path: agents/spec-engineer.agent.md
+    description: Writes and refines requirements in EARS notation, validates completeness
+    model: claude-opus-4
+  - name: design-architect
+    path: agents/design-architect.agent.md
+    description: Creates system architecture, interface design, UML diagrams
+    model: claude-opus-4
+  - name: task-planner
+    path: agents/task-planner.agent.md
+    description: Decomposes specifications into implementation tasks and sprints
+    model: claude-sonnet-4
+  - name: spec-reviewer
+    path: agents/spec-reviewer.agent.md
+    description: Audits specifications for quality, ambiguity, and completeness
+    model: claude-opus-4
+
+commands:
+  - name: sdd:spec
+    path: .claude/commands/sdd-spec.md
+    description: Initiate specification phase for a new feature
+  - name: sdd:design
+    path: .claude/commands/sdd-design.md
+    description: Begin design phase from completed specification
+  - name: sdd:tasks
+    path: .claude/commands/sdd-tasks.md
+    description: Decompose design into implementation tasks
+  - name: sdd:analyze
+    path: .claude/commands/sdd-analyze.md
+    description: Audit specification for quality and completeness
+  - name: sdd:bugfix
+    path: .claude/commands/sdd-bugfix.md
+    description: Link bugs to failing acceptance criteria
+
+hooks:
+  - name: auto-test
+    path: hooks/auto-test.md
+    description: Generate test stubs from acceptance criteria after task completion
+    trigger: task-completion
+    model: claude-haiku-3.5
+  - name: auto-docs
+    path: hooks/auto-docs.md
+    description: Update documentation to match code changes
+    trigger: code-change
+    model: claude-haiku-3.5
+  - name: security-scan
+    path: hooks/security-scan.md
+    description: Run OWASP Top 10 and secrets detection before merge
+    trigger: pre-merge
+    model: claude-haiku-3.5
+  - name: spec-sync
+    path: hooks/spec-sync.md
+    description: Validate implementation against specification and design
+    trigger: code-change
+    model: claude-haiku-3.5
+  - name: changelog
+    path: hooks/changelog.md
+    description: Generate CHANGELOG.md entries from completed features
+    trigger: release
+    model: claude-haiku-3.5
+  - name: srp-validator
+    path: hooks/srp-validator.md
+    description: Validate Single Responsibility Principle in code
+    trigger: code-change
+    model: claude-haiku-3.5
+
+references:
+  - name: ears-notation
+    path: references/ears-notation.md
+    description: EARS syntax guide with examples
+  - name: spec-templates
+    path: references/spec-templates.md
+    description: Specification boilerplate templates
+  - name: design-patterns
+    path: references/design-patterns.md
+    description: Architecture and design pattern templates
+
+files:
+  - path: CLAUDE.md
+    description: Claude Code project instructions (auto-loaded)
+  - path: apm.yml
+    description: This APM manifest for distribution
+  - path: .specs/
+    description: Feature specification directories (numbered 001-...)
+  - path: reports/
+    description: Auto-generated reports (analysis, traceability, security)
+  - path: agents/
+    description: Custom Agent definitions for GitHub Copilot
+
+dependencies:
+  optional:
+    - name: spec-kit
+      version: ">=1.0.0"
+      url: https://github.com/github/spec-kit
+      description: >-
+        CLI scaffolding and Git branch management for specifications.
+        Use 'specify init --template=sdd-spec-engineer' to scaffold features.
+
+metadata:
+  maintainer: Paula Silva
+  release_date: 2026-03-20
+  github_topics:
+    - specification
+    - requirements
+    - bdd
+    - ears
+    - quality-assurance
+    - traceability
+    - custom-agents
+  supported_models:
+    - claude-opus-4
+    - claude-sonnet-4
+    - claude-haiku-3.5
+  supported_platforms:
+    - github
+    - claude-code
+    - github-copilot

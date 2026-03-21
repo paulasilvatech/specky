@@ -1,0 +1,52 @@
+{
+  "name": "specky",
+  "version": "1.0.0",
+  "description": "Specky — The open-source MCP server for Spec-Driven Development (SDD). Transforms natural language into production-grade specifications with EARS notation, architecture design, and quality gates.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "specky": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc && node -e \"const fs=require('fs');const f='dist/index.js';const c=fs.readFileSync(f,'utf8');if(!c.startsWith('#!'))fs.writeFileSync(f,'#!/usr/bin/env node\\n'+c)\" && chmod +x dist/index.js",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "clean": "rm -rf dist"
+  },
+  "files": [
+    "dist/",
+    "templates/",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "mcp",
+    "spec-driven-development",
+    "sdd",
+    "ears-notation",
+    "requirements",
+    "specification",
+    "copilot",
+    "claude",
+    "ai-agent"
+  ],
+  "author": "Paula Silva <paulasilvatech@github.com> (https://github.com/paulasilvatech)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/paulasilvatech/specky"
+  },
+  "homepage": "https://github.com/paulasilvatech/specky#readme",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.6.1",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
