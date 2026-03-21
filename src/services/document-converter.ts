@@ -248,7 +248,8 @@ export class DocumentConverter {
     // Find the local file header for this entry
     // Look backwards from the central directory entry to find the actual data
     // For MVP, extract all text between XML tags using regex
-    const xmlMatch = bufStr.match(new RegExp(`${xmlPath.replace(/\//g, "\\/")}.*?PK`, "s"));
+    const escapedXmlPath = this.escapeRegex(xmlPath);
+    const xmlMatch = bufStr.match(new RegExp(`${escapedXmlPath}.*?PK`, "s"));
     if (!xmlMatch) return "";
 
     // Extract text content from XML tags (strip all tags)
@@ -261,6 +262,13 @@ export class DocumentConverter {
 
     // Clean up non-printable characters
     return textContent.replace(/[^\x20-\x7E\n\r\t]/g, "").trim();
+  }
+
+  /**
+   * Escape a string so it can be used safely inside a RegExp pattern.
+   */
+  private escapeRegex(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
   /**
