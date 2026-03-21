@@ -9,6 +9,7 @@ import type {
   TranscriptAnalysis,
   TranscriptTopic,
 } from "../types.js";
+import sanitizeHtml from "sanitize-html";
 
 /** Supported transcript formats */
 type TranscriptFormat = "vtt" | "srt" | "txt" | "md";
@@ -206,7 +207,7 @@ export class TranscriptParser {
       }
 
       // Clean HTML tags
-      text = text.replace(/<[^>]+>/g, "").trim();
+      text = sanitizeHtml(text, { allowedTags: [], allowedAttributes: {} }).trim();
 
       if (text) {
         segments.push({ speaker, text, timestamp });
@@ -237,7 +238,7 @@ export class TranscriptParser {
         text = colonMatch[2].trim();
       }
 
-      text = text.replace(/<[^>]+>/g, "").trim();
+      text = sanitizeHtml(text, { allowedTags: [], allowedAttributes: {} }).trim();
       if (text) {
         segments.push({ speaker, text, timestamp });
       }
