@@ -1,0 +1,21 @@
+{
+  // Disable markdown validation for template files (they use {{Handlebars}} syntax)
+  "markdownlint.ignore": [
+    "templates/**",
+    "hooks/**",
+    "agents/**",
+    "references/**",
+    ".specs/**",
+    "sdd-market-analysis-2026/**"
+  ],
+
+  // Exclude non-source directories from Problems panel
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "files.exclude": {
+    "sdd-market-analysis-2026": true,
+    "dist": true
+  },
+
+  // Don't validate markdown in these folders
+  "markdown.validate.enabled": false
+}

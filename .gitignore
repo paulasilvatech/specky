@@ -7,3 +7,5 @@ coverage/
 *.log
 .vscode/mcp.json
 !.vscode/mcp.json.example
+sdd-market-analysis-2026/
+docs/

@@ -1,0 +1,16 @@
+{
+  // Specky uses Handlebars {{placeholders}} in templates — disable rules that flag them
+  "MD013": false,       // Line length — templates have long lines
+  "MD033": false,       // Inline HTML — README uses <div>, <img>, <p> for badges
+  "MD041": false,       // First line heading — templates start with frontmatter
+  "MD024": false,       // Multiple headings same content — templates reuse headings
+  "MD040": false,       // Fenced code language — some code blocks are generic
+  "MD046": false,       // Code block style — mixed styles in docs
+  "MD047": false,       // Files should end with newline
+  "MD009": false,       // Trailing spaces
+  "MD012": false,       // Multiple blank lines
+  "MD032": false,       // Blanks around lists
+  "MD022": false,       // Blanks around headings
+  "MD031": false,       // Blanks around fenced code
+  "MD034": false        // Bare URLs
+}
