@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # Research: {{title}}
 
 **Feature**: {{feature_id}}

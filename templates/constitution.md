@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # {{project_name}} — Constitution
 
 > The foundational charter for the **{{project_name}}** project, establishing principles, constraints, and success criteria.

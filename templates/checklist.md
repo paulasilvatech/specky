@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # Quality Checklist: {{title}}
 
 **Feature**: {{feature_id}}

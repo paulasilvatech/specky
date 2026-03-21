@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # Sync Report: {{project_name}}
 
 > Drift analysis between specification and implementation.

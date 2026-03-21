@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # Infrastructure as Code: {{title}}
 
 **Feature**: {{feature_id}}

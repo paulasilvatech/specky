@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # Bugfix Spec: {{bug_title}}
 
 > Structured specification for bug investigation and resolution.

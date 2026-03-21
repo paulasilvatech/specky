@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # Task Verification Report: {{title}}
 
 **Feature**: {{feature_id}}

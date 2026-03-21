@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # {{project_name}} — Design
 
 > Architecture, diagrams, ADRs, and API contracts.

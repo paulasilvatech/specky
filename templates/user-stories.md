@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # User Stories: {{title}}
 
 **Feature**: {{feature_id}}

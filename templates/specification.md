@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # {{project_name}} — Specification
 
 > All requirements use **EARS notation** (Easy Approach to Requirements Syntax). Each requirement is testable, unambiguous, and traceable to the Constitution's success criteria.

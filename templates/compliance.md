@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # Compliance Report: {{title}}
 
 **Feature**: {{feature_id}}

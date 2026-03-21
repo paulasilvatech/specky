@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # Data Model: {{title}}
 
 **Feature**: {{feature_id}}

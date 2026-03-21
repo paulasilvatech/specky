@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # {{project_name}} — Tasks
 
 > Sequenced implementation tasks with pre-implementation gates, `[P]` parallel markers, effort estimates, and requirement traceability.
@@ -18,7 +19,7 @@ Before writing any code, the following gates must pass:
 
 | ID | Task | [P] | Effort | Depends On | Traces To |
 |----|------|-----|--------|------------|-----------|
-{{task_table}}
+| {{task_table}} | | | | | |
 
 ---
 
@@ -34,5 +35,5 @@ Before writing any code, the following gates must pass:
 
 | Phase | Tasks | Parallel | Effort |
 |-------|-------|----------|--------|
-{{effort_summary}}
+| {{effort_summary}} | | | |
 | **Total** | **{{total_tasks}}** | **{{parallel_tasks}}** | **{{total_effort}}** |

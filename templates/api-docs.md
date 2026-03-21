@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # API Documentation: {{title}}
 
 **Feature**: {{feature_id}}

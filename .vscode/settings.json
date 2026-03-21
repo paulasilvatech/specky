@@ -1,0 +1,8 @@
+{
+  "markdown.validate.enabled": false,
+  "markdown.validate.duplicateLinkDefinitions.enabled": "ignore",
+  "markdown.validate.fragmentLinks.enabled": "ignore",
+  "markdown.validate.fileLinks.enabled": "ignore",
+  "markdown.validate.referenceLinks.enabled": "ignore",
+  "markdown.validate.unusedLinkDefinitions.enabled": "ignore"
+}

@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # {{project_name}} — Analysis
 
 > Traceability matrix, coverage report, gap analysis, and quality gate decision.

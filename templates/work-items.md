@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # Work Items Export: {{title}}
 
 **Feature**: {{feature_id}}
