@@ -1,12 +1,12 @@
 ---
 title: "Specky — Project Constitution"
 project_id: specky-mcp-server
-version: 1.0.0
+version: 1.1.0
 date: 2026-03-20
 author: "Paula Silva @paulasilvatech @paulanunes85 | Americas Software GBB"
 status: Draft
-last_amended: 2026-03-20
-amendment_count: 0
+last_amended: 2026-03-21
+amendment_count: 1
 ---
 
 # Specky — Project Constitution

@@ -1,13 +1,13 @@
 ---
 title: "Specky — Specification"
 feature_id: "001-specky-mcp-server"
-version: 1.0.0
+version: 1.1.0
 date: 2026-03-20
 author: "Paula Silva @paulasilvatech @paulanunes85 | Americas Software GBB"
 status: Draft
 ears_notation: true
-requirement_count: 43
-categories: [CORE, PIPE, UTIL, SVC, INT, QUAL]
+requirement_count: 47
+categories: [CORE, PIPE, UTIL, SVC, INT, QUAL, ECO]
 ---
 
 # Specky — Specification
@@ -811,3 +811,75 @@ Every registered tool shall include `annotations` with accurate hints for the MC
 
 **Total requirements:** 43
 **Categories:** CORE (7), PIPE (8), UTIL (6), SVC (10), INT (6), QUAL (6)
+
+---
+
+## Amendment 1: MCP Ecosystem Detection (v2.1.0)
+
+_Added: 2026-03-21 | Reason: New tool `sdd_check_ecosystem` and `MCP_ECOSYSTEM` registry added in v2.1.0_
+
+### 7. MCP Ecosystem (REQ-ECO)
+
+### REQ-ECO-001: Ecosystem Check Tool (Ubiquitous)
+
+The server shall provide an `sdd_check_ecosystem` tool that reports all recommended external MCP servers with their purpose, install command, and which Specky tools they enhance.
+
+**Acceptance Criteria:**
+- Tool returns a list of 10 recommended MCP servers
+- Each entry includes: id, name, purpose, install_command, install_note, required, status, enhances
+- Response includes `explanation`, `next_steps`, and `learning_note` (educative output)
+
+**Traces to:** SC-001
+
+---
+
+### REQ-ECO-002: MCP Ecosystem Registry (Ubiquitous)
+
+The constants module shall export an `MCP_ECOSYSTEM` array containing all recommended external MCP servers with structured metadata.
+
+**Acceptance Criteria:**
+- `MCP_ECOSYSTEM` is a typed array of `RecommendedServer` objects
+- At least 10 servers are registered: MarkItDown, GitHub, Azure DevOps, Jira, Terraform, Azure, Figma, Docker, Playwright, Miro
+- Each server maps to specific Specky tools via the `enhances` field
+
+**Traces to:** SC-001
+
+---
+
+### REQ-ECO-003: Document Import Recommendation (Event-driven)
+
+When `sdd_import_document` processes a PDF, DOCX, or PPTX file, the response shall include a `recommended_servers` field suggesting Microsoft MarkItDown MCP for enhanced conversion.
+
+**Acceptance Criteria:**
+- `recommended_servers` is populated only for PDF/DOCX/PPTX formats
+- Recommendation includes install_command and install_note
+- Built-in conversion proceeds regardless of MarkItDown availability
+
+**Traces to:** SC-001
+
+---
+
+### REQ-ECO-004: Work Item Export Recommendation (Event-driven)
+
+When `sdd_export_work_items` generates work items, the response shall include a `recommended_servers` field suggesting the platform-specific MCP server (GitHub, Azure DevOps, or Jira).
+
+**Acceptance Criteria:**
+- Platform "github" recommends GitHub MCP
+- Platform "azure_boards" recommends Azure DevOps MCP
+- Platform "jira" recommends Jira MCP
+- Each recommendation includes install_command specific to the platform
+
+**Traces to:** SC-001
+
+---
+
+### Amendment 1 Summary
+
+| ID | Description | Pattern |
+|----|-------------|---------|
+| REQ-ECO-001 | Ecosystem check tool | Ubiquitous |
+| REQ-ECO-002 | MCP ecosystem registry | Ubiquitous |
+| REQ-ECO-003 | Document import recommendation | Event-driven |
+| REQ-ECO-004 | Work item export recommendation | Event-driven |
+
+**New total: 47 requirements (43 original + 4 amendment)**

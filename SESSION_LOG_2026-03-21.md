@@ -2,7 +2,7 @@
 
 ## Overview
 
-Complete development session covering the creation, expansion, and publication of Specky v2.0 — The Complete Spec-Driven Development Platform via MCP Protocol. Started from v1.0 (17 tools), ended at v2.1 (43 tools) published across 4 channels.
+Complete development session covering the creation, expansion, and publication of Specky v2.0 — The Complete Spec-Driven Development Platform via MCP Protocol. Started from v1.0 (17 tools), ended at v2.1 (44 tools) published across 4 channels.
 
 ---
 
@@ -200,7 +200,7 @@ Every phase mandatory. State machine blocks advancement until prerequisites are 
 - Imported 8 new services and 7 new tool registration functions
 - Instantiated all new services
 - Registered all new tool groups
-- Updated comment: "42 total"
+- Updated comment: "44 total" (42 in v2.0 + sdd_validate_ears + sdd_check_ecosystem in v2.1)
 
 ### Batch 7: Build and Verify
 
@@ -370,7 +370,7 @@ All of these are accessible to Copilot Chat simultaneously with Specky's 43 tool
 | Services | 6 | 14 | +8 |
 | Schemas | 4 | 10 | +6 |
 | Tool registration files | 4 | 11 | +7 |
-| MCP tools | 17 | 43 | +26 |
+| MCP tools | 17 | 44 | +27 |
 | Pipeline phases | 7 | 10 | +3 |
 | Diagram types | 0 | 10 | +10 |
 | Compliance frameworks | 0 | 6 | +6 |
@@ -380,16 +380,16 @@ All of these are accessible to Copilot Chat simultaneously with Specky's 43 tool
 | SVG diagrams | 0 | 4 | +4 |
 | Documentation lines | ~1,000 | 2,548 | +1,548 |
 
-### Complete Tool List (43)
-
-**Input and Conversion (5):**
-sdd_import_document, sdd_import_transcript, sdd_auto_pipeline, sdd_batch_import, sdd_figma_to_spec
+### Complete Tool List (44)
 
 **Pipeline Core (8):**
 sdd_init, sdd_discover, sdd_write_spec, sdd_clarify, sdd_write_design, sdd_write_tasks, sdd_run_analysis, sdd_advance_phase
 
-**Quality and Validation (5):**
-sdd_checklist, sdd_verify_tasks, sdd_compliance_check, sdd_cross_analyze, sdd_validate_ears
+**Input and Conversion (5):**
+sdd_import_document, sdd_import_transcript, sdd_auto_pipeline, sdd_batch_import, sdd_figma_to_spec
+
+**Quality and Validation (4):**
+sdd_checklist, sdd_verify_tasks, sdd_compliance_check, sdd_cross_analyze
 
 **Diagrams and Visualization (4):**
 sdd_generate_diagram, sdd_generate_all_diagrams, sdd_generate_user_stories, sdd_figma_diagram
@@ -407,13 +407,25 @@ sdd_create_branch, sdd_export_work_items, sdd_create_pr, sdd_implement, sdd_rese
 sdd_generate_docs, sdd_generate_api_docs, sdd_generate_runbook, sdd_generate_onboarding
 
 **Utility (6):**
-sdd_get_status, sdd_get_template, sdd_scan_codebase, sdd_metrics, sdd_amend, sdd_check_ecosystem
+sdd_get_status, sdd_get_template, sdd_scan_codebase, sdd_amend, sdd_write_bugfix, sdd_check_ecosystem
+
+**Analysis (1):**
+sdd_check_sync
+
+**Validation (1):**
+sdd_validate_ears
+
+**Metrics (1):**
+sdd_metrics
 
 ---
 
 ## 13. Git Commit History
 
 ```
+e4f0d9b feat: complete SDD spec package for 002-enterprise-ready
+34b23ae feat: add enterprise-ready implementation plan (.specs/002)
+fc36e15 fix: remove tools list from agent frontmatter to prevent VS Code Unknown tool warnings
 e8cd06b feat: MCP ecosystem detection and server recommendations
 fbcb832 fix: suppress VS Code markdown lint warnings in template files
 bac5a07 feat: add professional SVG diagrams replacing ASCII art

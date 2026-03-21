@@ -1,4 +1,4 @@
-# Specky v2.0.0 -- Claude Code Project Instructions
+# Specky v2.1.0 -- Claude Code Project Instructions
 
 **Auto-loaded by Claude Code when working in this directory.**
 
@@ -6,7 +6,7 @@
 
 ## 1. Project Overview
 
-Specky v2.0.0 is an **MCP server for Spec-Driven Development (SDD)** that enforces traceability between requirements, design, implementation, and tests. It exposes **42 tools** across a **10-phase pipeline**, uses EARS notation for requirement statements, and includes 14 services, 21 templates, 4 Custom Agents, and 6 automation hooks.
+Specky v2.1.0 is an **MCP server for Spec-Driven Development (SDD)** that enforces traceability between requirements, design, implementation, and tests. It exposes **44 tools** across a **10-phase pipeline**, uses EARS notation for requirement statements, and includes 14 services, 21 templates, 4 Custom Agents, and 6 automation hooks.
 
 **Goal:** Close the gap between specification and code through continuous validation, preventing drift and ensuring acceptance criteria are met.
 
@@ -30,7 +30,7 @@ Use these `/sdd:*` commands in Claude Code to invoke specialized workflows:
 
 ---
 
-## 3. MCP Tools (42 Total)
+## 3. MCP Tools (44 Total)
 
 ### Pipeline Tools (8)
 
@@ -72,7 +72,7 @@ Use these `/sdd:*` commands in Claude Code to invoke specialized workflows:
 | `sdd_batch_import` | Batch-import multiple documents |
 | `sdd_figma_to_spec` | Convert Figma design tokens to specification |
 
-### Quality and Validation Tools (5)
+### Quality and Validation Tools (4)
 
 | Tool | Description |
 |------|-------------|
@@ -80,7 +80,6 @@ Use these `/sdd:*` commands in Claude Code to invoke specialized workflows:
 | `sdd_verify_tasks` | Verify task completion against acceptance criteria |
 | `sdd_compliance_check` | Check specs against compliance framework controls |
 | `sdd_cross_analyze` | Analyze cross-cutting concerns across multiple specs |
-| `sdd_validate_ears` | Validate EARS notation patterns in requirements |
 
 ### Visualization Tools (4)
 
@@ -126,11 +125,11 @@ Use these `/sdd:*` commands in Claude Code to invoke specialized workflows:
 | `sdd_generate_runbook` | Generate operational runbook |
 | `sdd_generate_onboarding` | Generate developer onboarding guide |
 
-### Metrics (1)
+### Ecosystem (1)
 
 | Tool | Description |
 |------|-------------|
-| `sdd_metrics` | Calculate spec completeness and quality metrics |
+| `sdd_check_ecosystem` | Report recommended MCP servers with install commands |
 
 ---
 
@@ -521,6 +520,7 @@ PORT=3200                               # HTTP transport port (--http mode)
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.1.0 | 2026-03-21 | 44 tools (+sdd_check_ecosystem, sdd_validate_ears), MCP ecosystem detection, server recommendations, recommended_servers in tool outputs |
 | 2.0.0 | 2026-03-21 | 42 tools, 10-phase pipeline, 14 services, 21 templates, compliance frameworks, MCP-to-MCP routing, educative outputs, IaC generation, diagram generation, document import |
 | 1.0.0 | 2026-03-20 | Initial release: 17 tools, 7-phase pipeline, 6 services, 4 agents, 6 hooks |
 
