@@ -35,3 +35,17 @@ export const crossAnalyzeInputSchema = z.object({
   feature_number: featureNumberSchema,
   spec_dir: specDirSchema,
 }).strict().describe("Cross-artifact consistency analysis: checks alignment between SPECIFICATION.md, DESIGN.md, and TASKS.md. Finds orphaned requirements, missing designs, and untraced tasks. Writes CROSS_ANALYSIS.md.");
+
+export const validateEarsInputSchema = z.object({
+  requirements: z
+    .array(z.string().min(1))
+    .min(1)
+    .optional()
+    .describe("Array of requirement statements to validate directly. If omitted, reads requirements from SPECIFICATION.md"),
+  feature_number: z
+    .string()
+    .regex(/^\d{3}$/, "Feature number must be 3 digits, e.g. '001'")
+    .optional()
+    .describe("Feature number whose SPECIFICATION.md will be scanned for requirements (e.g. '001'). Required when requirements is not provided"),
+  spec_dir: specDirSchema,
+}).strict().describe("Validate requirement statements against EARS notation patterns. Returns per-requirement EARS compliance results with actionable suggestions for non-conforming statements.");

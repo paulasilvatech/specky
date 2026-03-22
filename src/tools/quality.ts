@@ -1,5 +1,5 @@
 /**
- * Quality Tools — 4 tools for quality validation, compliance, and cross-analysis.
+ * Quality Tools — 5 tools for quality validation, compliance, and cross-analysis.
  * Thin tools: validate input → call service → format output.
  */
 
@@ -11,6 +11,7 @@ import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
 import type { ComplianceEngine } from "../services/compliance-engine.js";
 import type { CrossAnalyzer } from "../services/cross-analyzer.js";
+import type { EarsValidator } from "../services/ears-validator.js";
 import type { ChecklistDomain } from "../constants.js";
 import type { ChecklistItem, VerificationResult } from "../types.js";
 import {
@@ -18,6 +19,7 @@ import {
   verifyTasksInputSchema,
   complianceCheckInputSchema,
   crossAnalyzeInputSchema,
+  validateEarsInputSchema,
 } from "../schemas/quality.js";
 
 function formatError(toolName: string, error: Error): string {
@@ -101,7 +103,8 @@ export function registerQualityTools(
   stateMachine: StateMachine,
   templateEngine: TemplateEngine,
   complianceEngine: ComplianceEngine,
-  crossAnalyzer: CrossAnalyzer
+  crossAnalyzer: CrossAnalyzer,
+  earsValidator: EarsValidator
 ): void {
   // ─── sdd_checklist ───
   server.registerTool(
@@ -497,6 +500,104 @@ export function registerQualityTools(
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_cross_analyze", error as Error) }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // ─── sdd_validate_ears ───
+  server.registerTool(
+    "sdd_validate_ears",
+    {
+      title: "Validate EARS Requirements",
+      description:
+        "Validates requirement statements against EARS notation patterns (ubiquitous, event-driven, state-driven, optional, unwanted, complex). Accepts a direct list of requirements OR reads from SPECIFICATION.md. Returns per-requirement compliance results with actionable suggestions.",
+      inputSchema: validateEarsInputSchema,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async ({ requirements, feature_number, spec_dir }) => {
+      try {
+        let reqs: string[];
+
+        if (requirements && requirements.length > 0) {
+          reqs = requirements;
+        } else if (feature_number) {
+          const features = await fileManager.listFeatures(spec_dir);
+          const feature = features.find((f) => f.number === feature_number);
+          if (!feature) {
+            throw new Error(`Feature ${feature_number} not found in ${spec_dir}`);
+          }
+          let specContent: string;
+          try {
+            specContent = await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md");
+          } catch {
+            throw new Error(
+              `SPECIFICATION.md not found in ${feature.directory}.\n→ Fix: Run sdd_write_spec first.`
+            );
+          }
+          // Extract lines that look like requirements (contain "shall")
+          reqs = specContent
+            .split("\n")
+            .map((line) => line.replace(/^[-*•>\s]+/, "").trim())
+            .filter((line) => /\bshall\b/i.test(line) && line.length > 10);
+
+          if (reqs.length === 0) {
+            throw new Error(
+              `No requirement statements found in SPECIFICATION.md for feature ${feature_number}.\n→ Requirements must contain the word "shall" to be detected.`
+            );
+          }
+        } else {
+          throw new Error(
+            "Provide either requirements (array of strings) or feature_number to read from SPECIFICATION.md."
+          );
+        }
+
+        const results = reqs.map((req) => {
+          const result = earsValidator.validate(req);
+          const improvement = result.valid ? undefined : earsValidator.suggestImprovement(req);
+          return {
+            requirement: req,
+            valid: result.valid,
+            pattern: result.pattern,
+            issues: result.issues ?? [],
+            suggestion: improvement?.suggestion,
+          };
+        });
+
+        const validCount = results.filter((r) => r.valid).length;
+        const invalidCount = results.length - validCount;
+        const complianceRate = results.length > 0
+          ? Math.round((validCount / results.length) * 100)
+          : 0;
+
+        const report = {
+          total: results.length,
+          valid: validCount,
+          invalid: invalidCount,
+          compliance_rate: complianceRate,
+          results,
+          summary:
+            complianceRate === 100
+              ? `All ${validCount} requirements conform to EARS notation.`
+              : `${invalidCount} of ${results.length} requirements need EARS notation fixes. Compliance rate: ${complianceRate}%.`,
+          next_steps:
+            invalidCount > 0
+              ? "Review requirements marked valid=false and apply the provided suggestion to rewrite them in EARS notation. Re-run sdd_validate_ears to confirm."
+              : undefined,
+          learning_note:
+            "EARS (Easy Approach to Requirements Syntax) patterns: Ubiquitous ('The system shall…'), Event-driven ('When…, the system shall…'), State-driven ('While…, the system shall…'), Optional ('Where…, the system shall…'), Unwanted ('If…, then the system shall…'), Complex (combined patterns).",
+        };
+
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(report, null, 2)) }] };
+      } catch (error) {
+        return {
+          content: [{ type: "text" as const, text: formatError("sdd_validate_ears", error as Error) }],
           isError: true,
         };
       }

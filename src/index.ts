@@ -69,7 +69,7 @@ const complianceEngine = new ComplianceEngine();
 const docGenerator = new DocGenerator(fileManager);
 const gitManager = new GitManager(fileManager);
 
-// Register all tools (42 total)
+// Register all tools (44 total)
 // v1 tools (17)
 registerPipelineTools(server, fileManager, stateMachine, templateEngine, earsValidator);
 registerAnalysisTools(server, fileManager, stateMachine, templateEngine);
@@ -78,7 +78,7 @@ registerTranscriptTools(server, fileManager, stateMachine, templateEngine, earsV
 
 // v2 tools (25)
 registerInputTools(server, fileManager, documentConverter, stateMachine);
-registerQualityTools(server, fileManager, stateMachine, templateEngine, complianceEngine, crossAnalyzer);
+registerQualityTools(server, fileManager, stateMachine, templateEngine, complianceEngine, crossAnalyzer, earsValidator);
 registerVisualizationTools(server, fileManager, stateMachine, diagramGenerator);
 registerInfrastructureTools(server, fileManager, stateMachine, iacGenerator);
 registerEnvironmentTools(server, fileManager, stateMachine, iacGenerator, codebaseScanner);

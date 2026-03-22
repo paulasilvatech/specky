@@ -10,7 +10,7 @@ export const VERSION = "2.1.0";
 export const SERVER_NAME = "specky";
 
 /** Total tool count for ecosystem check */
-export const TOTAL_TOOLS = 43;
+export const TOTAL_TOOLS = 44;
 
 /**
  * MCP Ecosystem — Recommended external MCP servers.
