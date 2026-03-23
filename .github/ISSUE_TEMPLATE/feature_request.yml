@@ -1,0 +1,78 @@
+name: Feature Request
+description: Suggest a new tool, template, or capability
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement to Specky!
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      description: What type of feature is this?
+      options:
+        - New MCP Tool
+        - New Template
+        - New Compliance Framework
+        - New Diagram Type
+        - MCP-to-MCP Integration
+        - Pipeline Enhancement
+        - Documentation
+        - Developer Experience
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this solve? Why is it needed?
+      placeholder: |
+        When I try to ... I can't because ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: How should this work? What's the ideal behavior?
+      placeholder: |
+        A new tool `sdd_my_tool` that ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: pipeline-phase
+    attributes:
+      label: Pipeline Phase
+      description: Which phase does this relate to?
+      options:
+        - Init
+        - Discover
+        - Specify
+        - Clarify
+        - Design
+        - Tasks
+        - Analyze
+        - Implement
+        - Verify
+        - Release
+        - Cross-cutting (all phases)
+        - Not applicable
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any other approaches you've considered?
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Screenshots, examples, related issues, etc.

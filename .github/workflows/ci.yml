@@ -16,6 +16,10 @@ jobs:
           node-version: 22
 
       - run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
       - run: npm run build
 
       - name: Run unit tests

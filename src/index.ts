@@ -40,6 +40,8 @@ import { registerInfrastructureTools } from "./tools/infrastructure.js";
 import { registerEnvironmentTools } from "./tools/environment.js";
 import { registerIntegrationTools } from "./tools/integration.js";
 import { registerDocumentationTools } from "./tools/documentation.js";
+import { TestGenerator } from "./services/test-generator.js";
+import { registerTestingTools } from "./tools/testing.js";
 
 // Resolve workspace root
 const workspaceRoot = process.env["SDD_WORKSPACE"] || process.cwd();
@@ -68,6 +70,7 @@ const crossAnalyzer = new CrossAnalyzer(fileManager);
 const complianceEngine = new ComplianceEngine();
 const docGenerator = new DocGenerator(fileManager);
 const gitManager = new GitManager(fileManager);
+const testGenerator = new TestGenerator(fileManager);
 
 // Register all tools (44 total)
 // v1 tools (17)
@@ -84,6 +87,7 @@ registerInfrastructureTools(server, fileManager, stateMachine, iacGenerator);
 registerEnvironmentTools(server, fileManager, stateMachine, iacGenerator, codebaseScanner);
 registerIntegrationTools(server, fileManager, stateMachine, templateEngine, gitManager, workItemExporter);
 registerDocumentationTools(server, fileManager, stateMachine, docGenerator);
+registerTestingTools(server, fileManager, stateMachine, testGenerator);
 
 // Graceful shutdown
 let isShuttingDown = false;

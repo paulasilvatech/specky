@@ -1,6 +1,6 @@
 # Getting Started with Specky -- From Zero to Production-Ready Specifications
 
-> **Specky v2.0.0** -- 42 MCP tools for the full specification lifecycle.
+> **Specky v2.1.0** -- 44 MCP tools for the full specification lifecycle.
 >
 > This guide assumes no prior knowledge of MCP, Spec-Driven Development, or EARS notation. By the end, you will have a production-grade specification written, validated, exported to your project tracker, and backed by generated infrastructure code.
 
@@ -40,7 +40,7 @@ With MCP, the AI calls Specky's tools directly. Specky validates EARS notation, 
 
 ```
 You -----> AI Assistant -----> Specky MCP Server -----> Files on disk
-           (Copilot/Claude)    (42 tools)               (.specs/ folder)
+           (Copilot/Claude)    (44 tools)               (.specs/ folder)
 ```
 
 ---
@@ -201,7 +201,7 @@ You can test that Specky responds to MCP handshakes:
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | npx specky-sdd 2>/dev/null
 ```
 
-A successful response includes `"serverInfo":{"name":"specky","version":"2.0.0"}` and a list of 42 tools.
+A successful response includes `"serverInfo":{"name":"specky","version":"2.1.0"}` and a list of 44 tools.
 
 ---
 
@@ -253,7 +253,7 @@ Specky ships with four custom agents for GitHub Copilot in the `.github/agents/`
 
 | Agent | Role |
 |-------|------|
-| `@spec-engineer` | Full pipeline orchestrator -- uses all 42 tools |
+| `@spec-engineer` | Full pipeline orchestrator -- uses all 44 tools |
 | `@design-architect` | Architecture and design phase specialist |
 | `@task-planner` | Task decomposition and estimation |
 | `@spec-reviewer` | Quality audit, compliance, and analysis |
@@ -576,7 +576,7 @@ If any requirement lacks a design component, task, or acceptance criteria, the g
 
 ## 8. Importing Documents
 
-Specky v2.0.0 can import existing documents and convert them into structured specifications. This is useful when requirements already exist in PDFs, Word documents, PowerPoint decks, or meeting transcripts.
+Specky v2.1.0 can import existing documents and convert them into structured specifications. This is useful when requirements already exist in PDFs, Word documents, PowerPoint decks, or meeting transcripts.
 
 ### Importing a single document
 
@@ -1084,7 +1084,7 @@ sdd_implement --> code --> sdd_verify_tasks --> sdd_create_pr
 
 ## 14. Tool Reference Summary
 
-Specky v2.0.0 provides 42 MCP tools organized into seven groups.
+Specky v2.1.0 provides 44 MCP tools organized into seven groups.
 
 ### Pipeline Tools (8)
 
@@ -1207,6 +1207,30 @@ Specky v2.0.0 provides 42 MCP tools organized into seven groups.
 - Use `sdd_check_sync` in CI to detect specification-code drift before merge
 - Run `sdd_verify_tasks` as a pre-merge gate to catch phantom completions
 - Generate work items automatically from approved specifications
+
+### Check your MCP ecosystem
+
+Run `sdd_check_ecosystem` to discover which MCP servers are available in your environment and get recommendations for complementary servers:
+
+```
+Use sdd_check_ecosystem to find recommended MCP servers for my project
+```
+
+Specky integrates with GitHub MCP, Azure DevOps MCP, Jira MCP, Terraform MCP, Figma MCP, and Docker MCP. See [docs/integration-cookbook.md](docs/integration-cookbook.md) for practical recipes.
+
+### Run the test suite
+
+If you're contributing or want to verify your installation:
+
+```bash
+# Run all 101 unit tests
+npm test
+
+# Run with coverage report
+npm run test:coverage
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full testing guide.
 
 ### Learn more
 

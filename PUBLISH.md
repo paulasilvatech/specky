@@ -143,8 +143,8 @@ rm -rf /tmp/test-specky
 ### 2.5 Publish
 
 ```bash
-# Publish to npm (public package)
-npm publish --access public
+# Publish to npm (public package with provenance)
+npm publish --access public --provenance
 ```
 
 **Done!** Anyone can now run:
@@ -303,7 +303,7 @@ npm version major
 
 # Then push and publish
 git push --follow-tags
-npm publish
+npm publish --provenance
 ```
 
 ---

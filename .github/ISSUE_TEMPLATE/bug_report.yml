@@ -1,0 +1,108 @@
+name: Bug Report
+description: Report a bug in Specky
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please fill out the details below.
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Which AI client are you using?
+      options:
+        - VS Code + GitHub Copilot
+        - Claude Code
+        - Claude Desktop
+        - Cursor
+        - Windsurf
+        - Other (specify below)
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Specky Version
+      description: Run `npx specky-sdd --version` or check package.json
+      placeholder: "2.1.0"
+    validations:
+      required: true
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js Version
+      description: Run `node --version`
+      placeholder: "v22.0.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tool
+    attributes:
+      label: Which tool is affected?
+      description: Select the MCP tool that's failing
+      options:
+        - sdd_init
+        - sdd_discover
+        - sdd_write_spec
+        - sdd_clarify
+        - sdd_write_design
+        - sdd_write_tasks
+        - sdd_run_analysis
+        - sdd_advance_phase
+        - sdd_get_status
+        - sdd_check_sync
+        - sdd_scan_codebase
+        - sdd_compliance_check
+        - sdd_cross_analyze
+        - sdd_generate_diagram
+        - sdd_generate_iac
+        - sdd_export_work_items
+        - sdd_check_ecosystem
+        - Other / Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: What happened? What did you expect?
+      placeholder: |
+        **What happened:**
+        ...
+
+        **What I expected:**
+        ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Minimal steps to reproduce the issue
+      placeholder: |
+        1. Call sdd_init with spec_dir=".specs"
+        2. Call sdd_advance_phase
+        3. Error: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: error
+    attributes:
+      label: Error Output
+      description: Paste the error message or MCP response
+      render: shell
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Any other relevant details (OS, MCP config, etc.)

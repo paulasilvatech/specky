@@ -254,6 +254,8 @@ export const TOOL_NAMES = {
   GENERATE_ONBOARDING: "sdd_generate_onboarding",
   // Metrics
   METRICS: "sdd_metrics",
+  // Testing
+  GENERATE_TESTS: "sdd_generate_tests",
 } as const;
 
 // Input & Conversion

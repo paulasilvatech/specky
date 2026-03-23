@@ -1,10 +1,11 @@
 <div align="center">
   <h1>Specky</h1>
   <h3>The Complete Spec-Driven Development Platform</h3>
-  <p><strong>42 MCP tools. 10-phase pipeline. Works in any IDE.</strong></p>
+  <p><strong>44 MCP tools. 10-phase pipeline. Works in any IDE.</strong></p>
 
   <p>
     <a href="https://www.npmjs.com/package/specky-sdd"><img src="https://img.shields.io/npm/v/specky-sdd" alt="npm"/></a>
+    <a href="https://github.com/paulasilvatech/specky/actions/workflows/ci.yml"><img src="https://github.com/paulasilvatech/specky/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
     <a href="https://github.com/paulasilvatech/specky"><img src="https://img.shields.io/github/stars/paulasilvatech/specky?style=social" alt="Stars"/></a>
     <a href="https://github.com/paulasilvatech/specky/blob/main/LICENSE"><img src="https://img.shields.io/github/license/paulasilvatech/specky" alt="License"/></a>
   </p>
@@ -100,7 +101,7 @@ Create `.vscode/mcp.json` in your project:
 }
 ```
 
-Open Copilot Chat -- Specky's 42 tools are now available.
+Open Copilot Chat -- Specky's 44 tools are now available.
 
 ### Configure in Claude Code
 
@@ -192,7 +193,7 @@ Each phase is **mandatory**. The state machine blocks advancement until prerequi
 
 ---
 
-## All 42 Tools
+## All 44 Tools
 
 ### Input and Conversion (5)
 
@@ -386,6 +387,44 @@ From any input to production — fully automated, MCP-orchestrated, with artifac
     COMPLIANCE.md         -- Compliance framework report
     VERIFICATION.md       -- Phantom detection results
 ```
+
+---
+
+## Enterprise Ready
+
+Specky is built with enterprise adoption in mind.
+
+### Security Posture
+
+- **2 runtime dependencies** — minimal attack surface (`@modelcontextprotocol/sdk`, `zod`)
+- **Zero outbound network requests** — all data stays local
+- **No `eval()` or dynamic code execution** — template rendering is string replacement only
+- **Path traversal prevention** — FileManager sanitizes all paths, blocks `..` sequences
+- **Zod `.strict()` validation** — every tool input is schema-validated; unknown fields rejected
+- See [SECURITY.md](SECURITY.md) for full OWASP Top 10 coverage
+
+### Compliance Validation
+
+Built-in compliance checking validates your specifications against industry frameworks:
+
+| Framework | Controls | Use Case |
+|-----------|----------|----------|
+| HIPAA | 6 controls | Healthcare applications |
+| SOC 2 | 6 controls | SaaS and cloud services |
+| GDPR | 5 controls | EU data processing |
+| PCI-DSS | 6 controls | Payment card handling |
+| ISO 27001 | 6 controls | Enterprise security management |
+
+### Audit Trail
+
+Every pipeline phase produces a traceable artifact in `.specs/NNN-feature/`. The complete specification-to-code journey is documented and reproducible.
+
+### Quality Gates
+
+- **EARS Validator** — programmatic requirement quality enforcement
+- **Cross-Artifact Analysis** — automatic alignment checking between spec, design, and tasks
+- **Phase Enforcement** — state machine blocks phase-skipping; required files gate advancement
+- **101 unit tests** with Vitest; CI runs on every push
 
 ---
 

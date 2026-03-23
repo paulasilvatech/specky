@@ -252,11 +252,12 @@ specky/
 │       ├── ANALYSIS.md
 │       ├── CHECKLIST.md
 │       └── VERIFICATION.md
-├── agents/                           4 Custom Agent definitions (GitHub Copilot)
-│   ├── spec-engineer.agent.md
-│   ├── design-architect.agent.md
-│   ├── task-planner.agent.md
-│   └── spec-reviewer.agent.md
+├── .github/
+│   └── agents/                       4 Custom Agent definitions (GitHub Copilot)
+│       ├── spec-engineer.agent.md
+│       ├── design-architect.agent.md
+│       ├── task-planner.agent.md
+│       └── spec-reviewer.agent.md
 ├── .claude/
 │   └── commands/                     7 Claude Code command definitions
 │       ├── sdd-spec.md
@@ -400,7 +401,7 @@ Load these progressively -- do not read all at once.
 
 ## 12. Agents and GitHub Copilot Integration
 
-Four Custom Agents available in `agents/` and `.github/agents/` for GitHub Copilot:
+Four Custom Agents available in `.github/agents/` for GitHub Copilot:
 
 1. **spec-engineer.agent.md** -- Writes EARS requirements, validates completeness
 2. **design-architect.agent.md** -- Creates system architecture, interface design, UML
@@ -526,6 +527,6 @@ PORT=3200                               # HTTP transport port (--http mode)
 
 ---
 
-**Last Updated:** 2026-03-21
+**Last Updated:** 2026-03-22
 **Maintainer:** Paula Silva
 **License:** MIT

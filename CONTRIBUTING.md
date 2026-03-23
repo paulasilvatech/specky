@@ -1,6 +1,6 @@
 # Contributing to Specky
 
-Thank you for your interest in contributing to Specky. This guide covers the v2.0.0 architecture, development patterns, and submission process.
+Thank you for your interest in contributing to Specky. This guide covers the v2.1.0 architecture, development patterns, and submission process.
 
 ---
 
@@ -22,7 +22,7 @@ Thank you for your interest in contributing to Specky. This guide covers the v2.
 
 ## Architecture Overview
 
-Specky v2.0.0 is an MCP server that exposes **42 tools** organized into a 10-phase Spec-Driven Development pipeline. The codebase comprises **38 source files**, **21 templates**, and is structured as follows:
+Specky v2.1.0 is an MCP server that exposes **44 tools** organized into a 10-phase Spec-Driven Development pipeline. The codebase comprises **38 source files**, **21 templates**, and is structured as follows:
 
 ```
 src/
@@ -349,25 +349,64 @@ The `next_steps` field is critical for MCP-to-MCP routing. For example, `sdd_cre
 
 ## Testing
 
+### Running Tests
+
 ```bash
-# Build must pass cleanly with zero errors
-npm run build
+# Run all unit tests
+npm test
 
-# Zero any types in source
-grep -r ": any" src/ --include="*.ts" | wc -l
-# Expected: 0
+# Watch mode (re-runs on file changes)
+npm run test:watch
 
-# MCP handshake works
-echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | node dist/index.js 2>/dev/null | head -1
-# Expected: JSON with serverInfo.name = "specky", version = "2.0.0"
+# Run with coverage report
+npm run test:coverage
+```
 
-# All 42 tools registered
-echo '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}' | node dist/index.js 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d['result']['tools']))"
-# Expected: 42
+### Test Architecture
 
-# Template count
-ls templates/*.md | wc -l
-# Expected: 21
+Tests live in `tests/unit/` and cover all services except `file-manager.ts` (which is the I/O boundary and tested via integration tests).
+
+| Test File | Service | Tests |
+|-----------|---------|-------|
+| `ears-validator.test.ts` | EarsValidator | EARS patterns, validation, suggestImprovement, validateAll |
+| `compliance-engine.test.ts` | ComplianceEngine | 6 frameworks, control matching, status classification |
+| `state-machine.test.ts` | StateMachine | Phase transitions, blocking, file gates, state persistence |
+| `cross-analyzer.test.ts` | CrossAnalyzer | Alignment scoring, orphaned detection, empty spec handling |
+| `diagram-generator.test.ts` | DiagramGenerator | 10 diagram types, user story flows, batch generation |
+| `template-engine.test.ts` | TemplateEngine | Variable replacement, frontmatter, `{{#each}}` loops |
+| `codebase-scanner.test.ts` | CodebaseScanner | Tech stack detection (Node, Python, Go, Rust, Java) |
+
+### Writing Tests
+
+- Use `vi.fn()` mocks for `FileManager` — never do real I/O in unit tests
+- Pure services (EarsValidator, ComplianceEngine) can be tested without mocks
+- Test file naming: `tests/unit/<service-name>.test.ts`
+- Coverage thresholds: 80% lines/functions, 70% branches (enforced in `vitest.config.ts`)
+
+### Adding Tests for a New Service
+
+1. Create `tests/unit/my-service.test.ts`
+2. Import the service and mock FileManager if needed:
+   ```typescript
+   import { describe, it, expect, vi } from "vitest";
+   import { MyService } from "../../src/services/my-service.js";
+
+   const makeFileManager = () => ({
+     readSpecFile: vi.fn(),
+     writeSpecFile: vi.fn(),
+     fileExists: vi.fn(),
+   });
+   ```
+3. Run `npm test` to verify
+4. Run `npm run test:coverage` to check coverage meets thresholds
+
+### Pre-Submission Checklist
+
+```bash
+# All must pass before submitting a PR
+npm run build          # Zero TypeScript errors
+npm test               # All unit tests green
+npm run test:coverage  # Coverage above thresholds
 ```
 
 Manual testing approach:
