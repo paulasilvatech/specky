@@ -5,6 +5,25 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-03-24
+
+### Added
+- `sdd_generate_tests` tool — generates test stubs from acceptance criteria for 6 frameworks (vitest, jest, playwright, pytest, junit, xunit)
+- `sdd_verify_tests` tool — verifies test results JSON against specification requirements, reports traceability coverage
+- `.specky/config.yml` support — project-local configuration for templates path, default framework, compliance frameworks, audit toggle
+- `src/config.ts` — centralized configuration loader with simple YAML parsing
+- MCP integration test (`tests/integration/pipeline-e2e.test.ts`) — end-to-end pipeline validation with real FileManager
+- Unit tests for 6 additional services: DocGenerator, GitManager, IacGenerator, WorkItemExporter, TranscriptParser, DocumentConverter
+- OpenSSF Scorecard workflow (`.github/workflows/scorecard.yml`)
+- SBOM generation (CycloneDX) in CI pipeline
+- `templates/test-stub.md` template for generated test files
+
+### Changed
+- Test suite expanded: 120 → 211 tests across 16 files
+- Coverage improved: 38% → 89% lines (threshold: 80%)
+- MCP tool count: 44 → 47
+- CI pipeline now enforces coverage thresholds
+
 ## [2.1.0] - 2026-03-21
 
 ### Added

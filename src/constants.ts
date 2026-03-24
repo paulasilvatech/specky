@@ -4,7 +4,7 @@
  */
 
 /** Specky server version — matches package.json */
-export const VERSION = "2.1.0";
+export const VERSION = "2.2.0";
 
 /** Server name for MCP handshake */
 export const SERVER_NAME = "specky";

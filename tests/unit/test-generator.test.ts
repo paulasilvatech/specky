@@ -201,4 +201,109 @@ describe("TestGenerator", () => {
       expect(result.content).toContain("Framework: vitest");
     });
   });
+
+  // ── verifyTestResults ─────────────────────────────────────────────────
+
+  describe("verifyTestResults", () => {
+    const SPEC_WITH_REQS = [
+      "# SPECIFICATION",
+      "",
+      "### REQ-AUTH-001",
+      "The system shall authenticate users.",
+      "",
+      "### REQ-AUTH-002",
+      "The system shall authorize requests.",
+      "",
+      "### REQ-LOG-001",
+      "The system shall log all API calls.",
+    ].join("\n");
+
+    it("reports full coverage when all requirements have tests", async () => {
+      const fm = makeFileManager(SPEC_WITH_REQS);
+      const gen = new TestGenerator(fm as never);
+
+      const testResults = JSON.stringify([
+        { name: "test REQ-AUTH-001 login", status: "passed" },
+        { name: "test REQ-AUTH-002 rbac", status: "passed" },
+        { name: "test REQ-LOG-001 logging", status: "passed" },
+      ]);
+
+      const result = await gen.verifyTestResults(".specs/001-auth", testResults);
+
+      expect(result.coverage_percentage).toBe(100);
+      expect(result.covered_requirements).toHaveLength(3);
+      expect(result.uncovered_requirements).toHaveLength(0);
+      expect(result.passed_tests).toBe(3);
+      expect(result.failed_tests).toBe(0);
+    });
+
+    it("reports partial coverage", async () => {
+      const fm = makeFileManager(SPEC_WITH_REQS);
+      const gen = new TestGenerator(fm as never);
+
+      const testResults = JSON.stringify([
+        { name: "test REQ-AUTH-001 login", status: "passed" },
+        { name: "unrelated test", status: "passed" },
+      ]);
+
+      const result = await gen.verifyTestResults(".specs/001-auth", testResults);
+
+      expect(result.coverage_percentage).toBe(33); // 1 of 3
+      expect(result.covered_requirements).toContain("REQ-AUTH-001");
+      expect(result.uncovered_requirements).toContain("REQ-AUTH-002");
+      expect(result.uncovered_requirements).toContain("REQ-LOG-001");
+    });
+
+    it("reports zero coverage when no tests match", async () => {
+      const fm = makeFileManager(SPEC_WITH_REQS);
+      const gen = new TestGenerator(fm as never);
+
+      const testResults = JSON.stringify([
+        { name: "unrelated test", status: "passed" },
+      ]);
+
+      const result = await gen.verifyTestResults(".specs/001-auth", testResults);
+      expect(result.coverage_percentage).toBe(0);
+      expect(result.uncovered_requirements).toHaveLength(3);
+    });
+
+    it("handles {testResults: [...]} format", async () => {
+      const fm = makeFileManager(SPEC_WITH_REQS);
+      const gen = new TestGenerator(fm as never);
+
+      const testResults = JSON.stringify({
+        testResults: [
+          { name: "test REQ-AUTH-001", status: "passed" },
+          { name: "test REQ-LOG-001", status: "failed" },
+        ],
+      });
+
+      const result = await gen.verifyTestResults(".specs/001-auth", testResults);
+      expect(result.covered_requirements).toHaveLength(2);
+      expect(result.failed_tests).toBe(1);
+      expect(result.traceability_matrix.find(m => m.requirement === "REQ-LOG-001")?.status).toBe("failing");
+    });
+
+    it("handles malformed JSON gracefully", async () => {
+      const fm = makeFileManager(SPEC_WITH_REQS);
+      const gen = new TestGenerator(fm as never);
+
+      const result = await gen.verifyTestResults(".specs/001-auth", "not valid json{");
+
+      expect(result.error).toContain("Invalid JSON");
+      expect(result.coverage_percentage).toBe(0);
+      expect(result.total_tests).toBe(0);
+    });
+
+    it("returns 100% when spec has no requirements", async () => {
+      const fm = makeFileManager("# SPECIFICATION\n\nNo formal requirements here.");
+      const gen = new TestGenerator(fm as never);
+
+      const testResults = JSON.stringify([{ name: "some test", status: "passed" }]);
+      const result = await gen.verifyTestResults(".specs/001-basic", testResults);
+
+      expect(result.coverage_percentage).toBe(100);
+      expect(result.total_requirements).toBe(0);
+    });
+  });
 });

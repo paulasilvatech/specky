@@ -1,11 +1,12 @@
 <div align="center">
   <h1>Specky</h1>
   <h3>The Complete Spec-Driven Development Platform</h3>
-  <p><strong>44 MCP tools. 10-phase pipeline. Works in any IDE.</strong></p>
+  <p><strong>47 MCP tools. 10-phase pipeline. Works in any IDE.</strong></p>
 
   <p>
     <a href="https://www.npmjs.com/package/specky-sdd"><img src="https://img.shields.io/npm/v/specky-sdd" alt="npm"/></a>
     <a href="https://github.com/paulasilvatech/specky/actions/workflows/ci.yml"><img src="https://github.com/paulasilvatech/specky/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
+    <a href="https://securityscorecards.dev/viewer/?uri=github.com/paulasilvatech/specky"><img src="https://api.securityscorecards.dev/projects/github.com/paulasilvatech/specky/badge" alt="OpenSSF Scorecard"/></a>
     <a href="https://github.com/paulasilvatech/specky"><img src="https://img.shields.io/github/stars/paulasilvatech/specky?style=social" alt="Stars"/></a>
     <a href="https://github.com/paulasilvatech/specky/blob/main/LICENSE"><img src="https://img.shields.io/github/license/paulasilvatech/specky" alt="License"/></a>
   </p>

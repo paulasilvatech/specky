@@ -7,7 +7,7 @@ import { CHARACTER_LIMIT } from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TestGenerator } from "../services/test-generator.js";
-import { generateTestsInputSchema } from "../schemas/testing.js";
+import { generateTestsInputSchema, verifyTestsInputSchema } from "../schemas/testing.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -115,6 +115,62 @@ export function registerTestingTools(
               text: formatError("sdd_generate_tests", error as Error),
             },
           ],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // ─── sdd_verify_tests ───
+  server.registerTool(
+    "sdd_verify_tests",
+    {
+      title: "Verify Test Coverage Against Requirements",
+      description:
+        "Reads test results JSON and cross-references with requirement IDs from SPECIFICATION.md. " +
+        "Reports requirement coverage percentage, uncovered requirements, and a traceability matrix.",
+      inputSchema: verifyTestsInputSchema,
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async ({ feature_number, spec_dir, test_results_json }) => {
+      try {
+        const features = await fileManager.listFeatures(spec_dir);
+        const feature = features.find((f) => f.number === feature_number);
+        if (!feature) {
+          throw new Error(
+            `Feature ${feature_number} not found in ${spec_dir}. Run sdd_init first.`,
+          );
+        }
+
+        const verification = await testGenerator.verifyTestResults(
+          feature.directory,
+          test_results_json,
+        );
+
+        const result = {
+          status: verification.error ? "error" : "verified",
+          ...verification,
+          next_steps:
+            verification.coverage_percentage === 100
+              ? "All requirements are covered by tests. Proceed to sdd_advance_phase."
+              : `${verification.uncovered_requirements.length} requirements lack test coverage. Write tests for: ${verification.uncovered_requirements.join(", ")}.`,
+          learning_note:
+            "Requirement-test traceability closes the quality loop. " +
+            "Each requirement (REQ-XXX-NNN) should have at least one test that references it by ID. " +
+            "100% requirement coverage means every spec item is verified by a test.",
+        };
+
+        return {
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }],
+        };
+      } catch (error) {
+        return {
+          content: [{ type: "text" as const, text: formatError("sdd_verify_tests", error as Error) }],
           isError: true,
         };
       }

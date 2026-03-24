@@ -43,6 +43,18 @@ jobs:
             exit 1
           fi
 
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          format: cyclonedx-json
+          output-file: sbom.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
+
   docker:
     runs-on: ubuntu-latest
     steps:

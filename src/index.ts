@@ -42,10 +42,16 @@ import { registerIntegrationTools } from "./tools/integration.js";
 import { registerDocumentationTools } from "./tools/documentation.js";
 import { TestGenerator } from "./services/test-generator.js";
 import { registerTestingTools } from "./tools/testing.js";
+import { loadConfig } from "./config.js";
 
 // Resolve workspace root
 const workspaceRoot = process.env["SDD_WORKSPACE"] || process.cwd();
 console.error(`[specky] Workspace root: ${workspaceRoot}`);
+
+// Load optional project config (.specky/config.yml)
+const config = loadConfig(workspaceRoot);
+if (config.templates_path) console.error(`[specky] Custom templates: ${config.templates_path}`);
+if (config.audit_enabled) console.error(`[specky] Audit trail: enabled`);
 
 // Initialize MCP server
 const server = new McpServer({

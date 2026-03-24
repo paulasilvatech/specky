@@ -185,4 +185,101 @@ export class TestGenerator {
       return "";
     }
   }
+
+  // ── Test Verification ─────────────────────────────────────────────────
+
+  /**
+   * Verify test results against specification requirements.
+   * Accepts a JSON string of test results and cross-references with requirement IDs.
+   */
+  async verifyTestResults(
+    featureDir: string,
+    testResultsJson: string,
+  ): Promise<TestVerificationResult> {
+    const spec = await this.safeRead(featureDir, "SPECIFICATION.md");
+    const reqIds = this.extractRequirementIds(spec);
+
+    let testResults: Array<{ name: string; status: string }>;
+    try {
+      const parsed = JSON.parse(testResultsJson);
+      testResults = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed.testResults)
+          ? parsed.testResults
+          : Array.isArray(parsed.tests)
+            ? parsed.tests
+            : [];
+    } catch {
+      return {
+        total_requirements: reqIds.length,
+        covered_requirements: [],
+        uncovered_requirements: reqIds,
+        coverage_percentage: 0,
+        total_tests: 0,
+        passed_tests: 0,
+        failed_tests: 0,
+        traceability_matrix: [],
+        error: "Invalid JSON: could not parse test results.",
+      };
+    }
+
+    const passedTests = testResults.filter(t => t.status === "passed" || t.status === "pass");
+    const failedTests = testResults.filter(t => t.status === "failed" || t.status === "fail");
+
+    // Match: a requirement is "covered" if any test name contains its ID
+    const covered: string[] = [];
+    const uncovered: string[] = [];
+    const matrix: Array<{ requirement: string; tests: string[]; status: string }> = [];
+
+    for (const reqId of reqIds) {
+      const matchingTests = testResults.filter(t =>
+        t.name.includes(reqId) || t.name.toLowerCase().includes(reqId.toLowerCase()),
+      );
+      if (matchingTests.length > 0) {
+        covered.push(reqId);
+        const allPassed = matchingTests.every(t => t.status === "passed" || t.status === "pass");
+        matrix.push({ requirement: reqId, tests: matchingTests.map(t => t.name), status: allPassed ? "covered" : "failing" });
+      } else {
+        uncovered.push(reqId);
+        matrix.push({ requirement: reqId, tests: [], status: "uncovered" });
+      }
+    }
+
+    const coveragePercentage = reqIds.length > 0
+      ? Math.round((covered.length / reqIds.length) * 100)
+      : 100;
+
+    return {
+      total_requirements: reqIds.length,
+      covered_requirements: covered,
+      uncovered_requirements: uncovered,
+      coverage_percentage: coveragePercentage,
+      total_tests: testResults.length,
+      passed_tests: passedTests.length,
+      failed_tests: failedTests.length,
+      traceability_matrix: matrix,
+    };
+  }
+
+  private extractRequirementIds(text: string): string[] {
+    const ids = new Set<string>();
+    const regex = /REQ-[A-Z]+-\d{3}/g;
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      ids.add(match[0]);
+    }
+    return [...ids].sort();
+  }
+}
+
+export interface TestVerificationResult {
+  total_requirements: number;
+  covered_requirements: string[];
+  uncovered_requirements: string[];
+  coverage_percentage: number;
+  total_tests: number;
+  passed_tests: number;
+  failed_tests: number;
+  traceability_matrix: Array<{ requirement: string; tests: string[]; status: string }>;
+  error?: string;
 }
