@@ -3,8 +3,11 @@
  * All shared constants, enums, and configuration values.
  */
 
-/** Specky server version — matches package.json */
-export const VERSION = "2.2.0";
+/** Specky server version — read from package.json at build time */
+import { createRequire } from "node:module";
+const _require = createRequire(import.meta.url);
+const _pkg = _require("../package.json") as { version: string };
+export const VERSION = _pkg.version;
 
 /** Server name for MCP handshake */
 export const SERVER_NAME = "specky";
