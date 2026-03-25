@@ -122,7 +122,7 @@ npm run build
 npm pack
 
 # Check the contents
-tar tzf specky-1.0.0.tgz
+tar tzf specky-sdd-2.3.1.tgz
 # Should show:
 #   package/dist/index.js
 #   package/dist/...
@@ -133,7 +133,7 @@ tar tzf specky-1.0.0.tgz
 
 # Test installing locally
 mkdir /tmp/test-specky && cd /tmp/test-specky
-npm install /path/to/specky/specky-1.0.0.tgz
+npm install /path/to/specky/specky-sdd-2.3.1.tgz
 npx specky  # Should start the server
 
 # Clean up
