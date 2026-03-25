@@ -1,6 +1,6 @@
 {
   "name": "specky-sdd",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Specky — The open-source MCP server for Spec-Driven Development (SDD). Transforms natural language into production-grade specifications with EARS notation, architecture design, and quality gates.",
   "type": "module",
   "main": "dist/index.js",
