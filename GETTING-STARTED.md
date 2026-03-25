@@ -54,7 +54,7 @@ Specky is a **deterministic engine** that sits between your intent and your code
 
 **Skills** (`.claude/commands/`) are reusable slash commands (like `/sdd:spec`, `/sdd:design`) that invoke the Specky pipeline with the right parameters. These work with Claude Code and compatible CLIs.
 
-Both agents and skills call the same 47 Specky MCP tools underneath — they're just different entry points for different platforms.
+Both agents and skills call the same 52 Specky MCP tools underneath — they're just different entry points for different platforms.
 
 
 ## 1. What is MCP and Why It Matters
@@ -272,7 +272,7 @@ Open GitHub Copilot Chat and type:
 What SDD tools are available?
 ```
 
-Copilot should list all 42 Specky tools. If it does not, check the VS Code Output panel (View > Output > select "MCP" from the dropdown) for connection errors.
+Copilot should list all 52 Specky tools. If it does not, check the VS Code Output panel (View > Output > select "MCP" from the dropdown) for connection errors.
 
 ### Using with Copilot Custom Agents
 

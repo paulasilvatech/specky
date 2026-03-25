@@ -83,14 +83,14 @@ const gitManager = new GitManager(fileManager);
 const testGenerator = new TestGenerator(fileManager);
 const pbtGenerator = new PbtGenerator(fileManager);
 
-// Register all tools (44 total)
-// v1 tools (17)
+// Register all tools (52 total)
+// v1 tools
 registerPipelineTools(server, fileManager, stateMachine, templateEngine, earsValidator);
 registerAnalysisTools(server, fileManager, stateMachine, templateEngine);
 registerUtilityTools(server, fileManager, stateMachine, templateEngine, codebaseScanner);
 registerTranscriptTools(server, fileManager, stateMachine, templateEngine, earsValidator, transcriptParser);
 
-// v2 tools (25)
+// v2+ tools
 registerInputTools(server, fileManager, documentConverter, stateMachine);
 registerQualityTools(server, fileManager, stateMachine, templateEngine, complianceEngine, crossAnalyzer, earsValidator);
 registerVisualizationTools(server, fileManager, stateMachine, diagramGenerator);

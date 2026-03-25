@@ -45,7 +45,7 @@ git add .
 # First commit
 git commit -m "feat: Specky MCP Server v1.0.0
 
-17 MCP tools for Spec-Driven Development with EARS notation.
+52 MCP tools for Spec-Driven Development with EARS notation.
 
 Pipeline: init, discover, write_spec, clarify, write_design, write_tasks, run_analysis, advance_phase
 Utility: get_status, get_template, write_bugfix, check_sync, scan_codebase, amend
