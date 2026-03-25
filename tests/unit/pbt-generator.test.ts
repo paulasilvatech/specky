@@ -159,6 +159,26 @@ describe("PbtGenerator", () => {
       const gen = new PbtGenerator({} as never);
       expect(gen.classifyPropertyType("The system shall update the configuration settings")).toBe("idempotence");
     });
+
+    it("detects commutativity for order-independent operations", () => {
+      const gen = new PbtGenerator({} as never);
+      expect(gen.classifyPropertyType("The system shall combine items regardless of order")).toBe("commutativity");
+    });
+
+    it("detects commutativity for swap/interchangeable", () => {
+      const gen = new PbtGenerator({} as never);
+      expect(gen.classifyPropertyType("The system shall produce interchangeable results")).toBe("commutativity");
+    });
+
+    it("detects monotonicity for proportional relationships", () => {
+      const gen = new PbtGenerator({} as never);
+      expect(gen.classifyPropertyType("The system shall scale monotonically with load")).toBe("monotonicity");
+    });
+
+    it("detects monotonicity for proportional keyword", () => {
+      const gen = new PbtGenerator({} as never);
+      expect(gen.classifyPropertyType("The system shall grow proportional to input size")).toBe("monotonicity");
+    });
   });
 
   // ── generate (fast-check) ─────────────────────────────────────────────
@@ -308,6 +328,49 @@ describe("PbtGenerator", () => {
       const roundTrip = result.properties.find(p => p.property_type === "round_trip");
       expect(roundTrip).toBeDefined();
       expect(roundTrip!.test_code).toContain("round_trip");
+    });
+  });
+
+  // ── generate — commutativity/monotonicity ───────────────────────────────
+
+  describe("generate — commutativity and monotonicity", () => {
+    const SPEC_COMMUTATIVE = "The system shall combine items regardless of order in all merge operations.";
+    const SPEC_MONOTONIC = "The system shall scale monotonically with increasing input load.";
+
+    it("generates commutativity fast-check test", async () => {
+      const fm = makeFileManager(SPEC_COMMUTATIVE);
+      const gen = new PbtGenerator(fm as never);
+      const result = await gen.generate(".specs/001-test", "fast-check", "tests");
+      const comm = result.properties.find(p => p.property_type === "commutativity");
+      expect(comm).toBeDefined();
+      expect(comm!.test_code).toContain("commutativity");
+    });
+
+    it("generates monotonicity fast-check test", async () => {
+      const fm = makeFileManager(SPEC_MONOTONIC);
+      const gen = new PbtGenerator(fm as never);
+      const result = await gen.generate(".specs/001-test", "fast-check", "tests");
+      const mono = result.properties.find(p => p.property_type === "monotonicity");
+      expect(mono).toBeDefined();
+      expect(mono!.test_code).toContain("monotonicity");
+    });
+
+    it("generates commutativity hypothesis test", async () => {
+      const fm = makeFileManager(SPEC_COMMUTATIVE);
+      const gen = new PbtGenerator(fm as never);
+      const result = await gen.generate(".specs/001-test", "hypothesis", "tests");
+      const comm = result.properties.find(p => p.property_type === "commutativity");
+      expect(comm).toBeDefined();
+      expect(comm!.test_code).toContain("commutativity");
+    });
+
+    it("generates monotonicity hypothesis test", async () => {
+      const fm = makeFileManager(SPEC_MONOTONIC);
+      const gen = new PbtGenerator(fm as never);
+      const result = await gen.generate(".specs/001-test", "hypothesis", "tests");
+      const mono = result.properties.find(p => p.property_type === "monotonicity");
+      expect(mono).toBeDefined();
+      expect(mono!.test_code).toContain("monotonicity");
     });
   });
 

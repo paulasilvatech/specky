@@ -46,9 +46,14 @@ const turnkeySpecInputSchema = z.object({
     .boolean()
     .default(false)
     .describe("Overwrite existing files if true"),
+  clarification_responses: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe("Answers to clarification questions from a previous turnkey run. Keys are question IDs (CQ-001), values are answers. When provided, the tool refines the existing specification instead of generating from scratch."),
 }).strict().describe(
   "Turnkey specification: provide a natural language description and get a complete EARS specification. " +
-  "Automatically infers requirements, classifies EARS patterns, generates acceptance criteria, and identifies clarification questions."
+  "Automatically infers requirements, classifies EARS patterns, generates acceptance criteria, and identifies clarification questions. " +
+  "Supports iterative refinement: pass clarification_responses from a previous run to refine the spec."
 );
 
 export function registerTurnkeyTools(
@@ -75,13 +80,22 @@ export function registerTurnkeyTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_name, description, feature_number, spec_dir, force }) => {
+    async ({ feature_name, description, feature_number, spec_dir, force, clarification_responses }) => {
       try {
         const featureSlug = feature_name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
         const featureDir = join(spec_dir, `${feature_number}-${featureSlug}`);
 
+        // If clarification_responses provided, enrich the description with the answers
+        let enrichedDescription = description;
+        if (clarification_responses && Object.keys(clarification_responses).length > 0) {
+          const enrichments = Object.entries(clarification_responses)
+            .map(([_qId, answer]) => answer)
+            .join(". ");
+          enrichedDescription = `${description}. Additional context from clarification: ${enrichments}`;
+        }
+
         // Step 1: Extract requirement candidates from natural language
-        const candidates = extractRequirementCandidates(description);
+        const candidates = extractRequirementCandidates(enrichedDescription);
 
         // Step 2: Convert to EARS notation
         const requirements = candidates.map((candidate, i) => {
@@ -206,7 +220,7 @@ export function registerTurnkeyTools(
             : ["SPECIFICATION.md"],
           next_steps:
             clarifications.length > 0
-              ? `Review ${clarifications.length} clarification questions below, then call sdd_clarify or sdd_amend to refine. When satisfied, proceed to sdd_write_design.`
+              ? `Review ${clarifications.length} clarification questions below. You can: (1) call sdd_turnkey_spec again with clarification_responses to auto-refine, or (2) call sdd_clarify for interactive disambiguation. When satisfied, proceed to sdd_write_design.`
               : "Specification looks complete. Review the generated requirements, then proceed to sdd_write_design.",
           learning_note:
             "Turnkey mode automatically infers EARS patterns from natural language. " +

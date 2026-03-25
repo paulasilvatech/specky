@@ -13,7 +13,9 @@ export type PbtPropertyType =
   | "conditional"
   | "negative"
   | "round_trip"
-  | "idempotence";
+  | "idempotence"
+  | "commutativity"
+  | "monotonicity";
 
 export interface PbtProperty {
   id: string;
@@ -106,6 +108,29 @@ export class PbtGenerator {
       lower.includes("decode")
     ) {
       return "round_trip";
+    }
+
+    // Commutativity: order-independent operations
+    if (
+      lower.includes("regardless of order") ||
+      lower.includes("commutativ") ||
+      lower.includes("interchangeabl") ||
+      (lower.includes("order") && (lower.includes("swap") || lower.includes("independen"))) ||
+      (lower.includes("combine") && lower.includes("order"))
+    ) {
+      return "commutativity";
+    }
+
+    // Monotonicity: proportional/scaling relationships
+    if (
+      lower.includes("monoton") ||
+      lower.includes("proportional") ||
+      (lower.includes("increase") && lower.includes("increase")) ||
+      (lower.includes("more") && lower.includes("more")) ||
+      (lower.includes("larger") && lower.includes("larger")) ||
+      (lower.includes("grow") && lower.includes("scale"))
+    ) {
+      return "monotonicity";
     }
 
     if (
@@ -277,6 +302,35 @@ export class PbtGenerator {
           `    );`,
           `  });`,
         ].join("\n");
+
+      case "commutativity":
+        return [
+          `  it("${propId}: commutativity — ${description}", () => {`,
+          `    fc.assert(`,
+          `      fc.property(fc.string(), fc.string(), (a, b) => {`,
+          `        // TODO: Verify f(a, b) === f(b, a)`,
+          `        expect(operation(a, b)).toEqual(operation(b, a));`,
+          `        return true;`,
+          `      }),`,
+          `      { numRuns: 100 }`,
+          `    );`,
+          `  });`,
+        ].join("\n");
+
+      case "monotonicity":
+        return [
+          `  it("${propId}: monotonicity — ${description}", () => {`,
+          `    fc.assert(`,
+          `      fc.property(fc.integer(), fc.integer(), (x, y) => {`,
+          `        // TODO: Verify x <= y implies f(x) <= f(y)`,
+          `        fc.pre(x <= y);`,
+          `        expect(f(x)).toBeLessThanOrEqual(f(y));`,
+          `        return true;`,
+          `      }),`,
+          `      { numRuns: 100 }`,
+          `    );`,
+          `  });`,
+        ].join("\n");
     }
   }
 
@@ -355,6 +409,26 @@ export class PbtGenerator {
           `        assume(condition)  # Only test when condition holds`,
           `        result = system_under_test(data)`,
           `        assert result is not None`,
+        ].join("\n");
+
+      case "commutativity":
+        return [
+          `    @given(a=st.text(), b=st.text())`,
+          `    @settings(max_examples=100)`,
+          `    def test_${this.snakeCase(propId)}_commutativity_${descSnake}(self, a, b):`,
+          `        """${propId}: commutativity — ${requirementText}"""`,
+          `        # TODO: Verify f(a, b) == f(b, a)`,
+          `        assert operation(a, b) == operation(b, a)`,
+        ].join("\n");
+
+      case "monotonicity":
+        return [
+          `    @given(x=st.integers(), y=st.integers())`,
+          `    @settings(max_examples=100)`,
+          `    def test_${this.snakeCase(propId)}_monotonicity_${descSnake}(self, x, y):`,
+          `        """${propId}: monotonicity — ${requirementText}"""`,
+          `        assume(x <= y)  # Only test ordered pairs`,
+          `        assert f(x) <= f(y)`,
         ].join("\n");
     }
   }
