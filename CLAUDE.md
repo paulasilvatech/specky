@@ -1,4 +1,4 @@
-# Specky v2.3.0 -- Claude Code Project Instructions
+# Specky v2.3.1 -- Claude Code Project Instructions
 
 **Auto-loaded by Claude Code when working in this directory.**
 
@@ -6,13 +6,13 @@
 
 ## 1. Project Overview
 
-Specky v2.3.0 is an **MCP server for Spec-Driven Development (SDD)** that enforces traceability between requirements, design, implementation, and tests. It exposes **52 tools** across a **10-phase pipeline**, uses EARS notation for requirement statements, and includes 16 services, 22 templates, 5 Custom Agents, 12 Claude Code commands, and 6 executable automation hooks.
+Specky v2.3.1 is an **MCP server for Spec-Driven Development (SDD)** that enforces traceability between requirements, design, implementation, and tests. It exposes **52 tools** across a **10-phase pipeline**, uses EARS notation for requirement statements, and includes 16 services, 22 templates, 5 Custom Agents, 12 Claude Code commands, and 6 executable automation hooks.
 
 **Goal:** Close the gap between specification and code through continuous validation, preventing drift and ensuring acceptance criteria are met.
 
 **What changed in v2.0.0:** The tool count grew from 17 to 42. The pipeline expanded from 7 phases to 10 (adding Discover, Clarify, and Release). New capabilities include compliance checking, diagram generation, IaC generation, document import, cross-spec analysis, work item export, and MCP-to-MCP routing for integration with GitHub, Docker, and Terraform MCP servers.
 
-**What changed in v2.3.0:** The tool count grew from 47 to 52. Added: turnkey spec generation from natural language (`sdd_turnkey_spec`), property-based testing with fast-check and Hypothesis (`sdd_generate_pbt`), checkpoint/restore for spec artifacts (`sdd_checkpoint`, `sdd_restore`, `sdd_list_checkpoints`). Added 5 new Claude Code commands (`/sdd:verify`, `/sdd:docs`, `/sdd:export`, `/sdd:diagrams`, `/sdd:iac`). All 6 hooks now have executable shell scripts with Claude Code settings.json integration. All 4 GitHub Copilot agents updated with Extended Toolset v2.3. 292 unit tests, new PBT generator service.
+**What changed in v2.3.1:** The tool count grew from 47 to 52. Added: turnkey spec generation from natural language (`sdd_turnkey_spec`), property-based testing with fast-check and Hypothesis (`sdd_generate_pbt`), checkpoint/restore for spec artifacts (`sdd_checkpoint`, `sdd_restore`, `sdd_list_checkpoints`). Added 5 new Claude Code commands (`/sdd:verify`, `/sdd:docs`, `/sdd:export`, `/sdd:diagrams`, `/sdd:iac`). All 6 hooks now have executable shell scripts with Claude Code settings.json integration. All 4 GitHub Copilot agents updated with Extended Toolset v2.3. 292 unit tests, new PBT generator service.
 
 ---
 
@@ -145,19 +145,19 @@ Use these `/sdd:*` commands in Claude Code to invoke specialized workflows:
 | `sdd_generate_tests` | Generate test stubs from acceptance criteria for 6 frameworks (vitest/jest/playwright/pytest/junit/xunit) |
 | `sdd_verify_tests` | Verify test results JSON against specification requirements, report traceability coverage |
 
-### Property-Based Testing (1) — NEW in v2.3.0
+### Property-Based Testing (1) — NEW in v2.3.1
 
 | Tool | Description |
 |------|-------------|
 | `sdd_generate_pbt` | Generate property-based tests from EARS requirements using fast-check (TypeScript) or Hypothesis (Python). Extracts invariants, round-trip, idempotence, state transition, and negative properties |
 
-### Turnkey Specification (1) — NEW in v2.3.0
+### Turnkey Specification (1) — NEW in v2.3.1
 
 | Tool | Description |
 |------|-------------|
 | `sdd_turnkey_spec` | Generate a complete EARS specification from a natural language description. Auto-extracts requirements, classifies EARS patterns, generates acceptance criteria, infers NFRs, and identifies clarification questions |
 
-### Checkpointing (3) — NEW in v2.3.0
+### Checkpointing (3) — NEW in v2.3.1
 
 | Tool | Description |
 |------|-------------|
@@ -571,7 +571,7 @@ PORT=3200                               # HTTP transport port (--http mode)
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 2.3.0 | 2026-03-24 | 52 tools (+sdd_turnkey_spec, sdd_generate_pbt, sdd_checkpoint, sdd_restore, sdd_list_checkpoints), turnkey EARS spec from natural language, property-based testing (fast-check/hypothesis), checkpoint/restore for spec artifacts, 12 Claude Code commands (+5), 6 executable hooks with settings.json integration, 4 agents updated to Extended Toolset v2.3, 292 unit tests |
+| 2.3.1 | 2026-03-24 | 52 tools (+sdd_turnkey_spec, sdd_generate_pbt, sdd_checkpoint, sdd_restore, sdd_list_checkpoints), turnkey EARS spec from natural language, property-based testing (fast-check/hypothesis), checkpoint/restore for spec artifacts, 12 Claude Code commands (+5), 6 executable hooks with settings.json integration, 4 agents updated to Extended Toolset v2.3, 292 unit tests |
 | 2.2.0 | 2026-03-24 | 47 tools (+sdd_generate_tests, sdd_verify_tests), test generation for 6 frameworks, .specky/config.yml support, 211 unit tests, 89% coverage, OpenSSF Scorecard, SBOM generation |
 | 2.1.0 | 2026-03-21 | 44 tools (+sdd_check_ecosystem, sdd_validate_ears), MCP ecosystem detection, server recommendations, recommended_servers in tool outputs |
 | 2.0.0 | 2026-03-21 | 42 tools, 10-phase pipeline, 14 services, 21 templates, compliance frameworks, MCP-to-MCP routing, educative outputs, IaC generation, diagram generation, document import |

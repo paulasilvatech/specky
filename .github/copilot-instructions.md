@@ -1,4 +1,4 @@
-# Specky v2.3.0 — GitHub Copilot Instructions
+# Specky v2.3.1 — GitHub Copilot Instructions
 
 This project uses **Spec-Driven Development (SDD)** via the Specky MCP server.
 

@@ -133,7 +133,7 @@
 
   <!-- Version badge: top-right of box -->
   <rect x="835" y="292" width="58" height="20" rx="10" fill="#7FBA00"/>
-  <text x="864" y="305" text-anchor="middle" font-size="10" font-weight="700" fill="#FFFFFF">v2.3.0</text>
+  <text x="864" y="305" text-anchor="middle" font-size="10" font-weight="700" fill="#FFFFFF">v2.3.1</text>
 
   <!-- ================================================================
        ROW 3: EXTERNAL MCP SERVERS

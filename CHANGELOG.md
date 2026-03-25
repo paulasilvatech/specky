@@ -5,6 +5,12 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-03-25
+
+### Changed
+- Added Specky MCP logo and icon (PNG 256x256 + 128x128) for VS Code MCP Gallery and npm
+- Configured "icon" field in package.json
+
 ## [2.3.0] - 2026-03-24
 
 ### Added

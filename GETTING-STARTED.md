@@ -1,6 +1,6 @@
 # Getting Started with Specky. From Zero to Production-Ready Specifications
 
-> **Specky v2.3.0** | 52 MCP tools for the full specification lifecycle.
+> **Specky v2.3.1** | 52 MCP tools for the full specification lifecycle.
 >
 > This guide assumes no prior knowledge of MCP, Spec-Driven Development, or EARS notation. By the end, you will have a production-grade specification written, validated, exported to your project tracker, and backed by generated infrastructure code.
 
@@ -229,7 +229,7 @@ You can test that Specky responds to MCP handshakes:
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | npx specky-sdd 2>/dev/null
 ```
 
-A successful response includes `"serverInfo":{"name":"specky","version":"2.3.0"}` and a list of 52 tools.
+A successful response includes `"serverInfo":{"name":"specky","version":"2.3.1"}` and a list of 52 tools.
 
 
 ## 5. Configuring in VS Code with GitHub Copilot
@@ -600,7 +600,7 @@ If any requirement lacks a design component, task, or acceptance criteria, the g
 
 ## 8. Importing Documents
 
-Specky v2.3.0 can import existing documents and convert them into structured specifications. This is useful when requirements already exist in PDFs, Word documents, PowerPoint decks, or meeting transcripts.
+Specky v2.3.1 can import existing documents and convert them into structured specifications. This is useful when requirements already exist in PDFs, Word documents, PowerPoint decks, or meeting transcripts.
 
 ### Importing a single document
 
@@ -972,7 +972,7 @@ Validate the EARS notation in the specification for feature 001.
 Checks every requirement against the six EARS patterns and provides improvement suggestions for any that are ambiguous or structurally weak.
 
 
-## 13. Generating Tests from Specifications (NEW in v2.3.0)
+## 13. Generating Tests from Specifications (NEW in v2.3.1)
 
 Specky can generate test stubs directly from your acceptance criteria — with full traceability back to requirements. This is the competitive differentiator: every test maps to a requirement ID.
 
@@ -1061,7 +1061,7 @@ When you choose Playwright as the framework, Specky automatically includes a `re
 ```
 
 
-## 14. Project Configuration (NEW in v2.3.0)
+## 14. Project Configuration (NEW in v2.3.1)
 
 Create a `.specky/config.yml` file in your project root to customize Specky's behavior:
 
@@ -1251,7 +1251,7 @@ sdd_implement --> code --> sdd_verify_tasks --> sdd_create_pr
 
 ## 17. Tool Reference Summary
 
-Specky v2.3.0 provides 52 MCP tools organized into eight groups.
+Specky v2.3.1 provides 52 MCP tools organized into eight groups.
 
 ### Pipeline Tools (8)
 
