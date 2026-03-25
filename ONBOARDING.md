@@ -8,7 +8,7 @@
 
 | Document | Description |
 |----------|-------------|
-| [README.md](README.md) | Project overview, quick start, all 47 tools |
+| [README.md](README.md) | Project overview, quick start, all 52 tools |
 | [GETTING-STARTED.md](GETTING-STARTED.md) | Complete educational guide — MCP, SDD, EARS, step-by-step walkthrough (assumes no prior knowledge) |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | System architecture, agent design, ADRs |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to add tools, templates, and services |

@@ -1389,7 +1389,7 @@ Specky integrates with GitHub MCP, Azure DevOps MCP, Jira MCP, Terraform MCP, Fi
 If you're contributing or want to verify your installation:
 
 ```bash
-# Run all 211 unit tests
+# Run all 292 unit tests
 npm test
 
 # Run with coverage report

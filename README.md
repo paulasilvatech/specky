@@ -540,7 +540,7 @@ The AI calls:
 
 The AI calls `sdd_export_work_items` + `sdd_create_pr` → generates work item payloads and PR body with full spec traceability.
 
-> 👉 **Next:** Learn about [EARS notation](#ears-notation) to understand the requirement patterns, or see [all 47 tools](#all-47-tools) for a complete reference.
+> 👉 **Next:** Learn about [EARS notation](#ears-notation) to understand the requirement patterns, or see [#all-52-tools](#all-47-tools) for a complete reference.
 
 
 ## 🔧 Brownfield Project: Add Features to Existing Code
@@ -1023,7 +1023,7 @@ Every pipeline phase produces a traceable artifact in `.specs/NNN-feature/`. The
 - **EARS Validator**.programmatic requirement quality enforcement
 - **Cross-Artifact Analysis**.automatic alignment checking between spec, design, and tasks
 - **Phase Enforcement**.state machine blocks phase-skipping; required files gate advancement
-- **211 unit tests** with 89% code coverage; CI enforces thresholds on every push
+- **292 unit tests** with 89% code coverage; CI enforces thresholds on every push
 
 
 ## 🛠️ Development
@@ -1037,7 +1037,7 @@ npm install
 # Build
 npm run build
 
-# Run tests (211 tests, 89% coverage)
+# Run tests (292 tests coverage)
 npm test
 
 # Run tests with coverage report
