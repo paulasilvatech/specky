@@ -13,6 +13,7 @@ import {
   validateIacInputSchema,
   generateDockerfileInputSchema,
 } from "../schemas/infrastructure.js";
+import { enrichResponse } from "./response-builder.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -100,8 +101,9 @@ export function registerInfrastructureTools(
             "State files track deployed resources so Terraform knows what exists.",
         };
 
+        const enriched = await enrichResponse("sdd_generate_iac", result, stateMachine, spec_dir);
         return {
-          content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }],
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
       } catch (error) {
         return {
@@ -157,8 +159,9 @@ export function registerInfrastructureTools(
             "Always validate before applying to catch misconfigurations early.",
         };
 
+        const enriched = await enrichResponse("sdd_validate_iac", result, stateMachine, spec_dir);
         return {
-          content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }],
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
       } catch (error) {
         return {
@@ -241,8 +244,9 @@ export function registerInfrastructureTools(
             "docker-compose.yml orchestrates multiple containers (app, database, cache) as a single stack.",
         };
 
+        const enriched = await enrichResponse("sdd_generate_dockerfile", result, stateMachine, spec_dir);
         return {
-          content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }],
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
       } catch (error) {
         return {

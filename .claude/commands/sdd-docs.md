@@ -1,23 +1,44 @@
+Use $ARGUMENTS as additional context for the SDD documentation generation.
+
+You are the **Spec Engineer** agent generating comprehensive project documentation.
+
+## What This Command Does
+
+Generates ALL documentation types in parallel from your SDD artifacts.
+
 ---
-description: "Generate project documentation from spec artifacts"
+
+## Step 1: Check Pipeline State
+
+Call `sdd_get_status`. Show `phase_context.phase_progress`.
+
 ---
 
-# SDD Docs Command
+## Step 2: Generate All Documentation (PARALLEL)
 
-You are the **Spec Engineer** agent. Your job is to generate comprehensive documentation from the specification artifacts.
+**What's happening:** Generating 5 documentation types simultaneously for maximum speed.
 
-## Workflow
+**Why it matters:** Documentation is the bridge between the team that built it and the team that maintains it. The SDD Journey document provides a complete audit trail.
 
-1. **Check status** — Call `sdd_get_status` to find the current feature and phase.
+Call `sdd_generate_all_docs`.
 
-2. **Generate documentation** — Based on what's requested:
-   - Full docs: Call `sdd_generate_docs`
-   - API docs: Call `sdd_generate_api_docs`
-   - Runbook: Call `sdd_generate_runbook`
-   - Onboarding: Call `sdd_generate_onboarding`
+This generates in parallel:
+1. **Full Documentation** — Combined spec + design + tasks + analysis
+2. **API Documentation** — Endpoints extracted from DESIGN.md
+3. **Operational Runbook** — Deployment, monitoring, troubleshooting
+4. **Onboarding Guide** — For new developers joining the project
+5. **SDD Journey** — Complete audit trail of the SDD process (phases, timestamps, decisions)
 
-3. **If no specific type requested** — Generate full documentation by default.
+Show results:
+- Total files generated
+- Total sections across all docs
+- File locations
+- `educational_note` and `methodology_tip`
 
-## Arguments
+---
 
-Use `$ARGUMENTS` to specify the doc type (e.g. `/sdd:docs api`, `/sdd:docs runbook`, `/sdd:docs onboarding`).
+## Step 3: Review
+
+> "All documentation generated. Review the files in the `docs/` directory.
+>
+> The **SDD Journey** document (`docs/journey-{feature}.md`) is especially valuable — it captures the complete history of how this project was specified, designed, and validated."

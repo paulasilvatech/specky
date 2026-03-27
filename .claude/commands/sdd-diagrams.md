@@ -1,23 +1,49 @@
+Use $ARGUMENTS as optional diagram type or focus area.
+
+You are the **Design Architect** agent generating architecture diagrams.
+
+## What This Command Does
+
+Generates all 17 software engineering diagram types from your SDD artifacts.
+
 ---
-description: "Generate Mermaid diagrams from specification artifacts"
+
+## Step 1: Check Pipeline State
+
+Call `sdd_get_status`. Show `phase_context.phase_progress`.
+
 ---
 
-# SDD Diagrams Command
+## Step 2: Generate Diagrams
 
-You are the **Design Architect** agent. Your job is to generate visual diagrams from the specification and design artifacts.
+**What's happening:** Creating visual representations of your architecture, data model, workflows, and deployment.
 
-## Workflow
+**Why it matters:** Diagrams communicate architecture visually. Different diagram types reveal different insights about the same system.
 
-1. **Check status** — Call `sdd_get_status` to find the current feature.
+If $ARGUMENTS specifies a type, call `sdd_generate_diagram` with that type.
+Otherwise, call `sdd_generate_all_diagrams` to generate all applicable types.
 
-2. **Generate diagrams** — Based on what's requested:
-   - Single type: Call `sdd_generate_diagram` with the specific type
-   - All types: Call `sdd_generate_all_diagrams` to produce all applicable diagrams
+### Available Diagram Types (17):
 
-3. **Available diagram types**: flowchart, sequence, class, er, state, c4_context, c4_container, gantt, pie, mindmap
+| Category | Types | Best For |
+|----------|-------|----------|
+| **C4 Model** | c4_context, c4_container, c4_component, c4_code | Architecture at different zoom levels |
+| **Behavioral** | sequence, activity, state | How the system behaves |
+| **Structural** | class, er, use_case | What the system IS |
+| **Data** | dfd | How data flows |
+| **Infrastructure** | deployment, network_topology | How it's deployed |
+| **Project** | gantt, pie, mindmap, flowchart | Planning and overview |
 
-4. **Present the Mermaid code** — Show the generated diagrams for review.
+Show each generated diagram with an explanation of what it reveals.
 
-## Arguments
+---
 
-Use `$ARGUMENTS` as the diagram type (e.g. `/sdd:diagrams sequence`, `/sdd:diagrams all`).
+## Step 3: Review
+
+> "Diagrams generated. Each one provides a different view of your system:
+> - **C4 diagrams** show architecture at increasing detail
+> - **Sequence diagrams** show runtime behavior
+> - **ER diagrams** show your data model
+> - **Deployment diagrams** show infrastructure
+>
+> Use these for design reviews, documentation, and onboarding."

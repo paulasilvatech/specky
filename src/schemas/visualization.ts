@@ -9,8 +9,13 @@ export const generateDiagramInputSchema = z.object({
   feature_number: featureNumberSchema,
   spec_dir: specDirSchema,
   diagram_type: z
-    .enum(["flowchart", "sequence", "class", "er", "state", "c4_context", "c4_container", "gantt", "pie", "mindmap"])
-    .describe("Type of Mermaid diagram to generate."),
+    .enum([
+      "flowchart", "sequence", "class", "er", "state",
+      "c4_context", "c4_container", "c4_component", "c4_code",
+      "activity", "use_case", "dfd", "deployment", "network_topology",
+      "gantt", "pie", "mindmap",
+    ])
+    .describe("Type of Mermaid diagram to generate. 17 types covering all software engineering diagram categories."),
   source: z
     .enum(["spec", "design", "tasks", "constitution"])
     .describe("Which artifact to generate the diagram from."),

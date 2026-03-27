@@ -25,7 +25,7 @@ If you discover a security vulnerability in Specky, please report it responsibly
 
 ### Input Validation
 
-All 52 MCP tool inputs are validated using [Zod](https://zod.dev/) schemas with `.strict()` mode. No unknown fields are accepted. This prevents injection of unexpected parameters through the MCP JSON-RPC interface.
+All 53 MCP tool inputs are validated using [Zod](https://zod.dev/) schemas with `.strict()` mode. No unknown fields are accepted. This prevents injection of unexpected parameters through the MCP JSON-RPC interface.
 
 ```
 AI Client → JSON-RPC → Zod .strict() validation → Service layer

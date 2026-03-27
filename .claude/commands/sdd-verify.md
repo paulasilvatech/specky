@@ -1,28 +1,95 @@
+Use $ARGUMENTS as the user's input for this SDD verification command.
+
+You are the **Spec Reviewer** agent. Your job is to verify that implementation matches the specification — catching phantom completions and spec-code drift.
+
+## What This Command Does
+
+This command runs the **Verify phase**:
+- Generate test stubs from acceptance criteria
+- Generate property-based tests from EARS requirements
+- Verify task completion against code evidence
+- Check spec-code drift
+
 ---
-description: "Run verification: generate tests and verify coverage against spec requirements"
+
+## Step 1: Verify Prerequisites
+
+Call `sdd_get_status`.
+- Show `phase_context.phase_progress`
+- Verify SPECIFICATION.md and TASKS.md exist
+
 ---
 
-# SDD Verify Command
+## Step 2: Generate Test Stubs
 
-You are the **Spec Reviewer** agent. Your job is to verify that implementation tests cover all specification requirements.
+**What's happening:** Creating test cases from your acceptance criteria.
 
-## Workflow
+**Why it matters:** Every requirement must have a test. Tests are the proof that implementation meets specification.
 
-1. **Check pipeline status** — Call `sdd_get_status` to confirm we are in or past the Verify phase.
+Call `sdd_generate_tests` with the appropriate framework (vitest/jest/playwright/pytest/junit/xunit — detect from codebase or ask user).
 
-2. **Generate test stubs** — Call `sdd_generate_tests` with the appropriate framework for this project.
+Show results:
+- Number of test stubs generated
+- Framework used
+- File location
 
-3. **Generate property-based tests** — Call `sdd_generate_pbt` with `fast-check` (TypeScript) or `hypothesis` (Python) depending on the tech stack.
+---
 
-4. **If test results are available** — Call `sdd_verify_tests` with the test results JSON to produce a traceability matrix.
+## Step 3: Generate Property-Based Tests
 
-5. **Report coverage** — Summarize which requirements are covered and which need attention.
+**What's happening:** Creating property-based tests that find edge cases example-based tests miss.
 
-## Arguments
+**Why it matters:** EARS requirements map directly to testable properties. Property-based testing with fast-check (TypeScript) or Hypothesis (Python) explores the input space automatically.
 
-Use `$ARGUMENTS` as the test framework or feature number (e.g. `/sdd:verify vitest 001`).
+Call `sdd_generate_pbt`.
 
-## Phase Gate
+Show results:
+- Properties extracted from EARS requirements
+- Property types (invariant, state_transition, round_trip, idempotence, etc.)
+- File location
 
-- Pause and present the verification results.
-- Wait for LGTM before proceeding.
+---
+
+## Step 4: Verify Task Completion
+
+**What's happening:** Detecting "phantom completions" — tasks marked as done but with no code evidence.
+
+Call `sdd_verify_tasks` with paths to the implementation code.
+
+Show results:
+- Tasks verified vs phantom
+- Evidence found for each task
+- Pass rate
+
+If phantom tasks are detected:
+> "Warning: {count} phantom task(s) detected — marked complete but no code evidence found.
+> Review these tasks and either implement them or update TASKS.md."
+
+---
+
+## Step 5: Check Spec-Code Drift
+
+**What's happening:** Comparing what was specified against what was built.
+
+Call `sdd_check_sync`.
+
+Show drift indicators and recommendations.
+
+---
+
+## Step 6: Verification Summary (INTERACTIVE)
+
+Present comprehensive results:
+- Test coverage: {test_count} tests generated
+- PBT coverage: {property_count} properties
+- Task verification: {pass_rate}% verified
+- Drift: {drift_status}
+
+> "Verification complete. Review the results above.
+>
+> Reply **LGTM** to proceed to Release, or tell me what needs attention."
+
+**WAIT for LGTM.**
+
+Call `sdd_advance_phase` on LGTM.
+- Suggest: "Run `/sdd:docs` to generate all documentation, or `/sdd:export` to create a PR."

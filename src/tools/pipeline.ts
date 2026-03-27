@@ -10,6 +10,7 @@ import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
 import type { EarsValidator } from "../services/ears-validator.js";
+import { enrichResponse } from "./response-builder.js";
 import {
   initInputSchema,
   discoverInputSchema,
@@ -93,7 +94,13 @@ export function registerPipelineTools(
           next_action: "Call sdd_discover with your project idea to get discovery questions.",
         };
 
-        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        const enriched = await enrichResponse("sdd_init", result, stateMachine, spec_dir, {
+          completedPhase: Phase.Init,
+          nextPhase: Phase.Discover,
+          artifactsProduced: ["CONSTITUTION.md", ".sdd-state.json"],
+          summaryOfWork: "Initialized SDD pipeline",
+        });
+        return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_init", error as Error) }],
@@ -120,6 +127,22 @@ export function registerPipelineTools(
     },
     async ({ project_idea, codebase_summary, spec_dir, feature_number }) => {
       try {
+        // Phase validation
+        const phaseCheck = await stateMachine.validatePhaseForTool(spec_dir, "sdd_discover");
+        if (!phaseCheck.allowed) {
+          return {
+            content: [{ type: "text" as const, text: JSON.stringify({
+              error: "phase_validation_failed",
+              tool: "sdd_discover",
+              current_phase: phaseCheck.current_phase,
+              expected_phases: phaseCheck.expected_phases,
+              message: phaseCheck.error_message,
+              fix: `Complete the ${phaseCheck.current_phase} phase first, then advance to proceed.`,
+            }, null, 2) }],
+            isError: true,
+          };
+        }
+
         const questions = [
           {
             id: "Q1",
@@ -185,7 +208,8 @@ export function registerPipelineTools(
           instructions: "Answer each question, then call sdd_write_spec with your answers and requirements.",
         };
 
-        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        const enriched = await enrichResponse("sdd_discover", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_discover", error as Error) }],
@@ -212,6 +236,22 @@ export function registerPipelineTools(
     },
     async ({ feature_name, feature_number, discovery_answers, requirements, spec_dir, force }) => {
       try {
+        // Phase validation
+        const phaseCheck = await stateMachine.validatePhaseForTool(spec_dir, "sdd_write_spec");
+        if (!phaseCheck.allowed) {
+          return {
+            content: [{ type: "text" as const, text: JSON.stringify({
+              error: "phase_validation_failed",
+              tool: "sdd_write_spec",
+              current_phase: phaseCheck.current_phase,
+              expected_phases: phaseCheck.expected_phases,
+              message: phaseCheck.error_message,
+              fix: `Complete the ${phaseCheck.current_phase} phase first, then advance to proceed.`,
+            }, null, 2) }],
+            isError: true,
+          };
+        }
+
         const featureDir = join(spec_dir, `${feature_number}-${feature_name.toLowerCase().replace(/\s+/g, "-")}`);
 
         // Validate EARS patterns
@@ -272,7 +312,13 @@ export function registerPipelineTools(
           next_action: "Review the specification. Call sdd_advance_phase when ready, then sdd_clarify for disambiguation.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_write_spec", result, stateMachine, spec_dir, {
+          completedPhase: Phase.Specify,
+          nextPhase: Phase.Clarify,
+          artifactsProduced: ["SPECIFICATION.md"],
+          summaryOfWork: `Generated ${requirements.length} EARS requirements`,
+        });
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_write_spec", error as Error) }],
@@ -299,6 +345,22 @@ export function registerPipelineTools(
     },
     async ({ spec_dir, feature_number }) => {
       try {
+        // Phase validation
+        const phaseCheck = await stateMachine.validatePhaseForTool(spec_dir, "sdd_clarify");
+        if (!phaseCheck.allowed) {
+          return {
+            content: [{ type: "text" as const, text: JSON.stringify({
+              error: "phase_validation_failed",
+              tool: "sdd_clarify",
+              current_phase: phaseCheck.current_phase,
+              expected_phases: phaseCheck.expected_phases,
+              message: phaseCheck.error_message,
+              fix: `Complete the ${phaseCheck.current_phase} phase first, then advance to proceed.`,
+            }, null, 2) }],
+            isError: true,
+          };
+        }
+
         // Find feature directory
         const features = await fileManager.listFeatures(spec_dir);
         const feature = features.find((f) => f.number === feature_number);
@@ -363,6 +425,7 @@ export function registerPipelineTools(
         }
 
         await stateMachine.recordPhaseStart(spec_dir, Phase.Clarify);
+        await stateMachine.recordPhaseComplete(spec_dir, Phase.Clarify);
 
         const result = {
           status: "clarification_questions",
@@ -371,7 +434,11 @@ export function registerPipelineTools(
           instructions: "Answer the clarification questions, then call sdd_write_design to proceed.",
         };
 
-        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        const enriched = await enrichResponse("sdd_clarify", result, stateMachine, spec_dir, {
+          completedPhase: Phase.Clarify,
+          nextPhase: Phase.Design,
+        });
+        return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_clarify", error as Error) }],
@@ -396,8 +463,24 @@ export function registerPipelineTools(
         openWorldHint: false,
       },
     },
-    async ({ architecture_overview, mermaid_diagrams, adrs, api_contracts, spec_dir, feature_number, force }) => {
+    async ({ architecture_overview, mermaid_diagrams, adrs, api_contracts, system_context, container_architecture, component_design, code_level_design, data_models, infrastructure, security_architecture, error_handling, cross_cutting, spec_dir, feature_number, force }) => {
       try {
+        // Phase validation
+        const phaseCheck = await stateMachine.validatePhaseForTool(spec_dir, "sdd_write_design");
+        if (!phaseCheck.allowed) {
+          return {
+            content: [{ type: "text" as const, text: JSON.stringify({
+              error: "phase_validation_failed",
+              tool: "sdd_write_design",
+              current_phase: phaseCheck.current_phase,
+              expected_phases: phaseCheck.expected_phases,
+              message: phaseCheck.error_message,
+              fix: `Complete the ${phaseCheck.current_phase} phase first, then advance to proceed.`,
+            }, null, 2) }],
+            isError: true,
+          };
+        }
+
         const features = await fileManager.listFeatures(spec_dir);
         const feature = features.find((f) => f.number === feature_number);
         if (!feature) {
@@ -437,28 +520,35 @@ export function registerPipelineTools(
           feature_id: `${feature_number}-${feature.name}`,
           project_name: feature.name,
           architecture_overview,
+          system_context: system_context || architecture_overview,
+          container_architecture: container_architecture || architecture_overview,
+          component_design: component_design || "[TODO: component_design]",
+          code_level_design: code_level_design || "[TODO: code_level_design]",
           diagrams: mermaid_diagrams.map((d) => d.title),
-          adrs: adrs ? adrs.map((a) => a.title) : [],
+          data_models: data_models || "[TODO: data_models]",
           api_contracts: apiContent,
-          data_models: "[TODO: data_models]",
-          error_handling: "[TODO: error_handling]",
+          infrastructure: infrastructure || "[TODO: infrastructure]",
+          security_architecture: security_architecture || "[TODO: security_architecture]",
+          adrs: adrs ? adrs.map((a) => a.title) : [],
+          error_handling: error_handling || "[TODO: error_handling]",
+          cross_cutting: cross_cutting || "[TODO: cross_cutting]",
           requirement_references: "[TODO: requirement_references]",
         });
 
         // Replace the template diagram/ADR placeholders with actual content
         let finalContent = content;
         // Replace the diagrams section
-        const diagramSectionRegex = /## 2\. System Diagrams\n\n([\s\S]*?)(?=\n---\n\n## 3)/;
+        const diagramSectionRegex = /## 5\. System Diagrams\n\n([\s\S]*?)(?=\n---\n\n## 6)/;
         finalContent = finalContent.replace(
           diagramSectionRegex,
-          `## 2. System Diagrams\n\n${diagramsContent}`
+          `## 5. System Diagrams\n\n${diagramsContent}`
         );
 
         // Replace the ADR section
-        const adrSectionRegex = /## 3\. Architecture Decision Records\n\n([\s\S]*?)(?=\n---\n\n## 4)/;
+        const adrSectionRegex = /## 10\. Architecture Decision Records\n\n([\s\S]*?)(?=\n---\n\n## 11)/;
         finalContent = finalContent.replace(
           adrSectionRegex,
-          `## 3. Architecture Decision Records\n\n${adrsContent}`
+          `## 10. Architecture Decision Records\n\n${adrsContent}`
         );
 
         const filePath = await fileManager.writeSpecFile(feature.directory, "DESIGN.md", finalContent, force);
@@ -474,7 +564,13 @@ export function registerPipelineTools(
           next_action: "Review the design. Call sdd_advance_phase, then sdd_write_tasks.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_write_design", result, stateMachine, spec_dir, {
+          completedPhase: Phase.Design,
+          nextPhase: Phase.Tasks,
+          artifactsProduced: ["DESIGN.md"],
+          summaryOfWork: `Generated design with ${mermaid_diagrams.length} diagrams`,
+        });
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_write_design", error as Error) }],
@@ -501,6 +597,22 @@ export function registerPipelineTools(
     },
     async ({ tasks, pre_impl_gates, spec_dir, feature_number, force }) => {
       try {
+        // Phase validation
+        const phaseCheck = await stateMachine.validatePhaseForTool(spec_dir, "sdd_write_tasks");
+        if (!phaseCheck.allowed) {
+          return {
+            content: [{ type: "text" as const, text: JSON.stringify({
+              error: "phase_validation_failed",
+              tool: "sdd_write_tasks",
+              current_phase: phaseCheck.current_phase,
+              expected_phases: phaseCheck.expected_phases,
+              message: phaseCheck.error_message,
+              fix: `Complete the ${phaseCheck.current_phase} phase first, then advance to proceed.`,
+            }, null, 2) }],
+            isError: true,
+          };
+        }
+
         const features = await fileManager.listFeatures(spec_dir);
         const feature = features.find((f) => f.number === feature_number);
         if (!feature) {
@@ -548,7 +660,13 @@ export function registerPipelineTools(
           next_action: "Review the tasks. Call sdd_advance_phase, then sdd_run_analysis for quality gate.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_write_tasks", result, stateMachine, spec_dir, {
+          completedPhase: Phase.Tasks,
+          nextPhase: Phase.Analyze,
+          artifactsProduced: ["TASKS.md"],
+          summaryOfWork: `Created ${tasks.length} tasks`,
+        });
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_write_tasks", error as Error) }],
@@ -575,6 +693,22 @@ export function registerPipelineTools(
     },
     async ({ spec_dir, feature_number, force }) => {
       try {
+        // Phase validation
+        const phaseCheck = await stateMachine.validatePhaseForTool(spec_dir, "sdd_run_analysis");
+        if (!phaseCheck.allowed) {
+          return {
+            content: [{ type: "text" as const, text: JSON.stringify({
+              error: "phase_validation_failed",
+              tool: "sdd_run_analysis",
+              current_phase: phaseCheck.current_phase,
+              expected_phases: phaseCheck.expected_phases,
+              message: phaseCheck.error_message,
+              fix: `Complete the ${phaseCheck.current_phase} phase first, then advance to proceed.`,
+            }, null, 2) }],
+            isError: true,
+          };
+        }
+
         const features = await fileManager.listFeatures(spec_dir);
         const feature = features.find((f) => f.number === feature_number);
         if (!feature) {
@@ -667,7 +801,13 @@ export function registerPipelineTools(
             : `Address the following gaps: ${gaps.join(", ")}`,
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_run_analysis", result, stateMachine, spec_dir, {
+          completedPhase: Phase.Analyze,
+          nextPhase: Phase.Implement,
+          artifactsProduced: ["ANALYSIS.md"],
+          summaryOfWork: `Analysis complete: ${decision}`,
+        });
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_run_analysis", error as Error) }],
@@ -710,7 +850,8 @@ export function registerPipelineTools(
             : "Pipeline is complete.",
         };
 
-        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        const enriched = await enrichResponse("sdd_advance_phase", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_advance_phase", error as Error) }],

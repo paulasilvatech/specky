@@ -9,6 +9,7 @@ import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
 import { checkSyncInputSchema } from "../schemas/utility.js";
+import { enrichResponse } from "./response-builder.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -106,7 +107,8 @@ export function registerAnalysisTools(
             : `${reqIds.length - implementedReqs.size} requirements not found in code. Review implementation coverage.`,
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_check_sync", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_check_sync", error as Error) }],

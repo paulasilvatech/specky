@@ -18,6 +18,7 @@ import {
   implementInputSchema,
   researchInputSchema,
 } from "../schemas/integration.js";
+import { enrichResponse } from "./response-builder.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -72,7 +73,8 @@ export function registerIntegrationTools(
           learning_note: "SDD branch naming ties the feature number to the branch, enabling traceability from spec to code.",
         };
 
-        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        const enriched = await enrichResponse("sdd_create_branch", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_create_branch", error as Error) }],
@@ -149,7 +151,8 @@ export function registerIntegrationTools(
           learning_note: "Work items maintain traceability from TASKS.md through to your project management platform via the traces_to field.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_export_work_items", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_export_work_items", error as Error) }],
@@ -205,7 +208,8 @@ export function registerIntegrationTools(
           learning_note: "SDD pull requests include spec artifact references and requirement coverage, enabling reviewers to trace code changes back to requirements.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_create_pr", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_create_pr", error as Error) }],
@@ -281,7 +285,8 @@ export function registerIntegrationTools(
           learning_note: "Implementation plans resolve task dependencies to find the optimal execution order. Parallel groups reduce total implementation time.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_implement", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_implement", error as Error) }],
@@ -352,7 +357,8 @@ export function registerIntegrationTools(
           learning_note: "Research logs capture unknowns early in the spec process. Resolving them before design prevents costly rework later.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_research", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_research", error as Error) }],

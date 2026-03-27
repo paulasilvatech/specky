@@ -17,6 +17,9 @@ import {
   scanCodebaseInputSchema,
   amendInputSchema,
 } from "../schemas/utility.js";
+import { MethodologyGuide } from "../services/methodology.js";
+import { DependencyGraph } from "../services/dependency-graph.js";
+import { enrichResponse, enrichStateless } from "./response-builder.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -79,17 +82,37 @@ export function registerUtilityTools(
           nextAction = "Pipeline complete. Proceed to implementation.";
         }
 
+        // Enhanced status with methodology and execution plan
+        const progress = MethodologyGuide.getProgressIndicator(state.current_phase, state.phases);
+        const phaseExplanation = MethodologyGuide.getPhaseExplanation(state.current_phase);
+        const executionPlan = DependencyGraph.getExecutionPlan(state.current_phase);
+        const parallelGroups = DependencyGraph.getParallelGroups(state.current_phase);
+
         const result = {
           current_phase: state.current_phase,
+          phase_progress: progress.progress_bar,
           phases: state.phases,
           features: state.features,
           files_found: filesFound,
           completion_percent: completionPercent,
           gate_decision: state.gate_decision,
           next_action: nextAction,
+          // Educational context
+          current_phase_explanation: {
+            what: phaseExplanation.what,
+            why: phaseExplanation.why,
+            best_practices: phaseExplanation.best_practices,
+          },
+          // Execution guidance
+          execution_plan: executionPlan.next_steps,
+          parallel_opportunities: {
+            sequential_tools: parallelGroups.sequential,
+            parallel_groups: parallelGroups.parallel_groups,
+          },
         };
 
-        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        const enriched = await enrichResponse("sdd_get_status", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_get_status", error as Error) }],
@@ -117,7 +140,8 @@ export function registerUtilityTools(
     async ({ template_name }) => {
       try {
         const template = await templateEngine.getTemplate(template_name);
-        return { content: [{ type: "text" as const, text: truncate(template) }] };
+        const enriched = enrichStateless("sdd_get_template", { status: "template_retrieved", template_name, content: template });
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_get_template", error as Error) }],
@@ -170,7 +194,8 @@ export function registerUtilityTools(
           sections: ["Current Behavior", "Expected Behavior", "Unchanged Behavior", "Root Cause Analysis", "Test Plan"],
         };
 
-        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        const enriched = await enrichResponse("sdd_write_bugfix", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_write_bugfix", error as Error) }],
@@ -199,8 +224,9 @@ export function registerUtilityTools(
       try {
         const excludePatterns = exclude || [...DEFAULT_EXCLUDE_PATTERNS];
         const summary = await codebaseScanner.scan(depth, excludePatterns);
+        const enriched = enrichStateless("sdd_scan_codebase", summary as unknown as Record<string, unknown>);
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(summary, null, 2)) }] };
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_scan_codebase", error as Error) }],
@@ -302,7 +328,8 @@ export function registerUtilityTools(
           changes_description,
         };
 
-        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        const enriched = await enrichResponse("sdd_amend", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_amend", error as Error) }],
@@ -348,8 +375,9 @@ export function registerUtilityTools(
         learning_note: "MCP (Model Context Protocol) allows AI clients to orchestrate between multiple servers. Specky produces structured payloads with routing_instructions that tell the AI client which external MCP server to call. This MCP-to-MCP pattern means Specky never needs API keys or credentials for external services — the AI client handles routing.",
       };
 
+      const enriched = enrichStateless("sdd_check_ecosystem", result);
       return {
-        content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+        content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }],
       };
     }
   );

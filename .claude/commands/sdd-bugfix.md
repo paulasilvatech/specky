@@ -1,53 +1,46 @@
-Use $ARGUMENTS as the bug description, title, or issue reference for the SDD bugfix specification workflow.
+Use $ARGUMENTS as the bug description, title, or issue reference for the SDD bugfix specification.
 
-## Purpose
+You are the **Spec Reviewer** agent creating a structured bug fix specification.
 
-Create a structured BUGFIX_SPEC.md that documents the bug with current behavior, expected behavior, unchanged behavior, root cause analysis, and test plan — without requiring the full SDD pipeline.
+## What This Command Does
 
-## Workflow
+Creates a BUGFIX_SPEC.md that traces the bug to failing acceptance criteria and defines a fix plan.
 
-### Step 1: Parse the Bug Information
+---
 
-Extract from $ARGUMENTS:
+## Step 1: Gather Bug Details (INTERACTIVE)
 
-- **Bug title**: A concise summary of the issue
-- **Current behavior**: What is happening now (the bug)
-- **Expected behavior**: What should happen instead
+Extract from $ARGUMENTS what's available. For anything missing, ask the user:
 
-If $ARGUMENTS only contains a brief description, ask the user for the missing details before proceeding.
+1. **Bug title**: What is the bug called?
+2. **Current behavior**: What happens now? (the broken behavior)
+3. **Expected behavior**: What should happen instead?
+4. **Steps to reproduce**: How can someone see the bug?
 
-### Step 2: Gather Additional Context (Optional)
+**WAIT for user to provide missing details.**
 
-If working in an existing project:
+---
 
-- Call `sdd_scan_codebase` to understand the tech stack and project structure.
-- Call `sdd_get_status` to check if there's an existing SDD pipeline for this project.
-- If a SPECIFICATION.md exists, reference relevant requirement IDs in the bugfix spec.
+## Step 2: Scan Context (Optional)
 
-### Step 3: Write the Bugfix Specification
+If there's a codebase, call `sdd_scan_codebase` to understand the tech stack.
+This helps identify likely root cause areas.
 
-Call `sdd_write_bugfix` with:
+---
 
-- `bug_title`: From $ARGUMENTS
-- `current_behavior`: What is broken
-- `expected_behavior`: What should happen
-- `unchanged_behavior`: Aspects of the system that must NOT change during the fix (regression boundaries)
-- `root_cause`: Initial hypothesis about why the bug exists (if known)
-- `test_plan`: How to verify the fix works and no regressions are introduced
+## Step 3: Generate Bugfix Spec
 
-### Step 4: Present the Result
+**What's happening:** Creating a structured bug specification with root cause analysis and test plan.
 
-Show the user a summary of the BUGFIX_SPEC.md and confirm the file location.
+**Why it matters:** Structured bugfix specs prevent regression by documenting unchanged behaviors and defining verification tests.
 
-This command does NOT require or affect the SDD pipeline state machine. It can be called at any time, from any phase.
+Call `sdd_write_bugfix` with the gathered details.
 
-## Error Handling
+Show results:
+- File location
+- Sections generated
+- Suggested root cause analysis approach
 
-- If $ARGUMENTS is empty, ask the user to describe the bug.
-- If file write fails, check workspace permissions and report the issue.
-
-## Tools Used
-
-- `sdd_write_bugfix` — Write BUGFIX_SPEC.md (not gated by state machine)
-- `sdd_scan_codebase` — Detect project context (optional)
-- `sdd_get_status` — Check for existing pipeline (optional)
+> "Bugfix spec created at `.specs/{feature}/BUGFIX_SPEC.md`.
+>
+> Review the root cause analysis and test plan. The 'Unchanged Behavior' section is critical — it defines what must NOT break when fixing this bug."

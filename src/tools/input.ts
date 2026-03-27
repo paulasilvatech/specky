@@ -13,6 +13,7 @@ import {
   figmaToSpecInputSchema,
   batchImportInputSchema,
 } from "../schemas/input.js";
+import { enrichResponse } from "./response-builder.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -84,7 +85,8 @@ export function registerInputTools(
           }] : [],
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(output, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_import_document", output, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_import_document", error as Error) }],
@@ -141,7 +143,8 @@ export function registerInputTools(
             "Figma-to-spec conversion bridges visual design with formal requirements. The design context provides UI structure that maps to EARS requirements: components become features, interactions become behavioral requirements, and layout constraints become interface requirements.",
         };
 
-        return { content: [{ type: "text" as const, text: JSON.stringify(output, null, 2) }] };
+        const enriched = await enrichResponse("sdd_figma_to_spec", output, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_figma_to_spec", error as Error) }],
@@ -242,7 +245,8 @@ export function registerInputTools(
             "Batch import provides an overview of available documents. For detailed content, use sdd_import_document on specific files. This two-step approach keeps responses manageable for large document sets.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(output, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_batch_import", output, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_batch_import", error as Error) }],

@@ -9,6 +9,7 @@ import { z } from "zod";
 import { CHARACTER_LIMIT } from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
+import { enrichResponse } from "./response-builder.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -144,7 +145,8 @@ export function registerCheckpointTools(
             "Each checkpoint stores the full content of all artifacts plus the pipeline state.",
         };
 
-        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        const enriched = await enrichResponse("sdd_checkpoint", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_checkpoint", error as Error) }],
@@ -262,7 +264,8 @@ export function registerCheckpointTools(
             "This means you can always undo a restore by running sdd_restore(checkpoint_id: 'CP-AUTO-BACKUP').",
         };
 
-        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        const enriched = await enrichResponse("sdd_restore", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_restore", error as Error) }],
@@ -348,7 +351,8 @@ export function registerCheckpointTools(
             : "No checkpoints yet. Use sdd_checkpoint to create one.",
         };
 
-        return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+        const enriched = await enrichResponse("sdd_list_checkpoints", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_list_checkpoints", error as Error) }],

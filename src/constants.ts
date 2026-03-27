@@ -13,7 +13,7 @@ export const VERSION = _pkg.version;
 export const SERVER_NAME = "specky";
 
 /** Total tool count for ecosystem check */
-export const TOTAL_TOOLS = 52;
+export const TOTAL_TOOLS = 53;
 
 /**
  * MCP Ecosystem — Recommended external MCP servers.
@@ -268,6 +268,8 @@ export const TOOL_NAMES = {
   CHECKPOINT: "sdd_checkpoint",
   RESTORE: "sdd_restore",
   LIST_CHECKPOINTS: "sdd_list_checkpoints",
+  // All Documentation
+  GENERATE_ALL_DOCS: "sdd_generate_all_docs",
 } as const;
 
 // Input & Conversion
@@ -337,6 +339,7 @@ export const TEMPLATE_NAMES = [
   "terraform",
   "dockerfile",
   "devcontainer",
+  "journey",
 ] as const;
 
 export type TemplateName = (typeof TEMPLATE_NAMES)[number];
@@ -357,8 +360,12 @@ export type EarsPatternName = (typeof EARS_PATTERNS)[number];
 /** Supported work item platforms */
 export type WorkItemPlatform = "github" | "azure_boards" | "jira";
 
-/** Supported diagram types */
-export type DiagramType = "flowchart" | "sequence" | "class" | "er" | "state" | "c4_context" | "c4_container" | "gantt" | "pie" | "mindmap";
+/** Supported diagram types — 17 total covering all software engineering diagram categories */
+export type DiagramType =
+  | "flowchart" | "sequence" | "class" | "er" | "state"
+  | "c4_context" | "c4_container" | "c4_component" | "c4_code"
+  | "activity" | "use_case" | "dfd" | "deployment" | "network_topology"
+  | "gantt" | "pie" | "mindmap";
 
 /** Supported compliance frameworks */
 export type ComplianceFramework = "hipaa" | "soc2" | "gdpr" | "pci_dss" | "iso27001" | "general";

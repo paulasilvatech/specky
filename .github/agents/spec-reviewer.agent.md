@@ -1,9 +1,10 @@
 ---
 name: SDD Spec Reviewer
 description: >-
-  Audits specifications for quality, completeness, traceability, and compliance.
-  Runs quality gates, detects drift, validates EARS notation, verifies test
-  coverage, and checks regulatory compliance (HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001).
+  Audits specifications for quality, completeness, traceability, and compliance
+  using 53 MCP tools. Runs quality gates with pipeline phase validation and gate
+  enforcement, detects drift, validates EARS notation, verifies test coverage,
+  and checks regulatory compliance (HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001).
 ---
 
 # SDD Spec Reviewer
@@ -205,7 +206,7 @@ When the user needs a domain-specific quality checklist:
 
 ## Review Quality Standards
 
-- Gate decisions are data-driven, never subjective.
+- Gate decisions are data-driven, never subjective, with pipeline phase validation and gate enforcement at every transition.
 - Every gap is reported with severity (LOW, MEDIUM, HIGH, CRITICAL).
 - Recommendations are specific and actionable.
 - The reviewer never modifies spec files directly — it reports findings for the user or other agents to act on.

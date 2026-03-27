@@ -1,63 +1,78 @@
 Use $ARGUMENTS as the user's input for this SDD transcript command.
 
-## Purpose
+You are the **Spec Engineer** agent converting meeting transcripts into SDD specifications.
 
-Automatically convert a meeting transcript (Teams VTT, Zoom SRT, or any text) into a complete SDD specification package. One command, full pipeline.
+## What This Command Does
 
-## Workflow
+Converts a meeting transcript (VTT, SRT, TXT, or MD) into a complete SDD specification package.
 
-1. Parse $ARGUMENTS to identify:
-   - **File path**: If $ARGUMENTS contains a file path (e.g., `meeting.vtt`, `transcript.txt`), use it as `file_path`
-   - **Project name**: Extract or ask for a kebab-case project name
-   - If $ARGUMENTS is empty, ask the user: "Provide the transcript file path and project name (e.g., `/sdd:transcript meeting.vtt my-project`)"
+---
 
-2. Call `sdd_auto_pipeline` with:
-   - `file_path`: the transcript file path
-   - `project_name`: the project name in kebab-case
-   - This single call will:
-     - Parse the VTT/SRT/TXT/MD transcript
-     - Extract participants, topics, decisions, action items
-     - Generate EARS requirements automatically
-     - Write CONSTITUTION.md, SPECIFICATION.md, DESIGN.md, TASKS.md, ANALYSIS.md, and TRANSCRIPT.md
+## Step 1: Get Transcript (INTERACTIVE)
 
-3. Present the results to the user:
-   - Show participants detected
-   - Show topics extracted
-   - Show number of requirements generated
-   - Show decisions captured
-   - Show gate decision (APPROVE / CHANGES_NEEDED / BLOCK)
+From $ARGUMENTS, extract the file path and project name. If missing, ask:
 
-4. Ask the user to review each file:
-   - "Review `.specs/001-{project}/SPECIFICATION.md` — are the EARS requirements accurate?"
-   - "Review `.specs/001-{project}/DESIGN.md` — add Mermaid diagrams if needed"
-   - "Review `.specs/001-{project}/TASKS.md` — adjust priorities and effort"
+1. **File path**: Where is the transcript file? (supports .vtt, .srt, .txt, .md)
+2. **Project name**: What should this project be called? (kebab-case)
 
-## Alternative: Import Only
+**WAIT for user to provide missing info.**
 
-If the user only wants to see what's in the transcript without generating specs:
-- Call `sdd_import_transcript` with the file path
-- Present the extracted data: topics, decisions, action items, requirements
-- Ask if they want to proceed with `sdd_auto_pipeline`
+---
 
-## Supported Formats
+## Step 2: Choose Processing Mode
 
-- `.vtt` — Microsoft Teams, WebVTT standard
-- `.srt` — Zoom, SubRip subtitle format
-- `.txt` — Plain text (Speaker: text format)
-- `.md` — Markdown (**Speaker:** text format)
-- Otter.ai exports (TXT format)
-- Google Meet exports (SRT format)
+Ask the user:
+> "I can process this transcript in two ways:
+>
+> **A) Preview mode** — Import and analyze the transcript, then let you review before generating specs
+> **B) Full pipeline** — Auto-generate all 5 spec files (CONSTITUTION, SPECIFICATION, DESIGN, TASKS, ANALYSIS) in one go
+>
+> Which do you prefer?"
 
-## Tools Used
+**WAIT for choice.**
 
-- `sdd_auto_pipeline`: Full automated pipeline from transcript (primary)
-- `sdd_import_transcript`: Parse transcript only, no file generation (preview mode)
-- `sdd_get_status`: Check pipeline status after generation
+---
 
-## Examples
+## Step 3A: Preview Mode
 
-```
-/sdd:transcript meeting.vtt ecommerce-platform
-/sdd:transcript ./transcripts/sprint-planning.srt my-api
-/sdd:transcript notes.txt project-alpha
-```
+Call `sdd_import_transcript`.
+
+Present the extracted data:
+- Participants identified
+- Topics discussed
+- Decisions made
+- Action items captured
+- Raw requirements detected
+- Open questions
+
+> "Review the extraction above. Want me to proceed to full spec generation, or adjust anything first?"
+
+---
+
+## Step 3B: Full Pipeline Mode
+
+**What's happening:** Running the ENTIRE SDD pipeline from transcript to analysis in one call.
+
+**Why it matters:** Auto-pipeline extracts requirements, generates EARS notation, creates architecture, breaks down tasks, and runs the quality gate — all from a single meeting recording.
+
+Call `sdd_auto_pipeline`.
+
+Show results step by step:
+- "Parsing transcript... found {n} participants, {n} topics"
+- "Generating EARS requirements... created {n} requirements"
+- "Writing CONSTITUTION.md..."
+- "Writing SPECIFICATION.md..."
+- "Writing DESIGN.md..."
+- "Writing TASKS.md..."
+- "Running analysis... Gate decision: {decision}"
+
+---
+
+## Step 4: Review (INTERACTIVE)
+
+> "Complete spec package generated from your transcript. Files created:
+> {list files}
+>
+> **Important:** Auto-generated specs should be reviewed for accuracy. The AI extracted requirements from natural conversation, which may need refinement.
+>
+> Review each file and run `/sdd:analyze` when ready to validate."

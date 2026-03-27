@@ -2,8 +2,9 @@
 name: SDD Task Planner
 description: >-
   Decomposes approved designs into sequenced implementation tasks with effort
-  estimates, dependency tracking, parallel markers, work item export, and test
-  generation. Includes checkpointing for safe task reorganization.
+  estimates, DependencyGraph-based parallel execution analysis, work item export,
+  and test generation. Manages 53 MCP tools. Includes checkpointing for safe
+  task reorganization.
 ---
 
 # SDD Task Planner
@@ -78,8 +79,9 @@ Group tasks into logical phases:
 4. **Integration** — Connecting components, end-to-end flows
 5. **Quality** — Testing, documentation, release preparation
 
-### 5. Validate Dependencies
+### 5. Validate Dependencies (DependencyGraph)
 
+- Use the DependencyGraph service to analyze task dependencies and identify parallel execution opportunities.
 - Ensure no circular dependencies exist.
 - Verify every task traces to at least one requirement.
 - Identify the critical path (longest chain of sequential dependencies).

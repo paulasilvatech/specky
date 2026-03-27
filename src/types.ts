@@ -537,7 +537,7 @@ export interface ProjectMetrics {
 
 /** Auto-generated documentation result */
 export interface DocumentationResult {
-  type: "full" | "api" | "runbook" | "onboarding";
+  type: "full" | "api" | "runbook" | "onboarding" | "journey" | "all";
   content: string;
   file_path: string;
   sections: string[];
@@ -565,6 +565,49 @@ export interface EcosystemCheckResult {
   recommended_servers: RecommendedServer[];
   explanation: string;
   next_steps: string;
+}
+
+// ─── Pipeline Validation ───
+
+/** Result of validating whether a tool can execute in the current phase */
+export interface PhaseValidation {
+  allowed: boolean;
+  current_phase: PhaseEnum;
+  expected_phases: PhaseEnum[];
+  error_message?: string;
+}
+
+/** Context passed during phase handoff to guide the AI client */
+export interface HandoffContext {
+  completed_phase: PhaseEnum;
+  next_phase: PhaseEnum;
+  artifacts_produced: string[];
+  summary_of_work: string;
+  what_comes_next: string;
+  methodology_note: string;
+}
+
+/** Parallel execution hints for the AI client */
+export interface ParallelHint {
+  can_run_now: string[];
+  must_wait_for: string[];
+  explanation: string;
+}
+
+/** Enriched tool response envelope with educational content */
+export interface ToolResponseEnvelope {
+  status: string;
+  phase_context: {
+    current_phase: PhaseEnum;
+    phase_progress: string;
+    phases_completed: PhaseEnum[];
+    completion_percent: number;
+  };
+  handoff?: HandoffContext;
+  parallel_opportunities?: ParallelHint;
+  educational_note: string;
+  methodology_tip: string;
+  [key: string]: unknown;
 }
 
 // ─── Educative Output (standard response envelope) ───

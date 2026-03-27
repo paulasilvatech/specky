@@ -14,6 +14,7 @@ import type { CrossAnalyzer } from "../services/cross-analyzer.js";
 import type { EarsValidator } from "../services/ears-validator.js";
 import type { ChecklistDomain } from "../constants.js";
 import type { ChecklistItem, VerificationResult } from "../types.js";
+import { enrichResponse } from "./response-builder.js";
 import {
   checklistInputSchema,
   verifyTasksInputSchema,
@@ -216,7 +217,8 @@ export function registerQualityTools(
           learning_note: `The ${domain} checklist validates that your specification and design artifacts address key ${domain} concerns. Items marked 'pending' have partial coverage and should be reviewed manually.`,
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_checklist", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_checklist", error as Error) }],
@@ -359,7 +361,8 @@ export function registerQualityTools(
           learning_note: "Phantom completions occur when a task is marked [x] but no corresponding code is found in the specified paths. This helps catch accidental check-offs and ensures specification-code alignment.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(report, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_verify_tasks", report, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_verify_tasks", error as Error) }],
@@ -435,7 +438,8 @@ export function registerQualityTools(
           learning_note: `Compliance checks match specification and design keywords against ${framework.toUpperCase()} controls. Failing controls indicate areas where your spec or design should explicitly address the requirement. Add relevant terms and sections, then re-run the check.`,
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_compliance_check", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_compliance_check", error as Error) }],
@@ -496,7 +500,8 @@ export function registerQualityTools(
           learning_note: "Cross-analysis ensures every requirement flows from SPECIFICATION.md → DESIGN.md → TASKS.md. Orphaned items indicate gaps in traceability that can lead to missing features or wasted effort.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_cross_analyze", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_cross_analyze", error as Error) }],
@@ -594,7 +599,8 @@ export function registerQualityTools(
             "EARS (Easy Approach to Requirements Syntax) patterns: Ubiquitous ('The system shall…'), Event-driven ('When…, the system shall…'), State-driven ('While…, the system shall…'), Optional ('Where…, the system shall…'), Unwanted ('If…, then the system shall…'), Complex (combined patterns).",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(report, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_validate_ears", report, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_validate_ears", error as Error) }],

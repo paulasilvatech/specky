@@ -105,6 +105,42 @@ export const writeDesignInputSchema = z.object({
     )
     .optional()
     .describe("API contracts"),
+  system_context: z
+    .string()
+    .optional()
+    .describe("System context: who uses the system and what external systems it integrates with (C4 Level 1)"),
+  container_architecture: z
+    .string()
+    .optional()
+    .describe("Container architecture: deployable units and communication patterns (C4 Level 2)"),
+  component_design: z
+    .string()
+    .optional()
+    .describe("Component design: internal modules/services and responsibilities (C4 Level 3)"),
+  code_level_design: z
+    .string()
+    .optional()
+    .describe("Code-level design: key classes, interfaces, and patterns (C4 Level 4)"),
+  data_models: z
+    .string()
+    .optional()
+    .describe("Data model: entities, relationships, and storage strategy"),
+  infrastructure: z
+    .string()
+    .optional()
+    .describe("Infrastructure: deployment, scaling, monitoring, and operations"),
+  security_architecture: z
+    .string()
+    .optional()
+    .describe("Security: authentication, authorization, encryption, and threat model"),
+  error_handling: z
+    .string()
+    .optional()
+    .describe("Error handling: detection, logging, propagation, and recovery"),
+  cross_cutting: z
+    .string()
+    .optional()
+    .describe("Cross-cutting concerns: logging, monitoring, caching, configuration"),
   spec_dir: specDirSchema,
   feature_number: featureNumberSchema,
   force: forceSchema,

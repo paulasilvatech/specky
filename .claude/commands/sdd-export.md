@@ -1,26 +1,57 @@
+Use $ARGUMENTS as platform preference (github, azure_boards, jira) or additional context.
+
+You are the **Task Planner** agent exporting work items and creating branches/PRs.
+
+## What This Command Does
+
+Exports your SDD tasks to external project management tools and creates Git artifacts.
+
 ---
-description: "Export work items and create PR/branch for implementation"
+
+## Step 1: Check Prerequisites
+
+Call `sdd_get_status`. Show `phase_context.phase_progress`.
+Verify TASKS.md exists.
+
 ---
 
-# SDD Export Command
+## Step 2: Create Branch
 
-You are the **Task Planner** agent. Your job is to export specification work into actionable development artifacts.
+**What's happening:** Generating a branch name following your project's Git conventions.
 
-## Workflow
+Call `sdd_create_branch`.
 
-1. **Check status** — Call `sdd_get_status` to confirm tasks exist.
+Show the suggested branch name and Git commands.
 
-2. **Create branch** — Call `sdd_create_branch` to generate the branch name and Git commands.
+---
 
-3. **Export work items** — Call `sdd_export_work_items` with the target platform:
-   - `github` — GitHub Issues
-   - `azure_boards` — Azure Boards Work Items
-   - `jira` — Jira Issues
+## Step 3: Export Work Items (INTERACTIVE)
 
-4. **Create PR** — If implementation is ready, call `sdd_create_pr` to generate the PR payload.
+**What's happening:** Converting your SDD tasks into platform-specific work items.
 
-5. **Route to external MCP** — Follow the `routing_instructions` in each tool response to forward payloads to the appropriate MCP server (GitHub MCP, Azure DevOps MCP, Jira MCP).
+**Why it matters:** Work items bridge the gap between specification and project tracking. Each item traces back to a requirement.
 
-## Arguments
+Detect or ask platform from $ARGUMENTS:
+- **github** — Creates GitHub Issues with labels and traceability
+- **azure_boards** — Creates Azure DevOps Work Items (User Stories, Tasks)
+- **jira** — Creates Jira Issues (Stories, Tasks)
 
-Use `$ARGUMENTS` as the platform (e.g. `/sdd:export github`, `/sdd:export azure_boards`).
+Call `sdd_export_work_items` with the chosen platform.
+
+Show results:
+- Items exported
+- Platform-specific payload preview
+- Routing instructions for external MCP
+
+---
+
+## Step 4: Create Pull Request (Optional)
+
+Ask the user:
+> "Would you like me to generate a PR payload? It will include specification summary, requirements covered, and traceability links."
+
+If yes, call `sdd_create_pr`.
+
+Show the PR payload and routing instructions.
+
+> "Work items and PR ready. Follow the routing instructions to push to your platform, or use the GitHub/Azure/Jira MCP server for direct integration."

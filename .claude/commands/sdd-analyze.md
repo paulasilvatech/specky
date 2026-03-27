@@ -1,61 +1,95 @@
 Use $ARGUMENTS as optional flags or focus areas for the SDD analysis phase.
 
-## Purpose
+You are the **Spec Reviewer** agent. Your job is to run the quality gate — validating completeness, traceability, and compliance.
 
-Run a comprehensive quality gate analysis across all specification documents — generating a traceability matrix, coverage report, gap analysis, and a data-driven gate decision (APPROVE / CHANGES_NEEDED / BLOCK).
+## What This Command Does
 
-## Workflow
+This command runs the **Analysis phase** — the quality gate that determines if the specification is ready for implementation:
+- Traceability matrix (every requirement → design → task)
+- Coverage assessment
+- Gate decision: APPROVE, CHANGES_NEEDED, or BLOCK
 
-### Step 1: Verify Prerequisites
+---
 
-Call `sdd_get_status` to confirm all required spec files exist:
+## Step 1: Verify Prerequisites
 
-- CONSTITUTION.md
-- SPECIFICATION.md
-- DESIGN.md
-- TASKS.md
+Call `sdd_get_status` to verify CONSTITUTION.md, SPECIFICATION.md, DESIGN.md, and TASKS.md all exist.
+- Show `phase_context.phase_progress`
+- If any are missing, explain which and suggest the right command
 
-If any are missing, inform the user which phases need completion first.
+---
 
-### Step 2: Run the Analysis
+## Step 2: Run Quality Analysis
 
-Call `sdd_run_analysis` to generate ANALYSIS.md. The tool will:
+**What's happening:** Validating that every requirement has a design element and implementation task.
 
-1. **Build Traceability Matrix** — Map every requirement to its design element(s) and task(s).
-2. **Calculate Coverage** — Percentage of requirements with both design and task mappings.
-3. **Identify Gaps** — Requirements without design, requirements without tasks, orphan tasks.
-4. **Assess Risks** — Based on gap severity and coverage thresholds.
-5. **Make Gate Decision:**
-   - **APPROVE** — Coverage >= 90%, zero high-severity gaps
-   - **CHANGES_NEEDED** — Coverage 70-89%, or medium-severity gaps
-   - **BLOCK** — Coverage < 70%, or critical gaps
+**Why it matters:** The quality gate catches gaps before implementation begins. Fixing gaps now is 10x cheaper than fixing them during coding.
 
-### Step 3: Present Results
+Call `sdd_run_analysis`.
 
-Show the user:
+After the tool responds:
+- Show the gate decision prominently: APPROVE / CHANGES_NEEDED / BLOCK
+- Show coverage percentage
+- Show `phase_context.phase_progress`
 
-- Gate decision with confidence level
-- Coverage percentage
-- Number of gaps found (by severity)
-- Specific recommendations for any gaps
+---
 
-### Step 4: Handle Decision
+## Step 3: Run Parallel Quality Checks
 
-- **If APPROVE:** Congratulate the user. The specification is ready for implementation. Suggest starting with Phase 1 of TASKS.md.
-- **If CHANGES_NEEDED:** List the specific gaps and recommend which spec documents to update. Offer to help fix them.
-- **If BLOCK:** Explain the critical issues. Guide the user back to the appropriate phase to address them.
+**What's happening:** Running additional quality checks in parallel for comprehensive validation.
 
-## Optional: Sync Check
+These can run simultaneously — call them in parallel:
 
-If $ARGUMENTS contains "sync" or "drift", also call `sdd_check_sync` to compare the specification against any existing implementation code.
+1. `sdd_cross_analyze` — Check traceability across spec, design, and tasks
+2. `sdd_compliance_check` (if $ARGUMENTS mentions compliance, security, HIPAA, SOC2, GDPR, PCI-DSS, ISO27001) — Check against compliance framework
+3. `sdd_checklist` — Generate domain-specific quality checklist
 
-## Error Handling
+Present results from each:
+- Cross-analysis consistency score
+- Orphaned requirements or tasks
+- Compliance findings (if applicable)
+- Checklist pass/fail rates
 
-- If analysis fails due to missing files, call `sdd_get_status` to show exactly what's missing.
-- If the user disagrees with the gate decision, explain the criteria and offer to run with adjusted thresholds.
+---
 
-## Tools Used
+## Step 4: Interpret Gate Decision (INTERACTIVE)
 
-- `sdd_get_status` — Check pipeline status and file inventory
-- `sdd_run_analysis` — Generate ANALYSIS.md with traceability and gate decision
-- `sdd_check_sync` — Compare spec vs code for drift detection (optional)
+### If APPROVE (coverage >= 90%):
+> "The quality gate is **APPROVE**. Your specification is complete, consistent, and ready for implementation.
+>
+> Coverage: {coverage}%
+> All core documents present and traceable.
+>
+> Reply **LGTM** to advance to the Implementation phase."
+
+### If CHANGES_NEEDED (coverage 70-89%):
+> "The quality gate is **CHANGES_NEEDED**. Some gaps need attention:
+>
+> Gaps found: {list gaps}
+>
+> I recommend addressing these gaps before proceeding. Would you like me to help fix them?"
+
+**WAIT for user direction. Help fix gaps if requested, then re-run analysis.**
+
+### If BLOCK (coverage < 70%):
+> "The quality gate is **BLOCK**. Critical documents are missing:
+>
+> Missing: {list gaps}
+>
+> These must be created before the analysis can pass. Let me guide you back to the right phase."
+
+**Guide user to the appropriate command to create missing artifacts.**
+
+---
+
+## Step 5: Advance and Hand Off
+
+Once APPROVE and user says LGTM:
+
+Call `sdd_advance_phase`.
+- Show `handoff.what_comes_next` and `handoff.methodology_note`
+- Suggest: "Your spec is implementation-ready! Next options:
+  - `/sdd:diagrams` — Generate all architecture diagrams
+  - `/sdd:export` — Export work items to GitHub/Azure/Jira
+  - `/sdd:iac` — Generate infrastructure as code
+  - Start implementing following TASKS.md"

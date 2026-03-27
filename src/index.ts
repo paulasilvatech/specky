@@ -78,12 +78,12 @@ const iacGenerator = new IacGenerator(fileManager);
 const workItemExporter = new WorkItemExporter(fileManager);
 const crossAnalyzer = new CrossAnalyzer(fileManager);
 const complianceEngine = new ComplianceEngine();
-const docGenerator = new DocGenerator(fileManager);
+const docGenerator = new DocGenerator(fileManager, stateMachine);
 const gitManager = new GitManager(fileManager);
 const testGenerator = new TestGenerator(fileManager);
 const pbtGenerator = new PbtGenerator(fileManager);
 
-// Register all tools (52 total)
+// Register all tools (53 total)
 // v1 tools
 registerPipelineTools(server, fileManager, stateMachine, templateEngine, earsValidator);
 registerAnalysisTools(server, fileManager, stateMachine, templateEngine);

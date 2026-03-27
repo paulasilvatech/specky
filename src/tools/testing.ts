@@ -8,6 +8,7 @@ import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TestGenerator } from "../services/test-generator.js";
 import { generateTestsInputSchema, verifyTestsInputSchema } from "../schemas/testing.js";
+import { enrichResponse } from "./response-builder.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -21,7 +22,7 @@ function truncate(text: string): string {
 export function registerTestingTools(
   server: McpServer,
   fileManager: FileManager,
-  _stateMachine: StateMachine,
+  stateMachine: StateMachine,
   testGenerator: TestGenerator,
 ): void {
   server.registerTool(
@@ -102,9 +103,10 @@ export function registerTestingTools(
             "from spec → test → code. Replace the TODO placeholders with real test logic.",
         };
 
+        const enriched = await enrichResponse("sdd_generate_tests", result, stateMachine, spec_dir);
         return {
           content: [
-            { type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) },
+            { type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) },
           ],
         };
       } catch (error) {
@@ -165,8 +167,9 @@ export function registerTestingTools(
             "100% requirement coverage means every spec item is verified by a test.",
         };
 
+        const enriched = await enrichResponse("sdd_verify_tests", result, stateMachine, spec_dir);
         return {
-          content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }],
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
       } catch (error) {
         return {

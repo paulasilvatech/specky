@@ -46,6 +46,27 @@ export class DiagramGenerator {
       case "mindmap":
         mermaid_code = this.generateMindmap(content, title);
         break;
+      case "c4_component":
+        mermaid_code = this.generateC4Component(content, title);
+        break;
+      case "c4_code":
+        mermaid_code = this.generateC4Code(content, title);
+        break;
+      case "activity":
+        mermaid_code = this.generateActivity(content, title);
+        break;
+      case "use_case":
+        mermaid_code = this.generateUseCase(content, title);
+        break;
+      case "dfd":
+        mermaid_code = this.generateDFD(content, title);
+        break;
+      case "deployment":
+        mermaid_code = this.generateDeployment(content, title);
+        break;
+      case "network_topology":
+        mermaid_code = this.generateNetworkTopology(content, title);
+        break;
       default:
         mermaid_code = this.generateFlowchart(content, title);
     }
@@ -81,6 +102,17 @@ export class DiagramGenerator {
     if (tasksContent) {
       diagrams.push({ ...this.generateDiagram(tasksContent, "gantt", "Implementation Timeline"), source: "tasks" });
       diagrams.push({ ...this.generateDiagram(tasksContent, "flowchart", "Task Dependencies"), source: "tasks" });
+    }
+    if (designContent) {
+      diagrams.push({ ...this.generateDiagram(designContent, "c4_component", "Component Design"), source: "design" });
+      diagrams.push({ ...this.generateDiagram(designContent, "c4_code", "Code Structure"), source: "design" });
+      diagrams.push({ ...this.generateDiagram(designContent, "deployment", "Deployment Architecture"), source: "design" });
+      diagrams.push({ ...this.generateDiagram(designContent, "network_topology", "Network Topology"), source: "design" });
+      diagrams.push({ ...this.generateDiagram(designContent, "dfd", "Data Flow"), source: "design" });
+    }
+    if (specContent) {
+      diagrams.push({ ...this.generateDiagram(specContent, "use_case", "Use Cases"), source: "spec" });
+      diagrams.push({ ...this.generateDiagram(specContent, "activity", "Workflow Activities"), source: "spec" });
     }
 
     const featureNumber = featureDir.match(/(\d{3})/)?.[1] || "000";
@@ -271,6 +303,220 @@ export class DiagramGenerator {
       for (const sub of (topic.subtopics || []).slice(0, 4)) {
         lines.push(`      ${this.sanitize(sub)}`);
       }
+    }
+    return lines.join("\n");
+  }
+
+  private generateC4Component(content: string, title: string): string {
+    const components = this.extractComponents(content);
+    const lines = [
+      `C4Component`,
+      `  title ${this.sanitize(title)}`,
+      `  Container_Boundary(main, "Main System") {`,
+    ];
+    if (components.length === 0) {
+      lines.push(`    Component(comp1, "Core Module", "Handles main logic")`);
+      lines.push(`    Component(comp2, "Data Access", "Database operations")`);
+      lines.push(`    Component(comp3, "API Layer", "External interface")`);
+    } else {
+      for (const comp of components.slice(0, 10)) {
+        const id = comp.replace(/\s+/g, "_").toLowerCase().replace(/[^a-z0-9_]/g, "");
+        lines.push(`    Component(${id}, "${this.sanitize(comp)}", "${this.sanitize(comp)}")`);
+      }
+    }
+    lines.push(`  }`);
+    // Add relationships between adjacent components
+    const ids = components.length > 0
+      ? components.slice(0, 10).map(c => c.replace(/\s+/g, "_").toLowerCase().replace(/[^a-z0-9_]/g, ""))
+      : ["comp1", "comp2", "comp3"];
+    for (let i = 0; i < ids.length - 1; i++) {
+      lines.push(`  Rel(${ids[i]}, ${ids[i + 1]}, "Uses")`);
+    }
+    return lines.join("\n");
+  }
+
+  private generateC4Code(content: string, title: string): string {
+    const interfaces = this.extractInterfaces(content);
+    if (interfaces.length === 0) {
+      return `classDiagram\n  class IService {\n    <<interface>>\n    +execute()\n    +validate()\n  }\n  class ServiceImpl {\n    +execute()\n    +validate()\n  }\n  IService <|.. ServiceImpl`;
+    }
+    const lines = [`classDiagram`];
+    for (const iface of interfaces.slice(0, 10)) {
+      lines.push(`  class ${this.sanitize(iface.name)} {`);
+      lines.push(`    <<interface>>`);
+      for (const method of iface.methods.slice(0, 6)) {
+        lines.push(`    +${this.sanitize(method)}()`);
+      }
+      lines.push(`  }`);
+    }
+    // Add implementation relationships
+    for (let i = 1; i < interfaces.length && i < 10; i++) {
+      lines.push(`  ${this.sanitize(interfaces[0].name)} <|.. ${this.sanitize(interfaces[i].name)}`);
+    }
+    return lines.join("\n");
+  }
+
+  private generateActivity(content: string, title: string): string {
+    const items = this.extractListItems(content);
+    if (items.length === 0) return `flowchart TD\n  Start([Start]) --> Action1[Process]\n  Action1 --> End([End])`;
+    const lines = [`flowchart TD`, `  Start([${this.sanitize(title)} - Start])`];
+    let prevId = "Start";
+    for (let i = 0; i < Math.min(items.length, 12); i++) {
+      const item = items[i];
+      const id = `A${i}`;
+      // Detect decision points
+      if (item.toLowerCase().includes("if ") || item.toLowerCase().includes("check") || item.toLowerCase().includes("validate")) {
+        lines.push(`  ${id}{${this.sanitize(item.substring(0, 50))}}`);
+        lines.push(`  ${prevId} --> ${id}`);
+        if (i < items.length - 1) {
+          lines.push(`  ${id} -->|Yes| A${i + 1}`);
+          lines.push(`  ${id} -->|No| End([End])`);
+        }
+      } else {
+        lines.push(`  ${id}[${this.sanitize(item.substring(0, 50))}]`);
+        lines.push(`  ${prevId} --> ${id}`);
+      }
+      prevId = id;
+    }
+    lines.push(`  ${prevId} --> End([End])`);
+    return lines.join("\n");
+  }
+
+  private generateUseCase(content: string, title: string): string {
+    const actors = this.extractActors(content);
+    const items = this.extractListItems(content);
+    const lines = [`flowchart LR`];
+    // Create actor nodes
+    const actorList = actors.length > 0 ? actors.slice(0, 4) : ["User"];
+    for (const actor of actorList) {
+      lines.push(`  ${actor.replace(/\s+/g, "")}((${this.sanitize(actor)}))`);
+    }
+    // Create use case boundary
+    lines.push(`  subgraph "${this.sanitize(title)}"`);
+    const useCases = items.length > 0 ? items.slice(0, 8) : ["Login", "View Dashboard", "Export Data"];
+    for (let i = 0; i < useCases.length; i++) {
+      lines.push(`    UC${i}([${this.sanitize(useCases[i].substring(0, 40))}])`);
+    }
+    lines.push(`  end`);
+    // Connect actors to use cases
+    const primaryActor = actorList[0].replace(/\s+/g, "");
+    for (let i = 0; i < Math.min(useCases.length, 8); i++) {
+      lines.push(`  ${primaryActor} --> UC${i}`);
+    }
+    return lines.join("\n");
+  }
+
+  private generateDFD(content: string, title: string): string {
+    const entities = this.extractEntities(content);
+    const components = this.extractComponents(content);
+    const lines = [`flowchart LR`];
+    // External entities
+    const externals = entities.length > 0 ? entities.slice(0, 3) : [{ name: "User", attributes: [] }];
+    for (const ext of externals) {
+      const id = ext.name.replace(/\s+/g, "_").toLowerCase();
+      lines.push(`  ${id}[/"${this.sanitize(ext.name)}"/]`);
+    }
+    // Processes
+    const processes = components.length > 0 ? components.slice(0, 4) : ["Process Data"];
+    for (let i = 0; i < processes.length; i++) {
+      lines.push(`  P${i}((${this.sanitize(processes[i].substring(0, 30))}))`);
+    }
+    // Data stores
+    lines.push(`  DS1[(Database)]`);
+    lines.push(`  DS2[(Cache)]`);
+    // Connect: external -> process -> store
+    const extId = externals[0].name.replace(/\s+/g, "_").toLowerCase();
+    if (processes.length > 0) {
+      lines.push(`  ${extId} -->|Input| P0`);
+      lines.push(`  P0 -->|Store| DS1`);
+      if (processes.length > 1) {
+        lines.push(`  P0 -->|Forward| P1`);
+        lines.push(`  P1 -->|Cache| DS2`);
+        lines.push(`  P1 -->|Response| ${extId}`);
+      } else {
+        lines.push(`  P0 -->|Response| ${extId}`);
+      }
+    }
+    return lines.join("\n");
+  }
+
+  private generateDeployment(content: string, title: string): string {
+    const components = this.extractComponents(content);
+    const lines = [`flowchart TB`];
+    // Internet/Load Balancer layer
+    lines.push(`  Internet((Internet))`);
+    lines.push(`  LB[Load Balancer]`);
+    lines.push(`  Internet --> LB`);
+    // Application layer
+    lines.push(`  subgraph "Application Layer"`);
+    if (components.length > 0) {
+      for (const comp of components.slice(0, 4)) {
+        const id = comp.replace(/\s+/g, "_").toLowerCase().replace(/[^a-z0-9_]/g, "");
+        lines.push(`    ${id}["${this.sanitize(comp)}"]`);
+      }
+    } else {
+      lines.push(`    API["API Server"]`);
+      lines.push(`    Worker["Background Worker"]`);
+    }
+    lines.push(`  end`);
+    // Data layer
+    lines.push(`  subgraph "Data Layer"`);
+    lines.push(`    DB[(Primary Database)]`);
+    lines.push(`    Cache[(Redis Cache)]`);
+    lines.push(`  end`);
+    // Connections
+    const appIds = components.length > 0
+      ? components.slice(0, 4).map(c => c.replace(/\s+/g, "_").toLowerCase().replace(/[^a-z0-9_]/g, ""))
+      : ["API", "Worker"];
+    lines.push(`  LB --> ${appIds[0]}`);
+    for (const id of appIds) {
+      lines.push(`  ${id} --> DB`);
+      lines.push(`  ${id} --> Cache`);
+    }
+    return lines.join("\n");
+  }
+
+  private generateNetworkTopology(content: string, title: string): string {
+    const lines = [`flowchart TB`];
+    // External zone
+    lines.push(`  subgraph "Public Zone"`);
+    lines.push(`    CDN["CDN / Edge"]`);
+    lines.push(`    WAF["WAF / Firewall"]`);
+    lines.push(`  end`);
+    // DMZ
+    lines.push(`  subgraph "DMZ"`);
+    lines.push(`    LB["Load Balancer"]`);
+    lines.push(`    Gateway["API Gateway"]`);
+    lines.push(`  end`);
+    // Private zone
+    lines.push(`  subgraph "Private Zone"`);
+    const components = this.extractComponents(content);
+    if (components.length > 0) {
+      for (const comp of components.slice(0, 4)) {
+        const id = comp.replace(/\s+/g, "_").toLowerCase().replace(/[^a-z0-9_]/g, "");
+        lines.push(`    ${id}["${this.sanitize(comp)}"]`);
+      }
+    } else {
+      lines.push(`    AppServer["Application Server"]`);
+      lines.push(`    WorkerNode["Worker Node"]`);
+    }
+    lines.push(`  end`);
+    // Data zone
+    lines.push(`  subgraph "Data Zone"`);
+    lines.push(`    DB[(Database)]`);
+    lines.push(`    MQ["Message Queue"]`);
+    lines.push(`  end`);
+    // Connections
+    lines.push(`  CDN --> WAF`);
+    lines.push(`  WAF --> LB`);
+    lines.push(`  LB --> Gateway`);
+    const privateIds = components.length > 0
+      ? components.slice(0, 4).map(c => c.replace(/\s+/g, "_").toLowerCase().replace(/[^a-z0-9_]/g, ""))
+      : ["AppServer", "WorkerNode"];
+    lines.push(`  Gateway --> ${privateIds[0]}`);
+    for (const id of privateIds) {
+      lines.push(`  ${id} --> DB`);
+      lines.push(`  ${id} --> MQ`);
     }
     return lines.join("\n");
   }

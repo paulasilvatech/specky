@@ -1,6 +1,6 @@
 # Contributing to Specky
 
-Thank you for your interest in contributing to Specky. This guide covers the v2.3.1 architecture, development patterns, and submission process.
+Thank you for your interest in contributing to Specky. This guide covers the v3.0.0 architecture, development patterns, and submission process.
 
 ---
 
@@ -22,7 +22,7 @@ Thank you for your interest in contributing to Specky. This guide covers the v2.
 
 ## Architecture Overview
 
-Specky v2.3.1 is an MCP server that exposes **52 tools** organized into a 10-phase Spec-Driven Development pipeline. The codebase comprises **47 source files**, **21 templates**, and is structured as follows:
+Specky v3.0.0 is an MCP server that exposes **53 tools** organized into a 10-phase Spec-Driven Development pipeline. The codebase comprises **47 source files**, **21 templates**, and is structured as follows:
 
 ```
 src/
@@ -40,7 +40,7 @@ src/
 │   ├── infrastructure.ts     Schemas for IaC generation and validation
 │   ├── environment.ts        Schemas for dev environment setup
 │   └── integration.ts        Schemas for Git, work items, PR, implement, research
-├── services/                 14 service classes (business logic)
+├── services/                 18 service classes (business logic)
 │   ├── file-manager.ts       All disk I/O (atomic writes, path sanitization)
 │   ├── state-machine.ts      10-phase pipeline enforcement
 │   ├── template-engine.ts    Markdown template rendering with {{variables}}
@@ -48,14 +48,18 @@ src/
 │   ├── codebase-scanner.ts   Tech stack detection via file system analysis
 │   ├── transcript-parser.ts  VTT/SRT/MD/TXT parsing and requirement extraction
 │   ├── document-converter.ts PDF/DOCX/PPTX import and conversion
-│   ├── diagram-generator.ts  Mermaid diagram generation from spec artifacts
+│   ├── diagram-generator.ts  Mermaid diagram generation (17 types) from spec artifacts
 │   ├── iac-generator.ts      Terraform, Bicep, Dockerfile, devcontainer generation
 │   ├── work-item-exporter.ts GitHub Issues, Azure Boards, Jira export payloads
 │   ├── cross-analyzer.ts     Multi-spec cross-cutting concern analysis
 │   ├── compliance-engine.ts  HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 controls
 │   ├── doc-generator.ts      Full docs, API docs, runbooks, onboarding guides
-│   └── git-manager.ts        Branch creation and PR payload generation
-└── tools/                    11 tool registration files (thin handlers)
+│   ├── git-manager.ts        Branch creation and PR payload generation
+│   ├── methodology.ts        SDD methodology enforcement and guidance
+│   ├── dependency-graph.ts   Dependency graph analysis for parallel execution
+│   ├── response-builder.ts   Enriched interactive response construction
+│   └── pbt-generator.ts      Property-based test generation (fast-check/hypothesis)
+└── tools/                    14 tool registration files (thin handlers)
     ├── pipeline.ts           8 pipeline tools (init through advance_phase)
     ├── analysis.ts           1 analysis tool (sdd_check_sync)
     ├── utility.ts            5 utility tools (status, template, bugfix, scan, amend)
@@ -66,7 +70,10 @@ src/
     ├── infrastructure.ts     3 infrastructure tools (IaC, validate, Dockerfile)
     ├── environment.ts        3 environment tools (local, Codespaces, devcontainer)
     ├── integration.ts        5 integration tools (branch, work items, PR, implement, research)
-    └── documentation.ts      4 documentation tools (docs, API, runbook, onboarding)
+    ├── documentation.ts      4 documentation tools (docs, API, runbook, onboarding)
+    ├── pbt.ts                1 property-based testing tool
+    ├── turnkey.ts            1 turnkey specification tool
+    └── checkpoint.ts         3 checkpoint/restore tools
 
 templates/                    21 Markdown templates with {{variable}} placeholders
 ```
@@ -100,6 +107,10 @@ templates/                    21 Markdown templates with {{variable}} placeholde
 | ComplianceEngine | `compliance-engine.ts` | Check specs against HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 controls |
 | DocGenerator | `doc-generator.ts` | Generate full documentation, API docs, runbooks, onboarding guides |
 | GitManager | `git-manager.ts` | Generate branch names and PR payloads for MCP-to-MCP routing |
+| PbtGenerator | `pbt-generator.ts` | Generate property-based tests using fast-check or Hypothesis |
+| Methodology | `methodology.ts` | SDD methodology enforcement and guidance |
+| DependencyGraph | `dependency-graph.ts` | Dependency graph analysis for parallel execution |
+| ResponseBuilder | `response-builder.ts` | Enriched interactive response construction for all tools |
 
 ---
 
@@ -372,7 +383,7 @@ Tests live in `tests/unit/` and cover all services except `file-manager.ts` (whi
 | `compliance-engine.test.ts` | ComplianceEngine | 6 frameworks, control matching, status classification |
 | `state-machine.test.ts` | StateMachine | Phase transitions, blocking, file gates, state persistence |
 | `cross-analyzer.test.ts` | CrossAnalyzer | Alignment scoring, orphaned detection, empty spec handling |
-| `diagram-generator.test.ts` | DiagramGenerator | 10 diagram types, user story flows, batch generation |
+| `diagram-generator.test.ts` | DiagramGenerator | 17 diagram types, user story flows, batch generation |
 | `template-engine.test.ts` | TemplateEngine | Variable replacement, frontmatter, `{{#each}}` loops |
 | `codebase-scanner.test.ts` | CodebaseScanner | Tech stack detection (Node, Python, Go, Rust, Java) |
 

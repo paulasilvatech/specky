@@ -137,6 +137,25 @@ export class StateMachine {
       throw new Error(transition.error_message || "Transition not allowed.");
     }
 
+    // Gate enforcement: cannot advance past Analyze without APPROVE
+    if (state.current_phase === Phase.Analyze) {
+      if (!state.gate_decision) {
+        throw new Error(
+          "Cannot advance past Analyze phase: no gate decision recorded. Run sdd_run_analysis first."
+        );
+      }
+      if (state.gate_decision.decision === "BLOCK") {
+        throw new Error(
+          `Gate decision is BLOCK. Reasons: ${state.gate_decision.reasons.join("; ")}. Gaps: ${state.gate_decision.gaps.join(", ")}. Address these before advancing.`
+        );
+      }
+      if (state.gate_decision.decision === "CHANGES_NEEDED") {
+        throw new Error(
+          `Gate decision is CHANGES_NEEDED. Gaps: ${state.gate_decision.gaps.join(", ")}. Address changes and re-run sdd_run_analysis.`
+        );
+      }
+    }
+
     // Mark current phase as completed
     state.phases[state.current_phase] = {
       ...state.phases[state.current_phase],
@@ -206,6 +225,182 @@ export class StateMachine {
       features: [],
       amendments: [],
       gate_decision: null,
+    };
+  }
+
+  /**
+   * Validate whether a tool is allowed to run in the current pipeline phase.
+   * Read-only/utility tools are allowed in any phase. Phase-specific tools
+   * are restricted to their mapped phases. Unknown tools are allowed for
+   * forward compatibility.
+   */
+  async validatePhaseForTool(specDir: string, toolName: string): Promise<{
+    allowed: boolean;
+    current_phase: Phase;
+    expected_phases: Phase[];
+    error_message?: string;
+  }> {
+    const TOOL_PHASE_MAP: Record<string, Phase[]> = {
+      // Read-only / utility tools — allowed in ANY phase (empty array = any)
+      sdd_get_status: [],
+      sdd_get_template: [],
+      sdd_scan_codebase: [],
+      sdd_check_sync: [],
+      sdd_generate_diagram: [],
+      sdd_generate_all_diagrams: [],
+      sdd_generate_user_stories: [],
+      sdd_figma_diagram: [],
+      sdd_validate_ears: [],
+      sdd_checkpoint: [],
+      sdd_restore: [],
+      sdd_list_checkpoints: [],
+      sdd_check_ecosystem: [],
+      sdd_metrics: [],
+      sdd_research: [],
+
+      // Special tools — allowed in any phase
+      sdd_advance_phase: [],
+      sdd_write_bugfix: [],
+      sdd_amend: [],
+      sdd_auto_pipeline: [],
+
+      // Phase-specific tools
+      sdd_init: [Phase.Init],
+      sdd_discover: [Phase.Init, Phase.Discover],
+      sdd_write_spec: [Phase.Discover, Phase.Specify],
+      sdd_import_transcript: [Phase.Discover, Phase.Specify],
+      sdd_import_document: [Phase.Discover, Phase.Specify],
+      sdd_batch_import: [Phase.Discover, Phase.Specify],
+      sdd_figma_to_spec: [Phase.Discover, Phase.Specify],
+      sdd_batch_transcripts: [Phase.Discover, Phase.Specify],
+      sdd_turnkey_spec: [Phase.Discover, Phase.Specify],
+      sdd_clarify: [Phase.Specify, Phase.Clarify],
+      sdd_write_design: [Phase.Clarify, Phase.Design],
+      sdd_write_tasks: [Phase.Design, Phase.Tasks],
+      sdd_run_analysis: [Phase.Tasks, Phase.Analyze],
+      sdd_cross_analyze: [Phase.Tasks, Phase.Analyze],
+      sdd_compliance_check: [Phase.Tasks, Phase.Analyze],
+      sdd_checklist: [Phase.Tasks, Phase.Analyze],
+      sdd_implement: [Phase.Analyze, Phase.Implement],
+      sdd_generate_iac: [Phase.Analyze, Phase.Implement],
+      sdd_validate_iac: [Phase.Analyze, Phase.Implement],
+      sdd_generate_dockerfile: [Phase.Analyze, Phase.Implement],
+      sdd_setup_local_env: [Phase.Analyze, Phase.Implement],
+      sdd_setup_codespaces: [Phase.Analyze, Phase.Implement],
+      sdd_generate_devcontainer: [Phase.Analyze, Phase.Implement],
+      sdd_create_branch: [Phase.Analyze, Phase.Implement],
+      sdd_verify_tasks: [Phase.Implement, Phase.Verify],
+      sdd_generate_tests: [Phase.Implement, Phase.Verify],
+      sdd_verify_tests: [Phase.Implement, Phase.Verify],
+      sdd_generate_pbt: [Phase.Implement, Phase.Verify],
+      sdd_create_pr: [Phase.Verify, Phase.Release],
+      sdd_export_work_items: [Phase.Verify, Phase.Release],
+      sdd_generate_docs: [Phase.Verify, Phase.Release],
+      sdd_generate_api_docs: [Phase.Verify, Phase.Release],
+      sdd_generate_runbook: [Phase.Verify, Phase.Release],
+      sdd_generate_onboarding: [Phase.Verify, Phase.Release],
+      sdd_generate_all_docs: [Phase.Verify, Phase.Release],
+    } as const;
+
+    const state = await this.loadState(specDir);
+    const currentPhase = state.current_phase;
+
+    // Unknown tools are allowed (forward compatibility)
+    if (!(toolName in TOOL_PHASE_MAP)) {
+      return {
+        allowed: true,
+        current_phase: currentPhase,
+        expected_phases: [],
+      };
+    }
+
+    const allowedPhases = TOOL_PHASE_MAP[toolName];
+
+    // Empty array means allowed in any phase
+    if (allowedPhases.length === 0) {
+      return {
+        allowed: true,
+        current_phase: currentPhase,
+        expected_phases: [],
+      };
+    }
+
+    if (allowedPhases.includes(currentPhase)) {
+      return {
+        allowed: true,
+        current_phase: currentPhase,
+        expected_phases: allowedPhases,
+      };
+    }
+
+    return {
+      allowed: false,
+      current_phase: currentPhase,
+      expected_phases: allowedPhases,
+      error_message: `Tool "${toolName}" is not allowed in phase "${currentPhase}". Allowed phases: ${allowedPhases.join(", ")}.`,
+    };
+  }
+
+  /**
+   * Validate the completeness of a DESIGN.md file by checking for
+   * the presence of key architectural section headings.
+   */
+  async validateDesignCompleteness(featureDir: string): Promise<{
+    score: number;
+    total_sections: number;
+    found_sections: string[];
+    missing_sections: string[];
+  }> {
+    const DESIGN_SECTIONS: { name: string; patterns: string[] }[] = [
+      { name: "System Context", patterns: ["system context", "c4 level 1", "context"] },
+      { name: "Container", patterns: ["container", "c4 level 2"] },
+      { name: "Component", patterns: ["component", "c4 level 3"] },
+      { name: "Data Model", patterns: ["data model", "data", "entity"] },
+      { name: "API Contract", patterns: ["api contract", "api", "endpoint"] },
+      { name: "Infrastructure", patterns: ["infrastructure", "deployment"] },
+      { name: "Security", patterns: ["security", "authentication", "authorization"] },
+      { name: "Architecture Decision", patterns: ["architecture decision", "adr"] },
+      { name: "Error Handling", patterns: ["error handling", "error"] },
+      { name: "Diagrams", patterns: ["diagrams", "system diagrams"] },
+      { name: "Cross-Cutting", patterns: ["cross-cutting", "logging", "monitoring"] },
+      { name: "Code-Level", patterns: ["code-level", "class", "interface"] },
+    ];
+
+    let content: string;
+    try {
+      content = await this.fileManager.readSpecFile(featureDir, "DESIGN.md");
+    } catch {
+      return {
+        score: 0,
+        total_sections: DESIGN_SECTIONS.length,
+        found_sections: [],
+        missing_sections: DESIGN_SECTIONS.map((s) => s.name),
+      };
+    }
+
+    const contentLower = content.toLowerCase();
+    const foundSections: string[] = [];
+    const missingSections: string[] = [];
+
+    for (const section of DESIGN_SECTIONS) {
+      const found = section.patterns.some((pattern) => contentLower.includes(pattern));
+      if (found) {
+        foundSections.push(section.name);
+      } else {
+        missingSections.push(section.name);
+      }
+    }
+
+    const totalSections = DESIGN_SECTIONS.length;
+    const score = totalSections > 0
+      ? Math.round((foundSections.length / totalSections) * 100)
+      : 0;
+
+    return {
+      score,
+      total_sections: totalSections,
+      found_sections: foundSections,
+      missing_sections: missingSections,
     };
   }
 }

@@ -8,6 +8,7 @@ import { CHARACTER_LIMIT } from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { DocGenerator } from "../services/doc-generator.js";
+import { enrichResponse } from "./response-builder.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -72,7 +73,8 @@ export function registerDocumentationTools(
           learning_note: "Full documentation combines all SDD artifacts into a single reference. It includes specification, architecture, implementation plan, and quality analysis.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_generate_docs", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_generate_docs", error as Error) }],
@@ -125,7 +127,8 @@ export function registerDocumentationTools(
           learning_note: "API documentation is auto-extracted from DESIGN.md endpoint definitions. Keep DESIGN.md up to date to maintain accurate API docs.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_generate_api_docs", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_generate_api_docs", error as Error) }],
@@ -178,10 +181,71 @@ export function registerDocumentationTools(
           learning_note: "Operational runbooks reduce MTTR by providing structured troubleshooting guides. Keep them updated as infrastructure changes.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_generate_runbook", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_generate_runbook", error as Error) }],
+          isError: true,
+        };
+      }
+    }
+  );
+
+  // ─── sdd_generate_all_docs ───
+  server.registerTool(
+    "sdd_generate_all_docs",
+    {
+      title: "Generate All Documentation",
+      description:
+        "Generates ALL documentation types in parallel: full docs, API docs, runbook, onboarding guide, and SDD journey. " +
+        "All documents are written to docs/ directory. This is the fastest way to generate complete project documentation.",
+      inputSchema: docsInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async ({ feature_number, spec_dir }) => {
+      try {
+        const features = await fileManager.listFeatures(spec_dir);
+        const feature = features.find((f) => f.number === feature_number);
+        if (!feature) {
+          throw new Error(`Feature ${feature_number} not found in ${spec_dir}. Run sdd_init first.`);
+        }
+
+        const allDocs = await docGenerator.generateAllDocs(feature.directory, feature_number);
+
+        // Write all docs to disk in parallel
+        const writePromises = allDocs.results.map(async (doc) => {
+          const writtenPath = await fileManager.writeSpecFile(
+            "docs",
+            doc.file_path.replace("docs/", ""),
+            doc.content,
+            true
+          );
+          return { type: doc.type, path: writtenPath, sections: doc.sections.length };
+        });
+
+        const writtenFiles = await Promise.all(writePromises);
+
+        const result = {
+          status: "all_docs_generated",
+          total_generated: allDocs.total_generated,
+          total_sections: allDocs.total_sections,
+          files: writtenFiles,
+          explanation: `Generated ${allDocs.total_generated} documentation files with ${allDocs.total_sections} total sections in parallel.`,
+          next_steps: "Review all generated documentation. The SDD Journey document provides a complete audit trail of the specification process.",
+          learning_note: "Generating all documentation in parallel is faster than sequential generation and ensures consistency across all document types.",
+        };
+
+        const enriched = await enrichResponse("sdd_generate_all_docs", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
+      } catch (error) {
+        return {
+          content: [{ type: "text" as const, text: formatError("sdd_generate_all_docs", error as Error) }],
           isError: true,
         };
       }
@@ -231,7 +295,8 @@ export function registerDocumentationTools(
           learning_note: "Onboarding guides accelerate ramp-up time for new developers. They provide context that code alone cannot convey.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_generate_onboarding", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_generate_onboarding", error as Error) }],

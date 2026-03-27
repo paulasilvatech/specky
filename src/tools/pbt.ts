@@ -8,6 +8,7 @@ import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { PbtGenerator } from "../services/pbt-generator.js";
 import { generatePbtInputSchema } from "../schemas/pbt.js";
+import { enrichResponse } from "./response-builder.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -21,7 +22,7 @@ function truncate(text: string): string {
 export function registerPbtTools(
   server: McpServer,
   fileManager: FileManager,
-  _stateMachine: StateMachine,
+  stateMachine: StateMachine,
   pbtGenerator: PbtGenerator,
 ): void {
   server.registerTool(
@@ -92,9 +93,10 @@ export function registerPbtTools(
             "When a PBT fails, the framework 'shrinks' the input to the smallest example that triggers the failure.",
         };
 
+        const enriched = await enrichResponse("sdd_generate_pbt", result, stateMachine, spec_dir);
         return {
           content: [
-            { type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) },
+            { type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) },
           ],
         };
       } catch (error) {

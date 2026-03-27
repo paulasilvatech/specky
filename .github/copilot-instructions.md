@@ -1,4 +1,4 @@
-# Specky v2.3.1 — GitHub Copilot Instructions
+# Specky v3.0.0 — GitHub Copilot Instructions
 
 This project uses **Spec-Driven Development (SDD)** via the Specky MCP server.
 
@@ -43,10 +43,10 @@ Each phase requires its predecessor. Use `sdd_advance_phase` to move forward.
 - **Traceability** — Every requirement → design → task → test chain must be complete
 - **Files on disk** — All artifacts live in `.specs/NNN-feature-name/`
 
-## 52 MCP Tools Available
+## 53 MCP Tools Available
 
 Pipeline (8), Utility (6), Transcript (3), Input (3), Quality (5), Visualization (4),
 Infrastructure (3), Environment (3), Integration (5), Documentation (4), Ecosystem (1),
-Testing (2), PBT (1), Turnkey (1), Checkpointing (3).
+Testing (3), PBT (1), Turnkey (1), Checkpointing (3).
 
 See CLAUDE.md for the full tool reference.

@@ -14,6 +14,7 @@ import {
   setupCodespacesInputSchema,
   generateDevcontainerInputSchema,
 } from "../schemas/environment.js";
+import { enrichResponse } from "./response-builder.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -74,7 +75,8 @@ export function registerEnvironmentTools(
           learning_note: "Local dev environments use Docker Compose to orchestrate multiple services. The generated Dockerfile uses multi-stage builds for smaller production images.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_setup_local_env", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_setup_local_env", error as Error) }],
@@ -126,7 +128,8 @@ export function registerEnvironmentTools(
           learning_note: "GitHub Codespaces provides cloud-hosted dev environments. The devcontainer.json defines the container image, extensions, and port forwarding.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_setup_codespaces", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_setup_codespaces", error as Error) }],
@@ -195,7 +198,8 @@ export function registerEnvironmentTools(
           learning_note: "The devcontainer.json specification defines reproducible development environments. It supports custom features, extensions, and lifecycle hooks.",
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }] };
+        const enriched = await enrichResponse("sdd_generate_devcontainer", result, stateMachine, spec_dir);
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_generate_devcontainer", error as Error) }],

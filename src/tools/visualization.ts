@@ -9,6 +9,7 @@ import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { DiagramGenerator } from "../services/diagram-generator.js";
 import type { UserStory, UserStoriesResult } from "../types.js";
+import { enrichResponse } from "./response-builder.js";
 import {
   generateDiagramInputSchema,
   generateAllDiagramsInputSchema,
@@ -44,7 +45,7 @@ export function registerVisualizationTools(
     {
       title: "Generate Mermaid Diagram",
       description:
-        "Generates a single Mermaid diagram from a specification artifact (spec, design, tasks, or constitution). Returns the Mermaid code ready for rendering.",
+        "Generates a single Mermaid diagram from a specification artifact. Supports 17 diagram types: flowchart, sequence, class, ER, state machine, C4 context, C4 container, C4 component, C4 code, activity, use case, DFD (data flow), deployment, network topology, Gantt, pie chart, and mind map.",
       inputSchema: generateDiagramInputSchema,
       annotations: {
         readOnlyHint: true,
@@ -108,11 +109,12 @@ export function registerVisualizationTools(
           learning_note: `A "${diagram_type}" diagram visualizes ${getDiagramDescription(diagram_type)}. Mermaid diagrams can be rendered in GitHub Markdown, documentation sites, and most modern editors.`,
         };
 
+        const enriched = await enrichResponse("sdd_generate_diagram", result, stateMachine, spec_dir);
         return {
           content: [
             {
               type: "text" as const,
-              text: truncate(JSON.stringify(result, null, 2)),
+              text: truncate(JSON.stringify(enriched, null, 2)),
             },
           ],
         };
@@ -173,11 +175,12 @@ export function registerVisualizationTools(
             "Together they form a complete visual specification that complements the written artifacts.",
         };
 
+        const enriched = await enrichResponse("sdd_generate_all_diagrams", result, stateMachine, spec_dir);
         return {
           content: [
             {
               type: "text" as const,
-              text: truncate(JSON.stringify(result, null, 2)),
+              text: truncate(JSON.stringify(enriched, null, 2)),
             },
           ],
         };
@@ -282,11 +285,12 @@ export function registerVisualizationTools(
             "testable acceptance criteria derived from the specification.",
         };
 
+        const enriched = await enrichResponse("sdd_generate_user_stories", result as unknown as Record<string, unknown>, stateMachine, spec_dir);
         return {
           content: [
             {
               type: "text" as const,
-              text: truncate(JSON.stringify(result, null, 2)),
+              text: truncate(JSON.stringify(enriched, null, 2)),
             },
           ],
         };
@@ -388,11 +392,12 @@ export function registerVisualizationTools(
             "in FigJam from the specification artifacts.",
         };
 
+        const enriched = await enrichResponse("sdd_figma_diagram", figmaPayload, stateMachine, spec_dir);
         return {
           content: [
             {
               type: "text" as const,
-              text: truncate(JSON.stringify(figmaPayload, null, 2)),
+              text: truncate(JSON.stringify(enriched, null, 2)),
             },
           ],
         };

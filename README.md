@@ -1,7 +1,7 @@
 <div align="center">
   <h1>Specky</h1>
   <h3>The Complete Spec-Driven Development Platform</h3>
-  <p><strong>52 MCP tools. 10-phase pipeline. Works in any IDE.</strong></p>
+  <p><strong>53 MCP tools. 10-phase pipeline. Works in any IDE.</strong></p>
 
   <p>
     <a href="https://www.npmjs.com/package/specky-sdd"><img src="https://img.shields.io/npm/v/specky-sdd" alt="npm"/></a>
@@ -25,17 +25,17 @@
 | [📥 Input Methods](#-input-methods--6-ways-to-start) | 6 ways to feed Specky |
 | [🏗️ Three Project Types](#%EF%B8%8F-three-project-types--one-pipeline) | Greenfield, Brownfield, Modernization |
 | [⚙️ Pipeline and LGTM Gates](#%EF%B8%8F-pipeline-and-lgtm-gates) | 10 phases with human review gates |
-| [🧰 All 52 Tools](#-all-47-tools) | Complete tool reference by category |
+| [🧰 All 53 Tools](#-all-53-tools) | Complete tool reference by category |
 | [🏛️ The SDD Platform](#%EF%B8%8F-the-spec-driven-development-platform) | Built on Spec-Kit, everything included |
 | [📐 EARS Notation](#-ears-notation) | The 6 requirement patterns |
 | [🛡️ Compliance](#%EF%B8%8F-compliance-frameworks) | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 |
 | [🏢 Enterprise Ready](#-enterprise-ready) | Security, audit trail, quality gates |
-| [🗺️ Roadmap](#%EF%B8%8F-roadmap) | v2.3 (current), v2.4, v3.0 plans |
+| [🗺️ Roadmap](#%EF%B8%8F-roadmap) | v3.0 (current), v2.4, future plans |
 
 
 ## 🔍 What is Specky?
 
-Specky is an open-source **MCP server** that turns the [Spec-Kit](https://github.com/paulasilvatech/spec-kit) SDD methodology into a **programmable enforcement engine** with 52 validated tools. It provides a deterministic pipeline from **any input** (meeting transcripts, documents, Figma designs, or natural language prompts) through specifications, architecture, infrastructure as code, implementation, and deployment.
+Specky is an open-source **MCP server** that turns the [Spec-Kit](https://github.com/paulasilvatech/spec-kit) SDD methodology into a **programmable enforcement engine** with 53 validated tools. It provides a deterministic pipeline from **any input** (meeting transcripts, documents, Figma designs, or natural language prompts) through specifications, architecture, infrastructure as code, implementation, and deployment.
 
 **Spec-Kit** provides the methodology: EARS notation, gated pipeline phases, constitution model, quality patterns. **Specky** reimplements all of it as MCP tools and adds programmatic enforcement: a state machine that blocks phase-skipping, an EARS validator, cross-artifact analysis, compliance engines, test generation, and MCP-to-MCP routing.
 
@@ -108,7 +108,7 @@ Specky adds a **deterministic engine** between your intent and your code:
 | Property-based testing (fast-check/Hypothesis) | No | Yes | No | **Yes** |
 | Checkpoint/restore for spec artifacts | No | Session-only | No | **Yes (persistent)** |
 | Executable hooks (file-save triggers) | No | Yes (IDE-level) | No | **Yes (Claude Code + GitHub Actions)** |
-| 52 MCP tools | N/A | N/A | N/A | **Yes** |
+| 53 MCP tools | N/A | N/A | N/A | **Yes** |
 | Works in ANY IDE via MCP | Templates | IDE-locked | IDE-locked | **Yes** |
 
 </details>
@@ -254,7 +254,7 @@ Open your AI IDE and type:
 > What tools does Specky have?
 ```
 
-The AI should list the 47 SDD tools. If you see them, Specky is working.
+The AI should list the 53 SDD tools. If you see them, Specky is working.
 
 ### ✅ Try It Now
 
@@ -540,7 +540,7 @@ The AI calls:
 
 The AI calls `sdd_export_work_items` + `sdd_create_pr` → generates work item payloads and PR body with full spec traceability.
 
-> 👉 **Next:** Learn about [EARS notation](#ears-notation) to understand the requirement patterns, or see [#all-52-tools](#all-47-tools) for a complete reference.
+> 👉 **Next:** Learn about [EARS notation](#ears-notation) to understand the requirement patterns, or see [#all-53-tools](#-all-53-tools) for a complete reference.
 
 
 ## 🔧 Brownfield Project: Add Features to Existing Code
@@ -733,7 +733,7 @@ The AI calls `sdd_advance_phase` → moves the pipeline forward if all prerequis
 All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). See [Input Methods](#input-methods--6-ways-to-start) for how to feed data into the pipeline.
 
 
-## 🧰 All 52 Tools
+## 🧰 All 53 Tools
 
 ### 📥 Input and Conversion (5)
 
@@ -753,7 +753,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_discover` | Interactive discovery with stakeholder mapping |
 | `sdd_write_spec` | Write EARS requirements with flow diagrams |
 | `sdd_clarify` | Resolve ambiguities with decision tree |
-| `sdd_write_design` | Architecture with sequence diagrams, ERD, API flow |
+| `sdd_write_design` | 12-section system design (C4 model) with sequence diagrams, ERD, API flow |
 | `sdd_write_tasks` | Task breakdown with dependency graph |
 | `sdd_run_analysis` | Quality gate analysis with coverage heatmap |
 | `sdd_advance_phase` | Move to next pipeline phase |
@@ -768,11 +768,11 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_cross_analyze` | Spec-design-tasks alignment with consistency score |
 | `sdd_validate_ears` | Batch EARS requirement validation |
 
-### 📊 Diagrams and Visualization (4)
+### 📊 Diagrams and Visualization (4) -- 17 Diagram Types
 
 | Tool | Description |
 |------|-------------|
-| `sdd_generate_diagram` | Single Mermaid diagram (10 types) |
+| `sdd_generate_diagram` | Single Mermaid diagram (17 software engineering diagram types) |
 | `sdd_generate_all_diagrams` | All diagrams for a feature at once |
 | `sdd_generate_user_stories` | User stories with flow diagrams |
 | `sdd_figma_diagram` | FigJam-ready diagram via Figma MCP |
@@ -861,11 +861,11 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 
 **[Spec-Kit](https://github.com/paulasilvatech/spec-kit)** is the open-source SDD methodology: EARS notation, gated pipeline phases, constitution model, 25+ specialized agents, and Markdown prompt templates. It defines **what** to do.
 
-**Specky** is the MCP engine that reimplements that methodology as 52 enforceable tools with programmatic validation. It enforces **how** to do it.
+**Specky** is the MCP engine that reimplements that methodology as 53 enforceable tools with programmatic validation. It enforces **how** to do it.
 
 | | Spec-Kit (Methodology) | Specky (Engine) |
 |--|------------------------|-----------------|
-| **What it is** | Prompt templates + agent definitions | MCP server with 52 tools |
+| **What it is** | Prompt templates + agent definitions | MCP server with 53 tools |
 | **How it works** | AI reads `.md` templates and follows instructions | AI calls tools that validate, enforce, and generate |
 | **Validation** | AI tries to follow the prompts | State machine, EARS regex, Zod schemas |
 | **Install** | Copy `.github/agents/` and `.claude/commands/` | `npx specky-sdd` (includes methodology built-in) |
@@ -1058,13 +1058,21 @@ curl http://localhost:3200/health
 
 ## 🗺️ Roadmap
 
-### v2.3 (current, stable)
+### v3.0 Highlights (current)
 
-Specky v2.3 is **production-ready** with full Kiro-parity features and complete GitHub Copilot + Claude Code integration.
+| Feature | Description |
+|---------|-------------|
+| Enriched interactive responses | All tools return structured, interactive responses with contextual guidance |
+| 17 software engineering diagram types | Expanded from 10 to 17 Mermaid diagram types for full system visualization |
+| 12-section system design template | C4 model-based design template covering all architecture concerns |
+| Parallel documentation generation | Generate multiple doc types simultaneously for faster output |
+| Pipeline phase validation and gate enforcement | Strengthened gate enforcement with validation at every phase transition |
+
+### v2.3 (stable)
 
 | Capability | Status |
 |------------|--------|
-| 52 MCP tools across 10 pipeline phases | ✅ Stable |
+| 53 MCP tools across 10 pipeline phases | ✅ Stable |
 | Turnkey spec from natural language (`sdd_turnkey_spec`) | ✅ New |
 | Property-based testing — fast-check + Hypothesis (`sdd_generate_pbt`) | ✅ New |
 | Checkpoint/restore for spec artifacts (`sdd_checkpoint`, `sdd_restore`) | ✅ New |
@@ -1089,7 +1097,7 @@ Specky v2.3 is **production-ready** with full Kiro-parity features and complete 
 | 🌐 Internationalization | Spec templates in multiple languages (PT-BR, ES, FR, DE, JA) |
 | 🧠 AI-powered shrinking | Integrate fast-check/Hypothesis shrinking feedback into spec refinement |
 
-### v3.0 (future)
+### v3.1+ (future)
 
 | Feature | Description |
 |---------|-------------|

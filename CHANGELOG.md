@@ -5,6 +5,62 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-03-26
+
+### Pipeline Validation & Enforcement
+- **Phase validation on every tool**: `validatePhaseForTool()` maps 53 tools to allowed pipeline phases; tools called out-of-order return structured errors with fix guidance
+- **Gate decision enforcement**: `advancePhase()` now blocks advancement past Analyze if gate decision is BLOCK or CHANGES_NEEDED; only APPROVE allows progression
+- **Clarify phase fix**: `sdd_clarify` now properly completes the Clarify phase (was stuck in `in_progress`)
+- **Proper state transitions**: `sdd_auto_pipeline` and `sdd_turnkey_spec` now use `advancePhase()` instead of direct state manipulation
+
+### Software Engineering Diagrams (10 → 17 types)
+- **7 new diagram types**: C4 Component (L3), C4 Code (L4), Activity, Use Case, Data Flow (DFD), Deployment, Network Topology
+- **`generateAllDiagrams()`** now generates up to 16 diagrams per feature automatically
+- **Schema updated**: `diagram_type` enum expanded from 10 to 17 types
+
+### System Design Completeness (6 → 12 sections)
+- **Design template expanded**: System Context (C4 L1), Container Architecture (C4 L2), Component Design (C4 L3), Code-Level Design (C4 L4), System Diagrams, Data Model, API Contracts, Infrastructure & Deployment, Security Architecture, ADRs, Error Handling, Cross-Cutting Concerns
+- **9 new optional fields** in `writeDesignInputSchema` for backward compatibility
+- **Design completeness validation**: `validateDesignCompleteness()` scores DESIGN.md against 12 required sections
+
+### Enriched Interactive Responses (ALL 53 tools)
+- **`enrichResponse()`**: Every tool response now includes phase progress bar, educational notes, methodology tips, handoff context, and parallel execution hints
+- **`enrichStateless()`**: Utility tools without phase context get educational notes and common mistakes
+- **`buildPhaseError()`**: Structured phase validation errors with fix guidance and methodology context
+- **`MethodologyGuide`** service: Educational content for all 10 phases (what/why/how/anti-patterns/best-practices) and 20+ tools
+- **`DependencyGraph`** service: Parallel execution groups for all 10 phases, tool dependency mapping, execution plans
+
+### Parallel Documentation Generation
+- **`sdd_generate_all_docs`** (NEW tool #53): Generates 5 doc types in parallel via `Promise.all()`
+- **`generateJourneyDocs()`**: New SDD Journey document capturing complete pipeline audit trail (phases, timestamps, gate decisions, traceability)
+- **DocGenerator wired with StateMachine** for phase-aware documentation
+
+### Active Hooks (6 → 7)
+- **`auto-checkpoint.sh`** (NEW): Suggests checkpoint creation when spec artifacts are modified
+- **`security-scan.sh`** now BLOCKS (exit 2) when hardcoded secrets detected
+- **`spec-sync.sh`** enhanced with drift detection and spec-reference checking
+- **`auto-docs.sh`** enhanced with modification tracking via `.doc-tracker.json`
+
+### Interactive Commands (12 rewritten)
+- All 12 `/sdd:*` commands rewritten with step-by-step educational guidance
+- Every step explains "What's happening" and "Why it matters"
+- WAIT/LGTM gates at all quality checkpoints
+- Enriched response data surfaced (progress bar, parallel hints, handoff)
+- Error recovery sections with guidance back on track
+
+### New Files
+- `src/services/methodology.ts` — Educational content service (static, no dependencies)
+- `src/services/dependency-graph.ts` — Parallel execution graph (static, no dependencies)
+- `src/tools/response-builder.ts` — Response enrichment (enrichResponse, enrichStateless, buildPhaseError)
+- `templates/journey.md` — SDD Journey documentation template
+- `.claude/hooks/auto-checkpoint.sh` — Auto-checkpoint hook
+
+### Stats
+- **53 tools** (was 52), **17 diagram types** (was 10), **22 templates** (was 21), **7 hooks** (was 6)
+- **18 services** (was 16): +MethodologyGuide, +DependencyGraph
+- **321 unit tests**, all passing
+- **12 interactive commands** fully rewritten
+
 ## [2.3.1] - 2026-03-25
 
 ### Changed
@@ -124,6 +180,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Zod schema validation on all tool inputs
 - Published to npm (`specky-sdd`), GitHub Container Registry, and GitHub Releases
 
+[3.0.0]: https://github.com/paulasilvatech/specky/compare/v2.3.1...v3.0.0
+[2.3.1]: https://github.com/paulasilvatech/specky/compare/v2.3.0...v2.3.1
+[2.3.0]: https://github.com/paulasilvatech/specky/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/paulasilvatech/specky/compare/v2.1.0...v2.2.0
 [2.1.0]: https://github.com/paulasilvatech/specky/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/paulasilvatech/specky/compare/v1.0.0...v2.0.0

@@ -20,6 +20,7 @@ import {
   autoPipelineInputSchema,
   batchTranscriptsInputSchema,
 } from "../schemas/transcript.js";
+import { enrichResponse } from "./response-builder.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -104,9 +105,10 @@ export function registerTranscriptTools(
           tip: "You can also call sdd_auto_pipeline directly with the same file_path for a fully automated flow.",
         };
 
+        const enriched = await enrichResponse("sdd_import_transcript", result, stateMachine, spec_dir);
         return {
           content: [
-            { type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) },
+            { type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) },
           ],
         };
       } catch (error) {
@@ -191,7 +193,7 @@ export function registerTranscriptTools(
         await fileManager.writeSpecFile(featureDir, "CONSTITUTION.md", constitutionContent, force);
         filesCreated.push("CONSTITUTION.md");
 
-        // Initialize state
+        // Initialize state and advance through phases properly
         const state = stateMachine.createDefaultState(project_name);
         state.features = [featureDir];
         state.phases[Phase.Init] = {
@@ -199,6 +201,9 @@ export function registerTranscriptTools(
           started_at: new Date().toISOString(),
           completed_at: new Date().toISOString(),
         };
+        await stateMachine.saveState(spec_dir, state);
+        // Advance Init → Discover
+        await stateMachine.advancePhase(spec_dir, "001");
 
         // ── Step 3: Generate EARS requirements from transcript ──
         console.error(`[specky] Auto-pipeline: generating EARS requirements...`);
@@ -250,21 +255,12 @@ export function registerTranscriptTools(
 
         await fileManager.writeSpecFile(featureDir, "SPECIFICATION.md", specContent, force);
         filesCreated.push("SPECIFICATION.md");
-        state.phases[Phase.Discover] = {
-          status: "completed",
-          started_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-        };
-        state.phases[Phase.Specify] = {
-          status: "completed",
-          started_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-        };
-        state.phases[Phase.Clarify] = {
-          status: "completed",
-          started_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-        };
+        // Advance Discover → Specify → Clarify
+        await stateMachine.recordPhaseComplete(spec_dir, Phase.Discover);
+        await stateMachine.advancePhase(spec_dir, "001");  // Discover → Specify
+        await stateMachine.recordPhaseComplete(spec_dir, Phase.Specify);
+        await stateMachine.advancePhase(spec_dir, "001");  // Specify → Clarify
+        await stateMachine.recordPhaseComplete(spec_dir, Phase.Clarify);
 
         // ── Step 5: Write DESIGN.md ──
         console.error(`[specky] Auto-pipeline: writing DESIGN.md...`);
@@ -286,11 +282,9 @@ export function registerTranscriptTools(
 
         await fileManager.writeSpecFile(featureDir, "DESIGN.md", designContent, force);
         filesCreated.push("DESIGN.md");
-        state.phases[Phase.Design] = {
-          status: "completed",
-          started_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-        };
+        // Advance Clarify → Design
+        await stateMachine.advancePhase(spec_dir, "001");
+        await stateMachine.recordPhaseComplete(spec_dir, Phase.Design);
 
         // ── Step 6: Write TASKS.md ──
         console.error(`[specky] Auto-pipeline: writing TASKS.md...`);
@@ -323,11 +317,9 @@ export function registerTranscriptTools(
 
         await fileManager.writeSpecFile(featureDir, "TASKS.md", tasksContent, force);
         filesCreated.push("TASKS.md");
-        state.phases[Phase.Tasks] = {
-          status: "completed",
-          started_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-        };
+        // Advance Design → Tasks
+        await stateMachine.advancePhase(spec_dir, "001");
+        await stateMachine.recordPhaseComplete(spec_dir, Phase.Tasks);
 
         // ── Step 7: Write ANALYSIS.md ──
         console.error(`[specky] Auto-pipeline: writing ANALYSIS.md...`);
@@ -376,14 +368,13 @@ export function registerTranscriptTools(
         await fileManager.writeSpecFile(featureDir, "TRANSCRIPT.md", transcriptMd, force);
         filesCreated.push("TRANSCRIPT.md");
 
-        // ── Step 9: Finalize state ──
-        state.current_phase = Phase.Analyze;
-        state.phases[Phase.Analyze] = {
-          status: "completed",
-          started_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-        };
-        state.gate_decision = {
+        // ── Step 9: Finalize state — advance Tasks → Analyze and set gate decision ──
+        await stateMachine.advancePhase(spec_dir, "001");  // Tasks → Analyze
+        await stateMachine.recordPhaseComplete(spec_dir, Phase.Analyze);
+
+        // Load final state and set gate decision
+        const finalState = await stateMachine.loadState(spec_dir);
+        finalState.gate_decision = {
           decision: "APPROVE",
           reasons: [
             "All specification documents generated from transcript.",
@@ -395,7 +386,7 @@ export function registerTranscriptTools(
           gaps: analysis.open_questions.slice(0, 5),
           decided_at: new Date().toISOString(),
         };
-        await stateMachine.saveState(spec_dir, state);
+        await stateMachine.saveState(spec_dir, finalState);
 
         console.error(`[specky] Auto-pipeline: COMPLETE — ${filesCreated.length} files written.`);
 
@@ -423,9 +414,10 @@ export function registerTranscriptTools(
           ].join("\n"),
         };
 
+        const enriched = await enrichResponse("sdd_auto_pipeline", result, stateMachine, spec_dir);
         return {
           content: [
-            { type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) },
+            { type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) },
           ],
         };
       } catch (error) {
@@ -717,9 +709,10 @@ export function registerTranscriptTools(
           ].join("\n"),
         };
 
+        const enriched = await enrichResponse("sdd_batch_transcripts", batchResult, stateMachine, spec_dir);
         return {
           content: [
-            { type: "text" as const, text: truncate(JSON.stringify(batchResult, null, 2)) },
+            { type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) },
           ],
         };
       } catch (error) {

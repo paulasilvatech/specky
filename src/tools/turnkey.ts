@@ -11,6 +11,7 @@ import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
 import type { EarsValidator } from "../services/ears-validator.js";
+import { enrichResponse } from "./response-builder.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -174,10 +175,10 @@ export function registerTurnkeyTools(
         await fileManager.ensureSpecDir(spec_dir);
         const filePath = await fileManager.writeSpecFile(featureDir, "SPECIFICATION.md", content, force);
 
-        // Also initialize if needed
+        // Initialize pipeline state properly using advancePhase
         const state = await stateMachine.loadState(spec_dir);
         if (state.current_phase === Phase.Init && state.features.length === 0) {
-          // Auto-init
+          // Auto-init: create Constitution first (required for Init phase)
           const constitutionContent = await templateEngine.renderWithFrontmatter("constitution", {
             title: `${feature_name} — Constitution`,
             feature_id: `${feature_number}-${featureSlug}`,
@@ -192,13 +193,17 @@ export function registerTurnkeyTools(
           });
           await fileManager.writeSpecFile(featureDir, "CONSTITUTION.md", constitutionContent, force);
 
+          // Initialize state with features, then advance through phases properly
           const newState = stateMachine.createDefaultState(feature_name);
           newState.features = [featureDir];
           newState.phases[Phase.Init] = { status: "completed", started_at: new Date().toISOString(), completed_at: new Date().toISOString() };
-          newState.phases[Phase.Discover] = { status: "completed", started_at: new Date().toISOString(), completed_at: new Date().toISOString() };
-          newState.phases[Phase.Specify] = { status: "completed", started_at: new Date().toISOString(), completed_at: new Date().toISOString() };
-          newState.current_phase = Phase.Specify;
           await stateMachine.saveState(spec_dir, newState);
+
+          // Advance Init → Discover → Specify using proper state transitions
+          await stateMachine.advancePhase(spec_dir, feature_number);  // Init → Discover
+          await stateMachine.recordPhaseComplete(spec_dir, Phase.Discover);
+          await stateMachine.advancePhase(spec_dir, feature_number);  // Discover → Specify
+          await stateMachine.recordPhaseComplete(spec_dir, Phase.Specify);
         } else {
           await stateMachine.recordPhaseStart(spec_dir, Phase.Specify);
           await stateMachine.recordPhaseComplete(spec_dir, Phase.Specify);
@@ -229,8 +234,13 @@ export function registerTurnkeyTools(
             "Review the generated EARS statements — the AI's best guess may need human refinement for edge cases.",
         };
 
+        const enriched = await enrichResponse("sdd_turnkey_spec", result, stateMachine, spec_dir, {
+          completedPhase: Phase.Specify,
+          nextPhase: Phase.Clarify,
+          artifactsProduced: ["SPECIFICATION.md"],
+        });
         return {
-          content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }],
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
       } catch (error) {
         return {

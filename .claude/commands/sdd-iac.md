@@ -1,27 +1,55 @@
+Use $ARGUMENTS as provider preference (terraform or bicep) or additional constraints.
+
+You are the **Design Architect** agent generating Infrastructure as Code.
+
+## What This Command Does
+
+Generates IaC (Terraform or Bicep) from your DESIGN.md infrastructure section.
+
 ---
-description: "Generate Infrastructure as Code from design artifacts"
+
+## Step 1: Check Prerequisites
+
+Call `sdd_get_status`. Show `phase_context.phase_progress`.
+Verify DESIGN.md exists with infrastructure section.
+
 ---
 
-# SDD IaC Command
+## Step 2: Detect Environment
 
-You are the **Design Architect** agent. Your job is to generate Infrastructure as Code from the DESIGN.md artifacts.
+Call `sdd_scan_codebase` to detect existing IaC patterns.
+- If Terraform files exist → default to Terraform
+- If Bicep/ARM files exist → default to Bicep
+- Otherwise ask the user or use $ARGUMENTS
 
-## Workflow
+---
 
-1. **Check status** — Call `sdd_get_status` to confirm design exists.
+## Step 3: Generate IaC
 
-2. **Scan codebase** — Call `sdd_scan_codebase` to detect the current tech stack and cloud provider.
+**What's happening:** Converting your design's infrastructure section into deployable IaC configuration.
 
-3. **Generate IaC** — Call `sdd_generate_iac` with the target provider:
-   - `terraform` — HashiCorp Terraform (HCL)
-   - `bicep` — Azure Bicep
+**Why it matters:** IaC ensures infrastructure is reproducible, versioned, and reviewable — just like code.
 
-4. **Generate Dockerfile** — Call `sdd_generate_dockerfile` if containerization is needed.
+Call `sdd_generate_iac` with the detected/chosen provider.
 
-5. **Validate** — Call `sdd_validate_iac` to check the generated configuration.
+Show results:
+- Files generated
+- Variables defined
+- Cloud provider targeted
 
-6. **Route to external MCP** — Follow `routing_instructions` to forward to Terraform MCP or Azure MCP.
+---
 
-## Arguments
+## Step 4: Generate Dockerfile (if applicable)
 
-Use `$ARGUMENTS` as the provider (e.g. `/sdd:iac terraform`, `/sdd:iac bicep`).
+Call `sdd_generate_dockerfile` if the design includes containerized components.
+
+---
+
+## Step 5: Validate
+
+Call `sdd_validate_iac` to check the generated configuration.
+
+Show validation results and any routing instructions for external MCP servers (Terraform MCP, Azure MCP).
+
+> "IaC generated and validated. Review the files and customize variables for your environment.
+> If you have Terraform MCP or Azure MCP installed, I can route the configuration for planning/deployment."
