@@ -1,6 +1,6 @@
 ---
 name: SDD Spec Engineer v3.0
-description: "Spec-Driven Development orchestrator — the open-source alternative to AWS Kiro. Transforms natural language into production-grade specs through interactive discovery. Auto-scans codebases, generates EARS-notation requirements, creates Mermaid architecture diagrams, produces sequenced task plans with [P] parallel markers and pre-implementation gates, runs quality gates with traceability matrices, and hands off to coding agents. Works in GitHub Copilot (.github/agents/) AND Claude Code (.claude/commands/). USE THIS when the user mentions: spec, requirements, plan feature, user stories, acceptance criteria, technical design, architect solution, implementation plan, SDD, \"spec this\", \"plan this\", \"break into tasks\", PRD, constitution, \"like Kiro\", bugfix spec, quality gate, spec sync, or any variation of spec-driven development."
+description: "Spec-Driven Development orchestrator — transforms natural language into production-grade specs through interactive discovery. Auto-scans codebases, generates EARS-notation requirements, creates Mermaid architecture diagrams, produces sequenced task plans with [P] parallel markers and pre-implementation gates, runs quality gates with traceability matrices, and hands off to coding agents. Works in GitHub Copilot (.github/agents/) AND Claude Code (.claude/commands/). USE THIS when the user mentions: spec, requirements, plan feature, user stories, acceptance criteria, technical design, architect solution, implementation plan, SDD, \"spec this\", \"plan this\", \"break into tasks\", PRD, constitution, bugfix spec, quality gate, spec sync, or any variation of spec-driven development."
 ---
 
 # SDD Spec Engineer v3.0
@@ -50,8 +50,8 @@ When the `sdd-mcp-server` is available, use these tools for each phase:
 
 1. **Spec-Kit Compliance**: Full pipeline Constitution → Specify → Clarify → Plan → Tasks → Analyze → Implement.
 2. **Anthropic Best Practices**: Positive framing, few-shot examples, progressive context loading, match prompt style to output.
-3. **Kiro Feature Parity**: Interactive discovery, EARS notation, Mermaid diagrams, quality gates, amendment protocol.
-4. **Beyond Kiro Differentiators**: Traceability matrix, 4 specialized agents, model routing, 4 implementation formats, spec sync detection.
+3. **Full SDD Feature Set**: Interactive discovery, EARS notation, Mermaid diagrams, quality gates, amendment protocol.
+4. **Key Differentiators**: Traceability matrix, 4 specialized agents, model routing, 4 implementation formats, spec sync detection.
 5. **Anti-Over-Engineering Guardrail**: Always start with the simplest approach that meets requirements.
 
 ---
@@ -1079,7 +1079,7 @@ Use this checklist to ensure you follow the full pipeline:
 - **Design Patterns**: Read `references/design-patterns.md` when generating DESIGN.md.
 - **Task Templates**: Read `references/spec-templates.md` when generating TASKS.md.
 - **Mermaid Syntax**: https://mermaid.live/ (test diagrams in real-time).
-- **AWS Kiro**: This skill is inspired by Kiro; it adds EARS notation, amendment tracking, and 4-format handoff.
+- **SDD Methodology**: This skill implements the SDD methodology with EARS notation, amendment tracking, and 4-format handoff.
 
 ---
 
@@ -1087,7 +1087,7 @@ Use this checklist to ensure you follow the full pipeline:
 
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
-| 3.0.0 | 2026-03-20 | SDD Team | Full pipeline with Kiro parity + Anthropic best practices, EARS notation, model routing, 4-format handoff, bugfix workflow, spec sync, amendment protocol |
+| 3.0.0 | 2026-03-20 | SDD Team | Full SDD pipeline with Anthropic best practices, EARS notation, model routing, 4-format handoff, bugfix workflow, spec sync, amendment protocol |
 
 ---
 

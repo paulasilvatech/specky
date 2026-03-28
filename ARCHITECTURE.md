@@ -732,7 +732,7 @@ Be honest about scope limitations:
 
 | Limitation | Why | Recommended Alternative |
 |-----------|-----|-----|
-| **No visual task tracking** | Markdown checkboxes only, unlike Kiro's UI | Use Kiro board for sprint tracking; link to TASKS.md |
+| **No visual task tracking** | Markdown checkboxes only, unlike visual IDE boards | Use GitHub Projects for sprint tracking; link to TASKS.md |
 | **No CLI scaffolding** | Not designed to `generate` code or project structure | Use GitHub Spec-Kit or `npm create` for scaffolding |
 | **No real-time collaboration** | File-based state means sequential phases, not concurrent | Each team member owns one phase; commit frequently |
 | **No model selection UI** | Users must edit command files to choose different models | Works with any frontier model; respects `CLAUDE_MODEL` env var |

@@ -94,7 +94,7 @@ SDD_MCP_Server_Architecture_Plan_v1.0.0_2026-03-20.md
 agents/     (old framework agents — keep for reference)
 hooks/      (old framework hooks — keep for reference)
 references/ (ears-notation.md, spec-templates.md — keep)
-sdd-market-analysis-2026/ (HTML site — keep)
+sdd-market-analysis-2026/ (internal analysis — not published in repo)
 ```
 
 ---

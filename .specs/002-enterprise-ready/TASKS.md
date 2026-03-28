@@ -98,7 +98,7 @@ Phase 2 + 3 + 4 ─────────→ Phase 5 (Enterprise)
 | T-061 | Update CLAUDE.md section 12 to reference only `.github/agents/` | S | T-060 | not-started |
 | T-062 | Improve `sdd_check_ecosystem` — detect which MCP servers are active vs just installed | M | — | not-started |
 | T-063 | Generate sample `.vscode/mcp.json` with snippet for each recommended MCP server | S | T-062 | not-started |
-| T-064 | Clean sub-repo `sdd-market-analysis-2026/` — move to separate repo or delete internal `.git` | S | — | not-started |
+| T-064 | Clean internal analysis sub-repo — move to separate repo or delete internal `.git` | S | — | not-started |
 | T-065 | Update workspace `.vscode/mcp.json` — use `npx specky-sdd` instead of `node dist/index.js` | S | — | not-started |
 | T-066 | Customizable templates — if `.specky/templates/` exists in user project, use instead of built-in | M | — | not-started |
 | T-067 | `sdd_import_document` — integrate with MarkItDown MCP when available (detect via ecosystem) | M | — | not-started |

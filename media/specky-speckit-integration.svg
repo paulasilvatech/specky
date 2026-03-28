@@ -21,7 +21,7 @@
 
   <!-- Title -->
   <text x="700" y="36" text-anchor="middle" font-size="22" font-weight="700" fill="#2C2C2A">The SDD Platform: Spec-Kit + Specky</text>
-  <text x="700" y="56" text-anchor="middle" font-size="13" fill="#5F5E5A">Part of the GitHub + Microsoft enterprise ecosystem. Competing with Kiro, Cursor, and Windsurf.</text>
+  <text x="700" y="56" text-anchor="middle" font-size="13" fill="#5F5E5A">Part of the GitHub + Microsoft enterprise ecosystem. Protocol-native MCP server for any IDE.</text>
   <rect x="460" y="66" width="480" height="3" rx="1.5" fill="url(#accent-bar)"/>
 
   <!-- ============================================================ -->
@@ -147,35 +147,35 @@
   <path d="M1030,384 L1030,410" stroke="#7FBA00" stroke-width="1.5" fill="none" marker-end="url(#arrow-green)"/>
 
   <!-- ============================================================ -->
-  <!-- COMPETITION SECTION                                           -->
+  <!-- KEY DIFFERENTIATORS SECTION                                    -->
   <!-- ============================================================ -->
 
-  <text x="700" y="528" text-anchor="middle" font-size="14" font-weight="700" fill="#2C2C2A">vs. The Competition</text>
+  <text x="700" y="528" text-anchor="middle" font-size="14" font-weight="700" fill="#2C2C2A">Key Differentiators</text>
 
-  <!-- Kiro -->
+  <!-- Differentiator 1 -->
   <g filter="url(#shadow)">
-    <rect x="100" y="546" width="350" height="56" rx="8" fill="#FFFFFF" stroke="#F25022" stroke-width="1.5"/>
+    <rect x="100" y="546" width="350" height="56" rx="8" fill="#FFFFFF" stroke="#7FBA00" stroke-width="1.5"/>
   </g>
-  <text x="130" y="572" font-size="13" font-weight="600" fill="#2C2C2A">Kiro (AWS)</text>
-  <text x="130" y="590" font-size="9" fill="#5F5E5A">Standalone IDE. EARS + PBT. Single model. Score: 2.85/5.0</text>
-  <rect x="370" y="558" width="60" height="20" rx="10" fill="#F25022" opacity="0.10"/>
-  <text x="400" y="572" text-anchor="middle" font-size="8" font-weight="700" fill="#F25022">2.85</text>
+  <text x="130" y="572" font-size="13" font-weight="600" fill="#2C2C2A">Protocol-Native MCP</text>
+  <text x="130" y="590" font-size="9" fill="#5F5E5A">53 tools via MCP. Works in any IDE. No vendor lock-in.</text>
+  <rect x="370" y="558" width="60" height="20" rx="10" fill="#7FBA00" opacity="0.10"/>
+  <text x="400" y="572" text-anchor="middle" font-size="8" font-weight="700" fill="#7FBA00">MCP</text>
 
-  <!-- Cursor -->
+  <!-- Differentiator 2 -->
   <g filter="url(#shadow)">
-    <rect x="525" y="546" width="350" height="56" rx="8" fill="#FFFFFF" stroke="#B4B2A9" stroke-width="1.5"/>
+    <rect x="525" y="546" width="350" height="56" rx="8" fill="#FFFFFF" stroke="#00A4EF" stroke-width="1.5"/>
   </g>
-  <text x="555" y="572" font-size="13" font-weight="600" fill="#2C2C2A">Cursor / Windsurf</text>
-  <text x="555" y="590" font-size="9" fill="#5F5E5A">IDE-locked. No SDD workflow. No compliance. Niche players.</text>
-  <rect x="790" y="558" width="60" height="20" rx="10" fill="#B4B2A9" opacity="0.15"/>
-  <text x="820" y="572" text-anchor="middle" font-size="8" font-weight="700" fill="#888780">Niche</text>
+  <text x="555" y="572" font-size="13" font-weight="600" fill="#2C2C2A">Enforced Pipeline</text>
+  <text x="555" y="590" font-size="9" fill="#5F5E5A">10 phases with gates. Not suggestions. Actual enforcement.</text>
+  <rect x="790" y="558" width="60" height="20" rx="10" fill="#00A4EF" opacity="0.15"/>
+  <text x="820" y="572" text-anchor="middle" font-size="8" font-weight="700" fill="#00A4EF">10</text>
 
-  <!-- GitHub + MS -->
+  <!-- Differentiator 3 -->
   <g filter="url(#shadow)">
     <rect x="950" y="546" width="350" height="56" rx="8" fill="#FFFFFF" stroke="#7FBA00" stroke-width="2"/>
   </g>
-  <text x="980" y="572" font-size="13" font-weight="600" fill="#2C2C2A">GitHub + Microsoft (Spec-Kit + Specky)</text>
-  <text x="980" y="590" font-size="9" fill="#5F5E5A">Full platform. SDD parity 4:4. Platform wins 14/14. Score: 4.25/5.0</text>
+  <text x="980" y="572" font-size="13" font-weight="600" fill="#2C2C2A">Enterprise Compliance</text>
+  <text x="980" y="590" font-size="9" fill="#5F5E5A">6 frameworks built-in. Air-gapped. Zero outbound calls. MIT.</text>
   <rect x="1220" y="558" width="60" height="20" rx="10" fill="#7FBA00" opacity="0.15"/>
   <text x="1250" y="572" text-anchor="middle" font-size="8" font-weight="700" fill="#527D00">4.25</text>
 

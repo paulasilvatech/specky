@@ -603,7 +603,7 @@ export function registerPipelineTools(
 
 **Decision:** `sdd_write_*` tools create real files on disk instead of returning content for the agent to save.
 
-**Rationale:** This is the whole point of the MCP server — the agent orchestrates the conversation while Specky handles file I/O and state management. This matches how Kiro works and avoids the "documentation-only" trap of the previous implementation.
+**Rationale:** This is the whole point of the MCP server — the agent orchestrates the conversation while Specky handles file I/O and state management. This matches how MCP-native servers work and avoids the "documentation-only" trap of the previous implementation.
 
 **Consequences:** The server needs `SDD_WORKSPACE` to know where to write. File operations must be safe (atomic writes, path sanitization). The `force` parameter prevents accidental overwrites.
 

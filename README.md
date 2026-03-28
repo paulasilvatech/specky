@@ -87,40 +87,25 @@ Specky adds a **deterministic engine** between your intent and your code:
 
 > **The AI is the operator; Specky is the engine.** The AI's creativity is channeled through a validated pipeline instead of producing unstructured guesswork. For a complete educational walkthrough, see [GETTING-STARTED.md](GETTING-STARTED.md).
 
-### Differentiators
+### What Makes Specky Different
 
-<p align="center">
-  <img src="media/comparison-matrix.svg" alt="Specky vs Spec-Kit vs Kiro vs Cursor" width="100%"/>
-</p>
-
-<details>
-<summary>View as table</summary>
-
-| Capability | Spec-Kit | Kiro | Cursor | **Specky** |
-|---|---|---|---|---|
-| Any input (PDF/DOCX/PPTX/transcript) to spec | No | No | No | **Yes** |
-| EARS validation (programmatic) | No | AI-tries | No | **Yes** |
-| State machine (10 phases) | No | No | No | **Yes** |
-| Auto-diagrams every phase (Mermaid) | No | No | No | **Yes** |
-| Terraform IaC generation | No | No | No | **Yes** |
-| Azure Boards + Jira + GitHub Issues (MCP) | Extension | No | No | **Yes** |
-| Figma design to spec (reverse) | No | No | No | **Yes** |
-| FigJam diagram generation | No | No | No | **Yes** |
-| Docker dev environment | No | No | No | **Yes** |
-| Codespaces setup | No | No | No | **Yes** |
-| Cross-artifact analysis | Yes | No | No | **Yes** |
-| Compliance (HIPAA/SOC2/GDPR) | No | No | No | **Yes** |
-| Phantom task detection | Extension | No | No | **Yes** |
-| Complete auto-documentation | No | No | No | **Yes** |
-| Educative outputs | No | No | No | **Yes** |
-| Turnkey spec from natural language | No | Partial (1 EARS pattern) | No | **Yes (5 EARS patterns)** |
-| Property-based testing (fast-check/Hypothesis) | No | Yes | No | **Yes** |
-| Checkpoint/restore for spec artifacts | No | Session-only | No | **Yes (persistent)** |
-| Executable hooks (file-save triggers) | No | Yes (IDE-level) | No | **Yes (Claude Code + GitHub Actions)** |
-| 53 MCP tools | N/A | N/A | N/A | **Yes** |
-| Works in ANY IDE via MCP | Templates | IDE-locked | IDE-locked | **Yes** |
-
-</details>
+| Capability | Specky |
+|---|---|
+| Any input (PDF, DOCX, PPTX, transcript, Figma) to spec | 53 MCP tools handle all input formats |
+| EARS validation (programmatic, not AI guessing) | 5 patterns enforced at schema level |
+| Enforced pipeline (not suggestions) | 10 phases with actual gates that block advancement |
+| 17 diagram types generated automatically | C4 (4 levels), sequence, ER, activity, use case, DFD, deployment, network |
+| Infrastructure as Code | Terraform, Bicep, Dockerfile from DESIGN.md |
+| Work item export | GitHub Issues, Azure Boards, Jira via MCP-to-MCP routing |
+| 6 compliance frameworks | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 built-in |
+| Cross-artifact traceability | Requirement to design to task to test to code |
+| Phantom task detection | Catches tasks marked done with no code evidence |
+| Property-based testing | fast-check (TypeScript) and Hypothesis (Python) |
+| Checkpoint/restore | Persistent snapshots of all spec artifacts |
+| 7 automation hooks | Tests, docs, security scan, spec sync, SRP, changelog, checkpoint |
+| Works in any MCP host | VS Code + Copilot, Claude Code, Cursor, Windsurf, or any MCP client |
+| Zero outbound network calls | Fully air-gapped, code never leaves your machine |
+| MIT open source | Fork it, extend it, audit it. No vendor lock, no seat pricing |
 
 
 ## Quick Start
@@ -885,9 +870,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 
 When you install Specky, you get the full Spec-Kit methodology reimplemented as validated MCP tools. **No separate installation of Spec-Kit needed.** But Spec-Kit remains available as a standalone learning tool for teams that want to adopt SDD concepts before using the engine.
 
-Together they form the **SDD layer** of the GitHub + Microsoft enterprise platform, competing with standalone approaches like Kiro (AWS), Cursor, and Windsurf.
-
-> 💡 **Key insight from the [SDD Market Analysis 2026](https://paulanunes85.github.io/sdd-market-analysis-2026/)**: SDD workflow scores are at competitive parity (4:4 tie). The enterprise platform surrounding the SDD layer is the differentiator: security, governance, multi-model freedom, and compliance. GitHub + Microsoft scores 4.25/5.0 vs Kiro's 2.85/5.0.
+Together they form the **SDD layer** of the GitHub + Microsoft enterprise platform. Specky reimplements the Spec-Kit methodology as enforceable MCP tools with compliance, traceability, and automation built in.
 
 ```json
 {
@@ -1166,7 +1149,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture details and how to add t
 - [SECURITY.md](SECURITY.md): Vulnerability disclosure policy and OWASP Top 10 coverage
 - [CONTRIBUTING.md](CONTRIBUTING.md): How to add tools, templates, or services
 - [Spec-Kit](https://github.com/paulasilvatech/spec-kit): The SDD methodology foundation
-- [SDD Market Analysis 2026](https://paulanunes85.github.io/sdd-market-analysis-2026/): Enterprise readiness comparison
 - [npm package](https://www.npmjs.com/package/specky-sdd): `specky-sdd` on npm
 
 
