@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Specky — Agentic Spec-Driven Development</title>
+<meta name="description" content="Open-source MCP server that closes the gap between specification and code. 53 tools, 10-phase pipeline, 6 compliance frameworks.">
+<meta name="theme-color" content="#7c3aed">
+<link rel="icon" type="image/svg+xml" href="specky-icon.svg">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --v50: #f5f3ff; --v100: #ede9fe; --v200: #ddd6fe;
+    --v300: #c4b5fd; --v400: #a78bfa; --v500: #8b5cf6;
+    --v600: #7c3aed; --v700: #6d28d9; --v800: #5b21b6;
+    --v900: #4c1d95;
+    --g50: #f9fafb; --g100: #f3f4f6; --g200: #e5e7eb;
+    --g300: #d1d5db; --g400: #9ca3af; --g500: #6b7280;
+    --g600: #4b5563; --g700: #374151; --g800: #1f2937;
+    --g900: #111827;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--g900); background: #fff;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    min-height: 100vh; position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    background: #fff;
+  }
+
+  /* Animated aurora gradient — smooth, premium */
+  .aurora {
+    position: absolute; inset: 0; z-index: 0; opacity: 0.5;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(124,58,237,0.15), transparent),
+      radial-gradient(ellipse 60% 50% at 20% 60%, rgba(167,139,250,0.08), transparent),
+      radial-gradient(ellipse 50% 40% at 80% 50%, rgba(139,92,246,0.06), transparent);
+    animation: aurora 10s ease-in-out infinite alternate;
+  }
+  @keyframes aurora {
+    0% { transform: translateY(0) scale(1); filter: blur(0px); }
+    100% { transform: translateY(-20px) scale(1.02); filter: blur(2px); }
+  }
+
+  .hero-inner {
+    position: relative; z-index: 1;
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 64px; align-items: center;
+    max-width: 1120px; width: 100%; padding: 40px 40px;
+  }
+
+  /* LEFT: copy */
+  .hero-copy { max-width: 520px; }
+
+  .hero-logo-full { height: 80px; width: auto; margin-bottom: 32px; }
+
+  .hero-copy h1 {
+    font-size: 3.6rem; font-weight: 900; line-height: 1.06;
+    letter-spacing: -2px; color: var(--g900); margin-bottom: 20px;
+  }
+  .hero-copy h1 span {
+    background: linear-gradient(135deg, var(--v700), var(--v500));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-copy .lead {
+    font-size: 1.12rem; color: var(--g500); line-height: 1.7;
+    margin-bottom: 10px;
+  }
+  .hero-copy .lead strong { color: var(--g700); font-weight: 600; }
+
+  .hero-copy .by {
+    font-size: 0.85rem; color: var(--g400); margin-bottom: 32px;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  .hero-copy .by strong { color: var(--v600); font-weight: 600; }
+  .hero-copy .by a {
+    color: var(--g400); text-decoration: none; transition: color 0.2s;
+    display: inline-flex; align-items: center; gap: 3px;
+  }
+  .hero-copy .by a:hover { color: var(--v600); }
+  .hero-copy .by .sep { color: var(--g300); }
+
+  .cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 24px; border-radius: 8px; font-size: 0.9rem;
+    font-weight: 600; text-decoration: none; transition: all 0.2s;
+    border: none; cursor: pointer;
+  }
+  .btn-primary {
+    background: var(--v600); color: #fff;
+    box-shadow: 0 1px 8px rgba(124,58,237,0.2);
+  }
+  .btn-primary:hover { background: var(--v700); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(124,58,237,0.25); }
+  .btn-ghost { background: transparent; color: var(--g600); border: 1px solid var(--g200); }
+  .btn-ghost:hover { background: var(--g50); border-color: var(--g300); }
+  .btn svg { width: 16px; height: 16px; }
+
+  .install-cmd {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem;
+    color: var(--g500); background: var(--g50); border: 1px solid var(--g200);
+    border-radius: 8px; padding: 10px 16px; cursor: pointer; transition: all 0.2s;
+  }
+  .install-cmd:hover { border-color: var(--v300); color: var(--v700); }
+  .install-cmd .d { color: var(--v500); }
+  .install-cmd .cp { font-family: 'Inter', sans-serif; font-size: 0.7rem; color: var(--g400); margin-left: 4px; }
+
+  /* RIGHT: terminal mockup */
+  .terminal {
+    background: var(--g900); border-radius: 12px; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.78rem;
+    line-height: 1.7; color: var(--g300);
+    transform: perspective(800px) rotateY(-2deg) rotateX(1deg);
+    transition: transform 0.4s ease;
+  }
+  .terminal:hover { transform: perspective(800px) rotateY(0) rotateX(0); }
+
+  .terminal-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 16px; background: var(--g800);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .terminal-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .terminal-dot.r { background: #ef4444; } .terminal-dot.y { background: #eab308; } .terminal-dot.g { background: #22c55e; }
+  .terminal-title { font-size: 0.7rem; color: var(--g500); margin-left: 8px; font-family: 'Inter', sans-serif; }
+
+  .terminal-body { padding: 20px; min-height: 320px; position: relative; }
+
+  .t-line { opacity: 0; animation: typeIn 0.3s ease forwards; white-space: nowrap; }
+  .t-line .prompt { color: var(--v400); }
+  .t-line .cmd { color: #e2e8f0; }
+  .t-line .flag { color: var(--v300); }
+  .t-line .ok { color: #4ade80; }
+  .t-line .dim { color: var(--g500); }
+  .t-line .warn { color: #facc15; }
+  .t-line .file { color: #67e8f9; }
+  .t-line .num { color: var(--v300); font-weight: 700; }
+
+  .t-line:nth-child(1) { animation-delay: 0.3s; }
+  .t-line:nth-child(2) { animation-delay: 0.8s; }
+  .t-line:nth-child(3) { animation-delay: 1.3s; }
+  .t-line:nth-child(4) { animation-delay: 1.6s; }
+  .t-line:nth-child(5) { animation-delay: 1.9s; }
+  .t-line:nth-child(6) { animation-delay: 2.2s; }
+  .t-line:nth-child(7) { animation-delay: 2.8s; }
+  .t-line:nth-child(8) { animation-delay: 3.3s; }
+  .t-line:nth-child(9) { animation-delay: 3.6s; }
+  .t-line:nth-child(10) { animation-delay: 3.9s; }
+  .t-line:nth-child(11) { animation-delay: 4.2s; }
+  .t-line:nth-child(12) { animation-delay: 4.8s; }
+  .t-line:nth-child(13) { animation-delay: 5.3s; }
+  .t-line:nth-child(14) { animation-delay: 5.6s; }
+
+  @keyframes typeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Blinking cursor on last line */
+  .cursor::after {
+    content: ''; display: inline-block; width: 7px; height: 14px;
+    background: var(--v400); margin-left: 2px; vertical-align: middle;
+    animation: blink 1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ===== STATS BAR ===== */
+  .stats-bar {
+    background: var(--g50); border-top: 1px solid var(--g200);
+    border-bottom: 1px solid var(--g200);
+    padding: 32px 24px;
+  }
+  .stats-bar-inner {
+    max-width: 900px; margin: 0 auto;
+    display: flex; justify-content: space-between; text-align: center;
+  }
+  .sbi-item .sbi-num {
+    font-size: 2rem; font-weight: 900; color: var(--v700); line-height: 1;
+  }
+  .sbi-item .sbi-label {
+    font-size: 0.72rem; color: var(--g400); text-transform: uppercase;
+    letter-spacing: 1.5px; margin-top: 6px; font-weight: 500;
+  }
+
+  /* ===== SECTIONS ===== */
+  section { padding: 88px 24px; }
+  .sec-inner { max-width: 1060px; margin: 0 auto; }
+
+  .sec-label {
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 2.5px; color: var(--v600); text-align: center; margin-bottom: 8px;
+  }
+  .sec-title {
+    font-size: 2rem; font-weight: 800; letter-spacing: -0.5px;
+    text-align: center; margin-bottom: 12px; color: var(--g900);
+  }
+  .sec-sub {
+    text-align: center; font-size: 1rem; color: var(--g500);
+    max-width: 520px; margin: 0 auto 48px; line-height: 1.6;
+  }
+
+  /* FEATURES */
+  .feat-section { background: #fff; }
+  .feat-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+
+  .feat {
+    background: var(--g50); border: 1px solid var(--g100);
+    border-radius: 12px; padding: 24px; transition: all 0.25s;
+  }
+  .feat:hover {
+    background: #fff; border-color: var(--v200);
+    box-shadow: 0 8px 24px rgba(124,58,237,0.06); transform: translateY(-3px);
+  }
+  .feat .fi {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; margin-bottom: 12px; background: #fff;
+    border: 1px solid var(--g200);
+  }
+  .feat:hover .fi { background: var(--v50); border-color: var(--v200); }
+  .feat h3 { font-size: 0.92rem; font-weight: 700; color: var(--g900); margin-bottom: 4px; }
+  .feat p { font-size: 0.82rem; color: var(--g500); line-height: 1.55; }
+
+  /* IDE SECTION */
+  .ide-section { background: var(--g50); }
+  .ide-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; max-width: 800px; margin: 0 auto; }
+  .ide {
+    background: #fff; border: 1px solid var(--g200); border-radius: 10px;
+    padding: 20px; text-align: center; transition: all 0.25s;
+  }
+  .ide:hover { border-color: var(--v300); transform: translateY(-2px); box-shadow: 0 4px 16px rgba(124,58,237,0.05); }
+  .ide .ii { font-size: 1.6rem; margin-bottom: 8px; }
+  .ide h3 { font-size: 0.85rem; font-weight: 700; color: var(--g900); margin-bottom: 2px; }
+  .ide p { font-size: 0.75rem; color: var(--g500); }
+  .ide .ib {
+    display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 20px;
+    font-size: 0.62rem; font-weight: 600; background: var(--v50);
+    color: var(--v600); border: 1px solid var(--v100);
+  }
+
+  /* DIFF SECTION */
+  .diff-section { background: #fff; }
+  .diff-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; max-width: 760px; margin: 0 auto; }
+  .di {
+    background: var(--g50); border: 1px solid var(--g100); border-radius: 10px;
+    padding: 18px 20px; display: flex; gap: 12px; align-items: flex-start;
+    transition: all 0.25s;
+  }
+  .di:hover { background: #fff; border-color: var(--v200); box-shadow: 0 4px 12px rgba(124,58,237,0.04); transform: translateY(-1px); }
+  .di-c {
+    width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
+    background: var(--v100); color: var(--v600);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700; margin-top: 1px;
+  }
+  .di h4 { font-size: 0.85rem; font-weight: 700; color: var(--g900); margin-bottom: 2px; }
+  .di p { font-size: 0.78rem; color: var(--g500); line-height: 1.45; }
+
+  /* FOOTER */
+  .footer {
+    background: var(--g50); border-top: 1px solid var(--g200);
+    text-align: center; padding: 64px 24px 40px;
+  }
+  .footer h2 { font-size: 2rem; font-weight: 900; color: var(--g900); letter-spacing: -0.5px; margin-bottom: 10px; }
+  .footer > p { color: var(--g500); font-size: 0.95rem; margin-bottom: 24px; }
+
+  .footer-links {
+    display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;
+    margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--g200);
+  }
+  .footer-links a { color: var(--g400); text-decoration: none; font-size: 0.82rem; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--v600); }
+  .footer-copy { margin-top: 16px; font-size: 0.78rem; color: var(--g400); }
+  .footer-copy a { color: var(--g400); text-decoration: none; transition: color 0.2s; }
+  .footer-copy a:hover { color: var(--v600); }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .hero-inner { grid-template-columns: 1fr; gap: 40px; text-align: center; padding: 100px 24px 60px; }
+    .hero-copy { max-width: 100%; margin: 0 auto; }
+    .hero-copy .by { justify-content: center; }
+    .hero-copy h1 { font-size: 2.8rem; }
+    .cta-row { justify-content: center; }
+    .install-cmd { margin: 0 auto; }
+    .terminal { transform: none; max-width: 500px; margin: 0 auto; }
+    .terminal:hover { transform: none; }
+    .feat-grid { grid-template-columns: 1fr; }
+    .ide-grid { grid-template-columns: repeat(2,1fr); }
+    .diff-grid { grid-template-columns: 1fr; }
+    .stats-bar-inner { flex-wrap: wrap; gap: 24px; justify-content: center; }
+  }
+  @media (max-width: 500px) {
+    .hero-copy h1 { font-size: 2.2rem; letter-spacing: -1px; }
+    .ide-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="aurora"></div>
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <img src="specky-logo-full.svg" alt="Specky" class="hero-logo-full">
+      <h1>Stop vibe coding.<br><span>Start spec coding.</span></h1>
+      <p class="lead">
+        <strong>Open-source MCP server</strong> that keeps your requirements, code, and tests in sync. 53 tools, 10-phase enforced pipeline, six compliance frameworks. Runs inside the IDE you already use.
+      </p>
+      <p class="by">Created by <strong>Paula Silva</strong> <span class="sep">·</span> <a href="https://github.com/paulasilvatech" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg> @paulasilvatech</a> <span class="sep">·</span> <a href="https://github.com/paulanunes85" target="_blank"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg> @paulanunes85</a></p>
+      <div class="cta-row">
+        <a href="https://github.com/paulasilvatech/specky" class="btn btn-primary" target="_blank">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          View on GitHub
+        </a>
+        <a href="https://www.npmjs.com/package/specky-sdd" class="btn btn-ghost" target="_blank">npm Package</a>
+      </div>
+      <div class="install-cmd" onclick="navigator.clipboard.writeText('npm install -g specky-sdd'); this.querySelector('.cp').textContent='copied!'">
+        <span class="d">$</span> npm install -g specky-sdd <span class="cp">copy</span>
+      </div>
+    </div>
+
+    <!-- Terminal demo -->
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="terminal-dot r"></div>
+        <div class="terminal-dot y"></div>
+        <div class="terminal-dot g"></div>
+        <span class="terminal-title">GitHub Copilot Agent Mode</span>
+      </div>
+      <div class="terminal-body">
+        <div class="t-line"><span class="prompt">&gt;</span> <span class="cmd">@spec-engineer</span> <span class="flag">write spec for user auth</span></div>
+        <div class="t-line"><span class="dim">Scanning codebase...</span></div>
+        <div class="t-line"><span class="ok">✓</span> <span class="dim">Detected:</span> TypeScript, React, PostgreSQL</div>
+        <div class="t-line"><span class="ok">✓</span> <span class="dim">Pipeline initialized at</span> <span class="file">Specify</span> <span class="dim">phase</span></div>
+        <div class="t-line"><span class="ok">✓</span> <span class="dim">EARS patterns applied:</span> <span class="num">12 requirements</span></div>
+        <div class="t-line"><span class="ok">✓</span> <span class="file">.specs/001-auth/SPECIFICATION.md</span> <span class="dim">created</span></div>
+        <div class="t-line">&nbsp;</div>
+        <div class="t-line"><span class="prompt">&gt;</span> <span class="cmd">@design-architect</span> <span class="flag">design the auth system</span></div>
+        <div class="t-line"><span class="ok">✓</span> <span class="dim">Architecture:</span> <span class="num">4 components</span><span class="dim">,</span> <span class="num">3 interfaces</span></div>
+        <div class="t-line"><span class="ok">✓</span> <span class="dim">Diagrams:</span> sequence, class, ERD, C4</div>
+        <div class="t-line"><span class="ok">✓</span> <span class="file">.specs/001-auth/DESIGN.md</span> <span class="dim">created</span></div>
+        <div class="t-line">&nbsp;</div>
+        <div class="t-line"><span class="prompt">&gt;</span> <span class="cmd">@spec-reviewer</span> <span class="flag">verify traceability</span></div>
+        <div class="t-line"><span class="ok">✓</span> <span class="dim">Coverage:</span> <span class="num">12/12</span> <span class="dim">requirements traced</span> <span class="cursor"></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STATS BAR ===== -->
+<div class="stats-bar">
+  <div class="stats-bar-inner">
+    <div class="sbi-item"><div class="sbi-num">53</div><div class="sbi-label">MCP Tools</div></div>
+    <div class="sbi-item"><div class="sbi-num">10</div><div class="sbi-label">Pipeline Phases</div></div>
+    <div class="sbi-item"><div class="sbi-num">6</div><div class="sbi-label">Compliance Frameworks</div></div>
+    <div class="sbi-item"><div class="sbi-num">17</div><div class="sbi-label">Diagram Types</div></div>
+    <div class="sbi-item"><div class="sbi-num">7</div><div class="sbi-label">Automation Hooks</div></div>
+  </div>
+</div>
+
+<!-- ===== FEATURES ===== -->
+<section class="feat-section">
+  <div class="sec-inner">
+    <div class="sec-label">Why Specky</div>
+    <div class="sec-title">Your specs should live next to your code</div>
+    <div class="sec-sub">Not another code generator. The layer that makes sure what you build matches what you planned.</div>
+
+    <div class="feat-grid">
+      <div class="feat">
+        <div class="fi">🔗</div>
+        <h3>Native MCP Server</h3>
+        <p>53 tools through the Model Context Protocol. Any MCP host, no plugins, no extensions needed.</p>
+      </div>
+      <div class="feat">
+        <div class="fi">🛡️</div>
+        <h3>Six Compliance Frameworks</h3>
+        <p>HIPAA, SOC 2, GDPR, PCI DSS, ISO 27001. Validate specs against regulatory controls before writing code.</p>
+      </div>
+      <div class="feat">
+        <div class="fi">🔒</div>
+        <h3>Nothing Leaves Your Machine</h3>
+        <p>Zero outbound calls. Two dependencies. No eval(). Works fully offline and in air-gapped environments.</p>
+      </div>
+      <div class="feat">
+        <div class="fi">🔀</div>
+        <h3>MCP to MCP Routing</h3>
+        <p>Push to GitHub, Terraform, Docker, Jira, Azure DevOps, Figma. Specky generates payloads, your client delivers.</p>
+      </div>
+      <div class="feat">
+        <div class="fi">📐</div>
+        <h3>EARS Notation</h3>
+        <p>Five patterns that guarantee every requirement is testable, traceable, and unambiguous.</p>
+      </div>
+      <div class="feat">
+        <div class="fi">🤖</div>
+        <h3>Seven Automation Hooks</h3>
+        <p>Tests, docs, security, spec sync, SRP checks, changelog, checkpoints. Run on save, catch problems early.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== IDE ===== -->
+<section class="ide-section">
+  <div class="sec-inner">
+    <div class="sec-label">Integrations</div>
+    <div class="sec-title">Works inside your IDE</div>
+    <div class="sec-sub">No new editor. No new account. Plugs into what you already use.</div>
+
+    <div class="ide-grid">
+      <div class="ide">
+        <div class="ii">🧠</div>
+        <h3>GitHub Copilot</h3>
+        <p>5 custom agents</p>
+        <div class="ib">@spec-engineer @design-architect +3</div>
+      </div>
+      <div class="ide">
+        <div class="ii">⚡</div>
+        <h3>Claude Code</h3>
+        <p>12 slash commands</p>
+        <div class="ib">/sdd:spec /sdd:design +10</div>
+      </div>
+      <div class="ide">
+        <div class="ii">🔮</div>
+        <h3>Cursor</h3>
+        <p>Full MCP access</p>
+        <div class="ib">53 tools</div>
+      </div>
+      <div class="ide">
+        <div class="ii">🌐</div>
+        <h3>Any MCP Host</h3>
+        <p>stdio + HTTP</p>
+        <div class="ib">Future proof</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DIFF ===== -->
+<section class="diff-section">
+  <div class="sec-inner">
+    <div class="sec-label">What makes it different</div>
+    <div class="sec-title">Built different on purpose</div>
+    <div class="sec-sub">Designed around what matters when shipping production software.</div>
+
+    <div class="diff-grid">
+      <div class="di">
+        <div class="di-c">✓</div>
+        <div><h4>Open source, MIT license</h4><p>Fork it, extend it, audit it. No vendor lock, no seat pricing.</p></div>
+      </div>
+      <div class="di">
+        <div class="di-c">✓</div>
+        <div><h4>10 enforced pipeline phases</h4><p>Not suggestions. Actual gates that prevent skipping steps.</p></div>
+      </div>
+      <div class="di">
+        <div class="di-c">✓</div>
+        <div><h4>Works in any MCP host</h4><p>No proprietary IDE. Use Copilot, Claude Code, Cursor, or whatever comes next.</p></div>
+      </div>
+      <div class="di">
+        <div class="di-c">✓</div>
+        <div><h4>Fully offline capable</h4><p>Code never leaves your machine. Air-gapped environments fully supported.</p></div>
+      </div>
+      <div class="di">
+        <div class="di-c">✓</div>
+        <div><h4>17 diagram types</h4><p>Sequence, class, ERD, state, C4, deployment and more from your specs.</p></div>
+      </div>
+      <div class="di">
+        <div class="di-c">✓</div>
+        <div><h4>Tests for 6 frameworks</h4><p>Vitest, Jest, Playwright, Pytest, JUnit, xUnit. Plus property-based testing.</p></div>
+      </div>
+      <div class="di">
+        <div class="di-c">✓</div>
+        <div><h4>Infrastructure as Code</h4><p>Terraform, Bicep, Dockerfiles generated from your design docs.</p></div>
+      </div>
+      <div class="di">
+        <div class="di-c">✓</div>
+        <div><h4>6 compliance frameworks</h4><p>HIPAA, SOC 2, GDPR, PCI DSS, ISO 27001. Validate before you code.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FOOTER ===== -->
+<div class="footer">
+  <h2>Spec it before you ship it.</h2>
+  <p>Install in 60 seconds. No signup. No new IDE.</p>
+  <div class="cta-row" style="justify-content:center">
+    <a href="https://github.com/paulasilvatech/specky" class="btn btn-primary" target="_blank">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+      Get Started on GitHub
+    </a>
+  </div>
+  <div class="footer-links">
+    <a href="https://github.com/paulasilvatech/specky" target="_blank">GitHub</a>
+    <a href="https://www.npmjs.com/package/specky-sdd" target="_blank">npm</a>
+    <a href="https://github.com/paulasilvatech/specky/blob/main/CLAUDE.md" target="_blank">Docs</a>
+    <a href="https://github.com/paulasilvatech/specky/blob/main/references/ears-notation.md" target="_blank">EARS Guide</a>
+    <a href="https://github.com/paulasilvatech/specky/blob/main/CONTRIBUTING.md" target="_blank">Contribute</a>
+    <a href="https://github.com/paulasilvatech/specky/blob/main/LICENSE" target="_blank">MIT License</a>
+  </div>
+  <div class="footer-copy">Created by Paula Silva · <a href="https://github.com/paulasilvatech" target="_blank">@paulasilvatech</a> · <a href="https://github.com/paulanunes85" target="_blank">@paulanunes85</a></div>
+</div>
+
+</body>
+</html>

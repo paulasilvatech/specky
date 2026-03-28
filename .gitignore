@@ -9,3 +9,14 @@ SESSION_LOG_*.md
 .vscode/mcp.json
 !.vscode/mcp.json.example
 docs/
+
+# Internal materials — NOT for public repo
+brand/specky-brand-guide.html
+brand/specky-brand-voice.html
+brand/specky-icon.svg
+brand/specky-logo-dark.svg
+brand/specky-logo-full.svg
+brand/specky-mono.svg
+brand/specky-wordmark.svg
+reports/competitive-analysis-specky-vs-kiro.html
+reports/v3-audit-report.md
