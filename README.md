@@ -190,8 +190,7 @@ Add a config file to the repo so teammates get Specky automatically on clone —
 {
   "servers": {
     "specky": {
-      "command": "npx",
-      "args": ["-y", "specky-sdd"],
+      "command": "specky-sdd",
       "env": { "SDD_WORKSPACE": "${workspaceFolder}" }
     }
   }
@@ -200,7 +199,7 @@ Add a config file to the repo so teammates get Specky automatically on clone —
 
 **Claude Code**:
 ```bash
-claude mcp add specky -- npx -y specky-sdd
+claude mcp add specky -- specky-sdd
 ```
 
 > Commit `.vscode/mcp.json` to Git so every team member gets Specky automatically.

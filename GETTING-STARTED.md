@@ -1,6 +1,6 @@
 # Getting Started with Specky. From Zero to Production-Ready Specifications
 
-> **Specky v3.1.0** | 56 MCP tools for the full specification lifecycle.
+> **Specky v3.2.0** | 57 MCP tools for the full specification lifecycle.
 >
 > This guide assumes no prior knowledge of MCP, Spec-Driven Development, or EARS notation. By the end, you will have a production-grade specification written, validated, exported to your project tracker, and backed by generated infrastructure code.
 
@@ -273,7 +273,7 @@ You can test that Specky responds to MCP handshakes:
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | npx specky-sdd 2>/dev/null
 ```
 
-A successful response includes `"serverInfo":{"name":"specky","version":"3.1.0"}` and a list of 56 tools.
+A successful response includes `"serverInfo":{"name":"specky","version":"3.2.0"}` and a list of 57 tools.
 
 
 ## 5. Configuring in VS Code with GitHub Copilot
@@ -642,7 +642,7 @@ If any requirement lacks a design component, task, or acceptance criteria, the g
 
 ## 8. Importing Documents
 
-Specky v3.1.0 can import existing documents and convert them into structured specifications. This is useful when requirements already exist in PDFs, Word documents, PowerPoint decks, or meeting transcripts.
+Specky v3.2.0 can import existing documents and convert them into structured specifications. This is useful when requirements already exist in PDFs, Word documents, PowerPoint decks, or meeting transcripts.
 
 ### Importing a single document
 
@@ -1293,7 +1293,7 @@ sdd_implement --> code --> sdd_verify_tasks --> sdd_create_pr
 
 ## 17. Tool Reference Summary
 
-Specky v3.1.0 provides 56 MCP tools organized into eight groups.
+Specky v3.2.0 provides 57 MCP tools organized into eight groups.
 
 ### Pipeline Tools (8)
 
