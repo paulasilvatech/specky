@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <!-- Gradient for the main shield -->
+    <linearGradient id="shieldGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0078D4"/>
+      <stop offset="100%" stop-color="#005A9E"/>
+    </linearGradient>
+    <!-- Glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <!-- Shadow -->
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="white"/>
+  <circle cx="256" cy="256" r="240" fill="url(#shieldGrad)" opacity="0.04"/>
+
+  <!-- Main shield shape — represents spec protection/validation -->
+  <path d="M256 52 L420 130 L420 280 Q420 380 256 460 Q92 380 92 280 L92 130 Z"
+        fill="url(#shieldGrad)" filter="url(#shadow)" opacity="0.95"/>
+
+  <!-- Inner shield highlight -->
+  <path d="M256 72 L400 142 L400 276 Q400 366 256 440 Q112 366 112 276 L112 142 Z"
+        fill="none" stroke="white" stroke-width="2" opacity="0.2"/>
+
+  <!-- Document/spec icon (center) -->
+  <rect x="188" y="148" width="136" height="176" rx="8" fill="white" opacity="0.95"/>
+  <rect x="188" y="148" width="136" height="32" rx="8" fill="#FFB900"/>
+  <rect x="188" y="172" width="136" height="8" rx="0" fill="#FFB900"/>
+
+  <!-- Document lines (EARS requirements) -->
+  <rect x="204" y="196" width="80" height="4" rx="2" fill="#0078D4" opacity="0.6"/>
+  <rect x="204" y="210" width="104" height="4" rx="2" fill="#2C2C2A" opacity="0.3"/>
+  <rect x="204" y="224" width="96" height="4" rx="2" fill="#2C2C2A" opacity="0.3"/>
+
+  <rect x="204" y="244" width="70" height="4" rx="2" fill="#0078D4" opacity="0.6"/>
+  <rect x="204" y="258" width="104" height="4" rx="2" fill="#2C2C2A" opacity="0.3"/>
+  <rect x="204" y="272" width="88" height="4" rx="2" fill="#2C2C2A" opacity="0.3"/>
+
+  <rect x="204" y="292" width="76" height="4" rx="2" fill="#0078D4" opacity="0.6"/>
+  <rect x="204" y="306" width="100" height="4" rx="2" fill="#2C2C2A" opacity="0.3"/>
+
+  <!-- Checkmark badges (validation/quality) -->
+  <!-- Green check top-right -->
+  <circle cx="340" cy="164" r="24" fill="#7FBA00" filter="url(#glow)"/>
+  <path d="M328 164 L336 172 L352 156" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Pipeline nodes at bottom (3 dots connected = pipeline) -->
+  <circle cx="196" cy="370" r="12" fill="#F25022" opacity="0.9"/>
+  <circle cx="256" cy="370" r="12" fill="#FFB900" opacity="0.9"/>
+  <circle cx="316" cy="370" r="12" fill="#7FBA00" opacity="0.9"/>
+
+  <!-- Pipeline connections -->
+  <line x1="208" y1="370" x2="244" y2="370" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  <line x1="268" y1="370" x2="304" y2="370" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+
+  <!-- Small arrows on pipeline -->
+  <path d="M238 366 L244 370 L238 374" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.7"/>
+  <path d="M298 366 L304 370 L298 374" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.7"/>
+
+  <!-- S letterform overlay (subtle, watermark-style) -->
+  <text x="256" y="420" text-anchor="middle" font-family="system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="28" font-weight="800" letter-spacing="6" fill="white" opacity="0.9">SPECKY</text>
+</svg>

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="256" y2="256" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0078D4"/>
+      <stop offset="100%" stop-color="#004E8C"/>
+    </linearGradient>
+    <linearGradient id="docTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFB900"/>
+      <stop offset="100%" stop-color="#E6A700"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect width="256" height="256" rx="48" fill="url(#bg)"/>
+
+  <!-- Subtle inner glow -->
+  <rect x="4" y="4" width="248" height="248" rx="44" fill="none" stroke="white" stroke-width="1" opacity="0.1"/>
+
+  <!-- Document body -->
+  <rect x="64" y="42" width="128" height="148" rx="10" fill="white"/>
+
+  <!-- Document header (yellow — EARS spec) -->
+  <rect x="64" y="42" width="128" height="30" rx="10" fill="url(#docTop)"/>
+  <rect x="64" y="62" width="128" height="10" fill="url(#docTop)"/>
+
+  <!-- EARS requirement lines -->
+  <!-- REQ 1 -->
+  <rect x="80" y="84" width="52" height="5" rx="2.5" fill="#0078D4" opacity="0.5"/>
+  <rect x="80" y="94" width="96" height="4" rx="2" fill="#8A8886" opacity="0.25"/>
+  <rect x="80" y="103" width="80" height="4" rx="2" fill="#8A8886" opacity="0.25"/>
+
+  <!-- REQ 2 -->
+  <rect x="80" y="118" width="44" height="5" rx="2.5" fill="#0078D4" opacity="0.5"/>
+  <rect x="80" y="128" width="88" height="4" rx="2" fill="#8A8886" opacity="0.25"/>
+  <rect x="80" y="137" width="72" height="4" rx="2" fill="#8A8886" opacity="0.25"/>
+
+  <!-- REQ 3 -->
+  <rect x="80" y="152" width="60" height="5" rx="2.5" fill="#0078D4" opacity="0.5"/>
+  <rect x="80" y="162" width="96" height="4" rx="2" fill="#8A8886" opacity="0.25"/>
+  <rect x="80" y="171" width="68" height="4" rx="2" fill="#8A8886" opacity="0.25"/>
+
+  <!-- Green validation checkmark badge (top-right corner) -->
+  <circle cx="196" cy="56" r="22" fill="#7FBA00"/>
+  <circle cx="196" cy="56" r="22" fill="none" stroke="white" stroke-width="2" opacity="0.3"/>
+  <path d="M184 56 L192 64 L208 48" stroke="white" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Pipeline bar (bottom) -->
+  <!-- 3 phase dots with connecting lines -->
+  <circle cx="88" cy="214" r="10" fill="#F25022"/>
+  <circle cx="128" cy="214" r="10" fill="#FFB900"/>
+  <circle cx="168" cy="214" r="10" fill="#7FBA00"/>
+
+  <!-- Connections -->
+  <line x1="98" y1="214" x2="118" y2="214" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <line x1="138" y1="214" x2="158" y2="214" stroke="white" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- Arrows -->
+  <path d="M114 210 L118 214 L114 218" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.6"/>
+  <path d="M154 210 L158 214 L154 218" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.6"/>
+</svg>

@@ -1,0 +1,254 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <!-- Arrow marker: muted gray #B4B2A9 -->
+    <marker id="arrow" viewBox="0 0 10 7" refX="10" refY="3.5"
+            markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,3.5 L0,7 z" fill="#B4B2A9"/>
+    </marker>
+    <!-- Arrow marker: green for Specky outbound -->
+    <marker id="arrow-green" viewBox="0 0 10 7" refX="10" refY="3.5"
+            markerWidth="8" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,3.5 L0,7 z" fill="#7FBA00"/>
+    </marker>
+  </defs>
+
+  <!-- ================================================================
+       BACKGROUND: white
+       ================================================================ -->
+  <rect width="1200" height="720" fill="#FFFFFF"/>
+
+  <!-- ================================================================
+       TITLE AREA: y=0..80
+       Title centered at x=600, y=36
+       Subtitle at y=56
+       Accent bar: y=70, x=480..720 (240px wide, 4 segments of 60px)
+       ================================================================ -->
+  <text x="600" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#2C2C2A">
+    Specky v3.0 — MCP Ecosystem Architecture
+  </text>
+  <text x="600" y="56" text-anchor="middle" font-size="13" fill="#888780">
+    53 tools · 10-phase pipeline · MCP-to-MCP orchestration · built on Spec-Kit SDD
+  </text>
+  <!-- 4-color accent bar: x=480, width=240, 4x60px segments, height=3 -->
+  <rect x="480" y="66" width="60" height="3" rx="1.5" fill="#0078D4"/>
+  <rect x="540" y="66" width="60" height="3" rx="1.5" fill="#7FBA00"/>
+  <rect x="600" y="66" width="60" height="3" rx="1.5" fill="#FFB900"/>
+  <rect x="660" y="66" width="60" height="3" rx="1.5" fill="#F25022"/>
+
+  <!-- ================================================================
+       ROW 1: INPUT SOURCES (Blue section)
+       Section bg: y=82..240, full width with padding
+       Section label at y=102
+       5 boxes evenly spaced, box height=56, y=116..172
+       Box positions: x centers at 140, 340, 540, 740, 940
+       Box width=170, so x starts at center-85
+       Merge point: diamond at (540, 214)
+       ================================================================ -->
+  <!-- Section background: blue at 0.04 opacity -->
+  <rect x="24" y="82" width="1152" height="162" rx="8" fill="#0078D4" opacity="0.04"/>
+  <!-- Section label -->
+  <text x="48" y="102" font-size="11" font-weight="600" fill="#0078D4" letter-spacing="1.5">
+    INPUT SOURCES
+  </text>
+
+  <!-- Box 1: Meeting Transcript — center=(140, 144), w=170, h=56 → x=55, y=116 -->
+  <rect x="55" y="116" width="170" height="56" rx="6" fill="#FFFFFF" stroke="#0078D4" stroke-width="1.5"/>
+  <text x="140" y="140" text-anchor="middle" font-size="12" font-weight="600" fill="#2C2C2A">Meeting</text>
+  <text x="140" y="156" text-anchor="middle" font-size="12" font-weight="600" fill="#2C2C2A">Transcript</text>
+
+  <!-- Box 2: PDF / DOCX / PPTX — center=(340, 144) -->
+  <rect x="255" y="116" width="170" height="56" rx="6" fill="#FFFFFF" stroke="#0078D4" stroke-width="1.5"/>
+  <text x="340" y="140" text-anchor="middle" font-size="12" font-weight="600" fill="#2C2C2A">PDF / DOCX</text>
+  <text x="340" y="156" text-anchor="middle" font-size="12" font-weight="600" fill="#2C2C2A">/ PPTX</text>
+
+  <!-- Box 3: Figma Design — center=(540, 144) -->
+  <rect x="455" y="116" width="170" height="56" rx="6" fill="#FFFFFF" stroke="#F25022" stroke-width="1.5"/>
+  <text x="540" y="148" text-anchor="middle" font-size="12" font-weight="600" fill="#2C2C2A">Figma Design</text>
+
+  <!-- Box 4: User Prompt — center=(740, 144) -->
+  <rect x="655" y="116" width="170" height="56" rx="6" fill="#FFFFFF" stroke="#0078D4" stroke-width="1.5"/>
+  <text x="740" y="148" text-anchor="middle" font-size="12" font-weight="600" fill="#2C2C2A">User Prompt</text>
+
+  <!-- Box 5: Markdown — center=(940, 144) -->
+  <rect x="855" y="116" width="170" height="56" rx="6" fill="#FFFFFF" stroke="#0078D4" stroke-width="1.5"/>
+  <text x="940" y="148" text-anchor="middle" font-size="12" font-weight="600" fill="#2C2C2A">Markdown</text>
+
+  <!-- Merge point: diamond at (540, 218) -->
+  <polygon points="540,204 554,218 540,232 526,218" fill="#FFFFFF" stroke="#B4B2A9" stroke-width="1.5"/>
+
+  <!-- Arrows from each box bottom (y=172) down to merge diamond top (y=204)
+       Orthogonal routing with Q-curve corners (radius 8)
+       Each line goes: box.bottom.center → down to y=188 → horizontal to x=540 → down to diamond
+  -->
+  <!-- Box 1 (x=140): down to y=188, right to x=540, down to y=204 -->
+  <path d="M140,172 L140,188 Q140,196 148,196 L532,196 Q540,196 540,204"
+        fill="none" stroke="#B4B2A9" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <!-- Box 2 (x=340): down to y=188, right to x=540, down to y=204 -->
+  <path d="M340,172 L340,188 Q340,196 348,196 L532,196 Q540,196 540,204"
+        fill="none" stroke="#B4B2A9" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <!-- Box 3 (x=540): straight down -->
+  <line x1="540" y1="172" x2="540" y2="204" stroke="#B4B2A9" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <!-- Box 4 (x=740): down to y=188, left to x=540, down to y=204 -->
+  <path d="M740,172 L740,188 Q740,196 732,196 L548,196 Q540,196 540,204"
+        fill="none" stroke="#B4B2A9" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <!-- Box 5 (x=940): down to y=188, left to x=540, down to y=204 -->
+  <path d="M940,172 L940,188 Q940,196 932,196 L548,196 Q540,196 540,204"
+        fill="none" stroke="#B4B2A9" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+  <!-- ================================================================
+       ROW 2: SPECKY MCP SERVER (Green section)
+       Section bg: y=254..400
+       Central box: center=(600, 327), w=520, h=90 → x=340, y=282
+       Sub-text inside box
+       Badge: "v2.0.0" pill
+       ================================================================ -->
+  <rect x="24" y="254" width="1152" height="150" rx="8" fill="#7FBA00" opacity="0.04"/>
+  <text x="48" y="274" font-size="11" font-weight="600" fill="#7FBA00" letter-spacing="1.5">
+    SPECKY MCP SERVER
+  </text>
+
+  <!-- Arrow from merge diamond bottom (540, 232) to central box top (600, 288) -->
+  <path d="M540,232 L540,264 Q540,272 548,272 L592,272 Q600,272 600,280 L600,288"
+        fill="none" stroke="#7FBA00" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+
+  <!-- Central box: green border, wider -->
+  <rect x="300" y="288" width="600" height="96" rx="8" fill="#FFFFFF" stroke="#7FBA00" stroke-width="2"/>
+  <!-- Title inside box -->
+  <text x="600" y="318" text-anchor="middle" font-size="16" font-weight="700" fill="#2C2C2A">
+    Specky MCP Server
+  </text>
+  <!-- Sub-features -->
+  <text x="600" y="342" text-anchor="middle" font-size="12" fill="#5F5E5A">
+    53 Tools · State Machine · EARS Validator · Diagram Generator
+  </text>
+  <!-- Capability tags row -->
+  <rect x="380" y="354" width="90" height="20" rx="10" fill="#7FBA00" opacity="0.12"/>
+  <text x="425" y="367" text-anchor="middle" font-size="10" font-weight="600" fill="#7FBA00">10 Phases</text>
+  <rect x="480" y="354" width="110" height="20" rx="10" fill="#0078D4" opacity="0.12"/>
+  <text x="535" y="367" text-anchor="middle" font-size="10" font-weight="600" fill="#0078D4">MCP Protocol</text>
+  <rect x="600" y="354" width="100" height="20" rx="10" fill="#FFB900" opacity="0.12"/>
+  <text x="650" y="367" text-anchor="middle" font-size="10" font-weight="600" fill="#FFB900">SDD Specs</text>
+  <rect x="710" y="354" width="90" height="20" rx="10" fill="#F25022" opacity="0.12"/>
+  <text x="755" y="367" text-anchor="middle" font-size="10" font-weight="600" fill="#F25022">Quality Gates</text>
+
+  <!-- Version badge: top-right of box -->
+  <rect x="835" y="292" width="58" height="20" rx="10" fill="#7FBA00"/>
+  <text x="864" y="305" text-anchor="middle" font-size="10" font-weight="700" fill="#FFFFFF">v3.0.0</text>
+
+  <!-- ================================================================
+       ROW 3: EXTERNAL MCP SERVERS
+       Section bg: y=414..600
+       7 boxes evenly distributed
+       Box width=140, height=72, gap between boxes ~12px
+       Total width for 7 boxes: 7*140 + 6*12 = 980+72 = 1052
+       Start x = (1200 - 1052)/2 = 74
+       Box centers: 74+70=144, 144+152=296, 296+152=448, 448+152=600, 600+152=752, 752+152=904, 904+152=1056
+       Box top y = 454, bottom y = 526
+       ================================================================ -->
+  <rect x="24" y="414" width="1152" height="186" rx="8" fill="#5F5E5A" opacity="0.03"/>
+  <text x="48" y="434" font-size="11" font-weight="600" fill="#5F5E5A" letter-spacing="1.5">
+    EXTERNAL MCP SERVERS
+  </text>
+
+  <!-- Arrows from Specky box bottom center (600, 384) fanning out to each external box top (y=454)
+       Use orthogonal routing with Q-curve radius 8
+       Intermediate horizontal line at y=424
+  -->
+
+  <!-- Box E1: GitHub MCP — center=(144, 490), x=74, y=454, w=140, h=72 -->
+  <rect x="74" y="454" width="140" height="72" rx="6" fill="#FFFFFF" stroke="#0078D4" stroke-width="1.5"/>
+  <text x="144" y="478" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">GitHub MCP</text>
+  <text x="144" y="494" text-anchor="middle" font-size="10" fill="#888780">Issues, PRs,</text>
+  <text x="144" y="508" text-anchor="middle" font-size="10" fill="#888780">Codespaces</text>
+  <!-- Arrow: (600,384) → down to 408 → left to 144 → down to 454 -->
+  <path d="M600,384 L600,408 Q600,416 592,416 L152,416 Q144,416 144,424 L144,454"
+        fill="none" stroke="#B4B2A9" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+  <!-- Box E2: Azure DevOps MCP — center=(296, 490) -->
+  <rect x="226" y="454" width="140" height="72" rx="6" fill="#FFFFFF" stroke="#0078D4" stroke-width="1.5"/>
+  <text x="296" y="478" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">Azure DevOps</text>
+  <text x="296" y="494" text-anchor="middle" font-size="10" fill="#888780">Boards,</text>
+  <text x="296" y="508" text-anchor="middle" font-size="10" fill="#888780">Work Items</text>
+  <path d="M600,384 L600,408 Q600,416 592,416 L304,416 Q296,416 296,424 L296,454"
+        fill="none" stroke="#B4B2A9" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+  <!-- Box E3: Jira MCP — center=(448, 490) -->
+  <rect x="378" y="454" width="140" height="72" rx="6" fill="#FFFFFF" stroke="#FFB900" stroke-width="1.5"/>
+  <text x="448" y="478" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">Jira MCP</text>
+  <text x="448" y="494" text-anchor="middle" font-size="10" fill="#888780">Issues,</text>
+  <text x="448" y="508" text-anchor="middle" font-size="10" fill="#888780">Projects</text>
+  <path d="M600,384 L600,408 Q600,416 592,416 L456,416 Q448,416 448,424 L448,454"
+        fill="none" stroke="#B4B2A9" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+  <!-- Box E4: Terraform MCP — center=(600, 490) -->
+  <rect x="530" y="454" width="140" height="72" rx="6" fill="#FFFFFF" stroke="#7FBA00" stroke-width="1.5"/>
+  <text x="600" y="478" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">Terraform MCP</text>
+  <text x="600" y="494" text-anchor="middle" font-size="10" fill="#888780">Plan,</text>
+  <text x="600" y="508" text-anchor="middle" font-size="10" fill="#888780">Validate</text>
+  <!-- Straight down -->
+  <line x1="600" y1="384" x2="600" y2="454" stroke="#B4B2A9" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+  <!-- Box E5: Azure MCP — center=(752, 490) -->
+  <rect x="682" y="454" width="140" height="72" rx="6" fill="#FFFFFF" stroke="#0078D4" stroke-width="1.5"/>
+  <text x="752" y="478" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">Azure MCP</text>
+  <text x="752" y="494" text-anchor="middle" font-size="10" fill="#888780">Infra</text>
+  <text x="752" y="508" text-anchor="middle" font-size="10" fill="#888780">Validation</text>
+  <path d="M600,384 L600,408 Q600,416 608,416 L744,416 Q752,416 752,424 L752,454"
+        fill="none" stroke="#B4B2A9" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+  <!-- Box E6: Figma MCP — center=(904, 490) -->
+  <rect x="834" y="454" width="140" height="72" rx="6" fill="#FFFFFF" stroke="#F25022" stroke-width="1.5"/>
+  <text x="904" y="478" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">Figma MCP</text>
+  <text x="904" y="494" text-anchor="middle" font-size="10" fill="#888780">Design,</text>
+  <text x="904" y="508" text-anchor="middle" font-size="10" fill="#888780">FigJam</text>
+  <path d="M600,384 L600,408 Q600,416 608,416 L896,416 Q904,416 904,424 L904,454"
+        fill="none" stroke="#B4B2A9" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+  <!-- Box E7: Docker MCP — center=(1056, 490) -->
+  <rect x="986" y="454" width="140" height="72" rx="6" fill="#FFFFFF" stroke="#0078D4" stroke-width="1.5"/>
+  <text x="1056" y="478" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">Docker MCP</text>
+  <text x="1056" y="494" text-anchor="middle" font-size="10" fill="#888780">Dev</text>
+  <text x="1056" y="508" text-anchor="middle" font-size="10" fill="#888780">Environments</text>
+  <path d="M600,384 L600,408 Q600,416 608,416 L1048,416 Q1056,416 1056,424 L1056,454"
+        fill="none" stroke="#B4B2A9" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+  <!-- ================================================================
+       AI CLIENT ORCHESTRATION NOTE
+       y=548..570, centered
+       ================================================================ -->
+  <rect x="340" y="544" width="520" height="32" rx="16" fill="#2C2C2A" opacity="0.06"/>
+  <text x="600" y="564" text-anchor="middle" font-size="11" font-weight="600" fill="#5F5E5A">
+    AI Client (Claude, Copilot, Cursor) orchestrates routing between MCP servers
+  </text>
+
+  <!-- ================================================================
+       LEGEND: y=616..690
+       4 color swatches + labels, centered
+       Swatch positions: x=280, 440, 600, 760 (spacing 160)
+       ================================================================ -->
+  <rect x="24" y="616" width="1152" height="80" rx="8" fill="#D3D1C7" opacity="0.15"/>
+  <text x="600" y="638" text-anchor="middle" font-size="11" font-weight="600" fill="#5F5E5A" letter-spacing="1">
+    LEGEND
+  </text>
+
+  <!-- Blue swatch -->
+  <rect x="230" y="652" width="16" height="16" rx="3" fill="#0078D4"/>
+  <text x="254" y="664" font-size="11" fill="#5F5E5A">Azure / GitHub / Docker</text>
+
+  <!-- Green swatch -->
+  <rect x="440" y="652" width="16" height="16" rx="3" fill="#7FBA00"/>
+  <text x="464" y="664" font-size="11" fill="#5F5E5A">Specky / Terraform</text>
+
+  <!-- Yellow swatch -->
+  <rect x="630" y="652" width="16" height="16" rx="3" fill="#FFB900"/>
+  <text x="654" y="664" font-size="11" fill="#5F5E5A">Jira / Specs</text>
+
+  <!-- Red swatch -->
+  <rect x="790" y="652" width="16" height="16" rx="3" fill="#F25022"/>
+  <text x="814" y="664" font-size="11" fill="#5F5E5A">Figma / Quality</text>
+
+  <!-- Gray swatch for arrows -->
+  <rect x="930" y="652" width="16" height="16" rx="3" fill="#B4B2A9"/>
+  <text x="954" y="664" font-size="11" fill="#5F5E5A">Data flow</text>
+
+</svg>
