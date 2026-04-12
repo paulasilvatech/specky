@@ -1,29 +1,67 @@
+# ============================================================
+# Specky .gitignore — PUBLIC repo policy
+# Keep: src/, package.json, media/, README, LICENSE, CHANGELOG,
+#       SECURITY, CONTRIBUTING, GETTING-STARTED, .github/workflows
+# Everything else is internal / generated
+# ============================================================
+
+# ── Generated output ──────────────────────────────────────
 node_modules/
 dist/
+coverage/
 *.tgz
+*.log
+
+# ── Environment & secrets ─────────────────────────────────
 .env
 .env.*
+
+# ── OS artifacts ──────────────────────────────────────────
 .DS_Store
-coverage/
-*.log
-SESSION_LOG_*.md
-.vscode/mcp.json
-!.vscode/mcp.json.example
-docs/
+Thumbs.db
 
-# Claude session state
+# ── IDE & editor config ──────────────────────────────────
+.vscode/
+.idea/
+
+# ── AI tooling (Claude Code / Copilot internal) ──────────
+.claude/
 .remember/
+CLAUDE.md
+BUILD_PROMPT.md
+SESSION_LOG_*.md
+Specky_v3.2.0_Master_Prompt_v2_npm_default_*.md
 
-# SDD doc tracker
-SDD/specs/.doc-tracker.json
+# ── Copilot agents, skills, prompts (internal authoring) ─
+.github/agents/
+.github/skills/
+.github/prompts/
+.github/copilot-instructions.md
 
-# Internal materials — NOT for public repo
-brand/specky-brand-guide.html
-brand/specky-brand-voice.html
-brand/specky-icon.svg
-brand/specky-logo-dark.svg
-brand/specky-logo-full.svg
-brand/specky-mono.svg
-brand/specky-wordmark.svg
-reports/competitive-analysis-specky-vs-kiro.html
-reports/v3-audit-report.md
+# ── SDD process artifacts (how Specky was built) ─────────
+.specs/
+.specky/
+SDD/
+hooks/
+references/
+ARCHITECTURE.md
+apm.yml
+
+# ── Build, test, packaging config (internal) ─────────────
+templates/
+tests/
+scripts/
+site/
+docs/
+vitest.config.ts
+tsconfig.json
+Dockerfile
+docker-compose.yml
+.dockerignore
+.npmignore
+PUBLISH.md
+ONBOARDING.md
+
+# ── Internal brand & reports ──────────────────────────────
+brand/
+reports/

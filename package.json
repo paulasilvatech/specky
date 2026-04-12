@@ -9,7 +9,7 @@
     "specky-sdd": "./dist/index.js"
   },
   "scripts": {
-    "build": "tsc && node -e \"const fs=require('fs');const f='dist/index.js';const c=fs.readFileSync(f,'utf8');if(!c.startsWith('#!'))fs.writeFileSync(f,'#!/usr/bin/env node\\n'+c)\" && chmod +x dist/index.js",
+    "build": "tsc && cp -r templates dist/templates && node -e \"const fs=require('fs');const f='dist/index.js';const c=fs.readFileSync(f,'utf8');if(!c.startsWith('#!'))fs.writeFileSync(f,'#!/usr/bin/env node\\n'+c)\" && chmod +x dist/index.js",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "clean": "rm -rf dist",
@@ -21,9 +21,6 @@
   "icon": "media/specky-icon-256.png",
   "files": [
     "dist/",
-    "templates/",
-    "references/",
-    "hooks/",
     "media/specky-icon-256.png",
     "media/specky-icon-128.png",
     "README.md",
