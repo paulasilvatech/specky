@@ -1,7 +1,7 @@
 {
   "name": "specky-sdd",
-  "version": "3.0.0",
-  "description": "Specky — 53 MCP tools for Spec-Driven Development. 10-phase pipeline, EARS notation, 17 diagram types, 12-section system design, enriched interactive responses, parallel documentation, property-based testing.",
+  "version": "3.1.0",
+  "description": "Specky — 56 MCP tools for Spec-Driven Development. 10-phase pipeline, model routing guidance, context tiering, cognitive debt metrics, intent drift detection, EARS notation, 17 diagram types, 12-section system design.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {

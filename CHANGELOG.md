@@ -5,6 +5,48 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-04-12
+
+### Intelligence Layer (Specs 003–007)
+
+#### Model Routing Guidance (Spec 003)
+- **`sdd_model_routing`** (NEW tool #54): Returns the full 10-phase model routing decision table with optimal model, mode, extended thinking settings, arXiv evidence, and cost savings calculator
+- **`model_routing_hint`** field added to ALL 55 tool responses via `buildToolResponse()` — every response now tells the AI client which model to use for the current phase
+- Complexity override: `implement`/`design` phases with >10 files escalate to Opus automatically
+- `ModelRoutingEngine` service with empirically-grounded ROUTING_TABLE (arXiv:2601.08419)
+
+#### Context Tiering (Spec 004)
+- **`sdd_context_status`** (NEW tool #55): Returns Hot/Domain/Cold tier assignment for all spec artifacts with estimated token savings
+- **`context_load_summary`** field added to ALL 55 tool responses — shows which files are loaded per call
+- `ContextTieringEngine` service: CONSTITUTION.md=Hot, SPEC/DESIGN/TASKS=Domain, ANALYSIS/CHECKLIST/etc=Cold
+- Token estimation: `Math.ceil(content.length / 4)` — matches GPT/Claude tokenization heuristic
+
+#### Cognitive Debt Metrics (Spec 005)
+- **`cognitive_debt`** field in `sdd_metrics` and `sdd_get_status` responses (when gate history available)
+- Gate instrumentation in `sdd_advance_phase`: records mtime-based modified/unmodified detection per gate
+- `CognitiveDebtEngine` service: LGTM-without-modification rate as cognitive surrender signal; score = `(lgtm_rate × 0.6) + (delta_normalized × 0.4)`, labels: healthy/caution/high_risk
+- Warning shown in `sdd_advance_phase` response when unmodified approval is detected
+
+#### Verified Test Loop (Spec 006)
+- **`TestResultParser`** service: auto-detects and parses Vitest JSON, pytest JSON, and JUnit XML into normalized `TestResult[]`
+- **`TestTraceabilityMapper`** service: maps test names to REQ-XXX IDs via `// REQ-XXX` comment convention, builds per-requirement coverage report and failure details with `suggested_fix_prompt`
+- `sdd_verify_tests` enhanced: adds `enhanced_coverage` (per-requirement breakdown) and `failure_details` to response when parsers are wired
+- JUnit XML parser bug fixed: self-closing `<testcase .../>` was greedily consumed by open-tag alternative, merging two testcases; fixed with negative lookbehind `(?<!\/)`
+
+#### Intent Drift Detection (Spec 007)
+- **`intent_drift`** report in `sdd_check_sync` and `sdd_metrics` responses
+- **`drift_amendment_suggestion`** in `sdd_amend` response when last drift score > 40 — lists orphaned constitutional principles with recommended spec actions
+- `IntentDriftEngine` service: extracts principles from CONSTITUTION.md `## Article` sections, keyword-overlap coverage detection (≥2 keywords threshold), trend analysis (improving/stable/worsening) over last 3 DriftSnapshots
+- `drift_history` stored in `.sdd-state.json` (FIFO, max 100 entries)
+
+### Stats
+- **56 tools** (was 53, corrected to 56 — sdd_metrics, sdd_validate_ears, sdd_check_ecosystem were already implemented but undercounted): +sdd_model_routing, +sdd_context_status, count reconciled
+- **24 services** (was 18): +ModelRoutingEngine, +ContextTieringEngine, +CognitiveDebtEngine, +IntentDriftEngine, +TestResultParser, +TestTraceabilityMapper
+- **507 unit tests** across 30 test files (was 321 across 22 files)
+- All 7 specs (001–007) at ≥93% acceptance criteria coverage
+
+---
+
 ## [3.0.0] - 2026-03-26
 
 ### Pipeline Validation & Enforcement

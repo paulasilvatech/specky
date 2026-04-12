@@ -2,6 +2,7 @@ node_modules/
 dist/
 *.tgz
 .env
+.env.*
 .DS_Store
 coverage/
 *.log
@@ -9,6 +10,12 @@ SESSION_LOG_*.md
 .vscode/mcp.json
 !.vscode/mcp.json.example
 docs/
+
+# Claude session state
+.remember/
+
+# SDD doc tracker
+SDD/specs/.doc-tracker.json
 
 # Internal materials — NOT for public repo
 brand/specky-brand-guide.html

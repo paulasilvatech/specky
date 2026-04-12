@@ -15,7 +15,7 @@ FROM node:22-slim AS production
 
 LABEL org.opencontainers.image.title="specky-sdd" \
       org.opencontainers.image.description="MCP server for Spec-Driven Development (SDD) with EARS notation" \
-      org.opencontainers.image.version="3.0.0" \
+      org.opencontainers.image.version="3.1.0" \
       org.opencontainers.image.vendor="Paula Silva" \
       org.opencontainers.image.source="https://github.com/paulasilvatech/specky" \
       org.opencontainers.image.licenses="MIT"

@@ -1,4 +1,4 @@
-# Specky v3.0.0 -- Claude Code Project Instructions
+# Specky v3.1.0 -- Claude Code Project Instructions
 
 **Auto-loaded by Claude Code when working in this directory.**
 
@@ -6,7 +6,7 @@
 
 ## 1. Project Overview
 
-Specky v3.0.0 is an **MCP server for Spec-Driven Development (SDD)** that enforces traceability between requirements, design, implementation, and tests. It exposes **53 tools** across a **10-phase pipeline**, uses EARS notation for requirement statements, and includes 18 services, 22 templates, 5 Custom Agents, 12 Claude Code commands, and 7 executable automation hooks.
+Specky v3.1.0 is an **MCP server for Spec-Driven Development (SDD)** that enforces traceability between requirements, design, implementation, and tests. It exposes **56 tools** across a **10-phase pipeline**, uses EARS notation for requirement statements, and includes 24 services, 22 templates, 5 Custom Agents, 12 Claude Code commands, and 7 executable automation hooks.
 
 **Goal:** Close the gap between specification and code through continuous validation, preventing drift and ensuring acceptance criteria are met.
 
@@ -15,6 +15,8 @@ Specky v3.0.0 is an **MCP server for Spec-Driven Development (SDD)** that enforc
 **What changed in v2.3.1:** The tool count grew from 47 to 52. Added: turnkey spec generation from natural language (`sdd_turnkey_spec`), property-based testing with fast-check and Hypothesis (`sdd_generate_pbt`), checkpoint/restore for spec artifacts (`sdd_checkpoint`, `sdd_restore`, `sdd_list_checkpoints`). Added 5 new Claude Code commands (`/sdd:verify`, `/sdd:docs`, `/sdd:export`, `/sdd:diagrams`, `/sdd:iac`). All 6 hooks now have executable shell scripts with Claude Code settings.json integration. All 4 GitHub Copilot agents updated with Extended Toolset v2.3. 292 unit tests, new PBT generator service.
 
 **What changed in v3.0.0:** Pipeline enforcement with phase validation on all tools, gate decision enforcement, 17 diagram types (was 10), 12-section design template (was 6), enriched interactive responses on all 53 tools, parallel documentation generation, MethodologyGuide and DependencyGraph services, 7 active hooks, 12 fully interactive commands.
+
+**What changed in v3.1.0:** Intelligence layer across all 55 tool responses. `model_routing_hint` and `context_load_summary` injected on every tool response. New tools: `sdd_model_routing` (#54) and `sdd_context_status` (#55). Cognitive debt metrics (LGTM-without-modification detection), intent drift detection with `drift_amendment_suggestion` in `sdd_amend`, enhanced `sdd_verify_tests` with `TestResultParser` (Vitest/pytest/JUnit XML) + `TestTraceabilityMapper` (per-requirement coverage + failure details). 6 new services. 507 unit tests (was 321).
 
 ---
 
@@ -168,6 +170,18 @@ Use these `/sdd:*` commands in Claude Code to invoke specialized workflows:
 | `sdd_restore` | Restore spec artifacts from a previous checkpoint (auto-creates backup before restoring) |
 | `sdd_list_checkpoints` | List all available checkpoints for a feature with labels, dates, and phases |
 
+### Model Routing (1) — NEW in v3.1.0
+
+| Tool | Description |
+|------|-------------|
+| `sdd_model_routing` | Return the full 10-phase model routing decision table. Includes optimal model, mode, extended thinking settings, arXiv evidence, and cost savings calculator for your team size |
+
+### Context Tiering (1) — NEW in v3.1.0
+
+| Tool | Description |
+|------|-------------|
+| `sdd_context_status` | Return Hot/Domain/Cold tier assignment for all spec artifacts in the active feature, with estimated token load per tier and savings percentage vs universal loading |
+
 ---
 
 ## 4. Model Routing Table
@@ -231,7 +245,7 @@ specky/
 │   │   ├── infrastructure.ts         IaC/Dockerfile schemas
 │   │   ├── environment.ts            Dev environment schemas
 │   │   └── integration.ts            Git/export/PR schemas
-│   ├── services/                     18 service classes
+│   ├── services/                     24 service classes
 │   │   ├── file-manager.ts           Atomic file I/O
 │   │   ├── state-machine.ts          10-phase pipeline enforcement
 │   │   ├── template-engine.ts        Markdown template rendering
@@ -583,6 +597,7 @@ PORT=3200                               # HTTP transport port (--http mode)
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 3.1.0 | 2026-04-12 | 56 tools (+sdd_model_routing, +sdd_context_status), 24 services (+ModelRoutingEngine, +ContextTieringEngine, +CognitiveDebtEngine, +IntentDriftEngine, +TestResultParser, +TestTraceabilityMapper), model_routing_hint + context_load_summary on all tool responses, cognitive debt gate instrumentation, intent drift detection + drift_amendment_suggestion, enhanced sdd_verify_tests with JUnit XML parsing + per-requirement traceability, 507 unit tests |
 | 3.0.0 | 2026-03-26 | 53 tools, 17 diagram types, 12-section design template, enriched interactive responses on all tools, pipeline phase validation, gate enforcement, parallel documentation, MethodologyGuide + DependencyGraph services, 7 active hooks (auto-checkpoint new), 12 fully interactive commands rewritten, 321 unit tests |
 | 2.3.1 | 2026-03-24 | 52 tools (+sdd_turnkey_spec, sdd_generate_pbt, sdd_checkpoint, sdd_restore, sdd_list_checkpoints), turnkey EARS spec from natural language, property-based testing (fast-check/hypothesis), checkpoint/restore for spec artifacts, 12 Claude Code commands (+5), 6 executable hooks with settings.json integration, 4 agents updated to Extended Toolset v2.3, 292 unit tests |
 | 2.2.0 | 2026-03-24 | 47 tools (+sdd_generate_tests, sdd_verify_tests), test generation for 6 frameworks, .specky/config.yml support, 211 unit tests, 89% coverage, OpenSSF Scorecard, SBOM generation |

@@ -80,7 +80,7 @@ export class MetricsGenerator {
 
   private async safeRead(featureDir: string, file: string): Promise<string> {
     try {
-      return await this.fileManager.readSpecFile(`${featureDir}/${file}`);
+      return await this.fileManager.readSpecFile(featureDir, file);
     } catch {
       return "";
     }
@@ -88,7 +88,7 @@ export class MetricsGenerator {
 
   private async readState(featureDir: string): Promise<Record<string, unknown>> {
     try {
-      const raw = await this.fileManager.readSpecFile(`${featureDir}/.sdd-state.json`);
+      const raw = await this.fileManager.readSpecFile(featureDir, ".sdd-state.json");
       return JSON.parse(raw) as Record<string, unknown>;
     } catch {
       return {};

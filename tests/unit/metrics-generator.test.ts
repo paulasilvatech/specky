@@ -4,10 +4,11 @@ import type { FileManager } from "../../src/services/file-manager.js";
 
 function makeFileManager(files: Record<string, string>): FileManager {
   return {
-    readSpecFile: vi.fn(async (path: string) => {
-      const hit = Object.entries(files).find(([k]) => path.endsWith(k));
+    readSpecFile: vi.fn(async (dirOrPath: string, fileName?: string) => {
+      const key = fileName ?? dirOrPath;
+      const hit = Object.entries(files).find(([k]) => key.endsWith(k));
       if (hit) return hit[1];
-      throw new Error(`File not found: ${path}`);
+      throw new Error(`File not found: ${key}`);
     }),
     writeSpecFile: vi.fn(async () => "/feature/metrics-dashboard.html"),
     listFeatures: vi.fn(async () => []),

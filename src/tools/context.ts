@@ -55,7 +55,7 @@ export function registerContextTools(
 
         for (const entry of tierTable) {
           try {
-            const content = await fileManager.readSpecFile(`${feature.directory}/${entry.filename}`);
+            const content = await fileManager.readSpecFile(feature.directory, entry.filename);
             const tokens = contextTieringEngine.estimateTokens(content);
             if (entry.tier === "hot") hotTokens += tokens;
             else if (entry.tier === "domain") domainTokens += tokens;

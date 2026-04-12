@@ -2,11 +2,11 @@
   <br>
   <img src="media/specky-brand-logo.svg" alt="Specky" height="80">
   <br><br>
-  <p><strong>53 MCP tools. 10-phase pipeline. Works in any IDE.</strong></p>
+  <p><strong>56 MCP tools. 10-phase pipeline. Works in any IDE.</strong></p>
   <p>Agentic Spec-Driven Development</p>
 
   <p>
-    <img src="https://img.shields.io/badge/tools-53_MCP-7c3aed?style=flat-square" alt="53 Tools"/>
+    <img src="https://img.shields.io/badge/tools-56_MCP-7c3aed?style=flat-square" alt="56 Tools"/>
     <img src="https://img.shields.io/badge/phases-10_enforced-6d28d9?style=flat-square" alt="10 Phases"/>
     <img src="https://img.shields.io/badge/diagrams-17_types-5b21b6?style=flat-square" alt="17 Diagrams"/>
     <img src="https://img.shields.io/badge/compliance-6_frameworks-4c1d95?style=flat-square" alt="6 Compliance"/>
@@ -41,7 +41,7 @@
 | | [Input Methods](#input-methods-6-ways-to-start) | 6 ways to feed Specky |
 | | [Three Project Types](#three-project-types-one-pipeline) | Greenfield, Brownfield, Modernization |
 | **Pipeline** | [Pipeline and LGTM Gates](#pipeline-and-lgtm-gates) | 10 phases with human review gates |
-| | [All 53 Tools](#all-53-tools) | Complete tool reference by category |
+| | [All 56 Tools](#all-53-tools) | Complete tool reference by category |
 | | [EARS Notation](#ears-notation) | The 6 requirement patterns |
 | **Enterprise** | [Compliance Frameworks](#compliance-frameworks) | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 |
 | | [Enterprise Ready](#enterprise-ready) | Security, audit trail, quality gates |
@@ -98,7 +98,7 @@ Specky adds a **deterministic engine** between your intent and your code:
 
 | Capability | Specky |
 |---|---|
-| Any input (PDF, DOCX, PPTX, transcript, Figma) to spec | 53 MCP tools handle all input formats |
+| Any input (PDF, DOCX, PPTX, transcript, Figma) to spec | 56 MCP tools handle all input formats |
 | EARS validation (programmatic, not AI guessing) | 5 patterns enforced at schema level |
 | Enforced pipeline (not suggestions) | 10 phases with actual gates that block advancement |
 | 17 diagram types generated automatically | C4 (4 levels), sequence, ER, activity, use case, DFD, deployment, network |
@@ -541,7 +541,7 @@ The AI calls:
 
 The AI calls `sdd_export_work_items` + `sdd_create_pr` → generates work item payloads and PR body with full spec traceability.
 
-> **Next:** **Next:** Learn about [EARS notation](#ears-notation) to understand the requirement patterns, or see [All 53 Tools](#all-53-tools) for a complete reference.
+> **Next:** **Next:** Learn about [EARS notation](#ears-notation) to understand the requirement patterns, or see [All 56 Tools](#all-53-tools) for a complete reference.
 
 
 ## Brownfield Project: Add Features to Existing Code
@@ -734,7 +734,7 @@ The AI calls `sdd_advance_phase` → moves the pipeline forward if all prerequis
 All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). See [Input Methods](#input-methods-6-ways-to-start) for how to feed data into the pipeline.
 
 
-## All 53 Tools
+## All 56 Tools
 
 ### Input and Conversion (5)
 
@@ -866,7 +866,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 
 | | Spec-Kit (Methodology) | Specky (Engine) |
 |--|------------------------|-----------------|
-| **What it is** | Prompt templates + agent definitions | MCP server with 53 tools |
+| **What it is** | Prompt templates + agent definitions | MCP server with 55 tools |
 | **How it works** | AI reads `.md` templates and follows instructions | AI calls tools that validate, enforce, and generate |
 | **Validation** | AI tries to follow the prompts | State machine, EARS regex, Zod schemas |
 | **Install** | Copy `.github/agents/` and `.claude/commands/` | `npx specky-sdd` (includes methodology built-in) |
@@ -1096,7 +1096,7 @@ curl http://localhost:3200/health
 
 | Capability | Status |
 |------------|--------|
-| 53 MCP tools across 10 enforced pipeline phases | Stable |
+| 56 MCP tools across 10 enforced pipeline phases | Stable |
 | Phase validation on every tool with gate enforcement | Stable |
 | 17 software engineering diagram types (C4, sequence, ER, DFD, deployment, network) | Stable |
 | 12-section system design template (C4 model, security, infrastructure) | Stable |
