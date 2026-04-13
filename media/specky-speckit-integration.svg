@@ -1,186 +1,121 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 700" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
-  <defs>
-    <filter id="shadow" x="-4%" y="-4%" width="108%" height="116%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#2C2C2A" flood-opacity="0.10"/>
-    </filter>
-    <marker id="arrow-up" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#0078D4"/>
-    </marker>
-    <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#7FBA00"/>
-    </marker>
-    <linearGradient id="accent-bar" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#0078D4"/>
-      <stop offset="33%" stop-color="#7FBA00"/>
-      <stop offset="66%" stop-color="#FFB900"/>
-      <stop offset="100%" stop-color="#F25022"/>
-    </linearGradient>
-  </defs>
+<!-- The SDD Platform: Spec-Kit + Specky
+     @paulasilvatech visual identity · purple/blue/gray palette
+     Plugin-first · 57 tools · v3.2.2
+     Canvas: 1400x700
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 700" width="1400" height="700"
+     font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<defs>
+  <marker id="arr" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+    <path d="M1,1.2 L8,4 L1,6.8" fill="#9590A8" stroke="none"/>
+  </marker>
+  <marker id="arr-p" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+    <path d="M1,1.2 L8,4 L1,6.8" fill="#5B2D8E" stroke="none"/>
+  </marker>
+</defs>
+<rect width="1400" height="700" fill="#FFFFFF"/>
 
-  <rect width="1400" height="700" fill="#FFFFFF"/>
+<!-- ============= TITLE ============= -->
+<text x="700" y="36" text-anchor="middle" font-size="22" font-weight="700" fill="#2C2C2A">The SDD Platform: Spec-Kit + Specky</text>
+<text x="700" y="56" text-anchor="middle" font-size="13" fill="#888780">Plugin-first installation · Protocol-native MCP server for any IDE</text>
+<rect x="460" y="66" width="48" height="3" rx="1.5" fill="#3D1A6E"/>
+<rect x="512" y="66" width="48" height="3" rx="1.5" fill="#5B2D8E"/>
+<rect x="564" y="66" width="48" height="3" rx="1.5" fill="#8661C5"/>
+<rect x="616" y="66" width="48" height="3" rx="1.5" fill="#0058A3"/>
+<rect x="668" y="66" width="48" height="3" rx="1.5" fill="#3A7FD5"/>
 
-  <!-- Title -->
-  <text x="700" y="36" text-anchor="middle" font-size="22" font-weight="700" fill="#2C2C2A">The SDD Platform: Spec-Kit + Specky</text>
-  <text x="700" y="56" text-anchor="middle" font-size="13" fill="#5F5E5A">Part of the GitHub + Microsoft enterprise ecosystem. Protocol-native MCP server for any IDE.</text>
-  <rect x="460" y="66" width="480" height="3" rx="1.5" fill="url(#accent-bar)"/>
+<!-- ============= TOP: Enterprise Platform ============= -->
+<rect x="60" y="88" width="1280" height="56" rx="10" fill="#2C2C2A"/>
+<text x="700" y="114" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">GitHub + Microsoft Enterprise Platform</text>
+<text x="700" y="132" text-anchor="middle" font-size="10" fill="#FFFFFF" opacity="0.7">Security (GHAS) | Governance (Purview) | Agent Orchestration (Foundry) | Multi-model | Enterprise Data (Work IQ)</text>
 
-  <!-- ============================================================ -->
-  <!-- TOP: Enterprise Platform Context                              -->
-  <!-- ============================================================ -->
+<!-- ============= LAYER 1: Spec-Kit (Methodology) ============= -->
+<rect x="60" y="164" width="620" height="220" rx="12" fill="#FFF" stroke="#0058A3" stroke-width="2"/>
+<rect x="60" y="164" width="620" height="8" rx="4" fill="#0058A3"/>
+<text x="140" y="200" font-size="18" font-weight="700" fill="#0058A3">Spec-Kit</text>
+<rect x="225" y="186" width="130" height="22" rx="11" fill="#0058A3" opacity="0.10"/>
+<text x="290" y="201" text-anchor="middle" font-size="10" font-weight="600" fill="#0058A3">SDD Methodology</text>
+<text x="100" y="228" font-size="11" fill="#5F5E5A">Open-source templates and prompts that define the</text>
+<text x="100" y="244" font-size="11" fill="#5F5E5A">Spec-Driven Development workflow.</text>
+<text x="100" y="272" font-size="10" font-weight="700" fill="#2C2C2A">Provides:</text>
+<rect x="100" y="282" width="130" height="28" rx="6" fill="#0058A3" opacity="0.06" stroke="#0058A3" stroke-width="1"/>
+<text x="165" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#0058A3">EARS Notation</text>
+<rect x="240" y="282" width="130" height="28" rx="6" fill="#0058A3" opacity="0.06" stroke="#0058A3" stroke-width="1"/>
+<text x="305" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#0058A3">Gated Pipeline</text>
+<rect x="380" y="282" width="130" height="28" rx="6" fill="#0058A3" opacity="0.06" stroke="#0058A3" stroke-width="1"/>
+<text x="445" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#0058A3">25+ Agents</text>
+<rect x="520" y="282" width="140" height="28" rx="6" fill="#0058A3" opacity="0.06" stroke="#0058A3" stroke-width="1"/>
+<text x="590" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#0058A3">Constitution Model</text>
+<rect x="100" y="322" width="560" height="24" rx="6" fill="#0058A3" opacity="0.03"/>
+<text x="380" y="338" text-anchor="middle" font-size="9" fill="#5F5E5A">AI reads Markdown templates and follows instructions. No programmatic enforcement.</text>
+<rect x="100" y="354" width="120" height="20" rx="10" fill="#0058A3" opacity="0.08"/>
+<text x="160" y="368" text-anchor="middle" font-size="9" font-weight="600" fill="#0058A3">Works standalone</text>
+<text x="235" y="368" font-size="9" fill="#888780">.github/agents/ + .claude/commands/</text>
 
-  <g filter="url(#shadow)">
-    <rect x="60" y="88" width="1280" height="56" rx="10" fill="#2C2C2A"/>
-  </g>
-  <text x="700" y="114" text-anchor="middle" font-size="14" font-weight="700" fill="#FFFFFF">GitHub + Microsoft Enterprise Platform</text>
-  <text x="700" y="132" text-anchor="middle" font-size="10" fill="#FFFFFF" opacity="0.7">Security (GHAS) | Governance (Purview) | Agent Orchestration (Foundry) | Multi-model (Claude, GPT, Gemini, Llama) | Enterprise Data (Work IQ)</text>
+<!-- ============= LAYER 2: Specky (Engine + Plugin) ============= -->
+<rect x="720" y="164" width="620" height="220" rx="12" fill="#FFF" stroke="#5B2D8E" stroke-width="2"/>
+<rect x="720" y="164" width="620" height="8" rx="4" fill="#5B2D8E"/>
+<text x="800" y="200" font-size="18" font-weight="700" fill="#5B2D8E">Specky</text>
+<rect x="860" y="186" width="130" height="22" rx="11" fill="#5B2D8E" opacity="0.10"/>
+<text x="925" y="201" text-anchor="middle" font-size="10" font-weight="600" fill="#5B2D8E">MCP Engine + Plugin</text>
+<rect x="1000" y="186" width="60" height="22" rx="11" fill="#5B2D8E"/>
+<text x="1030" y="201" text-anchor="middle" font-size="10" font-weight="700" fill="#FFFFFF">v3.2</text>
+<text x="760" y="228" font-size="11" fill="#5F5E5A">MCP server + plugin that turns the Spec-Kit methodology into</text>
+<text x="760" y="244" font-size="11" fill="#5F5E5A">57 enforceable tools with 7 agents, 19 prompts, 6 skills, 10 hooks.</text>
+<text x="760" y="272" font-size="10" font-weight="700" fill="#2C2C2A">Adds on top:</text>
+<rect x="760" y="282" width="120" height="28" rx="6" fill="#5B2D8E" opacity="0.06" stroke="#5B2D8E" stroke-width="1"/>
+<text x="820" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#5B2D8E">State Machine</text>
+<rect x="890" y="282" width="120" height="28" rx="6" fill="#5B2D8E" opacity="0.06" stroke="#5B2D8E" stroke-width="1"/>
+<text x="950" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#5B2D8E">EARS Validator</text>
+<rect x="1020" y="282" width="120" height="28" rx="6" fill="#8661C5" opacity="0.06" stroke="#8661C5" stroke-width="1"/>
+<text x="1080" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#8661C5">Compliance</text>
+<rect x="1150" y="282" width="120" height="28" rx="6" fill="#3D1A6E" opacity="0.06" stroke="#3D1A6E" stroke-width="1"/>
+<text x="1210" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#3D1A6E">MCP-to-MCP</text>
+<rect x="760" y="318" width="120" height="28" rx="6" fill="#0058A3" opacity="0.06" stroke="#0058A3" stroke-width="1"/>
+<text x="820" y="336" text-anchor="middle" font-size="9" font-weight="600" fill="#0058A3">7 Input Types</text>
+<rect x="890" y="318" width="120" height="28" rx="6" fill="#0058A3" opacity="0.06" stroke="#0058A3" stroke-width="1"/>
+<text x="950" y="336" text-anchor="middle" font-size="9" font-weight="600" fill="#0058A3">Test Generation</text>
+<rect x="1020" y="318" width="120" height="28" rx="6" fill="#8661C5" opacity="0.06" stroke="#8661C5" stroke-width="1"/>
+<text x="1080" y="336" text-anchor="middle" font-size="9" font-weight="600" fill="#8661C5">IaC Output</text>
+<rect x="1150" y="318" width="120" height="28" rx="6" fill="#3D1A6E" opacity="0.06" stroke="#3D1A6E" stroke-width="1"/>
+<text x="1210" y="336" text-anchor="middle" font-size="9" font-weight="600" fill="#3D1A6E">Drift Detection</text>
+<rect x="760" y="354" width="168" height="20" rx="10" fill="#5B2D8E" opacity="0.08"/>
+<text x="844" y="368" text-anchor="middle" font-size="9" font-weight="600" fill="#5B2D8E">copilot plugin install</text>
+<text x="940" y="368" font-size="9" fill="#888780">or npm install -g specky-sdd</text>
 
-  <!-- ============================================================ -->
-  <!-- LAYER 1: Spec-Kit (Methodology)                               -->
-  <!-- ============================================================ -->
+<!-- Integration arrow -->
+<path d="M680,274 L720,274" stroke="#5B2D8E" stroke-width="2.5" fill="none" marker-end="url(#arr-p)"/>
+<text x="700" y="264" text-anchor="middle" font-size="8" font-weight="600" fill="#5B2D8E" transform="rotate(-90,700,264)">powers</text>
 
-  <g filter="url(#shadow)">
-    <rect x="60" y="164" width="620" height="220" rx="12" fill="#FFFFFF" stroke="#0078D4" stroke-width="2"/>
-    <rect x="60" y="164" width="620" height="8" rx="4" fill="#0078D4"/>
-  </g>
+<!-- ============= Combined Output ============= -->
+<rect x="200" y="410" width="1000" height="80" rx="12" fill="#FFF" stroke="#2C2C2A" stroke-width="1.5"/>
+<text x="700" y="440" text-anchor="middle" font-size="16" font-weight="700" fill="#2C2C2A">Together: The Complete SDD Layer</text>
+<text x="700" y="462" text-anchor="middle" font-size="11" fill="#5F5E5A">Spec-Kit defines what to do (methodology). Specky enforces how to do it (engine + plugin).</text>
+<text x="700" y="480" text-anchor="middle" font-size="11" fill="#5F5E5A">Install the plugin and you get both — 57 tools, 7 agents, 19 prompts, 6 skills, 10 hooks.</text>
+<path d="M370,384 L370,410" stroke="#0058A3" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+<path d="M1030,384 L1030,410" stroke="#5B2D8E" stroke-width="1.5" fill="none" marker-end="url(#arr-p)"/>
 
-  <text x="140" y="200" font-size="18" font-weight="700" fill="#0078D4">Spec-Kit</text>
-  <rect x="225" y="186" width="130" height="22" rx="11" fill="#0078D4" opacity="0.10"/>
-  <text x="290" y="201" text-anchor="middle" font-size="10" font-weight="600" fill="#0078D4">SDD Methodology</text>
+<!-- ============= Key Differentiators ============= -->
+<text x="700" y="528" text-anchor="middle" font-size="14" font-weight="700" fill="#2C2C2A">Key Differentiators</text>
 
-  <text x="100" y="228" font-size="11" fill="#5F5E5A">Open-source templates and prompts that define the</text>
-  <text x="100" y="244" font-size="11" fill="#5F5E5A">Spec-Driven Development workflow.</text>
+<rect x="100" y="546" width="350" height="56" rx="8" fill="#FFF" stroke="#5B2D8E" stroke-width="1.5"/>
+<text x="130" y="572" font-size="13" font-weight="600" fill="#2C2C2A">Protocol-Native MCP</text>
+<text x="130" y="590" font-size="9" fill="#5F5E5A">57 tools via MCP. Works in any IDE. No vendor lock-in.</text>
+<rect x="370" y="558" width="60" height="20" rx="10" fill="#5B2D8E" opacity="0.10"/>
+<text x="400" y="572" text-anchor="middle" font-size="8" font-weight="700" fill="#5B2D8E">MCP</text>
 
-  <!-- What it provides -->
-  <text x="100" y="272" font-size="10" font-weight="700" fill="#2C2C2A">Provides:</text>
+<rect x="525" y="546" width="350" height="56" rx="8" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<text x="555" y="572" font-size="13" font-weight="600" fill="#2C2C2A">Enforced Pipeline</text>
+<text x="555" y="590" font-size="9" fill="#5F5E5A">10 phases with gates. Not suggestions. Actual enforcement.</text>
+<rect x="790" y="558" width="60" height="20" rx="10" fill="#0058A3" opacity="0.10"/>
+<text x="820" y="572" text-anchor="middle" font-size="8" font-weight="700" fill="#0058A3">10</text>
 
-  <rect x="100" y="282" width="130" height="28" rx="6" fill="#0078D4" opacity="0.06" stroke="#0078D4" stroke-width="1"/>
-  <text x="165" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#0078D4">EARS Notation</text>
+<rect x="950" y="546" width="350" height="56" rx="8" fill="#FFF" stroke="#8661C5" stroke-width="1.5"/>
+<text x="980" y="572" font-size="13" font-weight="600" fill="#2C2C2A">Enterprise Plugin</text>
+<text x="980" y="590" font-size="9" fill="#5F5E5A">6 compliance frameworks. Air-gapped. Zero outbound calls. MIT.</text>
+<rect x="1220" y="558" width="60" height="20" rx="10" fill="#8661C5" opacity="0.10"/>
+<text x="1250" y="572" text-anchor="middle" font-size="8" font-weight="700" fill="#8661C5">MIT</text>
 
-  <rect x="240" y="282" width="130" height="28" rx="6" fill="#0078D4" opacity="0.06" stroke="#0078D4" stroke-width="1"/>
-  <text x="305" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#0078D4">Gated Pipeline</text>
-
-  <rect x="380" y="282" width="130" height="28" rx="6" fill="#0078D4" opacity="0.06" stroke="#0078D4" stroke-width="1"/>
-  <text x="445" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#0078D4">25+ Agents</text>
-
-  <rect x="520" y="282" width="140" height="28" rx="6" fill="#0078D4" opacity="0.06" stroke="#0078D4" stroke-width="1"/>
-  <text x="590" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#0078D4">Constitution Model</text>
-
-  <!-- How it works -->
-  <rect x="100" y="322" width="560" height="24" rx="6" fill="#0078D4" opacity="0.03"/>
-  <text x="380" y="338" text-anchor="middle" font-size="9" fill="#5F5E5A">AI reads Markdown templates and follows instructions. No programmatic enforcement.</text>
-
-  <rect x="100" y="354" width="120" height="20" rx="10" fill="#0078D4" opacity="0.08"/>
-  <text x="160" y="368" text-anchor="middle" font-size="9" font-weight="600" fill="#0078D4">Works standalone</text>
-  <text x="235" y="368" font-size="9" fill="#888780">.github/agents/ + .claude/commands/</text>
-
-  <!-- ============================================================ -->
-  <!-- LAYER 2: Specky (Engine)                                      -->
-  <!-- ============================================================ -->
-
-  <g filter="url(#shadow)">
-    <rect x="720" y="164" width="620" height="220" rx="12" fill="#FFFFFF" stroke="#7FBA00" stroke-width="2"/>
-    <rect x="720" y="164" width="620" height="8" rx="4" fill="#7FBA00"/>
-  </g>
-
-  <text x="800" y="200" font-size="18" font-weight="700" fill="#7FBA00">Specky</text>
-  <rect x="860" y="186" width="130" height="22" rx="11" fill="#7FBA00" opacity="0.10"/>
-  <text x="925" y="201" text-anchor="middle" font-size="10" font-weight="600" fill="#527D00">MCP Engine</text>
-  <rect x="1000" y="186" width="60" height="22" rx="11" fill="#7FBA00"/>
-  <text x="1030" y="201" text-anchor="middle" font-size="10" font-weight="700" fill="#FFFFFF">v3.0</text>
-
-  <text x="760" y="228" font-size="11" fill="#5F5E5A">MCP server that turns the Spec-Kit methodology into</text>
-  <text x="760" y="244" font-size="11" fill="#5F5E5A">53 enforceable tools with programmatic validation.</text>
-
-  <!-- What it adds -->
-  <text x="760" y="272" font-size="10" font-weight="700" fill="#2C2C2A">Adds on top:</text>
-
-  <rect x="760" y="282" width="120" height="28" rx="6" fill="#7FBA00" opacity="0.06" stroke="#7FBA00" stroke-width="1"/>
-  <text x="820" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#527D00">State Machine</text>
-
-  <rect x="890" y="282" width="120" height="28" rx="6" fill="#7FBA00" opacity="0.06" stroke="#7FBA00" stroke-width="1"/>
-  <text x="950" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#527D00">EARS Validator</text>
-
-  <rect x="1020" y="282" width="120" height="28" rx="6" fill="#FFB900" opacity="0.06" stroke="#FFB900" stroke-width="1"/>
-  <text x="1080" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#BA7517">Compliance</text>
-
-  <rect x="1150" y="282" width="120" height="28" rx="6" fill="#F25022" opacity="0.06" stroke="#F25022" stroke-width="1"/>
-  <text x="1210" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#F25022">MCP-to-MCP</text>
-
-  <!-- Second row of features -->
-  <rect x="760" y="318" width="120" height="28" rx="6" fill="#7FBA00" opacity="0.06" stroke="#7FBA00" stroke-width="1"/>
-  <text x="820" y="336" text-anchor="middle" font-size="9" font-weight="600" fill="#527D00">6 Input Types</text>
-
-  <rect x="890" y="318" width="120" height="28" rx="6" fill="#7FBA00" opacity="0.06" stroke="#7FBA00" stroke-width="1"/>
-  <text x="950" y="336" text-anchor="middle" font-size="9" font-weight="600" fill="#527D00">Test Generation</text>
-
-  <rect x="1020" y="318" width="120" height="28" rx="6" fill="#FFB900" opacity="0.06" stroke="#FFB900" stroke-width="1"/>
-  <text x="1080" y="336" text-anchor="middle" font-size="9" font-weight="600" fill="#BA7517">IaC Output</text>
-
-  <rect x="1150" y="318" width="120" height="28" rx="6" fill="#F25022" opacity="0.06" stroke="#F25022" stroke-width="1"/>
-  <text x="1210" y="336" text-anchor="middle" font-size="9" font-weight="600" fill="#F25022">Drift Detection</text>
-
-  <rect x="760" y="354" width="120" height="20" rx="10" fill="#7FBA00" opacity="0.08"/>
-  <text x="820" y="368" text-anchor="middle" font-size="9" font-weight="600" fill="#527D00">All-in-one install</text>
-  <text x="895" y="368" font-size="9" fill="#888780">npx specky-sdd (includes Spec-Kit methodology)</text>
-
-  <!-- ============================================================ -->
-  <!-- INTEGRATION ARROW                                             -->
-  <!-- ============================================================ -->
-
-  <path d="M680,274 L720,274" stroke="#7FBA00" stroke-width="2.5" fill="none" marker-end="url(#arrow-green)"/>
-  <text x="700" y="264" text-anchor="middle" font-size="8" font-weight="600" fill="#527D00" transform="rotate(-90,700,264)">powers</text>
-
-  <!-- ============================================================ -->
-  <!-- BOTTOM: Combined Output                                       -->
-  <!-- ============================================================ -->
-
-  <g filter="url(#shadow)">
-    <rect x="200" y="410" width="1000" height="80" rx="12" fill="#FFFFFF" stroke="#2C2C2A" stroke-width="1.5"/>
-  </g>
-
-  <text x="700" y="440" text-anchor="middle" font-size="16" font-weight="700" fill="#2C2C2A">Together: The Complete SDD Layer</text>
-  <text x="700" y="462" text-anchor="middle" font-size="11" fill="#5F5E5A">Spec-Kit defines <tspan font-weight="600">what</tspan> to do (methodology). Specky enforces <tspan font-weight="600">how</tspan> to do it (engine).</text>
-  <text x="700" y="480" text-anchor="middle" font-size="11" fill="#5F5E5A">Install Specky and you get both. The SDD workflow scores 4/4 parity, but the platform wins 14/14.</text>
-
-  <!-- Arrows down from both boxes -->
-  <path d="M370,384 L370,410" stroke="#0078D4" stroke-width="1.5" fill="none" marker-end="url(#arrow-up)"/>
-  <path d="M1030,384 L1030,410" stroke="#7FBA00" stroke-width="1.5" fill="none" marker-end="url(#arrow-green)"/>
-
-  <!-- ============================================================ -->
-  <!-- KEY DIFFERENTIATORS SECTION                                    -->
-  <!-- ============================================================ -->
-
-  <text x="700" y="528" text-anchor="middle" font-size="14" font-weight="700" fill="#2C2C2A">Key Differentiators</text>
-
-  <!-- Differentiator 1 -->
-  <g filter="url(#shadow)">
-    <rect x="100" y="546" width="350" height="56" rx="8" fill="#FFFFFF" stroke="#7FBA00" stroke-width="1.5"/>
-  </g>
-  <text x="130" y="572" font-size="13" font-weight="600" fill="#2C2C2A">Protocol-Native MCP</text>
-  <text x="130" y="590" font-size="9" fill="#5F5E5A">53 tools via MCP. Works in any IDE. No vendor lock-in.</text>
-  <rect x="370" y="558" width="60" height="20" rx="10" fill="#7FBA00" opacity="0.10"/>
-  <text x="400" y="572" text-anchor="middle" font-size="8" font-weight="700" fill="#7FBA00">MCP</text>
-
-  <!-- Differentiator 2 -->
-  <g filter="url(#shadow)">
-    <rect x="525" y="546" width="350" height="56" rx="8" fill="#FFFFFF" stroke="#00A4EF" stroke-width="1.5"/>
-  </g>
-  <text x="555" y="572" font-size="13" font-weight="600" fill="#2C2C2A">Enforced Pipeline</text>
-  <text x="555" y="590" font-size="9" fill="#5F5E5A">10 phases with gates. Not suggestions. Actual enforcement.</text>
-  <rect x="790" y="558" width="60" height="20" rx="10" fill="#00A4EF" opacity="0.15"/>
-  <text x="820" y="572" text-anchor="middle" font-size="8" font-weight="700" fill="#00A4EF">10</text>
-
-  <!-- Differentiator 3 -->
-  <g filter="url(#shadow)">
-    <rect x="950" y="546" width="350" height="56" rx="8" fill="#FFFFFF" stroke="#7FBA00" stroke-width="2"/>
-  </g>
-  <text x="980" y="572" font-size="13" font-weight="600" fill="#2C2C2A">Enterprise Compliance</text>
-  <text x="980" y="590" font-size="9" fill="#5F5E5A">6 frameworks built-in. Air-gapped. Zero outbound calls. MIT.</text>
-  <rect x="1220" y="558" width="60" height="20" rx="10" fill="#7FBA00" opacity="0.15"/>
-  <text x="1250" y="572" text-anchor="middle" font-size="8" font-weight="700" fill="#527D00">4.25</text>
-
-  <!-- Bottom note -->
-  <text x="700" y="640" text-anchor="middle" font-size="10" fill="#888780">"SDD tooling is not the battleground. The enterprise platform surrounding it is."</text>
-  <text x="700" y="658" text-anchor="middle" font-size="9" fill="#B4B2A9">Source: SDD Market Analysis 2026. Enterprise Readiness: 9-criterion weighted scoring.</text>
-
+<!-- ============= ATTRIBUTION ============= -->
+<text x="1360" y="690" text-anchor="end" font-size="9" fill="#9590A8" opacity="0.6">Paula Silva, AI-Native Software Engineer @paulasilvatech</text>
 </svg>

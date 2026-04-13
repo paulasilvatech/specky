@@ -1,407 +1,181 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 800" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
-  <defs>
-    <!-- Arrow marker -->
-    <marker id="arrow" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
-      <path d="M0,0 L10,3.5 L0,7 z" fill="#B4B2A9"/>
-    </marker>
-    <!-- Converge arrow (blue) -->
-    <marker id="arrow-blue" viewBox="0 0 10 7" refX="10" refY="3.5" markerWidth="8" markerHeight="6" orient="auto-start-auto">
-      <path d="M0,0 L10,3.5 L0,7 z" fill="#0078D4"/>
-    </marker>
-  </defs>
-
-  <!-- Background -->
-  <rect width="1400" height="800" fill="white"/>
-
-  <!-- ============================================================ -->
-  <!-- TITLE BLOCK                                                   -->
-  <!-- Title anchor: x=700 y=32                                      -->
-  <!-- Subtitle anchor: x=700 y=52                                   -->
-  <!-- Accent bar: x=440 y=60, width=520                             -->
-  <!-- ============================================================ -->
-  <text x="700" y="32" text-anchor="middle" font-size="20" font-weight="700" fill="#2C2C2A">Specky — Complete Pipeline Development Flow</text>
-  <text x="700" y="52" text-anchor="middle" font-size="11" fill="#5F5E5A">From any input to production · fully automated · MCP-orchestrated</text>
-  <!-- 4-color accent bar -->
-  <rect x="440" y="62" width="130" height="3" rx="1.5" fill="#0078D4"/>
-  <rect x="570" y="62" width="130" height="3" rx="1.5" fill="#7FBA00"/>
-  <rect x="700" y="62" width="130" height="3" rx="1.5" fill="#FFB900"/>
-  <rect x="830" y="62" width="130" height="3" rx="1.5" fill="#F25022"/>
-
-  <!-- ============================================================ -->
-  <!-- LANE GEOMETRY                                                  -->
-  <!-- Each lane: y-start, height=105, gap=4                         -->
-  <!-- Lane 1 (INPUT):          y=76  h=105                          -->
-  <!-- Lane 2 (SPECIFICATION):  y=185 h=105                          -->
-  <!-- Lane 3 (DESIGN):         y=294 h=105                          -->
-  <!-- Lane 4 (IMPLEMENTATION): y=403 h=105                          -->
-  <!-- Lane 5 (QUALITY):        y=512 h=105                          -->
-  <!-- Lane 6 (DELIVERY):       y=621 h=105                          -->
-  <!-- Label column: x=0..50                                          -->
-  <!-- Content area: x=55..1395                                       -->
-  <!-- ============================================================ -->
-
-  <!-- ============================================================ -->
-  <!-- ROW 1 — INPUT (Blue lane)                                      -->
-  <!-- Lane bg: x=0 y=76 w=1400 h=105                                -->
-  <!-- Rotated label anchor: x=25 y=128                               -->
-  <!-- Box centers y=120 (top row), y=148 (badge)                     -->
-  <!-- ============================================================ -->
-  <rect x="0" y="76" width="1400" height="105" rx="0" fill="#0078D4" opacity="0.04"/>
-  <rect x="0" y="76" width="50" height="105" rx="0" fill="#0078D4" opacity="0.10"/>
-  <text x="25" y="132" text-anchor="middle" font-size="9" font-weight="700" fill="#0078D4" transform="rotate(-90,25,132)" letter-spacing="1">INPUT</text>
-
-  <!-- Box: Meeting Recording — cx=140 cy=112 -->
-  <rect x="70" y="94" width="140" height="36" rx="6" fill="white" stroke="#0078D4" stroke-width="1.5"/>
-  <text x="140" y="116" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">Meeting Recording</text>
-
-  <!-- Arrow: 210,112 → 240,112 -->
-  <path d="M210,112 L240,112" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Box: PDF / DOCX / PPTX — cx=340 cy=112 -->
-  <rect x="250" y="94" width="140" height="36" rx="6" fill="white" stroke="#0078D4" stroke-width="1.5"/>
-  <text x="320" y="116" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">PDF / DOCX / PPTX</text>
-
-  <!-- Arrow: 390,112 → 420,112 -->
-  <path d="M390,112 L420,112" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Box: Figma Design — cx=500 cy=112 -->
-  <rect x="430" y="94" width="120" height="36" rx="6" fill="white" stroke="#0078D4" stroke-width="1.5"/>
-  <text x="490" y="116" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">Figma Design</text>
-
-  <!-- Arrow: 550,112 → 580,112 -->
-  <path d="M550,112 L580,112" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Box: User Prompt — cx=650 cy=112 -->
-  <rect x="590" y="94" width="110" height="36" rx="6" fill="white" stroke="#0078D4" stroke-width="1.5"/>
-  <text x="645" y="116" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">User Prompt</text>
-
-  <!-- Converge arrows to Markdown box -->
-  <!-- All four boxes converge to cx=870 cy=112 -->
-  <!-- From User Prompt: 700,112 → 790,112 -->
-  <path d="M700,112 L790,112" stroke="#0078D4" stroke-width="1.5" fill="none" marker-end="url(#arrow-blue)"/>
-  <!-- From Figma: 490,130 Q 490,148 750,148 Q 790,148 790,120 → 800,112 (via Q-curve) -->
-  <path d="M490,130 L490,145 Q490,153 498,153 L780,153 Q790,153 790,145 L790,120 Q790,112 800,112" stroke="#0078D4" stroke-width="1" fill="none" opacity="0.4" stroke-dasharray="3,2"/>
-  <!-- From PDF: 320,130 Q 320,158 750,158 (via Q-curve) -->
-  <path d="M320,130 L320,160 Q320,168 328,168 L780,168 Q790,168 790,155 L790,120 Q790,112 800,112" stroke="#0078D4" stroke-width="1" fill="none" opacity="0.3" stroke-dasharray="3,2"/>
-  <!-- From Meeting: 140,130 Q 140,165 (via Q-curve) -->
-  <path d="M140,130 L140,173 Q140,181 148,181 L780,181 Q790,181 790,165 L790,120 Q790,112 800,112" stroke="#0078D4" stroke-width="1" fill="none" opacity="0.2" stroke-dasharray="3,2"/>
-
-  <!-- Box: Markdown (raw source) — cx=870 cy=112 -->
-  <rect x="800" y="94" width="160" height="36" rx="6" fill="#0078D4" stroke="#0078D4" stroke-width="1.5"/>
-  <text x="880" y="110" text-anchor="middle" font-size="10" font-weight="700" fill="white">Markdown</text>
-  <text x="880" y="123" text-anchor="middle" font-size="8" fill="white" opacity="0.85">(raw source)</text>
-
-  <!-- Badge: 7 formats — cx=1010 cy=112 -->
-  <rect x="985" y="100" width="70" height="24" rx="12" fill="#0078D4" opacity="0.12"/>
-  <text x="1020" y="116" text-anchor="middle" font-size="9" font-weight="700" fill="#0078D4">7 formats</text>
-
-  <!-- Down arrow from Markdown to next lane: 880,130 → 880,200 -->
-  <path d="M880,130 L880,145 Q880,153 880,153 L880,196" stroke="#B4B2A9" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- ============================================================ -->
-  <!-- ROW 2 — SPECIFICATION (Green lane)                             -->
-  <!-- Lane bg: y=185 h=105                                           -->
-  <!-- Box centers y=228                                              -->
-  <!-- ============================================================ -->
-  <rect x="0" y="185" width="1400" height="105" rx="0" fill="#7FBA00" opacity="0.04"/>
-  <rect x="0" y="185" width="50" height="105" rx="0" fill="#7FBA00" opacity="0.10"/>
-  <text x="25" y="248" text-anchor="middle" font-size="9" font-weight="700" fill="#7FBA00" transform="rotate(-90,25,248)" letter-spacing="1">SPECIFICATION</text>
-
-  <!-- Box: sdd_init — cx=140 cy=226 -->
-  <rect x="70" y="208" width="120" height="36" rx="6" fill="white" stroke="#7FBA00" stroke-width="1.5"/>
-  <text x="130" y="230" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_init</text>
-
-  <!-- Arrow: 190,226 → 230,226 -->
-  <path d="M190,226 L230,226" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Box: sdd_discover — cx=320 cy=226 -->
-  <rect x="240" y="208" width="130" height="36" rx="6" fill="white" stroke="#7FBA00" stroke-width="1.5"/>
-  <text x="305" y="230" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_discover</text>
-
-  <!-- Arrow: 370,226 → 410,226 -->
-  <path d="M370,226 L410,226" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Box: sdd_write_spec — cx=500 cy=226 -->
-  <rect x="420" y="208" width="140" height="36" rx="6" fill="white" stroke="#7FBA00" stroke-width="1.5"/>
-  <text x="490" y="230" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_write_spec</text>
-
-  <!-- Arrow: 560,226 → 600,226 -->
-  <path d="M560,226 L600,226" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Box: sdd_clarify — cx=680 cy=226 -->
-  <rect x="610" y="208" width="120" height="36" rx="6" fill="white" stroke="#7FBA00" stroke-width="1.5"/>
-  <text x="670" y="230" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_clarify</text>
-
-  <!-- Arrow to artifacts: 730,226 → 790,226 -->
-  <path d="M730,226 L790,226" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Artifact: CONSTITUTION.md — cx=870 cy=218 -->
-  <rect x="800" y="206" width="130" height="22" rx="4" fill="#7FBA00" opacity="0.10" stroke="#7FBA00" stroke-width="0.8"/>
-  <text x="865" y="221" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">CONSTITUTION.md</text>
-
-  <!-- Artifact: SPECIFICATION.md — cx=870 cy=244 -->
-  <rect x="800" y="232" width="140" height="22" rx="4" fill="#7FBA00" opacity="0.10" stroke="#7FBA00" stroke-width="0.8"/>
-  <text x="870" y="247" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">SPECIFICATION.md</text>
-
-  <!-- Badge: EARS validated — cx=1020 cy=226 -->
-  <rect x="965" y="214" width="100" height="24" rx="12" fill="#7FBA00" opacity="0.12"/>
-  <text x="1015" y="230" text-anchor="middle" font-size="9" font-weight="700" fill="#527D00">EARS validated</text>
-
-  <!-- Down arrow: 670,244 → 670,310 -->
-  <path d="M670,244 L670,262 Q670,270 670,270 L670,306" stroke="#B4B2A9" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- ============================================================ -->
-  <!-- ROW 3 — DESIGN (Yellow lane)                                   -->
-  <!-- Lane bg: y=294 h=105                                           -->
-  <!-- Box centers y=338                                              -->
-  <!-- ============================================================ -->
-  <rect x="0" y="294" width="1400" height="105" rx="0" fill="#FFB900" opacity="0.04"/>
-  <rect x="0" y="294" width="50" height="105" rx="0" fill="#FFB900" opacity="0.10"/>
-  <text x="25" y="350" text-anchor="middle" font-size="9" font-weight="700" fill="#BA7517" transform="rotate(-90,25,350)" letter-spacing="1">DESIGN</text>
-
-  <!-- Box: sdd_write_design — cx=160 cy=338 -->
-  <rect x="70" y="320" width="150" height="36" rx="6" fill="white" stroke="#FFB900" stroke-width="1.5"/>
-  <text x="145" y="342" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_write_design</text>
-
-  <!-- Arrow: 220,338 → 270,338 -->
-  <path d="M220,338 L270,338" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Box: sdd_research — cx=360 cy=338 -->
-  <rect x="280" y="320" width="130" height="36" rx="6" fill="white" stroke="#FFB900" stroke-width="1.5"/>
-  <text x="345" y="342" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_research</text>
-
-  <!-- Arrow: 410,338 → 460,338 -->
-  <path d="M410,338 L460,338" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Box: sdd_generate_diagram — cx=575 cy=338 -->
-  <rect x="470" y="320" width="170" height="36" rx="6" fill="white" stroke="#FFB900" stroke-width="1.5"/>
-  <text x="555" y="342" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_generate_diagram</text>
-
-  <!-- Arrow to artifacts: 640,338 → 710,338 -->
-  <path d="M640,338 L710,338" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Artifact: DESIGN.md -->
-  <rect x="720" y="316" width="100" height="20" rx="4" fill="#FFB900" opacity="0.10" stroke="#FFB900" stroke-width="0.8"/>
-  <text x="770" y="330" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">DESIGN.md</text>
-
-  <!-- Artifact: RESEARCH.md -->
-  <rect x="720" y="340" width="110" height="20" rx="4" fill="#FFB900" opacity="0.10" stroke="#FFB900" stroke-width="0.8"/>
-  <text x="775" y="354" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">RESEARCH.md</text>
-
-  <!-- Artifact: 10 Mermaid diagrams -->
-  <rect x="720" y="364" width="140" height="20" rx="4" fill="#FFB900" opacity="0.10" stroke="#FFB900" stroke-width="0.8"/>
-  <text x="790" y="378" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">10 Mermaid diagrams</text>
-
-  <!-- Badge: Auto-diagrams -->
-  <rect x="965" y="326" width="110" height="24" rx="12" fill="#FFB900" opacity="0.12"/>
-  <text x="1020" y="342" text-anchor="middle" font-size="9" font-weight="700" fill="#BA7517">Auto-diagrams</text>
-
-  <!-- Down arrow: 555,356 → 555,418 -->
-  <path d="M555,356 L555,374 Q555,382 555,382 L555,414" stroke="#B4B2A9" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- ============================================================ -->
-  <!-- ROW 4 — IMPLEMENTATION (Blue lane)                             -->
-  <!-- Lane bg: y=403 h=105                                           -->
-  <!-- Box centers y=448                                              -->
-  <!-- ============================================================ -->
-  <rect x="0" y="403" width="1400" height="105" rx="0" fill="#0078D4" opacity="0.04"/>
-  <rect x="0" y="403" width="50" height="105" rx="0" fill="#0078D4" opacity="0.10"/>
-  <text x="25" y="466" text-anchor="middle" font-size="9" font-weight="700" fill="#0078D4" transform="rotate(-90,25,466)" letter-spacing="1">IMPLEMENTATION</text>
-
-  <!-- Box: sdd_write_tasks — cx=150 cy=448 -->
-  <rect x="70" y="430" width="140" height="36" rx="6" fill="white" stroke="#0078D4" stroke-width="1.5"/>
-  <text x="140" y="452" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_write_tasks</text>
-
-  <!-- Arrow: 210,448 → 260,448 -->
-  <path d="M210,448 L260,448" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Box: sdd_implement — cx=350 cy=448 -->
-  <rect x="270" y="430" width="140" height="36" rx="6" fill="white" stroke="#0078D4" stroke-width="1.5"/>
-  <text x="340" y="452" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_implement</text>
-
-  <!-- Arrow: 410,448 → 460,448 -->
-  <path d="M410,448 L460,448" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Box: sdd_generate_iac — cx=550 cy=448 -->
-  <rect x="470" y="430" width="150" height="36" rx="6" fill="white" stroke="#0078D4" stroke-width="1.5"/>
-  <text x="545" y="452" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_generate_iac</text>
-
-  <!-- Arrow to artifacts: 620,448 → 710,448 -->
-  <path d="M620,448 L710,448" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Artifact: TASKS.md -->
-  <rect x="720" y="428" width="90" height="20" rx="4" fill="#0078D4" opacity="0.10" stroke="#0078D4" stroke-width="0.8"/>
-  <text x="765" y="442" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">TASKS.md</text>
-
-  <!-- Artifact: Terraform -->
-  <rect x="720" y="452" width="85" height="20" rx="4" fill="#0078D4" opacity="0.10" stroke="#0078D4" stroke-width="0.8"/>
-  <text x="762" y="466" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">Terraform</text>
-
-  <!-- Artifact: Dockerfile -->
-  <rect x="815" y="452" width="85" height="20" rx="4" fill="#0078D4" opacity="0.10" stroke="#0078D4" stroke-width="0.8"/>
-  <text x="857" y="466" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">Dockerfile</text>
-
-  <!-- Badge: IaC generated -->
-  <rect x="965" y="436" width="105" height="24" rx="12" fill="#0078D4" opacity="0.12"/>
-  <text x="1017" y="452" text-anchor="middle" font-size="9" font-weight="700" fill="#0078D4">IaC generated</text>
-
-  <!-- Down arrow: 545,466 → 545,524 -->
-  <path d="M545,466 L545,484 Q545,492 545,492 L545,524" stroke="#B4B2A9" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- ============================================================ -->
-  <!-- ROW 5 — QUALITY (Red lane)                                     -->
-  <!-- Lane bg: y=512 h=105                                           -->
-  <!-- Box centers y=558                                              -->
-  <!-- ============================================================ -->
-  <rect x="0" y="512" width="1400" height="105" rx="0" fill="#F25022" opacity="0.04"/>
-  <rect x="0" y="512" width="50" height="105" rx="0" fill="#F25022" opacity="0.10"/>
-  <text x="25" y="568" text-anchor="middle" font-size="9" font-weight="700" fill="#F25022" transform="rotate(-90,25,568)" letter-spacing="1">QUALITY</text>
-
-  <!-- Box: sdd_run_analysis — cx=150 cy=558 -->
-  <rect x="70" y="540" width="140" height="36" rx="6" fill="white" stroke="#F25022" stroke-width="1.5"/>
-  <text x="140" y="562" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_run_analysis</text>
-
-  <!-- Arrow: 210,558 → 250,558 -->
-  <path d="M210,558 L250,558" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Box: sdd_compliance_check — cx=360 cy=558 -->
-  <rect x="260" y="540" width="170" height="36" rx="6" fill="white" stroke="#F25022" stroke-width="1.5"/>
-  <text x="345" y="562" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_compliance_check</text>
-
-  <!-- Arrow: 430,558 → 470,558 -->
-  <path d="M430,558 L470,558" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Box: sdd_cross_analyze — cx=565 cy=558 -->
-  <rect x="480" y="540" width="150" height="36" rx="6" fill="white" stroke="#F25022" stroke-width="1.5"/>
-  <text x="555" y="562" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_cross_analyze</text>
-
-  <!-- Arrow: 630,558 → 670,558 -->
-  <path d="M630,558 L670,558" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Box: sdd_verify_tasks — cx=770 cy=558 -->
-  <rect x="680" y="540" width="140" height="36" rx="6" fill="white" stroke="#F25022" stroke-width="1.5"/>
-  <text x="750" y="562" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_verify_tasks</text>
-
-  <!-- Arrow to artifacts: 820,558 → 870,558 -->
-  <path d="M820,558 L870,558" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Artifact: ANALYSIS.md -->
-  <rect x="880" y="536" width="105" height="20" rx="4" fill="#F25022" opacity="0.10" stroke="#F25022" stroke-width="0.8"/>
-  <text x="932" y="550" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">ANALYSIS.md</text>
-
-  <!-- Artifact: COMPLIANCE.md -->
-  <rect x="880" y="558" width="115" height="20" rx="4" fill="#F25022" opacity="0.10" stroke="#F25022" stroke-width="0.8"/>
-  <text x="937" y="572" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">COMPLIANCE.md</text>
-
-  <!-- Artifact: VERIFICATION.md -->
-  <rect x="880" y="580" width="125" height="20" rx="4" fill="#F25022" opacity="0.10" stroke="#F25022" stroke-width="0.8"/>
-  <text x="942" y="594" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">VERIFICATION.md</text>
-
-  <!-- Badge: 6 frameworks -->
-  <rect x="1030" y="546" width="105" height="24" rx="12" fill="#F25022" opacity="0.12"/>
-  <text x="1082" y="562" text-anchor="middle" font-size="9" font-weight="700" fill="#F25022">6 frameworks</text>
-
-  <!-- Down arrow: 750,576 → 750,634 -->
-  <path d="M750,576 L750,594 Q750,602 750,602 L750,634" stroke="#B4B2A9" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- ============================================================ -->
-  <!-- ROW 6 — DELIVERY (Green lane)                                  -->
-  <!-- Lane bg: y=621 h=105                                           -->
-  <!-- Box centers y=668                                              -->
-  <!-- ============================================================ -->
-  <rect x="0" y="621" width="1400" height="105" rx="0" fill="#7FBA00" opacity="0.04"/>
-  <rect x="0" y="621" width="50" height="105" rx="0" fill="#7FBA00" opacity="0.10"/>
-  <text x="25" y="677" text-anchor="middle" font-size="9" font-weight="700" fill="#7FBA00" transform="rotate(-90,25,677)" letter-spacing="1">DELIVERY</text>
-
-  <!-- Box: sdd_export_work_items — cx=170 cy=660 -->
-  <rect x="70" y="642" width="170" height="36" rx="6" fill="white" stroke="#7FBA00" stroke-width="1.5"/>
-  <text x="155" y="664" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_export_work_items</text>
-
-  <!-- Arrow: 240,660 → 290,660 -->
-  <path d="M240,660 L290,660" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Box: sdd_create_pr — cx=380 cy=660 -->
-  <rect x="300" y="642" width="130" height="36" rx="6" fill="white" stroke="#7FBA00" stroke-width="1.5"/>
-  <text x="365" y="664" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_create_pr</text>
-
-  <!-- Arrow: 430,660 → 480,660 -->
-  <path d="M430,660 L480,660" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Box: sdd_generate_docs — cx=580 cy=660 -->
-  <rect x="490" y="642" width="160" height="36" rx="6" fill="white" stroke="#7FBA00" stroke-width="1.5"/>
-  <text x="570" y="664" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_generate_docs</text>
-
-  <!-- Arrow to outputs: 650,660 → 720,660 -->
-  <path d="M650,660 L720,660" stroke="#B4B2A9" stroke-width="1.2" fill="none" marker-end="url(#arrow)"/>
-
-  <!-- Target: Azure Boards / Jira / GitHub -->
-  <rect x="730" y="640" width="170" height="20" rx="4" fill="#7FBA00" opacity="0.10" stroke="#7FBA00" stroke-width="0.8"/>
-  <text x="815" y="654" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">Azure Boards / Jira / GitHub</text>
-
-  <!-- Target: Pull Request -->
-  <rect x="730" y="664" width="100" height="20" rx="4" fill="#7FBA00" opacity="0.10" stroke="#7FBA00" stroke-width="0.8"/>
-  <text x="780" y="678" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">Pull Request</text>
-
-  <!-- Target: Full Documentation -->
-  <rect x="840" y="664" width="120" height="20" rx="4" fill="#7FBA00" opacity="0.10" stroke="#7FBA00" stroke-width="0.8"/>
-  <text x="900" y="678" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">Full Documentation</text>
-
-  <!-- Badge: MCP routed -->
-  <rect x="985" y="656" width="100" height="24" rx="12" fill="#7FBA00" opacity="0.12"/>
-  <text x="1035" y="672" text-anchor="middle" font-size="9" font-weight="700" fill="#527D00">MCP routed</text>
-
-  <!-- ============================================================ -->
-  <!-- RIGHT-SIDE VERTICAL FLOW INDICATOR                             -->
-  <!-- Connects all lanes with a subtle vertical guide                -->
-  <!-- ============================================================ -->
-  <line x1="1180" y1="100" x2="1180" y2="690" stroke="#B4B2A9" stroke-width="0.8" stroke-dasharray="4,4" opacity="0.3"/>
-  <text x="1180" y="94" text-anchor="middle" font-size="8" fill="#888780">flow</text>
-
-  <!-- Phase numbers on the right -->
-  <circle cx="1180" cy="112" r="10" fill="#0078D4" opacity="0.15"/>
-  <text x="1180" y="116" text-anchor="middle" font-size="8" font-weight="700" fill="#0078D4">1</text>
-
-  <circle cx="1180" cy="226" r="10" fill="#7FBA00" opacity="0.15"/>
-  <text x="1180" y="230" text-anchor="middle" font-size="8" font-weight="700" fill="#527D00">2</text>
-
-  <circle cx="1180" cy="338" r="10" fill="#FFB900" opacity="0.15"/>
-  <text x="1180" y="342" text-anchor="middle" font-size="8" font-weight="700" fill="#BA7517">3</text>
-
-  <circle cx="1180" cy="448" r="10" fill="#0078D4" opacity="0.15"/>
-  <text x="1180" y="452" text-anchor="middle" font-size="8" font-weight="700" fill="#0078D4">4</text>
-
-  <circle cx="1180" cy="558" r="10" fill="#F25022" opacity="0.15"/>
-  <text x="1180" y="562" text-anchor="middle" font-size="8" font-weight="700" fill="#F25022">5</text>
-
-  <circle cx="1180" cy="660" r="10" fill="#7FBA00" opacity="0.15"/>
-  <text x="1180" y="664" text-anchor="middle" font-size="8" font-weight="700" fill="#527D00">6</text>
-
-  <!-- ============================================================ -->
-  <!-- BOTTOM LEGEND                                                  -->
-  <!-- y=740                                                          -->
-  <!-- ============================================================ -->
-  <line x1="60" y1="738" x2="1340" y2="738" stroke="#B4B2A9" stroke-width="0.5" opacity="0.4"/>
-
-  <!-- Color legend items -->
-  <rect x="100" y="752" width="12" height="12" rx="2" fill="#0078D4"/>
-  <text x="118" y="762" font-size="9" fill="#5F5E5A">Input / Implementation</text>
-
-  <rect x="280" y="752" width="12" height="12" rx="2" fill="#7FBA00"/>
-  <text x="298" y="762" font-size="9" fill="#5F5E5A">Specification / Delivery</text>
-
-  <rect x="460" y="752" width="12" height="12" rx="2" fill="#FFB900"/>
-  <text x="478" y="762" font-size="9" fill="#5F5E5A">Design</text>
-
-  <rect x="560" y="752" width="12" height="12" rx="2" fill="#F25022"/>
-  <text x="578" y="762" font-size="9" fill="#5F5E5A">Quality</text>
-
-  <rect x="660" y="752" width="12" height="12" rx="3" fill="white" stroke="#B4B2A9" stroke-width="1"/>
-  <text x="678" y="762" font-size="9" fill="#5F5E5A">Process step</text>
-
-  <rect x="785" y="752" width="12" height="12" rx="3" fill="#B4B2A9" opacity="0.15" stroke="#B4B2A9" stroke-width="0.8"/>
-  <text x="803" y="762" font-size="9" fill="#5F5E5A">Artifact output</text>
-
-  <!-- Bottom note -->
-  <text x="700" y="786" text-anchor="middle" font-size="9" fill="#888780" font-style="italic">Each row produces artifacts, diagrams, and educative outputs automatically</text>
-
+<!-- Specky — Complete Pipeline Development Flow
+     @paulasilvatech visual identity · purple/blue/gray
+     57 tools · Plugin-first · 6 lanes
+     Canvas: 1400x800
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 800" width="1400" height="800"
+     font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<defs>
+  <marker id="arr" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+    <path d="M1,1.2 L8,4 L1,6.8" fill="#9590A8" stroke="none"/>
+  </marker>
+</defs>
+<rect width="1400" height="800" fill="#FFF"/>
+
+<!-- ============= TITLE ============= -->
+<text x="700" y="32" text-anchor="middle" font-size="20" font-weight="700" fill="#2C2C2A">Specky — Complete Pipeline Development Flow</text>
+<text x="700" y="52" text-anchor="middle" font-size="11" fill="#5F5E5A">From any input to production · fully automated · MCP-orchestrated · Plugin-first</text>
+<rect x="440" y="62" width="65" height="3" rx="1.5" fill="#3D1A6E"/>
+<rect x="508" y="62" width="65" height="3" rx="1.5" fill="#5B2D8E"/>
+<rect x="576" y="62" width="65" height="3" rx="1.5" fill="#8661C5"/>
+<rect x="644" y="62" width="65" height="3" rx="1.5" fill="#0058A3"/>
+<rect x="712" y="62" width="65" height="3" rx="1.5" fill="#3A7FD5"/>
+
+<!-- ============= LANE 1: INPUT (Blue) y=76 ============= -->
+<rect x="0" y="76" width="1400" height="105" fill="#0058A3" opacity="0.04"/>
+<rect x="0" y="76" width="50" height="105" fill="#0058A3" opacity="0.10"/>
+<text x="25" y="132" text-anchor="middle" font-size="9" font-weight="700" fill="#0058A3" transform="rotate(-90,25,132)" letter-spacing="1">INPUT</text>
+<rect x="70" y="94" width="140" height="36" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<text x="140" y="116" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">Meeting Recording</text>
+<path d="M210,112 L240,112" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="250" y="94" width="140" height="36" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<text x="320" y="116" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">PDF / DOCX / PPTX</text>
+<path d="M390,112 L420,112" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="430" y="94" width="120" height="36" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<text x="490" y="116" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">Figma Design</text>
+<path d="M550,112 L580,112" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="590" y="94" width="110" height="36" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<text x="645" y="116" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">User Prompt</text>
+<path d="M700,112 L790,112" stroke="#0058A3" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+<rect x="800" y="94" width="160" height="36" rx="6" fill="#0058A3" stroke="#0058A3" stroke-width="1.5"/>
+<text x="880" y="110" text-anchor="middle" font-size="10" font-weight="700" fill="#FFF">Markdown</text>
+<text x="880" y="123" text-anchor="middle" font-size="8" fill="#FFF" opacity="0.85">(raw source)</text>
+<rect x="985" y="100" width="70" height="24" rx="12" fill="#0058A3" opacity="0.12"/>
+<text x="1020" y="116" text-anchor="middle" font-size="9" font-weight="700" fill="#0058A3">7 formats</text>
+<path d="M880,130 L880,196" stroke="#9590A8" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+
+<!-- ============= LANE 2: SPECIFICATION (Purple) y=185 ============= -->
+<rect x="0" y="185" width="1400" height="105" fill="#5B2D8E" opacity="0.04"/>
+<rect x="0" y="185" width="50" height="105" fill="#5B2D8E" opacity="0.10"/>
+<text x="25" y="248" text-anchor="middle" font-size="9" font-weight="700" fill="#5B2D8E" transform="rotate(-90,25,248)" letter-spacing="1">SPECIFICATION</text>
+<rect x="70" y="208" width="120" height="36" rx="6" fill="#FFF" stroke="#5B2D8E" stroke-width="1.5"/>
+<text x="130" y="230" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_init</text>
+<path d="M190,226 L230,226" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="240" y="208" width="130" height="36" rx="6" fill="#FFF" stroke="#5B2D8E" stroke-width="1.5"/>
+<text x="305" y="230" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_discover</text>
+<path d="M370,226 L410,226" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="420" y="208" width="140" height="36" rx="6" fill="#FFF" stroke="#5B2D8E" stroke-width="1.5"/>
+<text x="490" y="230" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_write_spec</text>
+<path d="M560,226 L600,226" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="610" y="208" width="120" height="36" rx="6" fill="#FFF" stroke="#5B2D8E" stroke-width="1.5"/>
+<text x="670" y="230" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_clarify</text>
+<path d="M730,226 L790,226" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="800" y="206" width="130" height="22" rx="4" fill="#5B2D8E" opacity="0.10" stroke="#5B2D8E" stroke-width="0.8"/>
+<text x="865" y="221" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">CONSTITUTION.md</text>
+<rect x="800" y="232" width="140" height="22" rx="4" fill="#5B2D8E" opacity="0.10" stroke="#5B2D8E" stroke-width="0.8"/>
+<text x="870" y="247" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">SPECIFICATION.md</text>
+<rect x="965" y="214" width="100" height="24" rx="12" fill="#5B2D8E" opacity="0.12"/>
+<text x="1015" y="230" text-anchor="middle" font-size="9" font-weight="700" fill="#5B2D8E">EARS validated</text>
+<path d="M670,244 L670,306" stroke="#9590A8" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+
+<!-- ============= LANE 3: DESIGN (Light purple) y=294 ============= -->
+<rect x="0" y="294" width="1400" height="105" fill="#8661C5" opacity="0.04"/>
+<rect x="0" y="294" width="50" height="105" fill="#8661C5" opacity="0.10"/>
+<text x="25" y="350" text-anchor="middle" font-size="9" font-weight="700" fill="#8661C5" transform="rotate(-90,25,350)" letter-spacing="1">DESIGN</text>
+<rect x="70" y="320" width="150" height="36" rx="6" fill="#FFF" stroke="#8661C5" stroke-width="1.5"/>
+<text x="145" y="342" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_write_design</text>
+<path d="M220,338 L270,338" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="280" y="320" width="130" height="36" rx="6" fill="#FFF" stroke="#8661C5" stroke-width="1.5"/>
+<text x="345" y="342" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_research</text>
+<path d="M410,338 L460,338" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="470" y="320" width="170" height="36" rx="6" fill="#FFF" stroke="#8661C5" stroke-width="1.5"/>
+<text x="555" y="342" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_generate_diagram</text>
+<path d="M640,338 L710,338" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="720" y="316" width="100" height="20" rx="4" fill="#8661C5" opacity="0.10" stroke="#8661C5" stroke-width="0.8"/>
+<text x="770" y="330" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">DESIGN.md</text>
+<rect x="720" y="340" width="110" height="20" rx="4" fill="#8661C5" opacity="0.10" stroke="#8661C5" stroke-width="0.8"/>
+<text x="775" y="354" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">RESEARCH.md</text>
+<rect x="720" y="364" width="140" height="20" rx="4" fill="#8661C5" opacity="0.10" stroke="#8661C5" stroke-width="0.8"/>
+<text x="790" y="378" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">17 Mermaid diagrams</text>
+<rect x="965" y="326" width="110" height="24" rx="12" fill="#8661C5" opacity="0.12"/>
+<text x="1020" y="342" text-anchor="middle" font-size="9" font-weight="700" fill="#8661C5">Auto-diagrams</text>
+<path d="M555,356 L555,414" stroke="#9590A8" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+
+<!-- ============= LANE 4: IMPLEMENTATION (Blue) y=403 ============= -->
+<rect x="0" y="403" width="1400" height="105" fill="#0058A3" opacity="0.04"/>
+<rect x="0" y="403" width="50" height="105" fill="#0058A3" opacity="0.10"/>
+<text x="25" y="466" text-anchor="middle" font-size="9" font-weight="700" fill="#0058A3" transform="rotate(-90,25,466)" letter-spacing="1">IMPLEMENTATION</text>
+<rect x="70" y="430" width="140" height="36" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<text x="140" y="452" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_write_tasks</text>
+<path d="M210,448 L260,448" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="270" y="430" width="140" height="36" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<text x="340" y="452" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_implement</text>
+<path d="M410,448 L460,448" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="470" y="430" width="150" height="36" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<text x="545" y="452" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_generate_iac</text>
+<path d="M620,448 L710,448" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="720" y="428" width="90" height="20" rx="4" fill="#0058A3" opacity="0.10" stroke="#0058A3" stroke-width="0.8"/>
+<text x="765" y="442" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">TASKS.md</text>
+<rect x="720" y="452" width="85" height="20" rx="4" fill="#0058A3" opacity="0.10" stroke="#0058A3" stroke-width="0.8"/>
+<text x="762" y="466" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">Terraform</text>
+<rect x="815" y="452" width="85" height="20" rx="4" fill="#0058A3" opacity="0.10" stroke="#0058A3" stroke-width="0.8"/>
+<text x="857" y="466" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">Dockerfile</text>
+<rect x="965" y="436" width="105" height="24" rx="12" fill="#0058A3" opacity="0.12"/>
+<text x="1017" y="452" text-anchor="middle" font-size="9" font-weight="700" fill="#0058A3">IaC generated</text>
+<path d="M545,466 L545,524" stroke="#9590A8" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+
+<!-- ============= LANE 5: QUALITY (Dark purple) y=512 ============= -->
+<rect x="0" y="512" width="1400" height="105" fill="#3D1A6E" opacity="0.04"/>
+<rect x="0" y="512" width="50" height="105" fill="#3D1A6E" opacity="0.10"/>
+<text x="25" y="568" text-anchor="middle" font-size="9" font-weight="700" fill="#3D1A6E" transform="rotate(-90,25,568)" letter-spacing="1">QUALITY</text>
+<rect x="70" y="540" width="140" height="36" rx="6" fill="#FFF" stroke="#3D1A6E" stroke-width="1.5"/>
+<text x="140" y="562" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_run_analysis</text>
+<path d="M210,558 L250,558" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="260" y="540" width="170" height="36" rx="6" fill="#FFF" stroke="#3D1A6E" stroke-width="1.5"/>
+<text x="345" y="562" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_compliance_check</text>
+<path d="M430,558 L470,558" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="480" y="540" width="150" height="36" rx="6" fill="#FFF" stroke="#3D1A6E" stroke-width="1.5"/>
+<text x="555" y="562" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_cross_analyze</text>
+<path d="M630,558 L670,558" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="680" y="540" width="140" height="36" rx="6" fill="#FFF" stroke="#3D1A6E" stroke-width="1.5"/>
+<text x="750" y="562" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_verify_tasks</text>
+<path d="M820,558 L870,558" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="880" y="536" width="105" height="20" rx="4" fill="#3D1A6E" opacity="0.10" stroke="#3D1A6E" stroke-width="0.8"/>
+<text x="932" y="550" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">ANALYSIS.md</text>
+<rect x="880" y="558" width="115" height="20" rx="4" fill="#3D1A6E" opacity="0.10" stroke="#3D1A6E" stroke-width="0.8"/>
+<text x="937" y="572" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">COMPLIANCE.md</text>
+<rect x="880" y="580" width="125" height="20" rx="4" fill="#3D1A6E" opacity="0.10" stroke="#3D1A6E" stroke-width="0.8"/>
+<text x="942" y="594" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">VERIFICATION.md</text>
+<rect x="1030" y="546" width="105" height="24" rx="12" fill="#3D1A6E" opacity="0.12"/>
+<text x="1082" y="562" text-anchor="middle" font-size="9" font-weight="700" fill="#3D1A6E">6 frameworks</text>
+<path d="M750,576 L750,634" stroke="#9590A8" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
+
+<!-- ============= LANE 6: DELIVERY (Purple) y=621 ============= -->
+<rect x="0" y="621" width="1400" height="105" fill="#5B2D8E" opacity="0.04"/>
+<rect x="0" y="621" width="50" height="105" fill="#5B2D8E" opacity="0.10"/>
+<text x="25" y="677" text-anchor="middle" font-size="9" font-weight="700" fill="#5B2D8E" transform="rotate(-90,25,677)" letter-spacing="1">DELIVERY</text>
+<rect x="70" y="642" width="170" height="36" rx="6" fill="#FFF" stroke="#5B2D8E" stroke-width="1.5"/>
+<text x="155" y="664" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_export_work_items</text>
+<path d="M240,660 L290,660" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="300" y="642" width="130" height="36" rx="6" fill="#FFF" stroke="#5B2D8E" stroke-width="1.5"/>
+<text x="365" y="664" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_create_pr</text>
+<path d="M430,660 L480,660" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="490" y="642" width="160" height="36" rx="6" fill="#FFF" stroke="#5B2D8E" stroke-width="1.5"/>
+<text x="570" y="664" text-anchor="middle" font-size="10" font-weight="600" fill="#2C2C2A">sdd_generate_docs</text>
+<path d="M650,660 L720,660" stroke="#9590A8" stroke-width="1.2" fill="none" marker-end="url(#arr)"/>
+<rect x="730" y="640" width="170" height="20" rx="4" fill="#5B2D8E" opacity="0.10" stroke="#5B2D8E" stroke-width="0.8"/>
+<text x="815" y="654" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">Azure Boards / Jira / GitHub</text>
+<rect x="730" y="664" width="100" height="20" rx="4" fill="#5B2D8E" opacity="0.10" stroke="#5B2D8E" stroke-width="0.8"/>
+<text x="780" y="678" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">Pull Request</text>
+<rect x="840" y="664" width="120" height="20" rx="4" fill="#5B2D8E" opacity="0.10" stroke="#5B2D8E" stroke-width="0.8"/>
+<text x="900" y="678" text-anchor="middle" font-size="8.5" font-weight="600" fill="#5F5E5A">Full Documentation</text>
+<rect x="985" y="656" width="100" height="24" rx="12" fill="#5B2D8E" opacity="0.12"/>
+<text x="1035" y="672" text-anchor="middle" font-size="9" font-weight="700" fill="#5B2D8E">MCP routed</text>
+
+<!-- ============= FLOW INDICATOR ============= -->
+<line x1="1180" y1="100" x2="1180" y2="690" stroke="#9590A8" stroke-width="0.8" stroke-dasharray="4,4" opacity="0.3"/>
+
+<!-- ============= LEGEND ============= -->
+<line x1="60" y1="738" x2="1340" y2="738" stroke="#E8E6DF" stroke-width="1"/>
+<rect x="100" y="752" width="12" height="12" rx="2" fill="#0058A3"/>
+<text x="118" y="762" font-size="9" fill="#5F5E5A">Input / Implementation</text>
+<rect x="280" y="752" width="12" height="12" rx="2" fill="#5B2D8E"/>
+<text x="298" y="762" font-size="9" fill="#5F5E5A">Specification / Delivery</text>
+<rect x="460" y="752" width="12" height="12" rx="2" fill="#8661C5"/>
+<text x="478" y="762" font-size="9" fill="#5F5E5A">Design</text>
+<rect x="560" y="752" width="12" height="12" rx="2" fill="#3D1A6E"/>
+<text x="578" y="762" font-size="9" fill="#5F5E5A">Quality</text>
+
+<text x="700" y="786" text-anchor="middle" font-size="9" fill="#888780" font-style="italic">Each row produces artifacts, diagrams, and educative outputs automatically</text>
+<text x="1360" y="792" text-anchor="end" font-size="9" fill="#9590A8" opacity="0.6">Paula Silva, AI-Native Software Engineer @paulasilvatech</text>
 </svg>

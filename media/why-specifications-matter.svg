@@ -1,162 +1,126 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 760" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
-  <defs>
-    <filter id="shadow" x="-4%" y="-4%" width="108%" height="116%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#2C2C2A" flood-opacity="0.10"/>
-    </filter>
-    <linearGradient id="accent-bar" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#0078D4"/>
-      <stop offset="33%" stop-color="#7FBA00"/>
-      <stop offset="66%" stop-color="#FFB900"/>
-      <stop offset="100%" stop-color="#F25022"/>
-    </linearGradient>
-    <marker id="arrow-gray" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#B4B2A9"/>
-    </marker>
-    <marker id="arrow-red" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#F25022"/>
-    </marker>
-    <marker id="arrow-green" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#7FBA00"/>
-    </marker>
-  </defs>
+<!-- Why Specifications Matter in the AI Era
+     @paulasilvatech visual identity · purple/blue/gray palette
+     Canvas: 1400x760
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 760" width="1400" height="760"
+     font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<defs>
+  <marker id="arr" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+    <path d="M1,1.2 L8,4 L1,6.8" fill="#9590A8" stroke="none"/>
+  </marker>
+  <marker id="arr-r" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+    <path d="M1,1.2 L8,4 L1,6.8" fill="#3D1A6E" stroke="none"/>
+  </marker>
+  <marker id="arr-g" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+    <path d="M1,1.2 L8,4 L1,6.8" fill="#0058A3" stroke="none"/>
+  </marker>
+</defs>
 
-  <rect width="1400" height="760" fill="#FFFFFF"/>
+<rect width="1400" height="760" fill="#FFFFFF"/>
 
-  <!-- Title -->
-  <text x="700" y="38" text-anchor="middle" font-size="22" font-weight="700" fill="#2C2C2A">Why Specifications Matter in the AI Era</text>
-  <text x="700" y="60" text-anchor="middle" font-size="13" fill="#5F5E5A">From vibe coding to deterministic development</text>
-  <rect x="460" y="70" width="480" height="3" rx="1.5" fill="url(#accent-bar)"/>
+<!-- ============= TITLE ============= -->
+<text x="700" y="38" text-anchor="middle" font-size="22" font-weight="700" fill="#2C2C2A">Why Specifications Matter in the AI Era</text>
+<text x="700" y="60" text-anchor="middle" font-size="13" fill="#888780">From vibe coding to deterministic development</text>
+<rect x="460" y="70" width="48" height="3" rx="1.5" fill="#3D1A6E"/>
+<rect x="512" y="70" width="48" height="3" rx="1.5" fill="#5B2D8E"/>
+<rect x="564" y="70" width="48" height="3" rx="1.5" fill="#8661C5"/>
+<rect x="616" y="70" width="48" height="3" rx="1.5" fill="#0058A3"/>
+<rect x="668" y="70" width="48" height="3" rx="1.5" fill="#3A7FD5"/>
 
-  <!-- ============================================================ -->
-  <!-- LEFT SIDE: Without Specs (Red - The Problem)                  -->
-  <!-- ============================================================ -->
+<!-- ============= LEFT: Without Specs (Dark purple — The Problem) ============= -->
+<rect x="40" y="100" width="620" height="48" rx="10" fill="#3D1A6E"/>
+<text x="350" y="130" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">Without Specifications — Vibe Coding</text>
 
-  <g filter="url(#shadow)">
-    <rect x="40" y="100" width="620" height="48" rx="10" fill="#F25022"/>
-  </g>
-  <text x="350" y="130" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">Without Specifications — Vibe Coding</text>
+<rect x="60" y="168" width="260" height="54" rx="6" fill="#FFF" stroke="#5B2D8E" stroke-width="1.5"/>
+<text x="190" y="190" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">"Build me a login system"</text>
+<text x="190" y="206" text-anchor="middle" font-size="9" fill="#5B2D8E">Vague prompt, no acceptance criteria</text>
 
-  <!-- Step 1: Vague prompt -->
-  <rect x="60" y="168" width="260" height="54" rx="6" fill="#FFFFFF" stroke="#F25022" stroke-width="1.5"/>
-  <text x="190" y="190" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">"Build me a login system"</text>
-  <text x="190" y="206" text-anchor="middle" font-size="9" fill="#F25022">Vague prompt, no acceptance criteria</text>
+<path d="M320,195 L360,195" stroke="#5B2D8E" stroke-width="1.5" fill="none" marker-end="url(#arr-r)"/>
 
-  <path d="M320,195 L360,195" stroke="#F25022" stroke-width="1.5" fill="none" marker-end="url(#arrow-red)"/>
+<rect x="370" y="168" width="260" height="54" rx="6" fill="#FFF" stroke="#5B2D8E" stroke-width="1.5"/>
+<text x="500" y="190" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">AI generates code immediately</text>
+<text x="500" y="206" text-anchor="middle" font-size="9" fill="#5B2D8E">Skips requirements, guesses architecture</text>
 
-  <!-- Step 2: AI guesses -->
-  <rect x="370" y="168" width="260" height="54" rx="6" fill="#FFFFFF" stroke="#F25022" stroke-width="1.5"/>
-  <text x="500" y="190" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">AI generates code immediately</text>
-  <text x="500" y="206" text-anchor="middle" font-size="9" fill="#F25022">Skips requirements, guesses architecture</text>
+<path d="M500,222 L500,248" stroke="#5B2D8E" stroke-width="1.5" fill="none" marker-end="url(#arr-r)"/>
 
-  <!-- Arrow down -->
-  <path d="M500,222 L500,248" stroke="#F25022" stroke-width="1.5" fill="none" marker-end="url(#arrow-red)"/>
+<rect x="60" y="254" width="570" height="160" rx="8" fill="#5B2D8E" opacity="0.04" stroke="#5B2D8E" stroke-width="1"/>
+<text x="80" y="278" font-size="11" font-weight="700" fill="#5B2D8E">What goes wrong:</text>
+<text x="80" y="302" font-size="11" fill="#2C2C2A">1. Requirements live in Slack messages and someone's head</text>
+<text x="80" y="322" font-size="11" fill="#2C2C2A">2. Different people interpret "login system" differently</text>
+<text x="80" y="342" font-size="11" fill="#2C2C2A">3. Code drifts from original intent — no way to detect it</text>
+<text x="80" y="362" font-size="11" fill="#2C2C2A">4. No traceability between requirements, design, and tests</text>
+<text x="80" y="382" font-size="11" fill="#2C2C2A">5. Testing is subjective — "does it work?" instead of "does it meet criteria?"</text>
+<text x="80" y="402" font-size="11" fill="#2C2C2A">6. 40% of developer time spent on rework due to misunderstood requirements</text>
 
-  <!-- Problems list -->
-  <rect x="60" y="254" width="570" height="160" rx="8" fill="#F25022" opacity="0.04" stroke="#F25022" stroke-width="1"/>
-  <text x="80" y="278" font-size="11" font-weight="700" fill="#F25022">What goes wrong:</text>
+<!-- ============= RIGHT: With Specky (Blue — The Solution) ============= -->
+<rect x="740" y="100" width="620" height="48" rx="10" fill="#0058A3"/>
+<text x="1050" y="130" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">With Specky — Deterministic Development</text>
 
-  <text x="80" y="302" font-size="11" fill="#2C2C2A">1. Requirements live in Slack messages and someone's head</text>
-  <text x="80" y="322" font-size="11" fill="#2C2C2A">2. Different people interpret "login system" differently</text>
-  <text x="80" y="342" font-size="11" fill="#2C2C2A">3. Code drifts from original intent — no way to detect it</text>
-  <text x="80" y="362" font-size="11" fill="#2C2C2A">4. No traceability between requirements, design, and tests</text>
-  <text x="80" y="382" font-size="11" fill="#2C2C2A">5. Testing is subjective — "does it work?" instead of "does it meet criteria?"</text>
-  <text x="80" y="402" font-size="11" fill="#2C2C2A">6. 40% of developer time spent on rework due to misunderstood requirements</text>
+<rect x="760" y="168" width="260" height="54" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<text x="890" y="190" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">Any input (transcript, doc, prompt)</text>
+<text x="890" y="206" text-anchor="middle" font-size="9" fill="#0058A3">Specky structures it into Markdown</text>
 
-  <!-- ============================================================ -->
-  <!-- RIGHT SIDE: With Specs (Green - The Solution)                 -->
-  <!-- ============================================================ -->
+<path d="M1020,195 L1060,195" stroke="#0058A3" stroke-width="1.5" fill="none" marker-end="url(#arr-g)"/>
 
-  <g filter="url(#shadow)">
-    <rect x="740" y="100" width="620" height="48" rx="10" fill="#7FBA00"/>
-  </g>
-  <text x="1050" y="130" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">With Specky — Deterministic Development</text>
+<rect x="1070" y="168" width="260" height="54" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<text x="1200" y="190" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">10-phase pipeline enforces quality</text>
+<text x="1200" y="206" text-anchor="middle" font-size="9" fill="#0058A3">State machine, EARS validation, LGTM gates</text>
 
-  <!-- Step 1: Structured input -->
-  <rect x="760" y="168" width="260" height="54" rx="6" fill="#FFFFFF" stroke="#7FBA00" stroke-width="1.5"/>
-  <text x="890" y="190" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">Any input (transcript, doc, prompt)</text>
-  <text x="890" y="206" text-anchor="middle" font-size="9" fill="#7FBA00">Specky structures it into Markdown</text>
+<path d="M1200,222 L1200,248" stroke="#0058A3" stroke-width="1.5" fill="none" marker-end="url(#arr-g)"/>
 
-  <path d="M1020,195 L1060,195" stroke="#7FBA00" stroke-width="1.5" fill="none" marker-end="url(#arrow-green)"/>
+<rect x="760" y="254" width="570" height="160" rx="8" fill="#0058A3" opacity="0.03" stroke="#0058A3" stroke-width="1"/>
+<text x="780" y="278" font-size="11" font-weight="700" fill="#0058A3">What you get:</text>
+<text x="780" y="302" font-size="11" fill="#2C2C2A">1. Every requirement is testable (EARS notation — 6 patterns)</text>
+<text x="780" y="322" font-size="11" fill="#2C2C2A">2. State machine blocks skipping steps — no shortcuts</text>
+<text x="780" y="342" font-size="11" fill="#2C2C2A">3. Bidirectional traceability: requirement ↔ design ↔ task ↔ test</text>
+<text x="780" y="362" font-size="11" fill="#2C2C2A">4. Automatic drift detection between spec and code</text>
+<text x="780" y="382" font-size="11" fill="#2C2C2A">5. Compliance validation (HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001)</text>
+<text x="780" y="402" font-size="11" fill="#2C2C2A">6. AI produces deterministic output, not guesswork</text>
 
-  <!-- Step 2: Pipeline enforces -->
-  <rect x="1070" y="168" width="260" height="54" rx="6" fill="#FFFFFF" stroke="#7FBA00" stroke-width="1.5"/>
-  <text x="1200" y="190" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">10-phase pipeline enforces quality</text>
-  <text x="1200" y="206" text-anchor="middle" font-size="9" fill="#7FBA00">State machine, EARS validation, LGTM gates</text>
+<!-- ============= BOTTOM: How the Pieces Fit Together ============= -->
+<line x1="60" y1="440" x2="1340" y2="440" stroke="#E8E6DF" stroke-width="1"/>
+<text x="700" y="478" text-anchor="middle" font-size="18" font-weight="700" fill="#2C2C2A">How the Pieces Fit Together</text>
 
-  <!-- Arrow down -->
-  <path d="M1200,222 L1200,248" stroke="#7FBA00" stroke-width="1.5" fill="none" marker-end="url(#arrow-green)"/>
+<!-- Markdown -->
+<rect x="60" y="506" width="240" height="100" rx="8" fill="#FFF" stroke="#0058A3" stroke-width="2"/>
+<rect x="60" y="506" width="240" height="6" rx="3" fill="#0058A3"/>
+<text x="180" y="536" text-anchor="middle" font-size="14" font-weight="700" fill="#0058A3">Markdown</text>
+<text x="180" y="556" text-anchor="middle" font-size="10" fill="#5F5E5A">The universal language AI reads</text>
+<text x="180" y="572" text-anchor="middle" font-size="10" fill="#5F5E5A">and writes. Structured text that</text>
+<text x="180" y="588" text-anchor="middle" font-size="10" fill="#5F5E5A">both humans and machines understand.</text>
+<path d="M300,556 L340,556" stroke="#9590A8" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
 
-  <!-- Benefits list -->
-  <rect x="760" y="254" width="570" height="160" rx="8" fill="#7FBA00" opacity="0.04" stroke="#7FBA00" stroke-width="1"/>
-  <text x="780" y="278" font-size="11" font-weight="700" fill="#527D00">What you get:</text>
+<!-- MCP -->
+<rect x="350" y="506" width="240" height="100" rx="8" fill="#FFF" stroke="#5B2D8E" stroke-width="2"/>
+<rect x="350" y="506" width="240" height="6" rx="3" fill="#5B2D8E"/>
+<text x="470" y="536" text-anchor="middle" font-size="14" font-weight="700" fill="#5B2D8E">MCP Protocol</text>
+<text x="470" y="556" text-anchor="middle" font-size="10" fill="#5F5E5A">USB for AI — a universal interface</text>
+<text x="470" y="572" text-anchor="middle" font-size="10" fill="#5F5E5A">that lets any AI assistant call</text>
+<text x="470" y="588" text-anchor="middle" font-size="10" fill="#5F5E5A">external tools. Open standard.</text>
+<path d="M590,556 L630,556" stroke="#9590A8" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
 
-  <text x="780" y="302" font-size="11" fill="#2C2C2A">1. Every requirement is testable (EARS notation — 6 patterns)</text>
-  <text x="780" y="322" font-size="11" fill="#2C2C2A">2. State machine blocks skipping steps — no shortcuts</text>
-  <text x="780" y="342" font-size="11" fill="#2C2C2A">3. Bidirectional traceability: requirement ↔ design ↔ task ↔ test</text>
-  <text x="780" y="362" font-size="11" fill="#2C2C2A">4. Automatic drift detection between spec and code</text>
-  <text x="780" y="382" font-size="11" fill="#2C2C2A">5. Compliance validation (HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001)</text>
-  <text x="780" y="402" font-size="11" fill="#2C2C2A">6. AI produces deterministic output, not guesswork</text>
+<!-- Specky -->
+<rect x="640" y="506" width="240" height="100" rx="8" fill="#FFF" stroke="#8661C5" stroke-width="2"/>
+<rect x="640" y="506" width="240" height="6" rx="3" fill="#8661C5"/>
+<text x="760" y="536" text-anchor="middle" font-size="14" font-weight="700" fill="#5B2D8E">Specky MCP Server</text>
+<text x="760" y="556" text-anchor="middle" font-size="10" fill="#5F5E5A">57 tools that enforce SDD. State</text>
+<text x="760" y="572" text-anchor="middle" font-size="10" fill="#5F5E5A">machine, EARS validator, compliance</text>
+<text x="760" y="588" text-anchor="middle" font-size="10" fill="#5F5E5A">engine, test generator, IaC output.</text>
+<path d="M880,556 L920,556" stroke="#9590A8" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
 
-  <!-- ============================================================ -->
-  <!-- BOTTOM: The Stack Explanation                                 -->
-  <!-- ============================================================ -->
+<!-- Plugin / Agents -->
+<rect x="930" y="506" width="240" height="100" rx="8" fill="#FFF" stroke="#3D1A6E" stroke-width="2"/>
+<rect x="930" y="506" width="240" height="6" rx="3" fill="#3D1A6E"/>
+<text x="1050" y="536" text-anchor="middle" font-size="14" font-weight="700" fill="#3D1A6E">Plugin + Agents</text>
+<text x="1050" y="556" text-anchor="middle" font-size="10" fill="#5F5E5A">7 Copilot agents, 19 prompts,</text>
+<text x="1050" y="572" text-anchor="middle" font-size="10" fill="#5F5E5A">6 skills, 10 hooks. Installable</text>
+<text x="1050" y="588" text-anchor="middle" font-size="10" fill="#5F5E5A">via copilot plugin install.</text>
 
-  <line x1="60" y1="440" x2="1340" y2="440" stroke="#B4B2A9" stroke-width="0.5" opacity="0.4"/>
+<!-- Summary bar -->
+<rect x="200" y="640" width="1000" height="44" rx="22" fill="#2C2C2A"/>
+<text x="700" y="658" text-anchor="middle" font-size="11" font-weight="600" fill="#FFFFFF">Markdown is the language · MCP is the interface · Specky is the engine · The Plugin is the package</text>
+<text x="700" y="674" text-anchor="middle" font-size="10" fill="#FFFFFF" opacity="0.7">Together they replace vibe coding with traceable, validated, deterministic specifications</text>
 
-  <text x="700" y="478" text-anchor="middle" font-size="18" font-weight="700" fill="#2C2C2A">How the Pieces Fit Together</text>
-
-  <!-- Markdown box -->
-  <g filter="url(#shadow)">
-    <rect x="60" y="506" width="240" height="100" rx="8" fill="#FFFFFF" stroke="#0078D4" stroke-width="2"/>
-    <rect x="60" y="506" width="240" height="6" rx="3" fill="#0078D4"/>
-  </g>
-  <text x="180" y="536" text-anchor="middle" font-size="14" font-weight="700" fill="#0078D4">Markdown</text>
-  <text x="180" y="556" text-anchor="middle" font-size="10" fill="#5F5E5A">The universal language AI reads</text>
-  <text x="180" y="572" text-anchor="middle" font-size="10" fill="#5F5E5A">and writes. Structured text that</text>
-  <text x="180" y="588" text-anchor="middle" font-size="10" fill="#5F5E5A">both humans and machines understand.</text>
-
-  <path d="M300,556 L340,556" stroke="#B4B2A9" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
-
-  <!-- MCP box -->
-  <g filter="url(#shadow)">
-    <rect x="350" y="506" width="240" height="100" rx="8" fill="#FFFFFF" stroke="#7FBA00" stroke-width="2"/>
-    <rect x="350" y="506" width="240" height="6" rx="3" fill="#7FBA00"/>
-  </g>
-  <text x="470" y="536" text-anchor="middle" font-size="14" font-weight="700" fill="#7FBA00">MCP Protocol</text>
-  <text x="470" y="556" text-anchor="middle" font-size="10" fill="#5F5E5A">USB for AI — a universal interface</text>
-  <text x="470" y="572" text-anchor="middle" font-size="10" fill="#5F5E5A">that lets any AI assistant call</text>
-  <text x="470" y="588" text-anchor="middle" font-size="10" fill="#5F5E5A">external tools. Open standard.</text>
-
-  <path d="M590,556 L630,556" stroke="#B4B2A9" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
-
-  <!-- Specky box -->
-  <g filter="url(#shadow)">
-    <rect x="640" y="506" width="240" height="100" rx="8" fill="#FFFFFF" stroke="#FFB900" stroke-width="2"/>
-    <rect x="640" y="506" width="240" height="6" rx="3" fill="#FFB900"/>
-  </g>
-  <text x="760" y="536" text-anchor="middle" font-size="14" font-weight="700" fill="#BA7517">Specky MCP Server</text>
-  <text x="760" y="556" text-anchor="middle" font-size="10" fill="#5F5E5A">53 tools that enforce SDD. State</text>
-  <text x="760" y="572" text-anchor="middle" font-size="10" fill="#5F5E5A">machine, EARS validator, compliance</text>
-  <text x="760" y="588" text-anchor="middle" font-size="10" fill="#5F5E5A">engine, test generator, IaC output.</text>
-
-  <path d="M880,556 L920,556" stroke="#B4B2A9" stroke-width="1.5" fill="none" marker-end="url(#arrow-gray)"/>
-
-  <!-- Agents box -->
-  <g filter="url(#shadow)">
-    <rect x="930" y="506" width="240" height="100" rx="8" fill="#FFFFFF" stroke="#F25022" stroke-width="2"/>
-    <rect x="930" y="506" width="240" height="6" rx="3" fill="#F25022"/>
-  </g>
-  <text x="1050" y="536" text-anchor="middle" font-size="14" font-weight="700" fill="#F25022">AI Agents and Skills</text>
-  <text x="1050" y="556" text-anchor="middle" font-size="10" fill="#5F5E5A">Copilot agents + Claude Code skills</text>
-  <text x="1050" y="572" text-anchor="middle" font-size="10" fill="#5F5E5A">that invoke Specky tools. Specialized</text>
-  <text x="1050" y="588" text-anchor="middle" font-size="10" fill="#5F5E5A">roles: Spec Engineer, Architect, etc.</text>
-
-  <!-- Bottom summary -->
-  <rect x="200" y="640" width="1000" height="44" rx="22" fill="#2C2C2A"/>
-  <text x="700" y="658" text-anchor="middle" font-size="11" font-weight="600" fill="#FFFFFF">Markdown is the language · MCP is the interface · Specky is the engine · Agents are the operators</text>
-  <text x="700" y="674" text-anchor="middle" font-size="10" fill="#FFFFFF" opacity="0.7">Together they replace vibe coding with traceable, validated, deterministic specifications</text>
-
-  <!-- Footer -->
-  <text x="700" y="720" text-anchor="middle" font-size="9" fill="#888780" font-style="italic">Specky v3.0 — built on the Spec-Kit SDD methodology — includes everything you need</text>
-
+<!-- ============= ATTRIBUTION ============= -->
+<text x="1360" y="750" text-anchor="end" font-size="9" fill="#9590A8" opacity="0.6">Paula Silva, AI-Native Software Engineer @paulasilvatech</text>
 </svg>

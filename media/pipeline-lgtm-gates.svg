@@ -1,196 +1,138 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 400" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
-  <defs>
-    <filter id="shadow" x="-4%" y="-4%" width="108%" height="116%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#2C2C2A" flood-opacity="0.10"/>
-    </filter>
-    <marker id="arrow-flow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#B4B2A9"/>
-    </marker>
-    <marker id="arrow-feedback" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#F25022"/>
-    </marker>
-    <linearGradient id="accent-bar" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#0078D4"/>
-      <stop offset="33%" stop-color="#7FBA00"/>
-      <stop offset="66%" stop-color="#FFB900"/>
-      <stop offset="100%" stop-color="#F25022"/>
-    </linearGradient>
-  </defs>
+<!-- Pipeline Flow with LGTM Quality Gates
+     @paulasilvatech visual identity · purple/blue/gray
+     Canvas: 1400x400
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 400" width="1400" height="400"
+     font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<defs>
+  <marker id="arr-f" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+    <polygon points="0 0, 8 3, 0 6" fill="#9590A8"/>
+  </marker>
+  <marker id="arr-fb" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+    <polygon points="0 0, 8 3, 0 6" fill="#3D1A6E"/>
+  </marker>
+</defs>
+<rect width="1400" height="400" fill="#FFF"/>
 
-  <!-- Background -->
-  <rect width="1400" height="400" fill="#FFFFFF"/>
+<!-- ============= TITLE ============= -->
+<text x="700" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#2C2C2A">Pipeline Flow with LGTM Quality Gates</text>
+<text x="700" y="52" text-anchor="middle" font-size="12" fill="#5F5E5A">Human review at every critical phase · State machine blocks phase-skipping</text>
+<rect x="460" y="60" width="48" height="3" rx="1.5" fill="#3D1A6E"/>
+<rect x="512" y="60" width="48" height="3" rx="1.5" fill="#5B2D8E"/>
+<rect x="564" y="60" width="48" height="3" rx="1.5" fill="#8661C5"/>
+<rect x="616" y="60" width="48" height="3" rx="1.5" fill="#0058A3"/>
+<rect x="668" y="60" width="48" height="3" rx="1.5" fill="#3A7FD5"/>
 
-  <!-- Title -->
-  <text x="700" y="34" text-anchor="middle" font-size="20" font-weight="700" fill="#2C2C2A">Pipeline Flow with LGTM Quality Gates</text>
-  <text x="700" y="52" text-anchor="middle" font-size="12" fill="#5F5E5A">Human review at every critical phase · State machine blocks phase-skipping</text>
-  <rect x="460" y="60" width="480" height="3" rx="1.5" fill="url(#accent-bar)"/>
+<!-- ============= PHASE BOXES ============= -->
+<!-- Init -->
+<rect x="20" y="100" width="100" height="60" rx="8" fill="#FFF" stroke="#0058A3" stroke-width="2"/>
+<rect x="20" y="100" width="100" height="5" rx="2" fill="#0058A3"/>
+<text x="70" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A">Init</text>
+<text x="70" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">CONSTITUTION</text>
+<path d="M120,130 L140,130" stroke="#9590A8" stroke-width="1.5" fill="none" marker-end="url(#arr-f)"/>
 
-  <!-- ============================================================ -->
-  <!-- PHASE BOXES — Main flow line at y=150                         -->
-  <!-- ============================================================ -->
+<!-- Discover -->
+<rect x="150" y="100" width="100" height="60" rx="8" fill="#FFF" stroke="#0058A3" stroke-width="2"/>
+<rect x="150" y="100" width="100" height="5" rx="2" fill="#0058A3"/>
+<text x="200" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A">Discover</text>
+<text x="200" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">7 Questions</text>
+<path d="M250,130 L270,130" stroke="#9590A8" stroke-width="1.5" fill="none" marker-end="url(#arr-f)"/>
 
-  <!-- Phase 1: Init -->
-  <g filter="url(#shadow)">
-    <rect x="20" y="100" width="100" height="60" rx="8" fill="#FFFFFF" stroke="#0078D4" stroke-width="2"/>
-    <rect x="20" y="100" width="100" height="5" rx="2" fill="#0078D4"/>
-  </g>
-  <text x="70" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A">Init</text>
-  <text x="70" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">CONSTITUTION</text>
+<!-- Specify -->
+<rect x="280" y="100" width="100" height="60" rx="8" fill="#FFF" stroke="#5B2D8E" stroke-width="2"/>
+<rect x="280" y="100" width="100" height="5" rx="2" fill="#5B2D8E"/>
+<text x="330" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A">Specify</text>
+<text x="330" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">SPECIFICATION</text>
 
-  <!-- Arrow 1→2 -->
-  <path d="M120,130 L140,130" stroke="#B4B2A9" stroke-width="1.5" fill="none" marker-end="url(#arrow-flow)"/>
+<!-- LGTM Gate 1 -->
+<rect x="392" y="112" width="46" height="36" rx="18" fill="#5B2D8E"/>
+<text x="415" y="127" text-anchor="middle" font-size="8" font-weight="700" fill="#FFF">LGTM</text>
+<text x="415" y="140" text-anchor="middle" font-size="7" fill="#FFF" opacity="0.8">gate</text>
+<path d="M380,130 L390,130" stroke="#5B2D8E" stroke-width="1.5" fill="none"/>
+<path d="M438,130 L460,130" stroke="#5B2D8E" stroke-width="1.5" fill="none" marker-end="url(#arr-f)"/>
 
-  <!-- Phase 2: Discover -->
-  <g filter="url(#shadow)">
-    <rect x="150" y="100" width="100" height="60" rx="8" fill="#FFFFFF" stroke="#0078D4" stroke-width="2"/>
-    <rect x="150" y="100" width="100" height="5" rx="2" fill="#0078D4"/>
-  </g>
-  <text x="200" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A">Discover</text>
-  <text x="200" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">7 Questions</text>
+<!-- Clarify -->
+<rect x="470" y="100" width="100" height="60" rx="8" fill="#FFF" stroke="#5B2D8E" stroke-width="2"/>
+<rect x="470" y="100" width="100" height="5" rx="2" fill="#5B2D8E"/>
+<text x="520" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A">Clarify</text>
+<text x="520" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">EARS Valid.</text>
+<path d="M570,130 L590,130" stroke="#9590A8" stroke-width="1.5" fill="none" marker-end="url(#arr-f)"/>
 
-  <!-- Arrow 2→3 -->
-  <path d="M250,130 L270,130" stroke="#B4B2A9" stroke-width="1.5" fill="none" marker-end="url(#arrow-flow)"/>
+<!-- Design -->
+<rect x="600" y="100" width="100" height="60" rx="8" fill="#FFF" stroke="#8661C5" stroke-width="2"/>
+<rect x="600" y="100" width="100" height="5" rx="2" fill="#8661C5"/>
+<text x="650" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A">Design</text>
+<text x="650" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">DESIGN.md</text>
 
-  <!-- Phase 3: Specify -->
-  <g filter="url(#shadow)">
-    <rect x="280" y="100" width="100" height="60" rx="8" fill="#FFFFFF" stroke="#7FBA00" stroke-width="2"/>
-    <rect x="280" y="100" width="100" height="5" rx="2" fill="#7FBA00"/>
-  </g>
-  <text x="330" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A">Specify</text>
-  <text x="330" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">SPECIFICATION</text>
+<!-- LGTM Gate 2 -->
+<rect x="712" y="112" width="46" height="36" rx="18" fill="#8661C5"/>
+<text x="735" y="127" text-anchor="middle" font-size="8" font-weight="700" fill="#FFF">LGTM</text>
+<text x="735" y="140" text-anchor="middle" font-size="7" fill="#FFF" opacity="0.8">gate</text>
+<path d="M700,130 L710,130" stroke="#8661C5" stroke-width="1.5" fill="none"/>
+<path d="M758,130 L780,130" stroke="#8661C5" stroke-width="1.5" fill="none" marker-end="url(#arr-f)"/>
 
-  <!-- LGTM Gate 1 -->
-  <rect x="392" y="112" width="46" height="36" rx="18" fill="#7FBA00"/>
-  <text x="415" y="127" text-anchor="middle" font-size="8" font-weight="700" fill="#FFFFFF">LGTM</text>
-  <text x="415" y="140" text-anchor="middle" font-size="7" fill="#FFFFFF" opacity="0.8">gate</text>
+<!-- Tasks -->
+<rect x="790" y="100" width="100" height="60" rx="8" fill="#FFF" stroke="#8661C5" stroke-width="2"/>
+<rect x="790" y="100" width="100" height="5" rx="2" fill="#8661C5"/>
+<text x="840" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A">Tasks</text>
+<text x="840" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">TASKS.md</text>
 
-  <!-- Arrow 3→Gate→4 -->
-  <path d="M380,130 L390,130" stroke="#7FBA00" stroke-width="1.5" fill="none"/>
-  <path d="M438,130 L460,130" stroke="#7FBA00" stroke-width="1.5" fill="none" marker-end="url(#arrow-flow)"/>
+<!-- LGTM Gate 3 -->
+<rect x="902" y="112" width="46" height="36" rx="18" fill="#8661C5"/>
+<text x="925" y="127" text-anchor="middle" font-size="8" font-weight="700" fill="#FFF">LGTM</text>
+<text x="925" y="140" text-anchor="middle" font-size="7" fill="#FFF" opacity="0.8">gate</text>
+<path d="M890,130 L900,130" stroke="#8661C5" stroke-width="1.5" fill="none"/>
+<path d="M948,130 L970,130" stroke="#8661C5" stroke-width="1.5" fill="none" marker-end="url(#arr-f)"/>
 
-  <!-- Phase 4: Clarify -->
-  <g filter="url(#shadow)">
-    <rect x="470" y="100" width="100" height="60" rx="8" fill="#FFFFFF" stroke="#7FBA00" stroke-width="2"/>
-    <rect x="470" y="100" width="100" height="5" rx="2" fill="#7FBA00"/>
-  </g>
-  <text x="520" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A">Clarify</text>
-  <text x="520" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">EARS Valid.</text>
+<!-- Analyze -->
+<rect x="980" y="100" width="100" height="60" rx="8" fill="#FFF" stroke="#3D1A6E" stroke-width="2"/>
+<rect x="980" y="100" width="100" height="5" rx="2" fill="#3D1A6E"/>
+<text x="1030" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A">Analyze</text>
+<text x="1030" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">Quality Gate</text>
+<path d="M1080,130 L1100,130" stroke="#9590A8" stroke-width="1.5" fill="none" marker-end="url(#arr-f)"/>
 
-  <!-- Arrow 4→5 -->
-  <path d="M570,130 L590,130" stroke="#B4B2A9" stroke-width="1.5" fill="none" marker-end="url(#arrow-flow)"/>
+<!-- Implement -->
+<rect x="1110" y="100" width="80" height="60" rx="8" fill="#FFF" stroke="#0058A3" stroke-width="2"/>
+<rect x="1110" y="100" width="80" height="5" rx="2" fill="#0058A3"/>
+<text x="1150" y="128" text-anchor="middle" font-size="11" font-weight="700" fill="#2C2C2A">Implement</text>
+<text x="1150" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">Code</text>
+<path d="M1190,130 L1210,130" stroke="#9590A8" stroke-width="1.5" fill="none" marker-end="url(#arr-f)"/>
 
-  <!-- Phase 5: Design -->
-  <g filter="url(#shadow)">
-    <rect x="600" y="100" width="100" height="60" rx="8" fill="#FFFFFF" stroke="#FFB900" stroke-width="2"/>
-    <rect x="600" y="100" width="100" height="5" rx="2" fill="#FFB900"/>
-  </g>
-  <text x="650" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A">Design</text>
-  <text x="650" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">DESIGN.md</text>
+<!-- Verify -->
+<rect x="1220" y="100" width="80" height="60" rx="8" fill="#FFF" stroke="#5B2D8E" stroke-width="2"/>
+<rect x="1220" y="100" width="80" height="5" rx="2" fill="#5B2D8E"/>
+<text x="1260" y="128" text-anchor="middle" font-size="11" font-weight="700" fill="#2C2C2A">Verify</text>
+<text x="1260" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">Drift Check</text>
+<path d="M1300,130 L1310,130" stroke="#9590A8" stroke-width="1.5" fill="none" marker-end="url(#arr-f)"/>
 
-  <!-- LGTM Gate 2 -->
-  <rect x="712" y="112" width="46" height="36" rx="18" fill="#FFB900"/>
-  <text x="735" y="127" text-anchor="middle" font-size="8" font-weight="700" fill="#FFFFFF">LGTM</text>
-  <text x="735" y="140" text-anchor="middle" font-size="7" fill="#FFFFFF" opacity="0.8">gate</text>
+<!-- Release -->
+<rect x="1320" y="100" width="65" height="60" rx="8" fill="#FFF" stroke="#5B2D8E" stroke-width="2"/>
+<rect x="1320" y="100" width="65" height="5" rx="2" fill="#5B2D8E"/>
+<text x="1352" y="128" text-anchor="middle" font-size="11" font-weight="700" fill="#2C2C2A">Release</text>
+<text x="1352" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">PR + Docs</text>
 
-  <!-- Arrow 5→Gate→6 -->
-  <path d="M700,130 L710,130" stroke="#FFB900" stroke-width="1.5" fill="none"/>
-  <path d="M758,130 L780,130" stroke="#FFB900" stroke-width="1.5" fill="none" marker-end="url(#arrow-flow)"/>
+<!-- ============= FEEDBACK LOOP ============= -->
+<path d="M1260,160 L1260,220 Q1260,240 1240,240 L350,240 Q330,240 330,220 L330,162"
+      stroke="#3D1A6E" stroke-width="1.5" fill="none" stroke-dasharray="6,3" marker-end="url(#arr-fb)"/>
+<rect x="690" y="228" width="220" height="22" rx="11" fill="#3D1A6E" opacity="0.06"/>
+<text x="800" y="243" text-anchor="middle" font-size="9" font-weight="600" fill="#3D1A6E">re-specify if drift detected</text>
 
-  <!-- Phase 6: Tasks -->
-  <g filter="url(#shadow)">
-    <rect x="790" y="100" width="100" height="60" rx="8" fill="#FFFFFF" stroke="#FFB900" stroke-width="2"/>
-    <rect x="790" y="100" width="100" height="5" rx="2" fill="#FFB900"/>
-  </g>
-  <text x="840" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A">Tasks</text>
-  <text x="840" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">TASKS.md</text>
+<!-- ============= LEGEND ============= -->
+<line x1="60" y1="300" x2="1340" y2="300" stroke="#E8E6DF" stroke-width="1"/>
+<rect x="120" y="320" width="14" height="14" rx="3" fill="#0058A3"/>
+<text x="140" y="332" font-size="10" fill="#5F5E5A">Foundation</text>
+<rect x="260" y="320" width="14" height="14" rx="3" fill="#5B2D8E"/>
+<text x="280" y="332" font-size="10" fill="#5F5E5A">Specification</text>
+<rect x="420" y="320" width="14" height="14" rx="3" fill="#8661C5"/>
+<text x="440" y="332" font-size="10" fill="#5F5E5A">Architecture</text>
+<rect x="580" y="320" width="14" height="14" rx="3" fill="#3D1A6E"/>
+<text x="600" y="332" font-size="10" fill="#5F5E5A">Quality Gate</text>
+<rect x="740" y="320" width="40" height="14" rx="7" fill="#5B2D8E"/>
+<text x="760" y="331" text-anchor="middle" font-size="7" font-weight="700" fill="#FFF">LGTM</text>
+<text x="790" y="332" font-size="10" fill="#5F5E5A">Human review gate — AI pauses for approval</text>
+<path d="M1060,327 L1100,327" stroke="#3D1A6E" stroke-width="1.5" fill="none" stroke-dasharray="6,3"/>
+<text x="1110" y="332" font-size="10" fill="#5F5E5A">Feedback loop (on drift)</text>
 
-  <!-- LGTM Gate 3 -->
-  <rect x="902" y="112" width="46" height="36" rx="18" fill="#FFB900"/>
-  <text x="925" y="127" text-anchor="middle" font-size="8" font-weight="700" fill="#FFFFFF">LGTM</text>
-  <text x="925" y="140" text-anchor="middle" font-size="7" fill="#FFFFFF" opacity="0.8">gate</text>
-
-  <!-- Arrow 6→Gate→7 -->
-  <path d="M890,130 L900,130" stroke="#FFB900" stroke-width="1.5" fill="none"/>
-  <path d="M948,130 L970,130" stroke="#FFB900" stroke-width="1.5" fill="none" marker-end="url(#arrow-flow)"/>
-
-  <!-- Phase 7: Analyze -->
-  <g filter="url(#shadow)">
-    <rect x="980" y="100" width="100" height="60" rx="8" fill="#FFFFFF" stroke="#F25022" stroke-width="2"/>
-    <rect x="980" y="100" width="100" height="5" rx="2" fill="#F25022"/>
-  </g>
-  <text x="1030" y="128" text-anchor="middle" font-size="12" font-weight="700" fill="#2C2C2A">Analyze</text>
-  <text x="1030" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">Quality Gate</text>
-
-  <!-- Arrow 7→8 -->
-  <path d="M1080,130 L1100,130" stroke="#B4B2A9" stroke-width="1.5" fill="none" marker-end="url(#arrow-flow)"/>
-
-  <!-- Phase 8: Implement -->
-  <g filter="url(#shadow)">
-    <rect x="1110" y="100" width="80" height="60" rx="8" fill="#FFFFFF" stroke="#0078D4" stroke-width="2"/>
-    <rect x="1110" y="100" width="80" height="5" rx="2" fill="#0078D4"/>
-  </g>
-  <text x="1150" y="128" text-anchor="middle" font-size="11" font-weight="700" fill="#2C2C2A">Implement</text>
-  <text x="1150" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">Code</text>
-
-  <!-- Arrow 8→9 -->
-  <path d="M1190,130 L1210,130" stroke="#B4B2A9" stroke-width="1.5" fill="none" marker-end="url(#arrow-flow)"/>
-
-  <!-- Phase 9: Verify -->
-  <g filter="url(#shadow)">
-    <rect x="1220" y="100" width="80" height="60" rx="8" fill="#FFFFFF" stroke="#7FBA00" stroke-width="2"/>
-    <rect x="1220" y="100" width="80" height="5" rx="2" fill="#7FBA00"/>
-  </g>
-  <text x="1260" y="128" text-anchor="middle" font-size="11" font-weight="700" fill="#2C2C2A">Verify</text>
-  <text x="1260" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">Drift Check</text>
-
-  <!-- Arrow 9→10 -->
-  <path d="M1300,130 L1310,130" stroke="#B4B2A9" stroke-width="1.5" fill="none" marker-end="url(#arrow-flow)"/>
-
-  <!-- Phase 10: Release -->
-  <g filter="url(#shadow)">
-    <rect x="1320" y="100" width="65" height="60" rx="8" fill="#FFFFFF" stroke="#7FBA00" stroke-width="2"/>
-    <rect x="1320" y="100" width="65" height="5" rx="2" fill="#7FBA00"/>
-  </g>
-  <text x="1352" y="128" text-anchor="middle" font-size="11" font-weight="700" fill="#2C2C2A">Release</text>
-  <text x="1352" y="148" text-anchor="middle" font-size="8" fill="#5F5E5A">PR + Docs</text>
-
-  <!-- ============================================================ -->
-  <!-- FEEDBACK LOOP: Verify → Specify                               -->
-  <!-- ============================================================ -->
-
-  <path d="M1260,160 L1260,220 Q1260,240 1240,240 L350,240 Q330,240 330,220 L330,162"
-        stroke="#F25022" stroke-width="1.5" fill="none" stroke-dasharray="6,3" marker-end="url(#arrow-feedback)"/>
-
-  <rect x="690" y="228" width="220" height="22" rx="11" fill="#F25022" opacity="0.08"/>
-  <text x="800" y="243" text-anchor="middle" font-size="9" font-weight="600" fill="#F25022">re-specify if drift detected</text>
-
-  <!-- ============================================================ -->
-  <!-- LEGEND                                                        -->
-  <!-- ============================================================ -->
-
-  <line x1="60" y1="300" x2="1340" y2="300" stroke="#B4B2A9" stroke-width="0.5" opacity="0.4"/>
-
-  <!-- Legend items -->
-  <rect x="120" y="320" width="14" height="14" rx="3" fill="#0078D4"/>
-  <text x="140" y="332" font-size="10" fill="#5F5E5A">Foundation</text>
-
-  <rect x="260" y="320" width="14" height="14" rx="3" fill="#7FBA00"/>
-  <text x="280" y="332" font-size="10" fill="#5F5E5A">Specification</text>
-
-  <rect x="420" y="320" width="14" height="14" rx="3" fill="#FFB900"/>
-  <text x="440" y="332" font-size="10" fill="#5F5E5A">Architecture</text>
-
-  <rect x="580" y="320" width="14" height="14" rx="3" fill="#F25022"/>
-  <text x="600" y="332" font-size="10" fill="#5F5E5A">Quality Gate</text>
-
-  <rect x="740" y="320" width="40" height="14" rx="7" fill="#7FBA00"/>
-  <text x="760" y="331" text-anchor="middle" font-size="7" font-weight="700" fill="#FFFFFF">LGTM</text>
-  <text x="790" y="332" font-size="10" fill="#5F5E5A">Human review gate — AI pauses for approval</text>
-
-  <path d="M1060,327 L1100,327" stroke="#F25022" stroke-width="1.5" fill="none" stroke-dasharray="6,3"/>
-  <text x="1110" y="332" font-size="10" fill="#5F5E5A">Feedback loop (on drift)</text>
-
-  <!-- Bottom note -->
-  <text x="700" y="370" text-anchor="middle" font-size="10" fill="#888780" font-style="italic">The state machine enforces sequential phase completion — sdd_advance_phase gates each transition</text>
-
+<text x="700" y="370" text-anchor="middle" font-size="10" fill="#888780" font-style="italic">The state machine enforces sequential phase completion — sdd_advance_phase gates each transition</text>
+<text x="1360" y="392" text-anchor="end" font-size="9" fill="#9590A8" opacity="0.6">Paula Silva, AI-Native Software Engineer @paulasilvatech</text>
 </svg>

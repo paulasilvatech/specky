@@ -1,3 +1,157 @@
+<!-- Specky v3.2 — MCP Ecosystem Architecture
+     @paulasilvatech visual identity: purple/blue/gray palette
+     Plugin-first · 57 tools · 10-phase pipeline · MCP-to-MCP orchestration
+     Canvas: 1200x780
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 780" width="1200" height="780"
+     font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+
+<defs>
+  <marker id="arr" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+    <path d="M1,1.2 L8,4 L1,6.8" fill="#9590A8" stroke="none"/>
+  </marker>
+  <marker id="arr-p" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+    <path d="M1,1.2 L8,4 L1,6.8" fill="#5B2D8E" stroke="none"/>
+  </marker>
+</defs>
+
+<!-- ============= TITLE BLOCK ============= -->
+<text x="600" y="34" text-anchor="middle" font-size="22" font-weight="700" fill="#2C2C2A">Specky v3.2 — MCP Ecosystem Architecture</text>
+<text x="600" y="56" text-anchor="middle" font-size="13" fill="#888780">57 tools · 10-phase pipeline · Plugin-first · MCP-to-MCP orchestration</text>
+<rect x="430" y="66" width="48" height="3" rx="1.5" fill="#3D1A6E"/>
+<rect x="482" y="66" width="48" height="3" rx="1.5" fill="#5B2D8E"/>
+<rect x="534" y="66" width="48" height="3" rx="1.5" fill="#8661C5"/>
+<rect x="586" y="66" width="48" height="3" rx="1.5" fill="#0058A3"/>
+<rect x="638" y="66" width="48" height="3" rx="1.5" fill="#3A7FD5"/>
+
+<!-- ============= ROW 1: INPUT SOURCES ============= -->
+<rect x="24" y="82" width="1152" height="162" rx="8" fill="#5B2D8E" opacity="0.04"/>
+<text x="48" y="102" font-size="11" font-weight="600" fill="#5B2D8E" letter-spacing="1.5">INPUT SOURCES</text>
+
+<rect x="55" y="116" width="170" height="56" rx="6" fill="#FFF" stroke="#8661C5" stroke-width="1.5"/>
+<text x="140" y="140" text-anchor="middle" font-size="12" font-weight="600" fill="#2C2C2A">Meeting</text>
+<text x="140" y="156" text-anchor="middle" font-size="12" font-weight="600" fill="#2C2C2A">Transcript</text>
+
+<rect x="255" y="116" width="170" height="56" rx="6" fill="#FFF" stroke="#8661C5" stroke-width="1.5"/>
+<text x="340" y="140" text-anchor="middle" font-size="12" font-weight="600" fill="#2C2C2A">PDF / DOCX</text>
+<text x="340" y="156" text-anchor="middle" font-size="12" font-weight="600" fill="#2C2C2A">/ PPTX</text>
+
+<rect x="455" y="116" width="170" height="56" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<text x="540" y="148" text-anchor="middle" font-size="12" font-weight="600" fill="#2C2C2A">Figma Design</text>
+
+<rect x="655" y="116" width="170" height="56" rx="6" fill="#FFF" stroke="#8661C5" stroke-width="1.5"/>
+<text x="740" y="148" text-anchor="middle" font-size="12" font-weight="600" fill="#2C2C2A">User Prompt</text>
+
+<rect x="855" y="116" width="170" height="56" rx="6" fill="#FFF" stroke="#8661C5" stroke-width="1.5"/>
+<text x="940" y="148" text-anchor="middle" font-size="12" font-weight="600" fill="#2C2C2A">Markdown</text>
+
+<polygon points="540,204 554,218 540,232 526,218" fill="#FFF" stroke="#9590A8" stroke-width="1.5"/>
+<path d="M140,172 L140,188 Q140,196 148,196 L532,196 Q540,196 540,204" fill="none" stroke="#9590A8" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M340,172 L340,188 Q340,196 348,196 L532,196 Q540,196 540,204" fill="none" stroke="#9590A8" stroke-width="1.2" marker-end="url(#arr)"/>
+<line x1="540" y1="172" x2="540" y2="204" stroke="#9590A8" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M740,172 L740,188 Q740,196 732,196 L548,196 Q540,196 540,204" fill="none" stroke="#9590A8" stroke-width="1.2" marker-end="url(#arr)"/>
+<path d="M940,172 L940,188 Q940,196 932,196 L548,196 Q540,196 540,204" fill="none" stroke="#9590A8" stroke-width="1.2" marker-end="url(#arr)"/>
+
+<!-- ============= ROW 2: SPECKY PLUGIN + MCP SERVER ============= -->
+<rect x="24" y="254" width="1152" height="150" rx="8" fill="#5B2D8E" opacity="0.04"/>
+<text x="48" y="274" font-size="11" font-weight="600" fill="#5B2D8E" letter-spacing="1.5">SPECKY PLUGIN + MCP SERVER</text>
+<path d="M540,232 L540,264 Q540,272 548,272 L592,272 Q600,272 600,280 L600,288" fill="none" stroke="#5B2D8E" stroke-width="1.5" marker-end="url(#arr-p)"/>
+
+<rect x="260" y="288" width="680" height="100" rx="8" fill="#FFF" stroke="#5B2D8E" stroke-width="2"/>
+<text x="600" y="318" text-anchor="middle" font-size="16" font-weight="700" fill="#2C2C2A">Specky — Plugin + MCP Server</text>
+<text x="600" y="342" text-anchor="middle" font-size="12" fill="#5F5E5A">57 Tools · 7 Agents · 19 Prompts · 6 Skills · 10 Hooks · State Machine · EARS Validator</text>
+
+<rect x="310" y="354" width="90" height="20" rx="10" fill="#5B2D8E" opacity="0.08"/>
+<text x="355" y="367" text-anchor="middle" font-size="10" font-weight="600" fill="#5B2D8E">10 Phases</text>
+<rect x="410" y="354" width="110" height="20" rx="10" fill="#0058A3" opacity="0.08"/>
+<text x="465" y="367" text-anchor="middle" font-size="10" font-weight="600" fill="#0058A3">MCP Protocol</text>
+<rect x="530" y="354" width="100" height="20" rx="10" fill="#8661C5" opacity="0.08"/>
+<text x="580" y="367" text-anchor="middle" font-size="10" font-weight="600" fill="#8661C5">SDD Specs</text>
+<rect x="640" y="354" width="100" height="20" rx="10" fill="#3D1A6E" opacity="0.08"/>
+<text x="690" y="367" text-anchor="middle" font-size="10" font-weight="600" fill="#3D1A6E">Quality Gates</text>
+<rect x="750" y="354" width="130" height="20" rx="10" fill="#0058A3" opacity="0.08"/>
+<text x="815" y="367" text-anchor="middle" font-size="10" font-weight="600" fill="#0058A3">Plugin Marketplace</text>
+
+<rect x="875" y="292" width="58" height="20" rx="10" fill="#5B2D8E"/>
+<text x="904" y="305" text-anchor="middle" font-size="10" font-weight="700" fill="#FFF">v3.2.2</text>
+
+<!-- ============= ROW 3: EXTERNAL MCP SERVERS ============= -->
+<rect x="24" y="414" width="1152" height="186" rx="8" fill="#0058A3" opacity="0.03"/>
+<text x="48" y="434" font-size="11" font-weight="600" fill="#0058A3" letter-spacing="1.5">EXTERNAL MCP SERVERS</text>
+
+<rect x="74" y="454" width="140" height="72" rx="6" fill="#FFF" stroke="#1A6FC4" stroke-width="1.5"/>
+<text x="144" y="478" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">GitHub MCP</text>
+<text x="144" y="494" text-anchor="middle" font-size="10" fill="#888780">Issues, PRs,</text>
+<text x="144" y="508" text-anchor="middle" font-size="10" fill="#888780">Codespaces</text>
+<path d="M600,388 L600,412 Q600,420 592,420 L152,420 Q144,420 144,428 L144,454" fill="none" stroke="#9590A8" stroke-width="1.2" marker-end="url(#arr)"/>
+
+<rect x="226" y="454" width="140" height="72" rx="6" fill="#FFF" stroke="#1A6FC4" stroke-width="1.5"/>
+<text x="296" y="478" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">Azure DevOps</text>
+<text x="296" y="494" text-anchor="middle" font-size="10" fill="#888780">Boards,</text>
+<text x="296" y="508" text-anchor="middle" font-size="10" fill="#888780">Work Items</text>
+<path d="M600,388 L600,412 Q600,420 592,420 L304,420 Q296,420 296,428 L296,454" fill="none" stroke="#9590A8" stroke-width="1.2" marker-end="url(#arr)"/>
+
+<rect x="378" y="454" width="140" height="72" rx="6" fill="#FFF" stroke="#8661C5" stroke-width="1.5"/>
+<text x="448" y="478" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">Jira MCP</text>
+<text x="448" y="494" text-anchor="middle" font-size="10" fill="#888780">Issues,</text>
+<text x="448" y="508" text-anchor="middle" font-size="10" fill="#888780">Projects</text>
+<path d="M600,388 L600,412 Q600,420 592,420 L456,420 Q448,420 448,428 L448,454" fill="none" stroke="#9590A8" stroke-width="1.2" marker-end="url(#arr)"/>
+
+<rect x="530" y="454" width="140" height="72" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<text x="600" y="478" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">Terraform MCP</text>
+<text x="600" y="494" text-anchor="middle" font-size="10" fill="#888780">Plan,</text>
+<text x="600" y="508" text-anchor="middle" font-size="10" fill="#888780">Validate</text>
+<line x1="600" y1="388" x2="600" y2="454" stroke="#9590A8" stroke-width="1.2" marker-end="url(#arr)"/>
+
+<rect x="682" y="454" width="140" height="72" rx="6" fill="#FFF" stroke="#1A6FC4" stroke-width="1.5"/>
+<text x="752" y="478" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">Azure MCP</text>
+<text x="752" y="494" text-anchor="middle" font-size="10" fill="#888780">Infra</text>
+<text x="752" y="508" text-anchor="middle" font-size="10" fill="#888780">Validation</text>
+<path d="M600,388 L600,412 Q600,420 608,420 L744,420 Q752,420 752,428 L752,454" fill="none" stroke="#9590A8" stroke-width="1.2" marker-end="url(#arr)"/>
+
+<rect x="834" y="454" width="140" height="72" rx="6" fill="#FFF" stroke="#8661C5" stroke-width="1.5"/>
+<text x="904" y="478" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">Figma MCP</text>
+<text x="904" y="494" text-anchor="middle" font-size="10" fill="#888780">Design,</text>
+<text x="904" y="508" text-anchor="middle" font-size="10" fill="#888780">FigJam</text>
+<path d="M600,388 L600,412 Q600,420 608,420 L896,420 Q904,420 904,428 L904,454" fill="none" stroke="#9590A8" stroke-width="1.2" marker-end="url(#arr)"/>
+
+<rect x="986" y="454" width="140" height="72" rx="6" fill="#FFF" stroke="#1A6FC4" stroke-width="1.5"/>
+<text x="1056" y="478" text-anchor="middle" font-size="11" font-weight="600" fill="#2C2C2A">Docker MCP</text>
+<text x="1056" y="494" text-anchor="middle" font-size="10" fill="#888780">Dev</text>
+<text x="1056" y="508" text-anchor="middle" font-size="10" fill="#888780">Environments</text>
+<path d="M600,388 L600,412 Q600,420 608,420 L1048,420 Q1056,420 1056,428 L1056,454" fill="none" stroke="#9590A8" stroke-width="1.2" marker-end="url(#arr)"/>
+
+<!-- ============= ORCHESTRATION NOTE ============= -->
+<rect x="300" y="548" width="600" height="32" rx="16" fill="#2C2C2A" opacity="0.06"/>
+<text x="600" y="568" text-anchor="middle" font-size="11" font-weight="600" fill="#5F5E5A">AI Client (Copilot, Claude Code, Cursor) orchestrates routing between MCP servers</text>
+
+<!-- ============= INSTALL COMPARISON ============= -->
+<rect x="24" y="600" width="1152" height="100" rx="8" fill="#5B2D8E" opacity="0.03"/>
+<text x="48" y="618" font-size="11" font-weight="600" fill="#5B2D8E" letter-spacing="1.5">INSTALLATION</text>
+<rect x="74" y="630" width="520" height="56" rx="8" fill="#FFF" stroke="#5B2D8E" stroke-width="2"/>
+<circle cx="94" cy="658" r="8" fill="#5B2D8E" opacity="0.15"/>
+<text x="94" y="662" font-size="9" fill="#5B2D8E" text-anchor="middle" font-weight="700">&#10022;</text>
+<text x="114" y="652" font-size="13" font-weight="700" fill="#5B2D8E">Plugin (recommended)</text>
+<text x="114" y="670" font-size="10" fill="#888780">copilot plugin install specky-sdd@specky — 7 agents, 19 prompts, 6 skills, 10 hooks</text>
+<rect x="620" y="630" width="520" height="56" rx="8" fill="#FFF" stroke="#0058A3" stroke-width="1.3"/>
+<text x="650" y="652" font-size="13" font-weight="600" fill="#0058A3">MCP Server Only (alternative)</text>
+<text x="650" y="670" font-size="10" fill="#888780">npm install -g specky-sdd — 57 tools, no agents/skills/hooks</text>
+
+<!-- ============= LEGEND ============= -->
+<line x1="40" y1="720" x2="1160" y2="720" stroke="#E8E6DF" stroke-width="1"/>
+<rect x="160" y="734" width="14" height="14" rx="3" fill="#5B2D8E"/>
+<text x="182" y="746" font-size="11" fill="#5F5E5A">Specky / Plugin</text>
+<rect x="320" y="734" width="14" height="14" rx="3" fill="#0058A3"/>
+<text x="342" y="746" font-size="11" fill="#5F5E5A">Azure / GitHub / Docker / Terraform</text>
+<rect x="590" y="734" width="14" height="14" rx="3" fill="#8661C5"/>
+<text x="612" y="746" font-size="11" fill="#5F5E5A">Figma / Jira / Pipeline</text>
+<rect x="790" y="734" width="14" height="14" rx="3" fill="#9590A8"/>
+<text x="812" y="746" font-size="11" fill="#5F5E5A">Data flow</text>
+
+<!-- ============= ATTRIBUTION ============= -->
+<text x="1160" y="772" text-anchor="end" font-size="9" fill="#9590A8" opacity="0.6">Paula Silva, AI-Native Software Engineer @paulasilvatech</text>
+
+</svg>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 720" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
   <defs>
     <!-- Arrow marker: muted gray #B4B2A9 -->

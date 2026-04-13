@@ -1,242 +1,179 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 720" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
-  <defs>
-    <filter id="shadow" x="-4%" y="-4%" width="108%" height="116%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#2C2C2A" flood-opacity="0.10"/>
-    </filter>
-    <marker id="arrow-b" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#0078D4"/>
-    </marker>
-    <marker id="arrow-g" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#7FBA00"/>
-    </marker>
-    <marker id="arrow-r" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-      <polygon points="0 0, 8 3, 0 6" fill="#F25022"/>
-    </marker>
-    <linearGradient id="accent-bar" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#0078D4"/>
-      <stop offset="33%" stop-color="#7FBA00"/>
-      <stop offset="66%" stop-color="#FFB900"/>
-      <stop offset="100%" stop-color="#F25022"/>
-    </linearGradient>
-  </defs>
+<!-- Three Project Types — One Pipeline
+     @paulasilvatech visual identity · purple/blue/gray
+     Plugin-first · 57 tools
+     Canvas: 1400x720
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 720" width="1400" height="720"
+     font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+<defs>
+  <marker id="arr-b" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+    <polygon points="0 0, 8 3, 0 6" fill="#0058A3"/>
+  </marker>
+  <marker id="arr-p" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+    <polygon points="0 0, 8 3, 0 6" fill="#5B2D8E"/>
+  </marker>
+  <marker id="arr-d" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+    <polygon points="0 0, 8 3, 0 6" fill="#3D1A6E"/>
+  </marker>
+</defs>
+<rect width="1400" height="720" fill="#FFF"/>
 
-  <!-- Background -->
-  <rect width="1400" height="720" fill="#FFFFFF"/>
+<!-- ============= TITLE ============= -->
+<text x="700" y="38" text-anchor="middle" font-size="22" font-weight="700" fill="#2C2C2A">Three Project Types — One Pipeline</text>
+<text x="700" y="58" text-anchor="middle" font-size="13" fill="#888780">Specky adapts to greenfield, brownfield, and modernization workflows</text>
+<rect x="460" y="68" width="48" height="3" rx="1.5" fill="#3D1A6E"/>
+<rect x="512" y="68" width="48" height="3" rx="1.5" fill="#5B2D8E"/>
+<rect x="564" y="68" width="48" height="3" rx="1.5" fill="#8661C5"/>
+<rect x="616" y="68" width="48" height="3" rx="1.5" fill="#0058A3"/>
+<rect x="668" y="68" width="48" height="3" rx="1.5" fill="#3A7FD5"/>
 
-  <!-- Title -->
-  <text x="700" y="38" text-anchor="middle" font-size="22" font-weight="700" fill="#2C2C2A">Three Project Types — One Pipeline</text>
-  <text x="700" y="58" text-anchor="middle" font-size="13" fill="#5F5E5A">Specky adapts to greenfield, brownfield, and modernization workflows</text>
-  <rect x="460" y="68" width="480" height="3" rx="1.5" fill="url(#accent-bar)"/>
+<!-- ============= COLUMN 1: GREENFIELD (Blue) ============= -->
+<rect x="40" y="90" width="400" height="50" rx="10" fill="#0058A3"/>
+<text x="240" y="114" text-anchor="middle" font-size="16" font-weight="700" fill="#FFF">Greenfield</text>
+<text x="240" y="132" text-anchor="middle" font-size="10" fill="#FFF" opacity="0.85">New project from scratch</text>
 
-  <!-- ============================================================ -->
-  <!-- COLUMN 1: GREENFIELD (Blue)                                   -->
-  <!-- ============================================================ -->
+<rect x="60" y="156" width="360" height="42" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<rect x="60" y="156" width="28" height="42" rx="6" fill="#0058A3" opacity="0.10"/>
+<text x="74" y="181" font-size="11" font-weight="700" fill="#0058A3">1</text>
+<text x="98" y="175" font-size="11" font-weight="600" fill="#2C2C2A">Describe your idea in natural language</text>
+<text x="98" y="190" font-size="9" fill="#5F5E5A">sdd_init + sdd_discover → 7 structured questions</text>
+<path d="M240,198 L240,210" stroke="#0058A3" stroke-width="1.5" fill="none" marker-end="url(#arr-b)"/>
 
-  <!-- Column header -->
-  <g filter="url(#shadow)">
-    <rect x="40" y="90" width="400" height="50" rx="10" fill="#0078D4"/>
-  </g>
-  <text x="240" y="114" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">Greenfield</text>
-  <text x="240" y="132" text-anchor="middle" font-size="10" fill="#FFFFFF" opacity="0.85">New project from scratch</text>
+<rect x="60" y="216" width="360" height="42" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<rect x="60" y="216" width="28" height="42" rx="6" fill="#0058A3" opacity="0.10"/>
+<text x="74" y="241" font-size="11" font-weight="700" fill="#0058A3">2</text>
+<text x="98" y="235" font-size="11" font-weight="600" fill="#2C2C2A">Write EARS specification</text>
+<text x="98" y="250" font-size="9" fill="#5F5E5A">sdd_write_spec → SPECIFICATION.md — pause for LGTM</text>
+<path d="M240,258 L240,270" stroke="#0058A3" stroke-width="1.5" fill="none" marker-end="url(#arr-b)"/>
 
-  <!-- Step 1 -->
-  <rect x="60" y="156" width="360" height="42" rx="6" fill="#FFFFFF" stroke="#0078D4" stroke-width="1.5"/>
-  <rect x="60" y="156" width="28" height="42" rx="6" fill="#0078D4" opacity="0.10"/>
-  <text x="74" y="181" font-size="11" font-weight="700" fill="#0078D4">1</text>
-  <text x="98" y="175" font-size="11" font-weight="600" fill="#2C2C2A">Describe your idea in natural language</text>
-  <text x="98" y="190" font-size="9" fill="#5F5E5A">sdd_init + sdd_discover → 7 structured questions</text>
+<rect x="60" y="276" width="360" height="42" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<rect x="60" y="276" width="28" height="42" rx="6" fill="#0058A3" opacity="0.10"/>
+<text x="74" y="301" font-size="11" font-weight="700" fill="#0058A3">3</text>
+<text x="98" y="295" font-size="11" font-weight="600" fill="#2C2C2A">Design architecture</text>
+<text x="98" y="310" font-size="9" fill="#5F5E5A">sdd_write_design → DESIGN.md + diagrams — pause for LGTM</text>
+<path d="M240,318 L240,330" stroke="#0058A3" stroke-width="1.5" fill="none" marker-end="url(#arr-b)"/>
 
-  <path d="M240,198 L240,210" stroke="#0078D4" stroke-width="1.5" fill="none" marker-end="url(#arrow-b)"/>
+<rect x="60" y="336" width="360" height="42" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<rect x="60" y="336" width="28" height="42" rx="6" fill="#0058A3" opacity="0.10"/>
+<text x="74" y="361" font-size="11" font-weight="700" fill="#0058A3">4</text>
+<text x="98" y="355" font-size="11" font-weight="600" fill="#2C2C2A">Break into tasks + quality gates</text>
+<text x="98" y="370" font-size="9" fill="#5F5E5A">sdd_write_tasks + sdd_run_analysis + sdd_compliance_check</text>
+<path d="M240,378 L240,390" stroke="#0058A3" stroke-width="1.5" fill="none" marker-end="url(#arr-b)"/>
 
-  <!-- Step 2 -->
-  <rect x="60" y="216" width="360" height="42" rx="6" fill="#FFFFFF" stroke="#0078D4" stroke-width="1.5"/>
-  <rect x="60" y="216" width="28" height="42" rx="6" fill="#0078D4" opacity="0.10"/>
-  <text x="74" y="241" font-size="11" font-weight="700" fill="#0078D4">2</text>
-  <text x="98" y="235" font-size="11" font-weight="600" fill="#2C2C2A">Write EARS specification</text>
-  <text x="98" y="250" font-size="9" fill="#5F5E5A">sdd_write_spec → SPECIFICATION.md — pause for LGTM</text>
+<rect x="60" y="396" width="360" height="42" rx="6" fill="#FFF" stroke="#0058A3" stroke-width="1.5"/>
+<rect x="60" y="396" width="28" height="42" rx="6" fill="#0058A3" opacity="0.10"/>
+<text x="74" y="421" font-size="11" font-weight="700" fill="#0058A3">5</text>
+<text x="98" y="415" font-size="11" font-weight="600" fill="#2C2C2A">Generate IaC, tests, and ship</text>
+<text x="98" y="430" font-size="9" fill="#5F5E5A">sdd_generate_iac + sdd_generate_tests + sdd_create_pr</text>
 
-  <path d="M240,258 L240,270" stroke="#0078D4" stroke-width="1.5" fill="none" marker-end="url(#arrow-b)"/>
+<rect x="140" y="454" width="200" height="26" rx="13" fill="#0058A3" opacity="0.08"/>
+<text x="240" y="471" text-anchor="middle" font-size="9" font-weight="600" fill="#0058A3">Best for: new APIs, apps, services</text>
 
-  <!-- Step 3 -->
-  <rect x="60" y="276" width="360" height="42" rx="6" fill="#FFFFFF" stroke="#0078D4" stroke-width="1.5"/>
-  <rect x="60" y="276" width="28" height="42" rx="6" fill="#0078D4" opacity="0.10"/>
-  <text x="74" y="301" font-size="11" font-weight="700" fill="#0078D4">3</text>
-  <text x="98" y="295" font-size="11" font-weight="600" fill="#2C2C2A">Design architecture</text>
-  <text x="98" y="310" font-size="9" fill="#5F5E5A">sdd_write_design → DESIGN.md + diagrams — pause for LGTM</text>
+<!-- ============= COLUMN 2: BROWNFIELD (Purple) ============= -->
+<rect x="500" y="90" width="400" height="50" rx="10" fill="#5B2D8E"/>
+<text x="700" y="114" text-anchor="middle" font-size="16" font-weight="700" fill="#FFF">Brownfield</text>
+<text x="700" y="132" text-anchor="middle" font-size="10" fill="#FFF" opacity="0.85">Add features to existing code</text>
 
-  <path d="M240,318 L240,330" stroke="#0078D4" stroke-width="1.5" fill="none" marker-end="url(#arrow-b)"/>
+<rect x="520" y="156" width="360" height="42" rx="6" fill="#FFF" stroke="#5B2D8E" stroke-width="1.5"/>
+<rect x="520" y="156" width="28" height="42" rx="6" fill="#5B2D8E" opacity="0.10"/>
+<text x="534" y="181" font-size="11" font-weight="700" fill="#5B2D8E">1</text>
+<text x="558" y="175" font-size="11" font-weight="600" fill="#2C2C2A">Scan existing codebase</text>
+<text x="558" y="190" font-size="9" fill="#5F5E5A">sdd_scan_codebase → detect tech stack and patterns</text>
+<path d="M700,198 L700,210" stroke="#5B2D8E" stroke-width="1.5" fill="none" marker-end="url(#arr-p)"/>
 
-  <!-- Step 4 -->
-  <rect x="60" y="336" width="360" height="42" rx="6" fill="#FFFFFF" stroke="#0078D4" stroke-width="1.5"/>
-  <rect x="60" y="336" width="28" height="42" rx="6" fill="#0078D4" opacity="0.10"/>
-  <text x="74" y="361" font-size="11" font-weight="700" fill="#0078D4">4</text>
-  <text x="98" y="355" font-size="11" font-weight="600" fill="#2C2C2A">Break into tasks + quality gates</text>
-  <text x="98" y="370" font-size="9" fill="#5F5E5A">sdd_write_tasks + sdd_run_analysis + sdd_compliance_check</text>
+<rect x="520" y="216" width="360" height="42" rx="6" fill="#FFF" stroke="#5B2D8E" stroke-width="1.5"/>
+<rect x="520" y="216" width="28" height="42" rx="6" fill="#5B2D8E" opacity="0.10"/>
+<text x="534" y="241" font-size="11" font-weight="700" fill="#5B2D8E">2</text>
+<text x="558" y="235" font-size="11" font-weight="600" fill="#2C2C2A">Initialize with codebase context</text>
+<text x="558" y="250" font-size="9" fill="#5F5E5A">sdd_init + sdd_discover (with codebase_summary)</text>
+<path d="M700,258 L700,270" stroke="#5B2D8E" stroke-width="1.5" fill="none" marker-end="url(#arr-p)"/>
 
-  <path d="M240,378 L240,390" stroke="#0078D4" stroke-width="1.5" fill="none" marker-end="url(#arrow-b)"/>
+<rect x="520" y="276" width="360" height="42" rx="6" fill="#FFF" stroke="#5B2D8E" stroke-width="1.5"/>
+<rect x="520" y="276" width="28" height="42" rx="6" fill="#5B2D8E" opacity="0.10"/>
+<text x="534" y="301" font-size="11" font-weight="700" fill="#5B2D8E">3</text>
+<text x="558" y="295" font-size="11" font-weight="600" fill="#2C2C2A">Import existing PRDs and docs</text>
+<text x="558" y="310" font-size="9" fill="#5F5E5A">sdd_import_document → convert PDF/DOCX to spec input</text>
+<path d="M700,318 L700,330" stroke="#5B2D8E" stroke-width="1.5" fill="none" marker-end="url(#arr-p)"/>
 
-  <!-- Step 5 -->
-  <rect x="60" y="396" width="360" height="42" rx="6" fill="#FFFFFF" stroke="#0078D4" stroke-width="1.5"/>
-  <rect x="60" y="396" width="28" height="42" rx="6" fill="#0078D4" opacity="0.10"/>
-  <text x="74" y="421" font-size="11" font-weight="700" fill="#0078D4">5</text>
-  <text x="98" y="415" font-size="11" font-weight="600" fill="#2C2C2A">Generate IaC, tests, and ship</text>
-  <text x="98" y="430" font-size="9" fill="#5F5E5A">sdd_generate_iac + sdd_generate_tests + sdd_create_pr</text>
+<rect x="520" y="336" width="360" height="42" rx="6" fill="#FFF" stroke="#5B2D8E" stroke-width="1.5"/>
+<rect x="520" y="336" width="28" height="42" rx="6" fill="#5B2D8E" opacity="0.10"/>
+<text x="534" y="361" font-size="11" font-weight="700" fill="#5B2D8E">4</text>
+<text x="558" y="355" font-size="11" font-weight="600" fill="#2C2C2A">Spec with codebase awareness</text>
+<text x="558" y="370" font-size="9" fill="#5F5E5A">sdd_write_spec → references existing components and APIs</text>
+<path d="M700,378 L700,390" stroke="#5B2D8E" stroke-width="1.5" fill="none" marker-end="url(#arr-p)"/>
 
-  <!-- Greenfield badge -->
-  <rect x="140" y="454" width="200" height="26" rx="13" fill="#0078D4" opacity="0.08"/>
-  <text x="240" y="471" text-anchor="middle" font-size="9" font-weight="600" fill="#0078D4">Best for: new APIs, apps, services</text>
+<rect x="520" y="396" width="360" height="42" rx="6" fill="#FFF" stroke="#5B2D8E" stroke-width="1.5"/>
+<rect x="520" y="396" width="28" height="42" rx="6" fill="#5B2D8E" opacity="0.10"/>
+<text x="534" y="421" font-size="11" font-weight="700" fill="#5B2D8E">5</text>
+<text x="558" y="415" font-size="11" font-weight="600" fill="#2C2C2A">Implement + check for drift</text>
+<text x="558" y="430" font-size="9" fill="#5F5E5A">sdd_check_sync + sdd_cross_analyze → drift report</text>
 
-  <!-- ============================================================ -->
-  <!-- COLUMN 2: BROWNFIELD (Green)                                  -->
-  <!-- ============================================================ -->
+<rect x="580" y="454" width="240" height="26" rx="13" fill="#5B2D8E" opacity="0.08"/>
+<text x="700" y="471" text-anchor="middle" font-size="9" font-weight="600" fill="#5B2D8E">Best for: new features, integrations</text>
 
-  <!-- Column header -->
-  <g filter="url(#shadow)">
-    <rect x="500" y="90" width="400" height="50" rx="10" fill="#7FBA00"/>
-  </g>
-  <text x="700" y="114" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">Brownfield</text>
-  <text x="700" y="132" text-anchor="middle" font-size="10" fill="#FFFFFF" opacity="0.85">Add features to existing code</text>
+<!-- ============= COLUMN 3: MODERNIZATION (Dark purple) ============= -->
+<rect x="960" y="90" width="400" height="50" rx="10" fill="#3D1A6E"/>
+<text x="1160" y="114" text-anchor="middle" font-size="16" font-weight="700" fill="#FFF">Modernization</text>
+<text x="1160" y="132" text-anchor="middle" font-size="10" fill="#FFF" opacity="0.85">Assess and upgrade legacy systems</text>
 
-  <!-- Step 1 -->
-  <rect x="520" y="156" width="360" height="42" rx="6" fill="#FFFFFF" stroke="#7FBA00" stroke-width="1.5"/>
-  <rect x="520" y="156" width="28" height="42" rx="6" fill="#7FBA00" opacity="0.10"/>
-  <text x="534" y="181" font-size="11" font-weight="700" fill="#7FBA00">1</text>
-  <text x="558" y="175" font-size="11" font-weight="600" fill="#2C2C2A">Scan existing codebase</text>
-  <text x="558" y="190" font-size="9" fill="#5F5E5A">sdd_scan_codebase → detect tech stack and patterns</text>
+<rect x="980" y="156" width="360" height="42" rx="6" fill="#FFF" stroke="#3D1A6E" stroke-width="1.5"/>
+<rect x="980" y="156" width="28" height="42" rx="6" fill="#3D1A6E" opacity="0.10"/>
+<text x="994" y="181" font-size="11" font-weight="700" fill="#3D1A6E">1</text>
+<text x="1018" y="175" font-size="11" font-weight="600" fill="#2C2C2A">Scan legacy codebase</text>
+<text x="1018" y="190" font-size="9" fill="#5F5E5A">sdd_scan_codebase → map current tech stack</text>
+<path d="M1160,198 L1160,210" stroke="#3D1A6E" stroke-width="1.5" fill="none" marker-end="url(#arr-d)"/>
 
-  <path d="M700,198 L700,210" stroke="#7FBA00" stroke-width="1.5" fill="none" marker-end="url(#arrow-g)"/>
+<rect x="980" y="216" width="360" height="42" rx="6" fill="#FFF" stroke="#3D1A6E" stroke-width="1.5"/>
+<rect x="980" y="216" width="28" height="42" rx="6" fill="#3D1A6E" opacity="0.10"/>
+<text x="994" y="241" font-size="11" font-weight="700" fill="#3D1A6E">2</text>
+<text x="1018" y="235" font-size="11" font-weight="600" fill="#2C2C2A">Batch import docs + transcripts</text>
+<text x="1018" y="250" font-size="9" fill="#5F5E5A">sdd_batch_import + sdd_batch_transcripts → all context</text>
+<path d="M1160,258 L1160,270" stroke="#3D1A6E" stroke-width="1.5" fill="none" marker-end="url(#arr-d)"/>
 
-  <!-- Step 2 -->
-  <rect x="520" y="216" width="360" height="42" rx="6" fill="#FFFFFF" stroke="#7FBA00" stroke-width="1.5"/>
-  <rect x="520" y="216" width="28" height="42" rx="6" fill="#7FBA00" opacity="0.10"/>
-  <text x="534" y="241" font-size="11" font-weight="700" fill="#7FBA00">2</text>
-  <text x="558" y="235" font-size="11" font-weight="600" fill="#2C2C2A">Initialize with codebase context</text>
-  <text x="558" y="250" font-size="9" fill="#5F5E5A">sdd_init + sdd_discover (with codebase_summary)</text>
+<rect x="980" y="276" width="360" height="42" rx="6" fill="#FFF" stroke="#3D1A6E" stroke-width="1.5"/>
+<rect x="980" y="276" width="28" height="42" rx="6" fill="#3D1A6E" opacity="0.10"/>
+<text x="994" y="301" font-size="11" font-weight="700" fill="#3D1A6E">3</text>
+<text x="1018" y="295" font-size="11" font-weight="600" fill="#2C2C2A">Spec with migration constraints</text>
+<text x="1018" y="310" font-size="9" fill="#5F5E5A">sdd_write_spec → backward compat + migration path</text>
+<path d="M1160,318 L1160,330" stroke="#3D1A6E" stroke-width="1.5" fill="none" marker-end="url(#arr-d)"/>
 
-  <path d="M700,258 L700,270" stroke="#7FBA00" stroke-width="1.5" fill="none" marker-end="url(#arrow-g)"/>
+<rect x="980" y="336" width="360" height="42" rx="6" fill="#FFF" stroke="#3D1A6E" stroke-width="1.5"/>
+<rect x="980" y="336" width="28" height="42" rx="6" fill="#3D1A6E" opacity="0.10"/>
+<text x="994" y="361" font-size="11" font-weight="700" fill="#3D1A6E">4</text>
+<text x="1018" y="355" font-size="11" font-weight="600" fill="#2C2C2A">Compliance assessment</text>
+<text x="1018" y="370" font-size="9" fill="#5F5E5A">sdd_compliance_check → HIPAA, SOC2, GDPR, PCI-DSS</text>
+<path d="M1160,378 L1160,390" stroke="#3D1A6E" stroke-width="1.5" fill="none" marker-end="url(#arr-d)"/>
 
-  <!-- Step 3 -->
-  <rect x="520" y="276" width="360" height="42" rx="6" fill="#FFFFFF" stroke="#7FBA00" stroke-width="1.5"/>
-  <rect x="520" y="276" width="28" height="42" rx="6" fill="#7FBA00" opacity="0.10"/>
-  <text x="534" y="301" font-size="11" font-weight="700" fill="#7FBA00">3</text>
-  <text x="558" y="295" font-size="11" font-weight="600" fill="#2C2C2A">Import existing PRDs and docs</text>
-  <text x="558" y="310" font-size="9" fill="#5F5E5A">sdd_import_document → convert PDF/DOCX to spec input</text>
+<rect x="980" y="396" width="360" height="42" rx="6" fill="#FFF" stroke="#3D1A6E" stroke-width="1.5"/>
+<rect x="980" y="396" width="28" height="42" rx="6" fill="#3D1A6E" opacity="0.10"/>
+<text x="994" y="421" font-size="11" font-weight="700" fill="#3D1A6E">5</text>
+<text x="1018" y="415" font-size="11" font-weight="600" fill="#2C2C2A">Generate migration artifacts</text>
+<text x="1018" y="430" font-size="9" fill="#5F5E5A">sdd_generate_iac + sdd_generate_runbook + sdd_generate_onboarding</text>
 
-  <path d="M700,318 L700,330" stroke="#7FBA00" stroke-width="1.5" fill="none" marker-end="url(#arrow-g)"/>
+<rect x="1020" y="454" width="280" height="26" rx="13" fill="#3D1A6E" opacity="0.08"/>
+<text x="1160" y="471" text-anchor="middle" font-size="9" font-weight="600" fill="#3D1A6E">Best for: legacy upgrades, migrations, re-platforming</text>
 
-  <!-- Step 4 -->
-  <rect x="520" y="336" width="360" height="42" rx="6" fill="#FFFFFF" stroke="#7FBA00" stroke-width="1.5"/>
-  <rect x="520" y="336" width="28" height="42" rx="6" fill="#7FBA00" opacity="0.10"/>
-  <text x="534" y="361" font-size="11" font-weight="700" fill="#7FBA00">4</text>
-  <text x="558" y="355" font-size="11" font-weight="600" fill="#2C2C2A">Spec with codebase awareness</text>
-  <text x="558" y="370" font-size="9" fill="#5F5E5A">sdd_write_spec → references existing components and APIs</text>
+<!-- ============= BOTTOM: Shared Pipeline ============= -->
+<path d="M240,438 L240,510" stroke="#0058A3" stroke-width="1.5" fill="none" opacity="0.4"/>
+<path d="M700,438 L700,510" stroke="#5B2D8E" stroke-width="1.5" fill="none" opacity="0.4"/>
+<path d="M1160,438 L1160,510" stroke="#3D1A6E" stroke-width="1.5" fill="none" opacity="0.4"/>
+<path d="M240,510 L1160,510" stroke="#9590A8" stroke-width="1.5" fill="none" opacity="0.4"/>
+<path d="M700,510 L700,540" stroke="#2C2C2A" stroke-width="2" fill="none"/>
 
-  <path d="M700,378 L700,390" stroke="#7FBA00" stroke-width="1.5" fill="none" marker-end="url(#arrow-g)"/>
+<rect x="440" y="540" width="520" height="60" rx="10" fill="#2C2C2A"/>
+<text x="700" y="566" text-anchor="middle" font-size="15" font-weight="700" fill="#FFF">Same 10-Phase Pipeline</text>
+<text x="700" y="586" text-anchor="middle" font-size="10" fill="#FFF" opacity="0.75">Init → Discover → Specify → Clarify → Design → Tasks → Analyze → Implement → Verify → Release</text>
 
-  <!-- Step 5 -->
-  <rect x="520" y="396" width="360" height="42" rx="6" fill="#FFFFFF" stroke="#7FBA00" stroke-width="1.5"/>
-  <rect x="520" y="396" width="28" height="42" rx="6" fill="#7FBA00" opacity="0.10"/>
-  <text x="534" y="421" font-size="11" font-weight="700" fill="#7FBA00">5</text>
-  <text x="558" y="415" font-size="11" font-weight="600" fill="#2C2C2A">Implement + check for drift</text>
-  <text x="558" y="430" font-size="9" fill="#5F5E5A">sdd_check_sync + sdd_cross_analyze → drift report</text>
+<rect x="300" y="620" width="130" height="24" rx="12" fill="#0058A3" opacity="0.08"/>
+<text x="365" y="636" text-anchor="middle" font-size="9" font-weight="600" fill="#0058A3">EARS validated</text>
+<rect x="470" y="620" width="130" height="24" rx="12" fill="#5B2D8E" opacity="0.08"/>
+<text x="535" y="636" text-anchor="middle" font-size="9" font-weight="600" fill="#5B2D8E">State enforced</text>
+<rect x="640" y="620" width="130" height="24" rx="12" fill="#8661C5" opacity="0.08"/>
+<text x="705" y="636" text-anchor="middle" font-size="9" font-weight="600" fill="#8661C5">Auto-diagrams</text>
+<rect x="810" y="620" width="130" height="24" rx="12" fill="#3D1A6E" opacity="0.08"/>
+<text x="875" y="636" text-anchor="middle" font-size="9" font-weight="600" fill="#3D1A6E">Compliance</text>
 
-  <!-- Brownfield badge -->
-  <rect x="580" y="454" width="240" height="26" rx="13" fill="#7FBA00" opacity="0.08"/>
-  <text x="700" y="471" text-anchor="middle" font-size="9" font-weight="600" fill="#527D00">Best for: new features, integrations</text>
-
-  <!-- ============================================================ -->
-  <!-- COLUMN 3: MODERNIZATION (Red)                                 -->
-  <!-- ============================================================ -->
-
-  <!-- Column header -->
-  <g filter="url(#shadow)">
-    <rect x="960" y="90" width="400" height="50" rx="10" fill="#F25022"/>
-  </g>
-  <text x="1160" y="114" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">Modernization</text>
-  <text x="1160" y="132" text-anchor="middle" font-size="10" fill="#FFFFFF" opacity="0.85">Assess and upgrade legacy systems</text>
-
-  <!-- Step 1 -->
-  <rect x="980" y="156" width="360" height="42" rx="6" fill="#FFFFFF" stroke="#F25022" stroke-width="1.5"/>
-  <rect x="980" y="156" width="28" height="42" rx="6" fill="#F25022" opacity="0.10"/>
-  <text x="994" y="181" font-size="11" font-weight="700" fill="#F25022">1</text>
-  <text x="1018" y="175" font-size="11" font-weight="600" fill="#2C2C2A">Scan legacy codebase</text>
-  <text x="1018" y="190" font-size="9" fill="#5F5E5A">sdd_scan_codebase → map current tech stack</text>
-
-  <path d="M1160,198 L1160,210" stroke="#F25022" stroke-width="1.5" fill="none" marker-end="url(#arrow-r)"/>
-
-  <!-- Step 2 -->
-  <rect x="980" y="216" width="360" height="42" rx="6" fill="#FFFFFF" stroke="#F25022" stroke-width="1.5"/>
-  <rect x="980" y="216" width="28" height="42" rx="6" fill="#F25022" opacity="0.10"/>
-  <text x="994" y="241" font-size="11" font-weight="700" fill="#F25022">2</text>
-  <text x="1018" y="235" font-size="11" font-weight="600" fill="#2C2C2A">Batch import docs + transcripts</text>
-  <text x="1018" y="250" font-size="9" fill="#5F5E5A">sdd_batch_import + sdd_batch_transcripts → all context</text>
-
-  <path d="M1160,258 L1160,270" stroke="#F25022" stroke-width="1.5" fill="none" marker-end="url(#arrow-r)"/>
-
-  <!-- Step 3 -->
-  <rect x="980" y="276" width="360" height="42" rx="6" fill="#FFFFFF" stroke="#F25022" stroke-width="1.5"/>
-  <rect x="980" y="276" width="28" height="42" rx="6" fill="#F25022" opacity="0.10"/>
-  <text x="994" y="301" font-size="11" font-weight="700" fill="#F25022">3</text>
-  <text x="1018" y="295" font-size="11" font-weight="600" fill="#2C2C2A">Spec with migration constraints</text>
-  <text x="1018" y="310" font-size="9" fill="#5F5E5A">sdd_write_spec → backward compat + migration path</text>
-
-  <path d="M1160,318 L1160,330" stroke="#F25022" stroke-width="1.5" fill="none" marker-end="url(#arrow-r)"/>
-
-  <!-- Step 4 -->
-  <rect x="980" y="336" width="360" height="42" rx="6" fill="#FFFFFF" stroke="#F25022" stroke-width="1.5"/>
-  <rect x="980" y="336" width="28" height="42" rx="6" fill="#F25022" opacity="0.10"/>
-  <text x="994" y="361" font-size="11" font-weight="700" fill="#F25022">4</text>
-  <text x="1018" y="355" font-size="11" font-weight="600" fill="#2C2C2A">Compliance assessment</text>
-  <text x="1018" y="370" font-size="9" fill="#5F5E5A">sdd_compliance_check → HIPAA, SOC2, GDPR, PCI-DSS</text>
-
-  <path d="M1160,378 L1160,390" stroke="#F25022" stroke-width="1.5" fill="none" marker-end="url(#arrow-r)"/>
-
-  <!-- Step 5 -->
-  <rect x="980" y="396" width="360" height="42" rx="6" fill="#FFFFFF" stroke="#F25022" stroke-width="1.5"/>
-  <rect x="980" y="396" width="28" height="42" rx="6" fill="#F25022" opacity="0.10"/>
-  <text x="994" y="421" font-size="11" font-weight="700" fill="#F25022">5</text>
-  <text x="1018" y="415" font-size="11" font-weight="600" fill="#2C2C2A">Generate migration artifacts</text>
-  <text x="1018" y="430" font-size="9" fill="#5F5E5A">sdd_generate_iac + sdd_generate_runbook + sdd_generate_onboarding</text>
-
-  <!-- Modernization badge -->
-  <rect x="1020" y="454" width="280" height="26" rx="13" fill="#F25022" opacity="0.08"/>
-  <text x="1160" y="471" text-anchor="middle" font-size="9" font-weight="600" fill="#F25022">Best for: legacy upgrades, migrations, re-platforming</text>
-
-  <!-- ============================================================ -->
-  <!-- BOTTOM: Shared pipeline convergence                           -->
-  <!-- ============================================================ -->
-
-  <!-- Vertical lines converging -->
-  <path d="M240,438 L240,510" stroke="#0078D4" stroke-width="1.5" fill="none" opacity="0.4"/>
-  <path d="M700,438 L700,510" stroke="#7FBA00" stroke-width="1.5" fill="none" opacity="0.4"/>
-  <path d="M1160,438 L1160,510" stroke="#F25022" stroke-width="1.5" fill="none" opacity="0.4"/>
-
-  <!-- Horizontal merge line -->
-  <path d="M240,510 L1160,510" stroke="#B4B2A9" stroke-width="1.5" fill="none" opacity="0.4"/>
-  <path d="M700,510 L700,540" stroke="#2C2C2A" stroke-width="2" fill="none"/>
-
-  <!-- Shared pipeline box -->
-  <g filter="url(#shadow)">
-    <rect x="440" y="540" width="520" height="60" rx="10" fill="#2C2C2A"/>
-  </g>
-  <text x="700" y="566" text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF">Same 10-Phase Pipeline</text>
-  <text x="700" y="586" text-anchor="middle" font-size="10" fill="#FFFFFF" opacity="0.75">Init → Discover → Specify → Clarify → Design → Tasks → Analyze → Implement → Verify → Release</text>
-
-  <!-- Bottom badges -->
-  <rect x="300" y="620" width="130" height="24" rx="12" fill="#0078D4" opacity="0.08"/>
-  <text x="365" y="636" text-anchor="middle" font-size="9" font-weight="600" fill="#0078D4">EARS validated</text>
-
-  <rect x="470" y="620" width="130" height="24" rx="12" fill="#7FBA00" opacity="0.08"/>
-  <text x="535" y="636" text-anchor="middle" font-size="9" font-weight="600" fill="#527D00">State enforced</text>
-
-  <rect x="640" y="620" width="130" height="24" rx="12" fill="#FFB900" opacity="0.08"/>
-  <text x="705" y="636" text-anchor="middle" font-size="9" font-weight="600" fill="#BA7517">Auto-diagrams</text>
-
-  <rect x="810" y="620" width="130" height="24" rx="12" fill="#F25022" opacity="0.08"/>
-  <text x="875" y="636" text-anchor="middle" font-size="9" font-weight="600" fill="#F25022">Compliance</text>
-
-  <!-- Bottom note -->
-  <text x="700" y="680" text-anchor="middle" font-size="11" fill="#888780">All three workflows produce the same traceable, auditable spec package in .specs/NNN-feature/</text>
-  <text x="700" y="700" text-anchor="middle" font-size="10" fill="#B4B2A9" font-style="italic">Specky includes the full Spec-Kit SDD methodology with programmatic enforcement</text>
-
+<text x="700" y="680" text-anchor="middle" font-size="11" fill="#888780">All three workflows produce the same traceable, auditable spec package in .specs/NNN-feature/</text>
+<text x="700" y="700" text-anchor="middle" font-size="10" fill="#B4B2A9" font-style="italic">Specky plugin includes the full Spec-Kit SDD methodology with programmatic enforcement</text>
+<text x="1360" y="714" text-anchor="end" font-size="9" fill="#9590A8" opacity="0.6">Paula Silva, AI-Native Software Engineer @paulasilvatech</text>
 </svg>
