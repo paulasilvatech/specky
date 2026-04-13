@@ -2,11 +2,11 @@
   <br>
   <img src="media/specky-brand-logo.svg" alt="Specky" height="80">
   <br><br>
-  <p><strong>56 MCP tools. 10-phase pipeline. Works in any IDE.</strong></p>
+  <p><strong>57 MCP tools. 10-phase pipeline. Works in any IDE.</strong></p>
   <p>Agentic Spec-Driven Development</p>
 
   <p>
-    <img src="https://img.shields.io/badge/tools-56_MCP-7c3aed?style=flat-square" alt="56 Tools"/>
+    <img src="https://img.shields.io/badge/tools-57_MCP-7c3aed?style=flat-square" alt="57 Tools"/>
     <img src="https://img.shields.io/badge/phases-10_enforced-6d28d9?style=flat-square" alt="10 Phases"/>
     <img src="https://img.shields.io/badge/diagrams-17_types-5b21b6?style=flat-square" alt="17 Diagrams"/>
     <img src="https://img.shields.io/badge/compliance-6_frameworks-4c1d95?style=flat-square" alt="6 Compliance"/>
@@ -41,17 +41,17 @@
 | | [Input Methods](#input-methods-6-ways-to-start) | 6 ways to feed Specky |
 | | [Three Project Types](#three-project-types-one-pipeline) | Greenfield, Brownfield, Modernization |
 | **Pipeline** | [Pipeline and LGTM Gates](#pipeline-and-lgtm-gates) | 10 phases with human review gates |
-| | [All 56 Tools](#all-56-tools) | Complete tool reference by category |
+| | [All 57 Tools](#all-57-tools) | Complete tool reference by category |
 | | [EARS Notation](#ears-notation) | The 6 requirement patterns |
 | **Enterprise** | [Compliance Frameworks](#compliance-frameworks) | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 |
 | | [Enterprise Ready](#enterprise-ready) | Security, audit trail, quality gates |
 | **Platform** | [The SDD Platform](#the-spec-driven-development-platform) | Built on Spec-Kit, everything included |
-| | [Roadmap](#roadmap) | v3.0 current, v3.1+ planned |
+| | [Roadmap](#roadmap) | v3.2 current, v3.3+ planned |
 
 
 ## What is Specky?
 
-Specky is an open-source **MCP server** that turns the [Spec-Kit](https://github.com/paulasilvatech/spec-kit) SDD methodology into a **programmable enforcement engine** with 56 validated tools. It provides a deterministic pipeline from **any input** (meeting transcripts, documents, Figma designs, or natural language prompts) through specifications, architecture, infrastructure as code, implementation, and deployment.
+Specky is an open-source **MCP server** that turns the [Spec-Kit](https://github.com/paulasilvatech/spec-kit) SDD methodology into a **programmable enforcement engine** with 57 validated tools. It provides a deterministic pipeline from **any input** (meeting transcripts, documents, Figma designs, or natural language prompts) through specifications, architecture, infrastructure as code, implementation, and deployment.
 
 **Spec-Kit** provides the methodology: EARS notation, gated pipeline phases, constitution model, quality patterns. **Specky** reimplements all of it as MCP tools and adds programmatic enforcement: a state machine that blocks phase-skipping, an EARS validator, cross-artifact analysis, compliance engines, test generation, and MCP-to-MCP routing.
 
@@ -98,8 +98,8 @@ Specky adds a **deterministic engine** between your intent and your code:
 
 | Capability | Specky |
 |---|---|
-| Any input (PDF, DOCX, PPTX, transcript, Figma) to spec | 56 MCP tools handle all input formats |
-| EARS validation (programmatic, not AI guessing) | 5 patterns enforced at schema level |
+| Any input (PDF, DOCX, PPTX, transcript, Figma) to spec | 57 MCP tools handle all input formats |
+| EARS validation (programmatic, not AI guessing) | 6 patterns enforced at schema level |
 | Enforced pipeline (not suggestions) | 10 phases with actual gates that block advancement |
 | 17 diagram types generated automatically | C4 (4 levels), sequence, ER, activity, use case, DFD, deployment, network |
 | Infrastructure as Code | Terraform, Bicep, Dockerfile from DESIGN.md |
@@ -147,6 +147,7 @@ Then configure your IDE to use the global install:
 {
   "servers": {
     "specky": {
+      "type": "stdio",
       "command": "specky-sdd",
       "env": { "SDD_WORKSPACE": "${workspaceFolder}" }
     }
@@ -190,6 +191,7 @@ Add a config file to the repo so teammates get Specky automatically on clone —
 {
   "servers": {
     "specky": {
+      "type": "stdio",
       "command": "specky-sdd",
       "env": { "SDD_WORKSPACE": "${workspaceFolder}" }
     }
@@ -239,7 +241,7 @@ Open your AI IDE and type:
 > What tools does Specky have?
 ```
 
-The AI should list the 56 SDD tools. If you see them, Specky is working.
+The AI should list the 57 SDD tools. If you see them, Specky is working.
 
 ### Try It Now
 
@@ -525,7 +527,7 @@ The AI calls:
 
 The AI calls `sdd_export_work_items` + `sdd_create_pr` → generates work item payloads and PR body with full spec traceability.
 
-> **Next:** **Next:** Learn about [EARS notation](#ears-notation) to understand the requirement patterns, or see [All 56 Tools](#all-56-tools) for a complete reference.
+> **Next:** **Next:** Learn about [EARS notation](#ears-notation) to understand the requirement patterns, or see [All 57 Tools](#all-57-tools) for a complete reference.
 
 
 ## Brownfield Project: Add Features to Existing Code
@@ -718,9 +720,9 @@ The AI calls `sdd_advance_phase` → moves the pipeline forward if all prerequis
 All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). See [Input Methods](#input-methods-6-ways-to-start) for how to feed data into the pipeline.
 
 
-## All 56 Tools
+## All 57 Tools
 
-### Input and Conversion (5)
+### Input and Conversion (6)
 
 | Tool | Description |
 |------|-------------|
@@ -728,9 +730,10 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_import_transcript` | Parse meeting transcripts (Teams, Zoom, Google Meet) |
 | `sdd_auto_pipeline` | Any input to complete spec pipeline (all documents) |
 | `sdd_batch_import` | Process folder of mixed documents |
+| `sdd_batch_transcripts` | Process folder of meeting transcripts |
 | `sdd_figma_to_spec` | Figma design to requirements specification |
 
-### Pipeline Core (8)
+### Pipeline Core (9)
 
 | Tool | Description |
 |------|-------------|
@@ -740,6 +743,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_clarify` | Resolve ambiguities with decision tree |
 | `sdd_write_design` | 12-section system design (C4 model) with sequence diagrams, ERD, API flow |
 | `sdd_write_tasks` | Task breakdown with dependency graph |
+| `sdd_write_bugfix` | Bugfix specification from issue description |
 | `sdd_run_analysis` | Quality gate analysis with coverage heatmap |
 | `sdd_advance_phase` | Move to next pipeline phase |
 
@@ -778,7 +782,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_setup_codespaces` | GitHub Codespaces configuration |
 | `sdd_generate_devcontainer` | .devcontainer/devcontainer.json generation |
 
-### Integration and Export (5)
+### Integration and Export (7)
 
 | Tool | Description |
 |------|-------------|
@@ -787,17 +791,20 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_create_pr` | PR payload with spec summary |
 | `sdd_implement` | Ordered implementation plan with checkpoints |
 | `sdd_research` | Resolve unknowns in RESEARCH.md |
+| `sdd_check_sync` | Detect drift between specification and implementation |
+| `sdd_detect_drift` | Intent drift detection with amendment suggestions |
 
-### Documentation (4)
+### Documentation (5)
 
 | Tool | Description |
 |------|-------------|
 | `sdd_generate_docs` | Complete auto-documentation |
+| `sdd_generate_all_docs` | Generate all documentation types in parallel |
 | `sdd_generate_api_docs` | API documentation from design |
 | `sdd_generate_runbook` | Operational runbook |
 | `sdd_generate_onboarding` | Developer onboarding guide |
 
-### Utility (5)
+### Utility (8)
 
 | Tool | Description |
 |------|-------------|
@@ -806,6 +813,9 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_scan_codebase` | Detect tech stack and structure |
 | `sdd_metrics` | Project metrics dashboard |
 | `sdd_amend` | Amend project constitution |
+| `sdd_context_status` | Context tiering status (Hot/Domain/Cold) |
+| `sdd_model_routing` | Model routing guidance for current task |
+| `sdd_check_access` | RBAC access check for current role |
 
 ### Testing (3)
 
@@ -867,13 +877,15 @@ Together they form the **SDD layer** of the GitHub + Microsoft enterprise platfo
 {
   "servers": {
     "specky": {
-      "command": "specky-sdd"
+      "type": "stdio",
+      "command": "specky-sdd",
+      "env": { "SDD_WORKSPACE": "${workspaceFolder}" }
     }
   }
 }
 ```
 
-> **Note:** This example assumes `specky-sdd` is installed globally (`npm install -g specky-sdd`). See the [Installation](#installation) section for per-workspace and Docker alternatives.
+> **Note:** This example assumes `specky-sdd` is installed globally (`npm install -g specky-sdd`). See the [Quick Start](#quick-start) section for per-workspace and Docker alternatives.
 
 ## Project Configuration
 
@@ -985,7 +997,7 @@ Specky is built with enterprise adoption in mind.
 - **Zod `.strict()` validation** — every tool input is schema-validated; unknown fields rejected
 - **security-scan hook** blocks commits containing hardcoded secrets (exit code 2)
 - See [SECURITY.md](SECURITY.md) for full OWASP Top 10 coverage
-- See [docs/SYSTEM-DESIGN.md](docs/SYSTEM-DESIGN.md) for complete security architecture
+- See [SECURITY.md](SECURITY.md) for complete security architecture
 
 ### Security Best Practices
 
@@ -1041,46 +1053,29 @@ Every pipeline phase produces a traceable artifact in `.specs/NNN-feature/`. The
 - **EARS Validator** — programmatic requirement quality enforcement
 - **Cross-Artifact Analysis** — automatic alignment checking between spec, design, and tasks
 - **Phase Enforcement** — state machine blocks phase-skipping; required files gate advancement
-- **507 unit tests** — CI enforces thresholds on every push
+- **Comprehensive test suite** — CI enforces thresholds on every push
 
 
 ## Development
 
 ```bash
-# Clone and setup
-git clone https://github.com/paulasilvatech/specky.git
-cd specky
-npm install
-
-# Build
-npm run build
-
-# Run tests (507 tests)
-npm test
-
-# Run tests with coverage report
-npm run test:coverage
-
-# Development mode (auto-reload on file changes)
-npm run dev
+# Install globally
+npm install -g specky-sdd
 
 # Verify MCP handshake (quick smoke test)
-echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | node dist/index.js 2>/dev/null
-
-# Build and run with Docker locally
-docker build -t specky-sdd:dev .
-docker run -p 3200:3200 -v $(pwd):/workspace specky-sdd:dev
-curl http://localhost:3200/health
+echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | specky-sdd 2>/dev/null
 ```
+
+For contributors, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 
 ## Roadmap
 
-### v3.1 (current)
+### v3.2 (current)
 
 | Capability | Status |
 |------------|--------|
-| 56 MCP tools across 10 enforced pipeline phases | Stable |
+| 57 MCP tools across 10 enforced pipeline phases | Stable |
 | Phase validation on every tool with gate enforcement | Stable |
 | 17 software engineering diagram types (C4, sequence, ER, DFD, deployment, network) | Stable |
 | 12-section system design template (C4 model, security, infrastructure) | Stable |
@@ -1102,9 +1097,9 @@ curl http://localhost:3200/health
 | MCP-to-MCP routing (GitHub, Azure DevOps, Jira, Terraform, Figma, Docker) | Stable |
 | SBOM + cosign signing on Docker image | Stable |
 | JSONL audit logger (optional) | Stable |
-| 507 unit tests | Stable |
+| Comprehensive test suite | Stable |
 
-### v3.2+ (planned)
+### v3.3+ (planned)
 
 | Feature | Description |
 |---------|-------------|
@@ -1112,10 +1107,8 @@ curl http://localhost:3200/health
 | Observability | OpenTelemetry metrics and structured logging |
 | Internationalization | Spec templates in PT-BR, ES, FR, DE, JA |
 | Automated shrinking | fast-check/Hypothesis shrinking feedback into spec refinement |
-| RBAC | Role-based access control for phase advancement |
 | Centralized audit log | SIEM-integrated tamper-evident audit trail |
 | Multi-tenant | Isolated workspaces for multiple teams |
-| Rate limiting | Request throttling for HTTP transport |
 | SSO / SAML | Federated identity for enterprise auth |
 
 Have a feature request? [Open an issue](https://github.com/paulasilvatech/specky/issues).
