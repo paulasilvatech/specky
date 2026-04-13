@@ -23,6 +23,7 @@
   <p>
     <a href="https://paulasilvatech.github.io/specky-site/">Website</a> ·
     <a href="GETTING-STARTED.md">Getting Started</a> ·
+    <a href="plugins/specky-sdd/">Plugin</a> ·
     <a href="https://www.npmjs.com/package/specky-sdd">npm</a> ·
     <a href="SECURITY.md">Security</a>
   </p>
@@ -36,8 +37,10 @@
 | **Start** | [What is Specky?](#what-is-specky) | Overview and ecosystem |
 | | [Why Specifications Matter](#why-specifications-matter-in-the-ai-era) | Vibe coding vs deterministic development |
 | | [Getting Started](GETTING-STARTED.md) | Complete educational guide |
-| **Use** | [Quick Start](#quick-start) | Install via npm or Docker, connect to your IDE |
-| | [Where Specifications Live](#where-specifications-live) | File structure and naming conventions |
+| **Install** | [Quick Start](#quick-start) | Install plugin or MCP server, connect to your IDE |
+| | [Plugin (recommended)](#install-as-plugin-recommended) | Enterprise-grade: agents, skills, hooks, MCP — all in one |
+| | [MCP Server Only](#install-mcp-server-only) | Lightweight: just the 57 MCP tools |
+| **Use** | [Where Specifications Live](#where-specifications-live) | File structure and naming conventions |
 | | [Input Methods](#input-methods-6-ways-to-start) | 6 ways to feed Specky |
 | | [Three Project Types](#three-project-types-one-pipeline) | Greenfield, Brownfield, Modernization |
 | **Pipeline** | [Pipeline and LGTM Gates](#pipeline-and-lgtm-gates) | 10 phases with human review gates |
@@ -55,7 +58,7 @@ Specky is an open-source **MCP server** that turns the [Spec-Kit](https://github
 
 **Spec-Kit** provides the methodology: EARS notation, gated pipeline phases, constitution model, quality patterns. **Specky** reimplements all of it as MCP tools and adds programmatic enforcement: a state machine that blocks phase-skipping, an EARS validator, cross-artifact analysis, compliance engines, test generation, and MCP-to-MCP routing.
 
-**Install Specky and you get both.** The Spec-Kit methodology is already built in. It works inside any AI IDE that supports MCP, via `.github/agents/` or `.claude/commands/`, and natively in Cursor, Windsurf, or any MCP-compatible client. See how they [complement each other](#the-spec-driven-development-platform).
+**Install the Specky plugin and you get everything.** The Spec-Kit methodology is built in. The plugin bundles 7 agents, 19 prompts, 6 skills, 10 automation hooks, and the MCP server — all configured automatically. It works inside VS Code with Copilot, Claude Code, Cursor, Windsurf, or any MCP-compatible client. See the [plugin documentation](plugins/specky-sdd/) or how Spec-Kit and Specky [complement each other](#the-spec-driven-development-platform).
 
 
 ## Why Specifications Matter in the AI Era
@@ -122,31 +125,73 @@ Specky adds a **deterministic engine** between your intent and your code:
 - **Node.js 18+**: [Download here](https://nodejs.org/)
 - **An AI IDE**: VS Code with Copilot, Claude Code, Claude Desktop, Cursor, or Windsurf
 
-### Step 1: Choose Your Installation Scope
+### Install as Plugin (recommended)
 
-| Scope | What it does | Best for |
-|-------|-------------|----------|
-| **Per workspace** (recommended) | Config file lives inside the repo, shared with the team via Git | Teams, open-source projects |
-| **Global (once)** | Installed on your machine, available in every repo automatically | Personal use, quick setup |
+The **Specky plugin** is the enterprise-grade installation method. It bundles everything your team needs: 7 agents, 19 prompts, 6 skills, 10 automation hooks, and the MCP server — configured automatically and version-controlled with your repo.
 
-### Step 2: Install
+| What you get | MCP Server Only | Plugin |
+|-------------|:-:|:-:|
+| 57 MCP tools | ✅ | ✅ |
+| 7 specialized agents | — | ✅ |
+| 19 reusable prompts | — | ✅ |
+| 6 domain skills (SKILL.md) | — | ✅ |
+| 10 automation hooks (2 blocking) | — | ✅ |
+| EARS notation reference | — | ✅ |
+| Model routing guidance | — | ✅ |
+| Pipeline config (config.yml) | — | ✅ |
+| `copilot plugin install` ready | — | ✅ |
 
-<details open>
-<summary><strong>Global (recommended): Install once, use everywhere</strong></summary>
+#### Via Copilot CLI
 
-Install globally so `specky-sdd` is always available — no re-download on every run:
+```bash
+copilot plugin marketplace add paulasilvatech/specky
+copilot plugin install specky-sdd@specky
+```
+
+#### Manual Installation
+
+```bash
+cd your-project/
+bash <(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/plugins/specky-sdd/install.sh)
+```
+
+The installer creates:
+
+```
+your-project/
+├── .github/plugin/specky/          ← Full plugin (agents, skills, hooks, prompts)
+│   ├── agents/                     ← 7 specialized Copilot agents
+│   ├── prompts/                    ← 19 reusable prompts
+│   ├── skills/                     ← 6 domain skills
+│   ├── hooks/scripts/              ← 10 automation hooks
+│   ├── instructions/               ← Copilot instructions
+│   └── config.yml                  ← Pipeline configuration
+├── .vscode/
+│   ├── mcp.json                    ← MCP server configuration
+│   └── settings.json               ← Hook integration
+└── GETTING-STARTED.md
+```
+
+> **Tip:** Commit `.github/plugin/` and `.vscode/` to Git so every team member gets Specky automatically on clone.
+
+See the full [plugin documentation](plugins/specky-sdd/README.md) for details.
+
+### Install MCP Server Only
+
+If you only need the 57 MCP tools without agents, skills, and hooks, install the MCP server directly.
+
+<details>
+<summary><strong>Global (npm)</strong></summary>
 
 ```bash
 npm install -g specky-sdd
 ```
 
-Then configure your IDE to use the global install:
-
 **VS Code** (`.vscode/mcp.json`):
 ```json
 {
-  "servers": {
-    "specky": {
+  "mcpServers": {
+    "specky-sdd": {
       "type": "stdio",
       "command": "specky-sdd"
     }
@@ -156,21 +201,14 @@ Then configure your IDE to use the global install:
 
 **Claude Code**:
 ```bash
-claude mcp add specky -- specky-sdd
+claude mcp add specky-sdd -- specky-sdd
 ```
 
 **Claude Desktop** (`claude_desktop_config.json`):
-
-| OS | Config location |
-|----|----------------|
-| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
-| Linux | `~/.config/Claude/claude_desktop_config.json` |
-| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
-
 ```json
 {
   "mcpServers": {
-    "specky": {
+    "specky-sdd": {
       "command": "specky-sdd"
     }
   }
@@ -180,25 +218,19 @@ claude mcp add specky -- specky-sdd
 </details>
 
 <details>
-<summary><strong>Per Workspace (alternative): npx, no global install</strong></summary>
-
-Add a config file to the repo so teammates get Specky automatically on clone — no global install needed.
+<summary><strong>Per Workspace (npx)</strong></summary>
 
 **VS Code** (`.vscode/mcp.json`):
 ```json
 {
-  "servers": {
-    "specky": {
+  "mcpServers": {
+    "specky-sdd": {
       "type": "stdio",
-      "command": "specky-sdd"
+      "command": "npx",
+      "args": ["-y", "specky-sdd@latest"]
     }
   }
 }
-```
-
-**Claude Code**:
-```bash
-claude mcp add specky -- specky-sdd
 ```
 
 > Commit `.vscode/mcp.json` to Git so every team member gets Specky automatically.
@@ -206,31 +238,17 @@ claude mcp add specky -- specky-sdd
 </details>
 
 <details>
-<summary><strong>Docker: Docker (HTTP mode, no Node.js required)</strong></summary>
-
-Run Specky as an HTTP server in a container:
+<summary><strong>Docker (HTTP mode, no Node.js required)</strong></summary>
 
 ```bash
 docker run -d --name specky -p 3200:3200 -v $(pwd):/workspace ghcr.io/paulasilvatech/specky:latest
 ```
 
-Verify it's running:
-
-```bash
-curl http://localhost:3200/health
-```
-
 Point any MCP client that supports HTTP to `http://localhost:3200/mcp`
-
-Stop when done:
-
-```bash
-docker stop specky && docker rm specky
-```
 
 </details>
 
-### Step 3: Verify
+### Verify
 
 Open your AI IDE and type:
 
@@ -242,7 +260,7 @@ The AI should list the 57 SDD tools. If you see them, Specky is working.
 
 ### Try It Now
 
-Once connected, type this in your AI chat to see Specky in action:
+Once connected, type this in your AI chat:
 
 ```
 > Initialize a Specky project for a todo API and help me define the scope
@@ -870,10 +888,19 @@ When you install Specky, you get the full Spec-Kit methodology reimplemented as 
 
 Together they form the **SDD layer** of the GitHub + Microsoft enterprise platform. Specky reimplements the Spec-Kit methodology as enforceable MCP tools with compliance, traceability, and automation built in.
 
+The recommended way to adopt this stack is via the [Specky plugin](plugins/specky-sdd/), which bundles the MCP server, agents, skills, and hooks into a single installable package:
+
+```bash
+copilot plugin marketplace add paulasilvatech/specky
+copilot plugin install specky-sdd@specky
+```
+
+Or configure the MCP server directly:
+
 ```json
 {
-  "servers": {
-    "specky": {
+  "mcpServers": {
+    "specky-sdd": {
       "type": "stdio",
       "command": "specky-sdd"
     }
@@ -881,7 +908,7 @@ Together they form the **SDD layer** of the GitHub + Microsoft enterprise platfo
 }
 ```
 
-> **Note:** This example assumes `specky-sdd` is installed globally (`npm install -g specky-sdd`). See the [Quick Start](#quick-start) section for per-workspace and Docker alternatives.
+> **Note:** This example assumes `specky-sdd` is installed globally (`npm install -g specky-sdd`). See the [Quick Start](#quick-start) section for plugin installation, per-workspace, and Docker alternatives.
 
 ## Project Configuration
 

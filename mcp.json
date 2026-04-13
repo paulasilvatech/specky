@@ -1,6 +1,6 @@
 {
-  "servers": {
-    "specky": {
+  "mcpServers": {
+    "specky-sdd": {
       "type": "stdio",
       "command": "specky-sdd"
     }

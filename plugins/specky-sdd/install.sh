@@ -3,7 +3,7 @@ set -euo pipefail
 
 echo ""
 echo "╔══════════════════════════════════════════════╗"
-echo "║  Specky SDD v1.2.0 — VS Code + Copilot      ║"
+echo "║  Specky SDD v3.2.1 — VS Code + Copilot      ║"
 echo "╚══════════════════════════════════════════════╝"
 echo ""
 
@@ -11,7 +11,7 @@ echo ""
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(pwd)"
 
-# The install.sh lives inside .github/plugin/specky/
+# install.sh lives inside plugins/specky-sdd/
 # Source = where this script is (the plugin directory)
 S="$SCRIPT_DIR"
 P="$REPO_DIR/.github/plugin/specky"
@@ -26,7 +26,6 @@ if [ "$(cd "$S" && pwd)" = "$(cd "$P" 2>/dev/null && pwd)" ] 2>/dev/null; then
   CLEANUP_TMP=1
 fi
 cleanup() { [ "${CLEANUP_TMP:-0}" = "1" ] && rm -rf "$TMP_SRC" 2>/dev/null || true; }
-trap cleanup EXIT
 
 PASS=0; FAIL=0; FAILS=()
 check() {
@@ -73,11 +72,26 @@ cp "$S/instructions/copilot-instructions.md" "$P/instructions/"
 echo "📋 Installing plugin metadata..."
 cp "$S/GETTING-STARTED.md" "$P/"
 cp "$S/LICENSE" "$P/"
-cp "$S/mcp.json" "$P/"
 
 # ─── VS Code ───
 echo "🔌 Installing VS Code config..."
-cp "$S/mcp.json" "$REPO_DIR/.vscode/"
+mkdir -p "$REPO_DIR/.vscode"
+
+# Write .vscode/mcp.json with correct mcpServers key
+cat > "$REPO_DIR/.vscode/mcp.json" << 'MCPEOF'
+{
+  "mcpServers": {
+    "specky-sdd": {
+      "command": "npx",
+      "args": ["-y", "specky-sdd@latest"],
+      "env": {
+        "SDD_WORKSPACE": "${workspaceFolder}"
+      },
+      "tools": ["*"]
+    }
+  }
+}
+MCPEOF
 
 if [ -f "$REPO_DIR/.vscode/settings.json" ]; then
   echo "   ⚠️  Merging into existing settings.json..."
@@ -130,7 +144,6 @@ check "copilot-instructions" ".github/plugin/specky/instructions/copilot-instruc
 echo "  Plugin files:"
 check "GETTING-STARTED" ".github/plugin/specky/GETTING-STARTED.md"
 check "LICENSE" ".github/plugin/specky/LICENSE"
-check "mcp.json (plugin)" ".github/plugin/specky/mcp.json"
 
 echo "  VS Code:"
 check "mcp.json (vscode)" ".vscode/mcp.json"

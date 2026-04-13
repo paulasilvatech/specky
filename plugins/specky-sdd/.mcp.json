@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "specky-sdd": {
+      "command": "npx",
+      "args": ["-y", "specky-sdd@latest"],
+      "tools": ["*"]
+    }
+  }
+}

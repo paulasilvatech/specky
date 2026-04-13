@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.2.1] - 2026-04-13
 
+### Plugin Marketplace
+
+- **`marketplace.json`**: Added `.github/plugin/marketplace.json` — repo is now a valid GitHub Copilot plugin marketplace
+- **`plugin.json`**: Added `plugins/specky-sdd/.github/plugin/plugin.json` in Claude Code spec format (7 agents, 19 commands, 6 skills)
+- **`.mcp.json`**: Plugin ships its own MCP config with `mcpServers` key and `specky-sdd@latest`
+- **`.claude-plugin/`**: Added symlink for Claude Code marketplace compatibility
+- **Plugin README**: Full plugin documentation at `plugins/specky-sdd/README.md` with skills, agents, commands, MCP server, and installation instructions
+- **Plugin install**: Users can now install via `copilot plugin marketplace add paulasilvatech/specky && copilot plugin install specky-sdd@specky`
+- **Flat structure**: Restructured from versioned `specky-sdd-vscode-v1.2.1/.github/plugin/specky/` to flat `plugins/specky-sdd/`
+- **MCP key fix**: All JSON configs now use `mcpServers` key (previously `servers` in some files)
+- **Version sync**: All plugin files aligned to v3.2.1 (`config.yml`, `plugin.json`, `marketplace.json`)
+- **Cleanup**: Removed duplicate directories, empty `.github/agents/`, `.github/prompts/`, `.github/instructions/`, `.github/hooks/`
+
 ### MCP Server Metadata
 
 - **Server title**: MCP panel now shows "Specky" with description instead of raw binary name
