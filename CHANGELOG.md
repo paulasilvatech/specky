@@ -5,6 +5,25 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.1] - 2026-04-13
+
+### MCP Server Metadata
+
+- **Server title**: MCP panel now shows "Specky" with description instead of raw binary name
+- **Server icon**: SVG + PNG icons served from GitHub raw content, visible in VS Code MCP panel
+- **Website URL**: Links to [specky-site](https://paulasilvatech.github.io/specky-site/) from server metadata
+- **Instructions**: AI clients receive pipeline guidance during MCP handshake
+- **Template path fix**: Templates now resolve from `dist/templates/` (self-contained npm package)
+
+### Documentation
+
+- **MCP config examples**: Added `"type": "stdio"` to all VS Code, Claude Code, and Claude Desktop config examples
+- **Removed broken env vars**: Removed `SDD_WORKSPACE` / `${workspaceFolder}` that caused startup errors
+- **Tool count**: Updated 56 → 57 across all documentation
+- **EARS patterns**: Fixed 5 → 6 pattern count (includes Complex)
+- **Broken links**: Fixed references to private files (CLAUDE.md, SYSTEM-DESIGN.md, ears-notation.md)
+- **Site fixes**: Updated EARS count and footer links on [specky-site](https://paulasilvatech.github.io/specky-site/)
+
 ## [3.2.0] - 2026-04-12
 
 ### Enterprise Security Hardening
