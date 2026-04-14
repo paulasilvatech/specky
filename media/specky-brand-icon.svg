@@ -54,7 +54,7 @@
   <circle cx="26" cy="58" r="5" fill="none" stroke="#c4b5fd" stroke-width="1.5" opacity="0.4"/>
   <circle cx="26" cy="58" r="3" fill="#e9d5ff" filter="url(#nodeGlow)"/>
 
-  <!-- Satellite micro-nodes (representing MCP tools / 53 tools ecosystem) -->
+  <!-- Satellite micro-nodes (representing MCP tools / 57 tools ecosystem) -->
   <circle cx="56" cy="40" r="2" fill="#c4b5fd" opacity="0.5"/>
   <circle cx="24" cy="40" r="2" fill="#c4b5fd" opacity="0.5"/>
   <circle cx="40" cy="22" r="1.5" fill="#a78bfa" opacity="0.35"/>

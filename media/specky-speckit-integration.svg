@@ -17,7 +17,7 @@
 
 <!-- ============= TITLE ============= -->
 <text x="700" y="36" text-anchor="middle" font-size="22" font-weight="700" fill="#2C2C2A">The SDD Platform: Spec-Kit + Specky</text>
-<text x="700" y="56" text-anchor="middle" font-size="13" fill="#888780">Plugin-first installation · Protocol-native MCP server for any IDE</text>
+<text x="700" y="56" text-anchor="middle" font-size="13" fill="#888780">APM-powered installation · Protocol-native MCP server for any IDE</text>
 <rect x="460" y="66" width="48" height="3" rx="1.5" fill="#3D1A6E"/>
 <rect x="512" y="66" width="48" height="3" rx="1.5" fill="#5B2D8E"/>
 <rect x="564" y="66" width="48" height="3" rx="1.5" fill="#8661C5"/>
@@ -61,7 +61,7 @@
 <rect x="1000" y="186" width="60" height="22" rx="11" fill="#5B2D8E"/>
 <text x="1030" y="201" text-anchor="middle" font-size="10" font-weight="700" fill="#FFFFFF">v3.2</text>
 <text x="760" y="228" font-size="11" fill="#5F5E5A">MCP server + plugin that turns the Spec-Kit methodology into</text>
-<text x="760" y="244" font-size="11" fill="#5F5E5A">57 enforceable tools with 7 agents, 19 prompts, 6 skills, 10 hooks.</text>
+<text x="760" y="244" font-size="11" fill="#5F5E5A">57 enforceable tools with 13 agents, 22 prompts, 8 skills, 14 hooks.</text>
 <text x="760" y="272" font-size="10" font-weight="700" fill="#2C2C2A">Adds on top:</text>
 <rect x="760" y="282" width="120" height="28" rx="6" fill="#5B2D8E" opacity="0.06" stroke="#5B2D8E" stroke-width="1"/>
 <text x="820" y="300" text-anchor="middle" font-size="9" font-weight="600" fill="#5B2D8E">State Machine</text>
@@ -80,8 +80,7 @@
 <rect x="1150" y="318" width="120" height="28" rx="6" fill="#3D1A6E" opacity="0.06" stroke="#3D1A6E" stroke-width="1"/>
 <text x="1210" y="336" text-anchor="middle" font-size="9" font-weight="600" fill="#3D1A6E">Drift Detection</text>
 <rect x="760" y="354" width="168" height="20" rx="10" fill="#5B2D8E" opacity="0.08"/>
-<text x="844" y="368" text-anchor="middle" font-size="9" font-weight="600" fill="#5B2D8E">copilot plugin install</text>
-<text x="940" y="368" font-size="9" fill="#888780">or npm install -g specky-sdd</text>
+<text x="890" y="368" text-anchor="middle" font-size="9" font-weight="600" fill="#5B2D8E">apm install paulasilvatech/specky</text>
 
 <!-- Integration arrow -->
 <path d="M680,274 L720,274" stroke="#5B2D8E" stroke-width="2.5" fill="none" marker-end="url(#arr-p)"/>
@@ -91,7 +90,7 @@
 <rect x="200" y="410" width="1000" height="80" rx="12" fill="#FFF" stroke="#2C2C2A" stroke-width="1.5"/>
 <text x="700" y="440" text-anchor="middle" font-size="16" font-weight="700" fill="#2C2C2A">Together: The Complete SDD Layer</text>
 <text x="700" y="462" text-anchor="middle" font-size="11" fill="#5F5E5A">Spec-Kit defines what to do (methodology). Specky enforces how to do it (engine + plugin).</text>
-<text x="700" y="480" text-anchor="middle" font-size="11" fill="#5F5E5A">Install the plugin and you get both — 57 tools, 7 agents, 19 prompts, 6 skills, 10 hooks.</text>
+<text x="700" y="480" text-anchor="middle" font-size="11" fill="#5F5E5A">apm install paulasilvatech/specky — 57 tools, 13 agents, 22 prompts, 8 skills, 14 hooks.</text>
 <path d="M370,384 L370,410" stroke="#0058A3" stroke-width="1.5" fill="none" marker-end="url(#arr)"/>
 <path d="M1030,384 L1030,410" stroke="#5B2D8E" stroke-width="1.5" fill="none" marker-end="url(#arr-p)"/>
 

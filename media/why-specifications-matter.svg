@@ -112,9 +112,9 @@
 <rect x="930" y="506" width="240" height="100" rx="8" fill="#FFF" stroke="#3D1A6E" stroke-width="2"/>
 <rect x="930" y="506" width="240" height="6" rx="3" fill="#3D1A6E"/>
 <text x="1050" y="536" text-anchor="middle" font-size="14" font-weight="700" fill="#3D1A6E">Plugin + Agents</text>
-<text x="1050" y="556" text-anchor="middle" font-size="10" fill="#5F5E5A">7 Copilot agents, 19 prompts,</text>
-<text x="1050" y="572" text-anchor="middle" font-size="10" fill="#5F5E5A">6 skills, 10 hooks. Installable</text>
-<text x="1050" y="588" text-anchor="middle" font-size="10" fill="#5F5E5A">via copilot plugin install.</text>
+<text x="1050" y="556" text-anchor="middle" font-size="10" fill="#5F5E5A">13 agents, 22 prompts,</text>
+<text x="1050" y="572" text-anchor="middle" font-size="10" fill="#5F5E5A">8 skills, 14 hooks. Install via</text>
+<text x="1050" y="588" text-anchor="middle" font-size="10" fill="#5F5E5A">apm install paulasilvatech/specky</text>
 
 <!-- Summary bar -->
 <rect x="200" y="640" width="1000" height="44" rx="22" fill="#2C2C2A"/>
