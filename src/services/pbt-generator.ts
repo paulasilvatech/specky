@@ -77,7 +77,7 @@ export class PbtGenerator {
 
     for (const line of lines) {
       if (/^(When|While|Where|If|The)\s+.+shall\s+/im.test(line)) {
-        const reqMatch = line.match(/REQ-[A-Z]+-\d{3}/);
+        const reqMatch = line.match(/REQ(?:-[A-Z]+)?-\d{3}/);
         const reqId = reqMatch ? reqMatch[0] : `REQ-GEN-${String(results.length + 1).padStart(3, "0")}`;
         results.push({ line: line.trim(), reqId });
       }

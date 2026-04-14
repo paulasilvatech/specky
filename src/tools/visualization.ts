@@ -22,7 +22,11 @@ function formatError(toolName: string, error: Error): string {
 
 function truncate(text: string): string {
   if (text.length <= CHARACTER_LIMIT) return text;
-  return text.slice(0, CHARACTER_LIMIT) + "\n\n[TRUNCATED] Response exceeded 25,000 characters.";
+  return text.slice(0, CHARACTER_LIMIT) + `\n\n[TRUNCATED] Response exceeded ${CHARACTER_LIMIT.toLocaleString()} characters.`;
+}
+
+function buildDiagramTitle(featureName: string, diagramType: string): string {
+  return `${featureName} — ${diagramType}`;
 }
 
 const SOURCE_TO_FILE: Record<string, string> = {
@@ -100,7 +104,7 @@ export function registerVisualizationTools(
           };
         }
 
-        const diagramSpec = diagramGenerator.generateDiagram(content, diagram_type, `${feature.name} — ${diagram_type}`);
+        const diagramSpec = diagramGenerator.generateDiagram(content, diagram_type, buildDiagramTitle(feature.name, diagram_type));
 
         const result = {
           ...diagramSpec,
@@ -255,15 +259,17 @@ export function registerVisualizationTools(
           const steps = extractStepsFromRequirement(req.text);
           const flowDiagram = diagramGenerator.generateUserStoryFlow(req.title, steps);
           const acceptanceCriteria = generateAcceptanceCriteria(req.text);
+          const independentOutcome =
+            acceptanceCriteria.length > 0 ? acceptanceCriteria[0] : "the expected outcome occurs";
 
           stories.push({
             id: req.id,
             title: req.title,
-            description: `As a user, I want ${req.title.toLowerCase()} so that ${req.rationale || "the system meets this requirement"}.`,
+            description: `As a user, I want ${req.title.toLowerCase()} so that ${req.rationale || "the rationale is not specified in the requirement"}.`,
             priority: req.priority,
             acceptance_criteria: acceptanceCriteria,
             flow_diagram: flowDiagram,
-            independent_test: `Given the system is running, when ${req.title.toLowerCase()} is triggered, then ${acceptanceCriteria[0] || "the expected outcome occurs"}.`,
+            independent_test: `Given the system is running, when ${req.title.toLowerCase()} is triggered, then ${independentOutcome}.`,
           });
         }
 
@@ -440,6 +446,9 @@ interface ParsedRequirement {
   rationale?: string;
 }
 
+const CRITICAL_REQ_THRESHOLD = 3;
+const HIGH_REQ_THRESHOLD = 6;
+
 function extractRequirements(specContent: string): ParsedRequirement[] {
   const requirements: ParsedRequirement[] = [];
   // Match EARS-style requirement sections: ### REQ-XXX-NNN ...
@@ -460,7 +469,7 @@ function extractRequirements(specContent: string): ParsedRequirement[] {
 
     // Determine priority from content
     const priorityMatch = body.match(/\b(P[1-4])\b/) || title.match(/\b(P[1-4])\b/);
-    const priority = (priorityMatch?.[1] as "P1" | "P2" | "P3" | "P4") || (index < 3 ? "P1" : index < 6 ? "P2" : "P3");
+    const priority = (priorityMatch?.[1] as "P1" | "P2" | "P3" | "P4") || (index < CRITICAL_REQ_THRESHOLD ? "P1" : index < HIGH_REQ_THRESHOLD ? "P2" : "P3");
 
     // Extract rationale if present
     const rationaleMatch = body.match(/(?:rationale|so that|because|in order to)[:\s]+(.+?)(?:\.|$)/i);
@@ -479,7 +488,7 @@ function extractRequirements(specContent: string): ParsedRequirement[] {
         id: `REQ-GEN-${String(bulletIndex + 1).padStart(3, "0")}`,
         title: match[1].trim(),
         text: match[2].trim(),
-        priority: bulletIndex < 3 ? "P1" : bulletIndex < 6 ? "P2" : "P3",
+        priority: bulletIndex < CRITICAL_REQ_THRESHOLD ? "P1" : bulletIndex < HIGH_REQ_THRESHOLD ? "P2" : "P3",
       });
       bulletIndex++;
     }

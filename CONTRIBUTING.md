@@ -22,7 +22,7 @@ Thank you for your interest in contributing to Specky. This guide covers the v3.
 
 ## Architecture Overview
 
-Specky v3.3.0 is an MCP server that exposes **57 tools** organized into a 10-phase Spec-Driven Development pipeline. The codebase comprises **69 source files**, **23 templates**, and is structured as follows:
+As of Specky v3.3.0, Specky is an MCP server that exposes **~57 tools** organized into a 10-phase Spec-Driven Development pipeline. The codebase comprises approximately **~69 source files** and **~23 templates**, and is structured as follows:
 
 ```
 src/
@@ -332,7 +332,7 @@ Compliance frameworks live in `src/services/compliance-engine.ts` as a static `F
    ],
    ```
 
-3. Update the `complianceCheckInputSchema` in `src/schemas/quality.ts` to include the new framework in its enum.
+3. Update the `complianceCheckInputSchema` in `src/schemas/quality.ts` to include the new framework in its enum, using the exact same string literal as the `ComplianceFramework` type and `FRAMEWORKS` key (for example, `"fedramp"`).
 
 4. Add a `compliance.md` template section if needed, or the existing template will handle it generically.
 

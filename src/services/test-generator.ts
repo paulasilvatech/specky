@@ -263,7 +263,7 @@ export class TestGenerator {
 
   private extractRequirementIds(text: string): string[] {
     const ids = new Set<string>();
-    const regex = /REQ-[A-Z]+-\d{3}/g;
+    const regex = /REQ-(?:[A-Z]+-)?\d{3}/g;
     let match;
     while ((match = regex.exec(text)) !== null) {
       ids.add(match[0]);
