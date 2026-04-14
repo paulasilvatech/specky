@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 13 Agents
 
-- `@specky-orchestrator`, `@specky-onboarding`, `@sdd-init`, `@sdd-clarify`, `@requirements-engineer`, `@research-analyst`, `@specifier`, `@designer`, `@implementer`, `@test-verifier`, `@release-engineer`, `@sdd-review`, `@specky-greenfield`
+- `@specky-orchestrator`, `@specky-onboarding`, `@sdd-init`, `@sdd-clarify`, `@requirements-engineer`, `@research-analyst`, `@spec-engineer`, `@design-architect`, `@task-planner`, `@implementer`, `@test-verifier`, `@quality-reviewer`, `@release-engineer`
 - Each agent loads a companion SKILL.md as its first step (lean agent + rich skill pattern)
 
 ### 22 Prompts
@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 8 Skills
 
-- Domain knowledge for every pipeline stage: `sdd-pipeline`, `sdd-markdown-standard`, `research-analyst`, `implementer`, `test-verifier`, `release-engineer`, `svg-paulasilvatech`, `suggest-awesome-github-copilot-skills`
+- Domain knowledge for every pipeline stage: `sdd-pipeline`, `sdd-markdown-standard`, `research-analyst`, `implementer`, `test-verifier`, `release-engineer`, `specky-orchestrator`, `specky-onboarding`
 
 ### 14 Hooks
 
@@ -102,6 +102,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Enterprise Security Hardening
 
 #### Rate Limiting (opt-in)
+
 - **`RateLimiter` service**: Token bucket algorithm — no external deps, pure TypeScript
 - HTTP transport now supports `rate_limit.enabled: true` in `.specky/config.yml`
 - Config: `max_requests_per_minute` (default 60), `burst` (default 10)
@@ -109,18 +110,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - stdio mode bypasses rate limiting by design (single-session, process-isolated)
 
 #### State File Integrity
+
 - **`StateMachine.saveState()`** now writes HMAC-SHA256 signature to `.sdd-state.json.sig`
 - **`StateMachine.loadState()`** verifies signature on every load — tamper warning to stderr on mismatch
 - Key: `SDD_STATE_KEY` env var, or derived from workspace path using SHA-256
 - Missing `.sig` treated as unverified (no warning) — backward-compatible with pre-v3.2.0 state files
 
 #### Enhanced Audit Logger
+
 - **Hash-chaining**: every `AuditEntry` includes `previous_hash` (SHA-256 of previous line, seed `specky-audit-v1`)
 - **Log rotation**: rotates `.audit.jsonl` → `.audit.jsonl.1` when `audit.max_file_size_mb` exceeded (default 10 MB)
 - **Syslog export**: RFC 5424 format written to `.audit.syslog` when `audit.export_format: syslog`
 - **OTLP stub**: `audit.export_format: otlp` logs placeholder — implementation in next release
 
 #### RBAC Foundation (opt-in)
+
 - **`RbacEngine` service**: `viewer` / `contributor` / `admin` roles; disabled by default
 - **`sdd_check_access`** (NEW tool #57): Returns active role, per-tool access check, full role summary
 - Role enforcement via `SDD_ROLE` env var or `rbac.default_role` in config
@@ -128,11 +132,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Config: `rbac.enabled: true`, `rbac.default_role: contributor`
 
 #### Config Extension
+
 - `.specky/config.yml` now supports nested blocks: `rate_limit:`, `audit:`, `rbac:`
 - Parser upgraded to handle indented YAML child keys (dot-notation flattening)
 - All new options opt-in with safe defaults — existing behavior unchanged from v3.1.0
 
 ### NPM-as-Default Migration
+
 - Global install (`npm install -g specky-sdd`) is now the recommended installation method
 - npx retained as an "alternative" option for per-workspace and convenience use
 - All docs updated: README.md, GETTING-STARTED.md, SYSTEM-DESIGN.md, ONBOARDING.md, SECURITY.md
@@ -140,10 +146,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New "NPX Supply Chain Risk" + "MCP Security Framework Compliance" sections in SECURITY.md
 
 ### Security Documentation
+
 - **CoSAI MCP Security White Paper** — full T-01 through T-12 threat coverage table in SECURITY.md
 - **OWASP MCP Top 10** — M1 through M10 coverage table in SECURITY.md
 
 ### Tests
+
 - 561 tests (+54): `rate-limiter.test.ts` (11), `state-integrity.test.ts` (8), `audit-enhanced.test.ts` (12), `rbac-engine.test.ts` (15), plus existing suite maintained at 100%
 
 ---
@@ -153,36 +161,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Intelligence Layer (Specs 003–007)
 
 #### Model Routing Guidance (Spec 003)
+
 - **`sdd_model_routing`** (NEW tool #54): Returns the full 10-phase model routing decision table with optimal model, mode, extended thinking settings, arXiv evidence, and cost savings calculator
 - **`model_routing_hint`** field added to ALL 55 tool responses via `buildToolResponse()` — every response now tells the AI client which model to use for the current phase
 - Complexity override: `implement`/`design` phases with >10 files escalate to Opus automatically
 - `ModelRoutingEngine` service with empirically-grounded ROUTING_TABLE (arXiv:2601.08419)
 
 #### Context Tiering (Spec 004)
+
 - **`sdd_context_status`** (NEW tool #55): Returns Hot/Domain/Cold tier assignment for all spec artifacts with estimated token savings
 - **`context_load_summary`** field added to ALL 55 tool responses — shows which files are loaded per call
 - `ContextTieringEngine` service: CONSTITUTION.md=Hot, SPEC/DESIGN/TASKS=Domain, ANALYSIS/CHECKLIST/etc=Cold
 - Token estimation: `Math.ceil(content.length / 4)` — matches GPT/Claude tokenization heuristic
 
 #### Cognitive Debt Metrics (Spec 005)
+
 - **`cognitive_debt`** field in `sdd_metrics` and `sdd_get_status` responses (when gate history available)
 - Gate instrumentation in `sdd_advance_phase`: records mtime-based modified/unmodified detection per gate
 - `CognitiveDebtEngine` service: LGTM-without-modification rate as cognitive surrender signal; score = `(lgtm_rate × 0.6) + (delta_normalized × 0.4)`, labels: healthy/caution/high_risk
 - Warning shown in `sdd_advance_phase` response when unmodified approval is detected
 
 #### Verified Test Loop (Spec 006)
+
 - **`TestResultParser`** service: auto-detects and parses Vitest JSON, pytest JSON, and JUnit XML into normalized `TestResult[]`
 - **`TestTraceabilityMapper`** service: maps test names to REQ-XXX IDs via `// REQ-XXX` comment convention, builds per-requirement coverage report and failure details with `suggested_fix_prompt`
 - `sdd_verify_tests` enhanced: adds `enhanced_coverage` (per-requirement breakdown) and `failure_details` to response when parsers are wired
 - JUnit XML parser bug fixed: self-closing `<testcase .../>` was greedily consumed by open-tag alternative, merging two testcases; fixed with negative lookbehind `(?<!\/)`
 
 #### Intent Drift Detection (Spec 007)
+
 - **`intent_drift`** report in `sdd_check_sync` and `sdd_metrics` responses
 - **`drift_amendment_suggestion`** in `sdd_amend` response when last drift score > 40 — lists orphaned constitutional principles with recommended spec actions
 - `IntentDriftEngine` service: extracts principles from CONSTITUTION.md `## Article` sections, keyword-overlap coverage detection (≥2 keywords threshold), trend analysis (improving/stable/worsening) over last 3 DriftSnapshots
 - `drift_history` stored in `.sdd-state.json` (FIFO, max 100 entries)
 
 ### Stats
+
 - **56 tools** (was 53, corrected to 56 — sdd_metrics, sdd_validate_ears, sdd_check_ecosystem were already implemented but undercounted): +sdd_model_routing, +sdd_context_status, count reconciled
 - **24 services** (was 18): +ModelRoutingEngine, +ContextTieringEngine, +CognitiveDebtEngine, +IntentDriftEngine, +TestResultParser, +TestTraceabilityMapper
 - **507 unit tests** across 30 test files (was 321 across 22 files)
@@ -193,22 +207,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.0.0] - 2026-03-26
 
 ### Pipeline Validation & Enforcement
+
 - **Phase validation on every tool**: `validatePhaseForTool()` maps 53 tools to allowed pipeline phases; tools called out-of-order return structured errors with fix guidance
 - **Gate decision enforcement**: `advancePhase()` now blocks advancement past Analyze if gate decision is BLOCK or CHANGES_NEEDED; only APPROVE allows progression
 - **Clarify phase fix**: `sdd_clarify` now properly completes the Clarify phase (was stuck in `in_progress`)
 - **Proper state transitions**: `sdd_auto_pipeline` and `sdd_turnkey_spec` now use `advancePhase()` instead of direct state manipulation
 
 ### Software Engineering Diagrams (10 → 17 types)
+
 - **7 new diagram types**: C4 Component (L3), C4 Code (L4), Activity, Use Case, Data Flow (DFD), Deployment, Network Topology
 - **`generateAllDiagrams()`** now generates up to 16 diagrams per feature automatically
 - **Schema updated**: `diagram_type` enum expanded from 10 to 17 types
 
 ### System Design Completeness (6 → 12 sections)
+
 - **Design template expanded**: System Context (C4 L1), Container Architecture (C4 L2), Component Design (C4 L3), Code-Level Design (C4 L4), System Diagrams, Data Model, API Contracts, Infrastructure & Deployment, Security Architecture, ADRs, Error Handling, Cross-Cutting Concerns
 - **9 new optional fields** in `writeDesignInputSchema` for backward compatibility
 - **Design completeness validation**: `validateDesignCompleteness()` scores DESIGN.md against 12 required sections
 
 ### Enriched Interactive Responses (ALL 53 tools)
+
 - **`enrichResponse()`**: Every tool response now includes phase progress bar, educational notes, methodology tips, handoff context, and parallel execution hints
 - **`enrichStateless()`**: Utility tools without phase context get educational notes and common mistakes
 - **`buildPhaseError()`**: Structured phase validation errors with fix guidance and methodology context
@@ -216,17 +234,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`DependencyGraph`** service: Parallel execution groups for all 10 phases, tool dependency mapping, execution plans
 
 ### Parallel Documentation Generation
+
 - **`sdd_generate_all_docs`** (NEW tool #53): Generates 5 doc types in parallel via `Promise.all()`
 - **`generateJourneyDocs()`**: New SDD Journey document capturing complete pipeline audit trail (phases, timestamps, gate decisions, traceability)
 - **DocGenerator wired with StateMachine** for phase-aware documentation
 
 ### Active Hooks (6 → 7)
+
 - **`auto-checkpoint.sh`** (NEW): Suggests checkpoint creation when spec artifacts are modified
 - **`security-scan.sh`** now BLOCKS (exit 2) when hardcoded secrets detected
 - **`spec-sync.sh`** enhanced with drift detection and spec-reference checking
 - **`auto-docs.sh`** enhanced with modification tracking via `.doc-tracker.json`
 
 ### Interactive Commands (12 rewritten)
+
 - All 12 `/sdd:*` commands rewritten with step-by-step educational guidance
 - Every step explains "What's happening" and "Why it matters"
 - WAIT/LGTM gates at all quality checkpoints
@@ -234,6 +255,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Error recovery sections with guidance back on track
 
 ### New Files
+
 - `src/services/methodology.ts` — Educational content service (static, no dependencies)
 - `src/services/dependency-graph.ts` — Parallel execution graph (static, no dependencies)
 - `src/tools/response-builder.ts` — Response enrichment (enrichResponse, enrichStateless, buildPhaseError)
@@ -241,6 +263,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.claude/hooks/auto-checkpoint.sh` — Auto-checkpoint hook
 
 ### Stats
+
 - **53 tools** (was 52), **17 diagram types** (was 10), **22 templates** (was 21), **7 hooks** (was 6)
 - **18 services** (was 16): +MethodologyGuide, +DependencyGraph
 - **321 unit tests**, all passing
@@ -249,12 +272,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.3.1] - 2026-03-25
 
 ### Changed
+
 - Added Specky MCP logo and icon (PNG 256x256 + 128x128) for VS Code MCP Gallery and npm
 - Configured "icon" field in package.json
 
 ## [2.3.0] - 2026-03-24
 
 ### Added
+
 - `sdd_turnkey_spec` tool — generates complete EARS specification from a natural language description with auto-extracted requirements, EARS pattern classification, acceptance criteria generation, NFR inference, and clarification questions
 - `sdd_generate_pbt` tool — generates property-based tests using fast-check (TypeScript) or Hypothesis (Python), extracting 6 property types from EARS requirements: invariant, state_transition, conditional, negative, round_trip, idempotence
 - `sdd_checkpoint` tool — creates named snapshots of all spec artifacts and pipeline state for safe rollback
@@ -270,6 +295,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `tests/integration/checkpoint-e2e.test.ts` — 9 integration test cases for checkpoint create/restore/list with real filesystem
 
 ### Changed
+
 - MCP tool count: 47 → 52
 - Claude Code commands: 7 → 12
 - Test suite expanded: 211 → 292 tests across 19 files
@@ -286,6 +312,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.2.0] - 2026-03-24
 
 ### Added
+
 - `sdd_generate_tests` tool — generates test stubs from acceptance criteria for 6 frameworks (vitest, jest, playwright, pytest, junit, xunit)
 - `sdd_verify_tests` tool — verifies test results JSON against specification requirements, reports traceability coverage
 - `.specky/config.yml` support — project-local configuration for templates path, default framework, compliance frameworks, audit toggle
@@ -297,6 +324,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `templates/test-stub.md` template for generated test files
 
 ### Changed
+
 - Test suite expanded: 120 → 211 tests across 16 files
 - Coverage improved: 38% → 89% lines (threshold: 80%)
 - MCP tool count: 44 → 47
@@ -305,6 +333,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.1.0] - 2026-03-21
 
 ### Added
+
 - `sdd_check_ecosystem` tool — detects installed MCP servers and recommends complementary ones
 - `sdd_validate_ears` tool — batch EARS requirement validation with pattern classification
 - `recommended_servers` field in tool outputs for MCP ecosystem guidance
@@ -314,12 +343,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CHANGELOG.md` (this file)
 
 ### Changed
+
 - Tool count: 42 → 44
 - Updated `CLAUDE.md` to reflect v2.1.0 tools and version history
 
 ## [2.0.0] - 2026-03-21
 
 ### Added
+
 - **25 new MCP tools** (17 → 42 total)
 - **3 new pipeline phases**: Discover, Clarify, Release (7 → 10 phases)
 - **8 new services**: DocumentConverter, DiagramGenerator, IacGenerator, WorkItemExporter, CrossAnalyzer, ComplianceEngine, DocGenerator, GitManager
@@ -342,6 +373,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Docker-based local development environment setup
 
 ### Changed
+
 - Pipeline expanded from 7 to 10 phases
 - State machine updated for new phase transitions
 - All schemas updated to use `.strict()` mode
@@ -351,6 +383,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2026-03-20
 
 ### Added
+
 - Initial release of Specky MCP server
 - 17 MCP tools across 4 tool files
 - 7-phase pipeline: Init, Discover, Specify, Clarify, Design, Tasks, Analyze

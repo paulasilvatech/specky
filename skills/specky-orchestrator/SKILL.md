@@ -14,14 +14,14 @@ The orchestrator coordinates the full 10-phase SDD pipeline, routing to the corr
 | Phase | Agent | Model | MCP Tools | Required Input | Output Artifact |
 |-------|-------|-------|-----------|----------------|-----------------|
 | 0 Init | @sdd-init | Haiku | sdd_init, sdd_scan_codebase | — | CONSTITUTION.md, .sdd-state.json |
-| 1 Research | @research-analyst | Sonnet | sdd_discover, sdd_research, sdd_import_document, sdd_import_transcript, sdd_check_ecosystem | CONSTITUTION.md | RESEARCH.md |
-| 2 Clarify | @sdd-clarify | Opus | sdd_clarify, sdd_validate_ears, sdd_turnkey_spec | CONSTITUTION.md | Updates to RESEARCH.md |
-| 3 Specify | @spec-engineer | Opus | sdd_write_spec, sdd_turnkey_spec, sdd_validate_ears, sdd_figma_to_spec | RESEARCH.md | SPECIFICATION.md |
+| 1 Discover | @research-analyst | Sonnet | sdd_discover, sdd_research, sdd_import_document, sdd_import_transcript, sdd_check_ecosystem | CONSTITUTION.md | RESEARCH.md |
+| 2 Specify | @spec-engineer | Opus | sdd_write_spec, sdd_turnkey_spec, sdd_validate_ears, sdd_figma_to_spec | RESEARCH.md | SPECIFICATION.md |
+| 3 Clarify | @sdd-clarify | Opus | sdd_clarify, sdd_validate_ears, sdd_turnkey_spec | SPECIFICATION.md | Updates to SPECIFICATION.md |
 | 4 Design | @design-architect | Opus | sdd_write_design, sdd_generate_all_diagrams, sdd_generate_diagram | SPECIFICATION.md | DESIGN.md |
 | 5 Tasks | @task-planner | Sonnet | sdd_write_tasks, sdd_checklist | DESIGN.md | TASKS.md, CHECKLIST.md |
-| 6 Implement | @implementer | Sonnet | sdd_implement, sdd_generate_tests, sdd_generate_pbt, sdd_generate_iac, sdd_generate_dockerfile | TASKS.md, CHECKLIST.md | Code scaffolding, test stubs |
-| 7 Verify | @test-verifier | Sonnet | sdd_verify_tests, sdd_verify_tasks, sdd_check_sync, sdd_validate_ears | SPECIFICATION.md, TASKS.md | VERIFICATION.md, CROSS_ANALYSIS.md |
-| 8 Review | @quality-reviewer | Opus | sdd_run_analysis, sdd_cross_analyze, sdd_compliance_check, sdd_check_sync | All artifacts | ANALYSIS.md, COMPLIANCE.md |
+| 6 Analyze | @quality-reviewer | Sonnet | sdd_run_analysis, sdd_cross_analyze, sdd_compliance_check, sdd_check_sync | TASKS.md, CHECKLIST.md | ANALYSIS.md, COMPLIANCE.md |
+| 7 Implement | @implementer | Sonnet | sdd_implement, sdd_generate_tests, sdd_generate_pbt, sdd_generate_iac, sdd_generate_dockerfile | ANALYSIS.md | Code scaffolding, test stubs |
+| 8 Verify | @test-verifier | Opus | sdd_verify_tests, sdd_verify_tasks, sdd_check_sync, sdd_validate_ears | SPECIFICATION.md, TASKS.md | VERIFICATION.md, CROSS_ANALYSIS.md |
 | 9 Release | @release-engineer | Haiku | sdd_create_pr, sdd_generate_all_docs, sdd_export_work_items | ANALYSIS.md (APPROVE) | PR, docs, work items |
 
 ## Hook Enforcement Matrix
@@ -54,7 +54,7 @@ The orchestrator coordinates the full 10-phase SDD pipeline, routing to the corr
 
 ## LGTM Gate Protocol
 
-Phases 3 (Specify), 4 (Design), and 5 (Tasks) require human LGTM before advancing:
+Phases 2 (Specify), 4 (Design), and 5 (Tasks) require human LGTM before advancing:
 
 1. Phase agent completes and writes artifact
 2. lgtm-gate.sh runs → prints artifact summary
@@ -69,7 +69,7 @@ Phases 3 (Specify), 4 (Design), and 5 (Tasks) require human LGTM before advancin
 |-------|----------------|--------|
 | 0 (Init) | develop | Create spec/NNN-* from develop |
 | 1-7 | spec/NNN-* | All spec work on feature branch |
-| 8 (Review) | develop | After merge from spec branch |
+| 8 (Verify) | develop | After merge from spec branch |
 | 9 (Release) | stage | After merge from develop |
 | Production | main | After PR merge from stage |
 
@@ -78,7 +78,7 @@ Phases 3 (Specify), 4 (Design), and 5 (Tasks) require human LGTM before advancin
 Before calling sdd_advance_phase, verify:
 1. ✅ Required artifact exists (PHASE_REQUIRED_FILES)
 2. ✅ Artifact has minimum quality (phase-gate.sh passed)
-3. ✅ LGTM received (if phase 3, 4, or 5)
+3. ✅ LGTM received (if phase 2, 4, or 5)
 4. ✅ Branch matches expectations
 5. ✅ Checkpoint created (sdd_checkpoint)
 6. ✅ No blocking hook failures

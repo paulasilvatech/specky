@@ -697,7 +697,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 
 ## All 57 Tools
 
-### Input and Conversion (5)
+### Input and Conversion (6)
 
 | Tool | Description |
 |------|-------------|
@@ -705,6 +705,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_import_transcript` | Parse meeting transcripts (Teams, Zoom, Google Meet) |
 | `sdd_auto_pipeline` | Any input to complete spec pipeline (all documents) |
 | `sdd_batch_import` | Process folder of mixed documents |
+| `sdd_batch_transcripts` | Scan folder of transcripts and run full auto-pipeline for each |
 | `sdd_figma_to_spec` | Figma design to requirements specification |
 
 ### Pipeline Core (8)
@@ -720,7 +721,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_run_analysis` | Quality gate analysis with coverage heatmap |
 | `sdd_advance_phase` | Move to next pipeline phase |
 
-### Quality and Validation (5)
+### Quality and Validation (6)
 
 | Tool | Description |
 |------|-------------|
@@ -729,6 +730,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_compliance_check` | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 validation |
 | `sdd_cross_analyze` | Spec-design-tasks alignment with consistency score |
 | `sdd_validate_ears` | Batch EARS requirement validation |
+| `sdd_check_sync` | Spec-vs-implementation drift detection report |
 
 ### Diagrams and Visualization (4) -- 17 Diagram Types
 
@@ -765,7 +767,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_implement` | Ordered implementation plan with checkpoints |
 | `sdd_research` | Resolve unknowns in RESEARCH.md |
 
-### Documentation (4)
+### Documentation (5)
 
 | Tool | Description |
 |------|-------------|
@@ -773,8 +775,9 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_generate_api_docs` | API documentation from design |
 | `sdd_generate_runbook` | Operational runbook |
 | `sdd_generate_onboarding` | Developer onboarding guide |
+| `sdd_generate_all_docs` | Generate all documentation types in parallel (docs, API, runbook, onboarding, journey) |
 
-### Utility (5)
+### Utility (6)
 
 | Tool | Description |
 |------|-------------|
@@ -783,6 +786,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_scan_codebase` | Detect tech stack and structure |
 | `sdd_metrics` | Project metrics dashboard |
 | `sdd_amend` | Amend project constitution |
+| `sdd_write_bugfix` | Generate bugfix spec with root cause analysis and test plan |
 
 ### Testing (3)
 
@@ -811,6 +815,14 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | Tool | Description |
 |------|-------------|
 | `sdd_check_ecosystem` | Report recommended MCP servers with install commands |
+
+### Governance (3)
+
+| Tool | Description |
+|------|-------------|
+| `sdd_model_routing` | Model routing decision table for all 10 phases with cost analysis |
+| `sdd_context_status` | Context tier assignment (Hot/Domain/Cold) for spec artifacts with token savings |
+| `sdd_check_access` | RBAC access check for current role with per-tool permissions summary |
 
 
 ## The Spec-Driven Development Platform
@@ -1053,7 +1065,7 @@ curl http://localhost:3200/health
 
 ## Roadmap
 
-### v3.1 (current)
+### v3.3 (current)
 
 | Capability | Status |
 |------------|--------|
@@ -1079,6 +1091,8 @@ curl http://localhost:3200/health
 | MCP-to-MCP routing (GitHub, Azure DevOps, Jira, Terraform, Figma, Docker) | Stable |
 | SBOM + cosign signing on Docker image | Stable |
 | JSONL audit logger (optional) | Stable |
+| RBAC foundation (opt-in role-based access control) | Stable |
+| Rate limiting for HTTP transport (opt-in) | Stable |
 | 507 unit tests | Stable |
 
 ### v3.4+ (planned)
@@ -1089,10 +1103,8 @@ curl http://localhost:3200/health
 | Observability | OpenTelemetry metrics and structured logging |
 | Internationalization | Spec templates in PT-BR, ES, FR, DE, JA |
 | Automated shrinking | fast-check/Hypothesis shrinking feedback into spec refinement |
-| RBAC | Role-based access control for phase advancement |
 | Centralized audit log | SIEM-integrated tamper-evident audit trail |
 | Multi-tenant | Isolated workspaces for multiple teams |
-| Rate limiting | Request throttling for HTTP transport |
 | SSO / SAML | Federated identity for enterprise auth |
 
 Have a feature request? [Open an issue](https://github.com/paulasilvatech/specky/issues).

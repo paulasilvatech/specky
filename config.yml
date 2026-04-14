@@ -4,29 +4,29 @@ pipeline:
   phases: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
   phase_names:
     0: "init"
-    1: "research"
-    2: "clarify"
-    3: "specify"
+    1: "discover"
+    2: "specify"
+    3: "clarify"
     4: "design"
     5: "tasks"
-    6: "implement"
-    7: "verify"
-    8: "review"
+    6: "analyze"
+    7: "implement"
+    8: "verify"
     9: "release"
   phase_agents:
     pre: "specky-onboarding"
     all: "specky-orchestrator"
     0: "sdd-init"
     1: "research-analyst"
-    2: "sdd-clarify"
-    3: "spec-engineer"
+    2: "spec-engineer"
+    3: "sdd-clarify"
     4: "design-architect"
     5: "task-planner"
-    6: "implementer"
-    7: "test-verifier"
-    8: "quality-reviewer"
+    6: "quality-reviewer"
+    7: "implementer"
+    8: "test-verifier"
     9: "release-engineer"
-  lgtm_gates: [3, 4, 5]
+  lgtm_gates: [2, 4, 5]
 hooks:
   shared_path: ".github/plugin/specky/hooks/scripts"
   blocking:
@@ -58,11 +58,11 @@ branching:
   artifacts_per_phase:
     0: ["CONSTITUTION.md", ".sdd-state.json"]
     1: ["RESEARCH.md"]
-    3: ["SPECIFICATION.md"]
+    2: ["SPECIFICATION.md"]
     4: ["DESIGN.md"]
     5: ["TASKS.md", "CHECKLIST.md"]
-    7: ["VERIFICATION.md", "CROSS_ANALYSIS.md"]
-    8: ["ANALYSIS.md", "COMPLIANCE.md"]
+    6: ["ANALYSIS.md", "COMPLIANCE.md"]
+    8: ["VERIFICATION.md", "CROSS_ANALYSIS.md"]
   rules:
     - "Each spec MUST have its own branch: spec/NNN-feature-name"
     - "Create spec branch from develop, never from main"
