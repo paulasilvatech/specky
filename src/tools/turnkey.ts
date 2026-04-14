@@ -315,7 +315,7 @@ export function extractRequirementCandidates(description: string): RequirementCa
       continue;
     }
 
-    // Lower confidence: any sentence with a verb that looks like a requirement
+    // Lower confidence: sentences with a verb that look like a requirement
     if (lower.match(/\b(the|a|an)\s+\w+\s+(should|will|can|must)\b/) ||
         sentence.match(/^[-*]\s+/) ||
         sentence.match(/^\d+[.)]\s+/)) {
