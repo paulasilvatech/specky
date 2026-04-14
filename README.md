@@ -80,13 +80,30 @@ The MCP engine is the runtime. The plugin is the product.
 
 ### How to install
 
-Specky is distributed via [APM](https://microsoft.github.io/apm/) (Agent Package Manager) — the `npm` for AI agent configuration, from Microsoft:
+#### Quick install (no prerequisites)
 
 ```bash
+cd your-project/
+bash <(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/install.sh)
+```
+
+Installs all 13 agents, 22 prompts, 8 skills, 14 hooks + configures the MCP server. Works immediately — no extra tools needed.
+
+#### Via APM (recommended for teams)
+
+[APM](https://microsoft.github.io/apm/) (Agent Package Manager) is Microsoft's open-source dependency manager for AI agents. Install APM first, then install Specky:
+
+```bash
+# Install APM (one-time) — pick one:
+curl -sSL https://aka.ms/apm-unix | sh        # macOS / Linux
+brew install microsoft/apm/apm                 # Homebrew
+irm https://aka.ms/apm-windows | iex           # Windows PowerShell
+
+# Then install Specky:
 apm install paulasilvatech/specky
 ```
 
-This single command installs all 13 agents, 22 prompts, 8 skills, 14 hooks, configures the MCP server, and generates a lock file (`apm.lock.yaml`) for version reproducibility. No manual setup, no configuration drift across your team. [Install APM](https://microsoft.github.io/apm/getting-started/installation/) if you don't have it yet.
+APM generates a lock file (`apm.lock.yaml`) for version reproducibility — no configuration drift across your team. See [APM installation docs](https://microsoft.github.io/apm/getting-started/installation/) for more options.
 
 
 ## Why Specifications Matter in the AI Era
@@ -113,7 +130,7 @@ The result? Teams spend 40% of their time on rework because requirements were ne
 | **MCP** | Model Context Protocol — an open standard that lets AI assistants call external tools | Specky is an MCP server; any AI IDE can connect to it |
 | **EARS Notation** | A method for writing requirements that forces precision with 6 patterns | Eliminates vague statements like "the system should be fast" |
 | **Agents and Skills** | Specialized AI roles that invoke Specky tools with domain expertise | 13 agents + 8 skills orchestrate the full pipeline |
-| **Plugins** | A complete AI development package: agents + prompts + skills + hooks + MCP server | Installed via [APM](https://microsoft.github.io/apm/) — the `npm` for AI configuration |
+| **Plugins** | A complete AI development package: agents + prompts + skills + hooks + MCP server | Installed via [APM](https://microsoft.github.io/apm/) or the curl installer |
 
 ### How Specky Enforces Determinism
 
@@ -143,7 +160,7 @@ Specky adds a **deterministic engine** between your intent and your code:
 | 6 compliance frameworks | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 built-in |
 | Cross-artifact traceability | Requirement to design to task to test to code |
 | Gitflow-SDD branching | spec/NNN → develop → stage → main |
-| APM distribution | `apm install paulasilvatech/specky` — one command, everything works |
+| APM distribution | `apm install paulasilvatech/specky` — one command (requires [APM](https://microsoft.github.io/apm/getting-started/installation/)) |
 | Works in any MCP host | VS Code + Copilot, Claude Code, Cursor, Windsurf, or any MCP client |
 | Zero outbound network calls | Fully air-gapped, code never leaves your machine |
 | MIT open source | Fork it, extend it, audit it. No vendor lock, no seat pricing |
@@ -158,19 +175,19 @@ Specky adds a **deterministic engine** between your intent and your code:
 
 ### Install the Plugin
 
-#### Via APM (recommended)
-
-```bash
-apm install paulasilvatech/specky
-```
-
-One command: installs 13 agents, 22 prompts, 8 skills, 14 hooks + configures the MCP server. [Install APM](https://microsoft.github.io/apm/getting-started/installation/) if you don't have it.
-
-#### Via curl installer (no APM required)
+#### Via curl installer (fastest)
 
 ```bash
 cd your-project/
 bash <(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/install.sh)
+```
+
+#### Via APM (recommended for teams)
+
+Requires [APM](https://microsoft.github.io/apm/getting-started/installation/) — install it first, then:
+
+```bash
+apm install paulasilvatech/specky
 ```
 
 #### Via Copilot CLI (skills only)
@@ -842,7 +859,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | **What it is** | Prompt templates + agent definitions | Complete plugin: 13 agents + 57 MCP tools + 22 prompts + 8 skills + 14 hooks |
 | **How it works** | AI reads `.md` templates and follows instructions | AI calls agents that orchestrate tools with hook validation |
 | **Validation** | AI tries to follow the prompts | State machine, EARS regex, Zod schemas, pre/post hooks |
-| **Install** | Copy `.github/agents/` and `.claude/commands/` | `apm install paulasilvatech/specky` |
+| **Install** | Copy `.github/agents/` and `.claude/commands/` | `bash <(curl -sL .../install.sh)` or `apm install paulasilvatech/specky` |
 | **Works standalone** | Yes, in any AI IDE | Yes, includes all Spec-Kit patterns |
 | **Best for** | Learning SDD, lightweight adoption | Production enforcement, enterprise, compliance |
 

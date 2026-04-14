@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Plugin Architecture (APM)
 
-- **APM distribution**: Specky is now installable via `apm install paulasilvatech/specky` — the official Agent Package Manager from Microsoft
+- **APM distribution**: Specky is now installable via `apm install paulasilvatech/specky` — the official Agent Package Manager from Microsoft (requires [installing APM](https://microsoft.github.io/apm/getting-started/installation/) first; use the curl installer for a zero-prerequisite alternative)
 - **`apm.yml`**: Root-level manifest with MCP server dependency (`npx specky-sdd@latest`)
 - **`plugin.json`**: Root-level plugin descriptor with 13 agents, 22 commands, 8 skills
 - **Root-level primitives**: All agents, commands, skills, and hooks moved from `plugins/specky-sdd/` to repo root (APM convention)

@@ -20,9 +20,15 @@ Specky is not just an MCP server — it's a **plugin**: a complete AI developmen
 
 ### What is APM?
 
-[APM](https://microsoft.github.io/apm/) (Agent Package Manager) is the `npm` for AI agent configuration — from Microsoft. It manages agents, skills, prompts, hooks, and MCP servers as versioned packages with lock files. One command installs everything:
+[APM](https://microsoft.github.io/apm/) (Agent Package Manager) is Microsoft's open-source dependency manager for AI agent configuration. It manages agents, skills, prompts, hooks, and MCP servers as versioned packages with lock files. APM must be [installed separately](https://microsoft.github.io/apm/getting-started/installation/) before use:
 
 ```bash
+# Install APM (one-time) — pick one:
+curl -sSL https://aka.ms/apm-unix | sh        # macOS / Linux
+brew install microsoft/apm/apm                 # Homebrew
+irm https://aka.ms/apm-windows | iex           # Windows PowerShell
+
+# Then install Specky:
 apm install paulasilvatech/specky
 ```
 
@@ -32,20 +38,22 @@ apm install paulasilvatech/specky
 
 The **Specky plugin** bundles everything: 13 agents, 22 prompts, 8 skills, 14 hooks, and the MCP server (57 tools) — version-controlled with your repo.
 
-### Via APM (recommended)
-
-```bash
-apm install paulasilvatech/specky
-```
-
-One command: installs all primitives + configures MCP server + generates lock file. [Install APM](https://microsoft.github.io/apm/getting-started/installation/) if you don't have it.
-
-### Via curl installer (no APM required)
+### Via curl installer (fastest — no prerequisites)
 
 ```bash
 cd your-project/
 bash <(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/install.sh)
 ```
+
+### Via APM (recommended for teams)
+
+Requires [APM](https://microsoft.github.io/apm/getting-started/installation/) to be installed first:
+
+```bash
+apm install paulasilvatech/specky
+```
+
+Generates a lock file for version reproducibility across your team.
 
 ### Via Copilot CLI (skills only)
 
@@ -487,8 +495,8 @@ A: The `@implementer` (Phase 6) generates detailed implementation plans, test st
 
 ## Next Steps
 
-1. Install the plugin: `copilot plugin install paulasilvatech/specky`
-2. Or install manually: `bash <(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/install.sh)`
+1. Install the plugin: `bash <(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/install.sh)`
+2. Or via APM (requires [installing APM](https://microsoft.github.io/apm/getting-started/installation/) first): `apm install paulasilvatech/specky`
 3. Start with `/specky-pipeline-status` to see if there are active features, or
 4. Use `/specky-greenfield` (new project) or `/specky-brownfield` (existing feature) to begin
 5. Refer to this guide whenever you're unsure which prompt to use
