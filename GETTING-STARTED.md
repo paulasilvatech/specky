@@ -38,16 +38,9 @@ apm install paulasilvatech/specky
 
 The **Specky plugin** bundles everything: 13 agents, 22 prompts, 8 skills, 14 hooks, and the MCP server (57 tools) — version-controlled with your repo.
 
-### Via curl installer (fastest — no prerequisites)
+### Via APM
 
-```bash
-cd your-project/
-bash <(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/install.sh)
-```
-
-### Via APM (recommended for teams)
-
-Requires [APM](https://microsoft.github.io/apm/getting-started/installation/) to be installed first:
+[Install APM](https://microsoft.github.io/apm/getting-started/installation/) first, then:
 
 ```bash
 apm install paulasilvatech/specky
@@ -495,8 +488,7 @@ A: The `@implementer` (Phase 6) generates detailed implementation plans, test st
 
 ## Next Steps
 
-1. Install the plugin: `bash <(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/install.sh)`
-2. Or via APM (requires [installing APM](https://microsoft.github.io/apm/getting-started/installation/) first): `apm install paulasilvatech/specky`
+1. Install the plugin: `apm install paulasilvatech/specky` (requires [APM](https://microsoft.github.io/apm/getting-started/installation/))
 3. Start with `/specky-pipeline-status` to see if there are active features, or
 4. Use `/specky-greenfield` (new project) or `/specky-brownfield` (existing feature) to begin
 5. Refer to this guide whenever you're unsure which prompt to use

@@ -764,9 +764,6 @@
         </a>
         <a href="https://www.npmjs.com/package/specky-sdd" class="btn btn-ghost" target="_blank">npm</a>
       </div>
-      <div class="install-cmd" id="hero-install-cmd">
-        <span class="d">$</span> bash &lt;(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/install.sh) <span class="cp">copy</span>
-      </div>
     </div>
 
     </div>
@@ -941,7 +938,7 @@
       <div class="feat">
         <div class="fi">🔄</div>
         <h3>Lifecycle &amp; CI/CD</h3>
-        <p>Versioned with a lock file. Test, update, and roll back independently. The curl installer or <code>apm install</code> ensures every team member runs the exact same configuration.</p>
+        <p>Versioned with a lock file. Test, update, and roll back independently. <code>apm install</code> ensures every team member runs the exact same configuration.</p>
       </div>
       <div class="feat">
         <div class="fi">🤖</div>
@@ -951,7 +948,7 @@
       <div class="feat">
         <div class="fi">📦</div>
         <h3>APM Distribution</h3>
-        <p>Install via <a href="https://microsoft.github.io/apm/" target="_blank">APM</a> (Agent Package Manager) from Microsoft. <a href="https://microsoft.github.io/apm/getting-started/installation/" target="_blank">Install APM</a> first, then <code>apm install paulasilvatech/specky</code> — 13 agents, 22 prompts, 8 skills, 14 hooks. Or use the curl installer with zero prerequisites.</p>
+        <p>Install via <a href="https://microsoft.github.io/apm/" target="_blank">APM</a> (Agent Package Manager) from Microsoft. <a href="https://microsoft.github.io/apm/getting-started/installation/" target="_blank">Install APM</a> first, then <code>apm install paulasilvatech/specky</code> — 13 agents, 22 prompts, 8 skills, 14 hooks.</p>
       </div>
     </div>
   </div>
@@ -1035,14 +1032,7 @@
       </ol>
       <div class="code-block" style="margin-top:12px">
         <div class="code-block-header">
-          <span class="code-block-title">Terminal — curl installer (fastest)</span>
-          <button class="code-copy-btn" data-copy="bash <(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/install.sh)">Copy</button>
-        </div>
-        <pre><span class="dk">$</span> bash &lt;(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/install.sh)</pre>
-      </div>
-      <div class="code-block" style="margin-top:12px">
-        <div class="code-block-header">
-          <span class="code-block-title">Terminal — via APM (requires <a href="https://microsoft.github.io/apm/getting-started/installation/" target="_blank" style="color:inherit;text-decoration:underline">installing APM</a> first)</span>
+          <span class="code-block-title">Terminal</span>
           <button class="code-copy-btn" data-copy="curl -sSL https://aka.ms/apm-unix | sh">Copy</button>
         </div>
         <pre><span class="cm"># Install APM (one-time) — pick one:</span>
@@ -1338,7 +1328,7 @@
 
   <div class="install-note" style="margin-top:24px;max-width:720px;margin-left:auto;margin-right:auto">
     <span class="in-icon">📦</span>
-    <p><strong>What is APM?</strong> <a href="https://microsoft.github.io/apm/" target="_blank">APM</a> (Agent Package Manager) is Microsoft's open-source dependency manager for AI agent configuration. It manages agents, skills, prompts, hooks, and MCP servers as versioned packages with lock files. APM must be <a href="https://microsoft.github.io/apm/getting-started/installation/" target="_blank">installed separately</a> before running <code>apm install</code>. Alternatively, use the curl installer which requires no prerequisites.</p>
+    <p><strong>What is APM?</strong> <a href="https://microsoft.github.io/apm/" target="_blank">APM</a> (Agent Package Manager) is Microsoft's open-source dependency manager for AI agent configuration. It manages agents, skills, prompts, hooks, and MCP servers as versioned packages with lock files. <a href="https://microsoft.github.io/apm/getting-started/installation/" target="_blank">Install APM</a> first, then run <code>apm install paulasilvatech/specky</code>.</p>
   </div>
 </section>
 
@@ -1925,7 +1915,7 @@ const heroCmd = document.getElementById('hero-install-cmd');
 if (heroCmd) {
   heroCmd.addEventListener('click', function() {
     const cp = heroCmd.querySelector('.cp');
-    navigator.clipboard.writeText('bash <(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/install.sh)').then(() => {
+    navigator.clipboard.writeText('apm install paulasilvatech/specky').then(() => {
       if (cp) { cp.textContent = window._copiedText || 'copied!'; setTimeout(() => { cp.textContent = 'copy'; }, 1800); }
     });
   });
