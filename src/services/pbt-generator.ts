@@ -126,7 +126,7 @@ export class PbtGenerator {
       lower.includes("monoton") ||
       lower.includes("proportional") ||
       (lower.includes("increase") && lower.includes("increase")) ||
-      (lower.includes("more") && lower.includes("more")) ||
+      lower.includes("more") ||
       (lower.includes("larger") && lower.includes("larger")) ||
       (lower.includes("grow") && lower.includes("scale"))
     ) {
