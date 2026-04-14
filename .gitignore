@@ -1,8 +1,10 @@
 # ============================================================
-# Specky .gitignore — PUBLIC repo policy
-# Keep: src/, package.json, media/, README, LICENSE, CHANGELOG,
-#       SECURITY, CONTRIBUTING, GETTING-STARTED, .github/workflows
-# Everything else is internal / generated
+# Specky .gitignore — APM Package
+# ============================================================
+# TRACKED: apm.yml, .apm/, src/, package.json, config.yml,
+#          media/, README, LICENSE, CHANGELOG, SECURITY,
+#          CONTRIBUTING, GETTING-STARTED, .github/workflows,
+#          index.html (site), templates/, tests/, docs/
 # ============================================================
 
 # ── Generated output ──────────────────────────────────────
@@ -24,47 +26,26 @@ Thumbs.db
 .vscode/
 .idea/
 
-# ── AI tooling (Claude Code / Copilot internal) ──────────
+# ── AI tooling internals ─────────────────────────────────
 .claude/
 .remember/
 CLAUDE.md
 BUILD_PROMPT.md
 SESSION_LOG_*.md
-Specky_v3.2.0_Master_Prompt_v2_npm_default_*.md
 
-# ── Copilot agents, skills, prompts (internal authoring) ─
-.github/agents/
-.github/skills/
-.github/prompts/
-.github/copilot-instructions.md
-
-# ── SDD process artifacts (per-project, not repo content) ─
-.specs/
-.specky/
-SDD/
-ARCHITECTURE.md
-
-# ── APM internals ───────────────────────────────────
-
+# ── APM consumer artifacts (not package content) ─────────
 apm_modules/
 apm.lock.yaml
 
-# ── Build, test, packaging config (internal) ─────────────
-templates/
-tests/
+# ── SDD process artifacts (per-project, not repo) ────────
+.specs/
+.specky/
+
+# ── Build config (internal) ──────────────────────────────
 scripts/
-site/
-docs/
-vitest.config.ts
-tsconfig.json
 Dockerfile
 docker-compose.yml
 .dockerignore
 .npmignore
 PUBLISH.md
 ONBOARDING.md
-
-# ── Internal brand & reports ──────────────────────────────
-brand/
-reports/
-svg-paulasilvatech/
