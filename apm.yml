@@ -15,5 +15,5 @@ dependencies:
       tools: ["*"]
 
 scripts:
-  onboard: "echo 'Open Copilot Chat → @specky-onboarding'"
-  status: "echo 'Open Copilot Chat → /specky-pipeline-status'"
+  onboard: "echo 'Open Copilot Chat > @specky-onboarding'"
+  status: "echo 'Open Copilot Chat > /specky-pipeline-status'"
