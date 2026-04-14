@@ -1021,19 +1021,20 @@
     </div>
 
     <!-- GitHub Copilot -->
+    <!-- GitHub Copilot -->
     <div class="tab-panel active" id="tab-copilot">
       <ol class="install-steps">
         <li>
           <div class="step-content">
-            <h4>Install the Specky plugin</h4>
-            <p>The plugin bundles the MCP server, 13 agents, 22 prompts, 8 skills, and 14 hooks.</p>
+            <h4>Install the Specky plugin via APM</h4>
+            <p>One command installs the MCP server, 13 agents, 22 prompts, 8 skills, and 14 hooks.</p>
           </div>
         </li>
       </ol>
       <div class="code-block" style="margin-top:12px">
         <div class="code-block-header">
           <span class="code-block-title">Terminal</span>
-          <button class="code-copy-btn" data-copy="curl -sSL https://aka.ms/apm-unix | sh">Copy</button>
+          <button class="code-copy-btn" data-copy="apm install paulasilvatech/specky">Copy</button>
         </div>
         <pre><span class="cm"># Install APM (one-time) — pick one:</span>
 <span class="dk">$</span> curl -sSL https://aka.ms/apm-unix | sh        <span class="cm"># macOS / Linux</span>
@@ -1045,22 +1046,7 @@
       </div>
       <div class="install-note" style="margin-top:12px">
         <span class="in-icon">💡</span>
-        <p><strong>MCP server is auto-configured by the plugin.</strong> APM creates <code>.vscode/mcp.json</code> automatically.</p>
-      </div>
-      <div class="code-block" style="margin-top:12px">
-        <div class="code-block-header">
-          <span class="code-block-title">.vscode/mcp.json</span>
-          <button class="code-copy-btn" data-copy-id="c-vscode-copilot">Copy</button>
-        </div>
-        <pre id="c-vscode-copilot">{
-  <span class="pr">"mcpServers"</span>: {
-    <span class="pr">"specky-sdd"</span>: {
-      <span class="pr">"type"</span>: <span class="st">"stdio"</span>,
-      <span class="pr">"command"</span>: <span class="st">"npx"</span>,
-      <span class="pr">"args"</span>: [<span class="st">"-y"</span>, <span class="st">"specky-sdd@latest"</span>]
-    }
-  }
-}</pre>
+        <p><strong>Everything is auto-configured.</strong> APM creates <code>.vscode/mcp.json</code>, installs agents, prompts, skills, and hooks automatically.</p>
       </div>
       <ol class="install-steps" style="margin-top:16px">
         <li>
@@ -1095,7 +1081,7 @@
         <li>
           <div class="step-content">
             <h4>Install the Specky plugin via APM</h4>
-            <p>APM configures agents, prompts, skills, hooks, and the MCP server for Claude Code.</p>
+            <p>One command installs the MCP server, agents, prompts, skills, and hooks for Claude Code.</p>
           </div>
         </li>
       </ol>
@@ -1112,27 +1098,9 @@
 <span class="cm"># Then install Specky:</span>
 <span class="dk">$</span> apm install paulasilvatech/specky</pre>
       </div>
-      <ol class="install-steps" style="margin-top:16px">
-        <li>
-          <div class="step-content">
-            <h4>Add to Claude Code MCP config</h4>
-            <p>Run this from your project root, or edit <code>~/.claude/mcp.json</code> directly.</p>
-          </div>
-        </li>
-      </ol>
-      <div class="code-block" style="margin-top:12px">
-        <div class="code-block-header">
-          <span class="code-block-title">~/.claude/mcp.json</span>
-          <button class="code-copy-btn" data-copy-id="c-claude-mcp">Copy</button>
-        </div>
-        <pre id="c-claude-mcp">{
-  <span class="pr">"mcpServers"</span>: {
-    <span class="pr">"specky"</span>: {
-      <span class="pr">"command"</span>: <span class="st">"specky-sdd"</span>,
-      <span class="pr">"args"</span>: []
-    }
-  }
-}</pre>
+      <div class="install-note" style="margin-top:12px">
+        <span class="in-icon">💡</span>
+        <p><strong>Everything is auto-configured.</strong> APM sets up the MCP server and slash commands automatically.</p>
       </div>
       <ol class="install-steps" style="margin-top:16px">
         <li>
@@ -1163,7 +1131,7 @@
         <li>
           <div class="step-content">
             <h4>Install the Specky plugin via APM</h4>
-            <p>APM configures agents, prompts, skills, hooks, and the MCP server for Cursor and Windsurf.</p>
+            <p>One command installs the MCP server, agents, prompts, skills, and hooks for Cursor and Windsurf.</p>
           </div>
         </li>
       </ol>
@@ -1180,34 +1148,11 @@
 <span class="cm"># Then install Specky:</span>
 <span class="dk">$</span> apm install paulasilvatech/specky</pre>
       </div>
-      <ol class="install-steps" style="margin-top:16px">
-        <li>
-          <div class="step-content">
-            <h4>Add Specky to Cursor MCP settings</h4>
-            <p>Open <strong>Cursor → Settings → MCP</strong> and add a new server, or edit <code>~/.cursor/mcp.json</code>:</p>
-          </div>
-        </li>
-      </ol>
-      <div class="code-block" style="margin-top:12px">
-        <div class="code-block-header">
-          <span class="code-block-title">~/.cursor/mcp.json</span>
-          <button class="code-copy-btn" data-copy-id="c-cursor-mcp">Copy</button>
-        </div>
-        <pre id="c-cursor-mcp">{
-  <span class="pr">"mcpServers"</span>: {
-    <span class="pr">"specky"</span>: {
-      <span class="pr">"command"</span>: <span class="st">"specky-sdd"</span>
-    }
-  }
-}</pre>
+      <div class="install-note" style="margin-top:12px">
+        <span class="in-icon">💡</span>
+        <p><strong>Everything is auto-configured.</strong> APM sets up the MCP server automatically. Works with any MCP-compatible IDE.</p>
       </div>
       <ol class="install-steps" style="margin-top:16px">
-        <li>
-          <div class="step-content">
-            <h4>Windsurf: add to <code>~/.codeium/windsurf/mcp_config.json</code></h4>
-            <p>Same JSON structure as above. Restart Windsurf after saving.</p>
-          </div>
-        </li>
         <li>
           <div class="step-content">
             <h4>Use Specky's 57 tools via natural language</h4>
@@ -1215,10 +1160,6 @@
           </div>
         </li>
       </ol>
-      <div class="install-note">
-        <span class="in-icon">💡</span>
-        <p><strong>Works with any MCP-compatible IDE.</strong> The stdio transport is universal — if your editor supports MCP, Specky works out of the box.</p>
-      </div>
     </div>
 
     <!-- VS Code -->
@@ -1227,7 +1168,7 @@
         <li>
           <div class="step-content">
             <h4>Install the Specky plugin via APM</h4>
-            <p>APM configures agents, prompts, skills, hooks, and the MCP server for VS Code.</p>
+            <p>One command installs the MCP server, agents, prompts, skills, and hooks for VS Code.</p>
           </div>
         </li>
       </ol>
@@ -1244,35 +1185,11 @@
 <span class="cm"># Then install Specky:</span>
 <span class="dk">$</span> apm install paulasilvatech/specky</pre>
       </div>
-      <ol class="install-steps" style="margin-top:16px">
-        <li>
-          <div class="step-content">
-            <h4>Create or update <code>.vscode/mcp.json</code> in your workspace</h4>
-          </div>
-        </li>
-      </ol>
-      <div class="code-block" style="margin-top:12px">
-        <div class="code-block-header">
-          <span class="code-block-title">.vscode/mcp.json</span>
-          <button class="code-copy-btn" data-copy-id="c-vscode-mcp">Copy</button>
-        </div>
-        <pre id="c-vscode-mcp">{
-  <span class="pr">"mcpServers"</span>: {
-    <span class="pr">"specky-sdd"</span>: {
-      <span class="pr">"type"</span>: <span class="st">"stdio"</span>,
-      <span class="pr">"command"</span>: <span class="st">"npx"</span>,
-      <span class="pr">"args"</span>: [<span class="st">"-y"</span>, <span class="st">"specky-sdd@latest"</span>]
-    }
-  }
-}</pre>
+      <div class="install-note" style="margin-top:12px">
+        <span class="in-icon">💡</span>
+        <p><strong>Everything is auto-configured.</strong> APM creates <code>.vscode/mcp.json</code> automatically. Requires VS Code 1.99+ with GitHub Copilot extension.</p>
       </div>
       <ol class="install-steps" style="margin-top:16px">
-        <li>
-          <div class="step-content">
-            <h4>Enable MCP support in VS Code</h4>
-            <p>Requires VS Code 1.99+ with GitHub Copilot extension. MCP is enabled by default in recent versions. Reload the window (<code>Ctrl+Shift+P → Reload Window</code>) after adding the config.</p>
-          </div>
-        </li>
         <li>
           <div class="step-content">
             <h4>Verify installation</h4>
