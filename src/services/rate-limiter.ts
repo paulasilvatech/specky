@@ -17,11 +17,11 @@ export class RateLimiter {
   private readonly refillIntervalMs: number;
 
   constructor(
-    private readonly maxRpm: number,
+    _maxRpm: number,
     private readonly burst: number,
   ) {
     // Tokens refill at a rate of maxRpm per minute
-    this.refillIntervalMs = 60_000 / maxRpm;
+    this.refillIntervalMs = 60_000 / _maxRpm;
   }
 
   /**

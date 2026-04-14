@@ -4,7 +4,7 @@
  */
 
 import { Phase, PHASE_ORDER, PHASE_REQUIRED_FILES, STATE_FILE, DEFAULT_SPEC_DIR } from "../constants.js";
-import type { SddState, PhaseStatus, TransitionResult, GateDecision, GateHistoryEntry } from "../types.js";
+import type { SddState, PhaseStatus, TransitionResult, GateHistoryEntry } from "../types.js";
 import type { FileManager } from "./file-manager.js";
 import { join } from "node:path";
 import { stat } from "node:fs/promises";
@@ -153,7 +153,7 @@ export class StateMachine {
   /**
    * Advance to the next phase. Validates prerequisites first.
    */
-  async advancePhase(specDir: string, featureNumber: string): Promise<SddState> {
+  async advancePhase(specDir: string, _featureNumber: string): Promise<SddState> {
     const state = await this.loadState(specDir);
     const currentIndex = PHASE_ORDER.indexOf(state.current_phase);
 

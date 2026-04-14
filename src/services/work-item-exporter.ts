@@ -8,7 +8,7 @@ import type { WorkItemExportResult, WorkItemPayload, GitHubIssuePayload, AzureBo
 export class WorkItemExporter {
   constructor(private fileManager: FileManager) {}
 
-  async export(platform: WorkItemPlatform, specDir: string, featureDir: string, includeSubtasks: boolean, options?: { project_key?: string; area_path?: string; iteration_path?: string }): Promise<WorkItemExportResult> {
+  async export(platform: WorkItemPlatform, _specDir: string, featureDir: string, _includeSubtasks: boolean, _options?: { project_key?: string; area_path?: string; iteration_path?: string }): Promise<WorkItemExportResult> {
     const tasksContent = await this.fileManager.readSpecFile(featureDir, "TASKS.md");
     const specContent = await this.fileManager.readSpecFile(featureDir, "SPECIFICATION.md");
     const tasks = this.parseTasks(tasksContent, specContent);

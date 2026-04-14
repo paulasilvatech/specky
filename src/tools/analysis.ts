@@ -25,7 +25,7 @@ export function registerAnalysisTools(
   server: McpServer,
   fileManager: FileManager,
   stateMachine: StateMachine,
-  templateEngine: TemplateEngine,
+  _templateEngine: TemplateEngine,
   intentDriftEngine?: IntentDriftEngine,
 ): void {
   // ─── sdd_check_sync ───

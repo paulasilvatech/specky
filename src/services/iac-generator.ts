@@ -147,7 +147,7 @@ export class IacGenerator {
     return `terraform {\n  required_version = ">= 1.5"\n  required_providers {\n    ${cloud === "azure" ? 'azurerm' : cloud === "aws" ? 'aws' : 'google'} = {\n      source = "${cloud === "azure" ? 'hashicorp/azurerm' : cloud === "aws" ? 'hashicorp/aws' : 'hashicorp/google'}"\n    }\n  }\n}\n\n${provider}\n\n${resources}`;
   }
 
-  private generateVariables(cloud: CloudProvider, modules: string[]): IacVariable[] {
+  private generateVariables(cloud: CloudProvider, _modules: string[]): IacVariable[] {
     const vars: IacVariable[] = [
       { name: "project_name", type: "string", description: "Project name", required: true },
       { name: "environment", type: "string", description: "Environment (dev/staging/prod)", default: '"dev"', required: false },

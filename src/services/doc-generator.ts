@@ -49,7 +49,7 @@ export class DocGenerator {
   }
 
   async generateRunbook(featureDir: string, featureNumber: string): Promise<DocumentationResult> {
-    const design = await this.safeRead(featureDir, "DESIGN.md") || "";
+    await this.safeRead(featureDir, "DESIGN.md");
     const featureName = featureDir.replace(/.*\d{3}-/, "");
     const content = [
       `# Operational Runbook: ${featureName}`,

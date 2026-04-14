@@ -45,7 +45,7 @@ export function registerInfrastructureTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir, provider, cloud, modules }) => {
+    async ({ feature_number, spec_dir, cloud, modules }) => {
       try {
         const features = await fileManager.listFeatures(spec_dir);
         const feature = features.find((f) => f.number === feature_number);
@@ -56,9 +56,8 @@ export function registerInfrastructureTools(
         }
 
         // Read DESIGN.md to detect infrastructure needs
-        let designContent = "";
         try {
-          designContent = await fileManager.readSpecFile(feature.directory, "DESIGN.md");
+          await fileManager.readSpecFile(feature.directory, "DESIGN.md");
         } catch {
           // DESIGN.md is optional; generator will use defaults
         }

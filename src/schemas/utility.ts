@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod";
-import { specDirSchema, featureNumberSchema, forceSchema } from "./common.js";
+import { specDirSchema, featureNumberSchema } from "./common.js";
 import { TEMPLATE_NAMES } from "../constants.js";
 
 export const getStatusInputSchema = z.object({

@@ -3,7 +3,7 @@
  * Does NOT execute git commands. Generates payloads for the AI client.
  */
 import type { FileManager } from "./file-manager.js";
-import type { BranchInfo, PrPayload, RoutingInstructions } from "../types.js";
+import type { BranchInfo, PrPayload } from "../types.js";
 
 export class GitManager {
   constructor(private fileManager: FileManager) {}

@@ -7,10 +7,21 @@
 import { readFile } from "node:fs/promises";
 import { extname, basename } from "node:path";
 import type { FileManager } from "./file-manager.js";
-import type { DocumentConversionResult, DocumentMetadata, DocumentFormat } from "../types.js";
+import type { DocumentConversionResult, DocumentFormat } from "../types.js";
+
+/** Strip XML/HTML tags iteratively until none remain (CodeQL-safe) */
+function stripXmlTags(input: string): string {
+  let result = input;
+  let prev = "";
+  while (result !== prev) {
+    prev = result;
+    result = result.replace(/<[^<]*>/g, " ");
+  }
+  return result;
+}
 
 export class DocumentConverter {
-  constructor(private fileManager: FileManager) {}
+  constructor(_fileManager: FileManager) {}
 
   /**
    * Auto-detect format and convert to Markdown.
@@ -248,13 +259,13 @@ export class DocumentConverter {
     // Find the local file header for this entry
     // Look backwards from the central directory entry to find the actual data
     // For MVP, extract all text between XML tags using regex
-    const xmlMatch = bufStr.match(new RegExp(`${xmlPath.replace(/\//g, "\\/")}.*?PK`, "s"));
+    const escapedPath = xmlPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const xmlMatch = bufStr.match(new RegExp(`${escapedPath}.*?PK`, "s"));
     if (!xmlMatch) return "";
 
-    // Extract text content from XML tags (strip all tags)
+    // Extract text content from XML tags (strip all tags iteratively)
     const xmlContent = xmlMatch[0];
-    const textContent = xmlContent
-      .replace(/<\/?[a-zA-Z][a-zA-Z0-9]*(?:\s[^>]*)?\/? *>/g, " ")
+    const textContent = stripXmlTags(xmlContent)
       .replace(/\s+/g, " ")
       .replace(/PK$/, "")
       .trim();

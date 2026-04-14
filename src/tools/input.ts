@@ -111,7 +111,7 @@ export function registerInputTools(
         openWorldHint: true,
       },
     },
-    async ({ figma_file_key, figma_node_id, project_name, spec_dir, force }) => {
+    async ({ figma_file_key, figma_node_id, project_name, spec_dir }) => {
       try {
         const featureDir = join(spec_dir, `001-${project_name}`);
 
@@ -169,7 +169,7 @@ export function registerInputTools(
         openWorldHint: false,
       },
     },
-    async ({ documents_dir, spec_dir, force }) => {
+    async ({ documents_dir, spec_dir }) => {
       try {
         const supportedExtensions = [".pdf", ".docx", ".pptx", ".md", ".txt", ".vtt", ".srt"];
         const files = await fileManager.listFilesByExtension(documents_dir, supportedExtensions);

@@ -75,7 +75,7 @@ export function registerPipelineTools(
           scope_out: "Future enhancements not in initial scope",
         });
 
-        const filePath = await fileManager.writeSpecFile(featureDir, "CONSTITUTION.md", content);
+        await fileManager.writeSpecFile(featureDir, "CONSTITUTION.md", content);
 
         // Initialize state machine
         const state = stateMachine.createDefaultState(project_name);
@@ -126,7 +126,7 @@ export function registerPipelineTools(
         openWorldHint: false,
       },
     },
-    async ({ project_idea, codebase_summary, spec_dir, feature_number }) => {
+    async ({ project_idea, codebase_summary, spec_dir }) => {
       try {
         // Phase validation
         const phaseCheck = await stateMachine.validatePhaseForTool(spec_dir, "sdd_discover");
@@ -235,7 +235,7 @@ export function registerPipelineTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_name, feature_number, discovery_answers, requirements, spec_dir, force }) => {
+    async ({ feature_name, feature_number, requirements, spec_dir, force }) => {
       try {
         // Phase validation
         const phaseCheck = await stateMachine.validatePhaseForTool(spec_dir, "sdd_write_spec");

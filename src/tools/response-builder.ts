@@ -3,7 +3,7 @@
  * handoff information, and parallel execution hints.
  */
 
-import { Phase, PHASE_ORDER } from "../constants.js";
+import { Phase } from "../constants.js";
 import type { PhaseStatus, HandoffContext, ParallelHint } from "../types.js";
 import { MethodologyGuide } from "../services/methodology.js";
 import { DependencyGraph } from "../services/dependency-graph.js";

@@ -115,7 +115,7 @@ const docGenerator = new DocGenerator(fileManager, stateMachine);
 const gitManager = new GitManager(fileManager);
 const testGenerator = new TestGenerator(fileManager);
 const pbtGenerator = new PbtGenerator(fileManager);
-const auditLogger = new AuditLogger(
+new AuditLogger(
   workspaceRoot,
   config.audit_enabled,
   config.audit.export_format,

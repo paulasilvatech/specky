@@ -3,7 +3,7 @@
  * Static utility class — import and use directly, no constructor needed.
  */
 
-import { Phase, PHASE_ORDER } from "../constants.js";
+import { Phase } from "../constants.js";
 
 interface ToolDependency {
   requires: string[];

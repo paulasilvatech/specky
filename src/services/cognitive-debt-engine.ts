@@ -9,7 +9,7 @@
 
 import type { GateHistoryEntry } from "../types.js";
 import { writeFile, mkdir } from "node:fs/promises";
-import { join, dirname } from "node:path";
+import { join } from "node:path";
 
 export interface CognitiveDebtMetrics {
   lgtm_without_modification_rate: number;

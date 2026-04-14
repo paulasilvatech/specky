@@ -13,6 +13,17 @@ import type {
 /** Supported transcript formats */
 type TranscriptFormat = "vtt" | "srt" | "txt" | "md";
 
+/** Strip HTML tags iteratively until none remain (CodeQL-safe) */
+function stripHtmlTags(input: string): string {
+  let result = input;
+  let prev = "";
+  while (result !== prev) {
+    prev = result;
+    result = result.replace(/<[^<]*>/g, "");
+  }
+  return result;
+}
+
 export class TranscriptParser {
   constructor(private fileManager: FileManager) {}
 
@@ -31,7 +42,7 @@ export class TranscriptParser {
   parse(
     content: string,
     format: TranscriptFormat = "txt",
-    source: string = "inline"
+    _source: string = "inline"
   ): TranscriptAnalysis {
     let segments: TranscriptSegment[];
 
@@ -205,8 +216,8 @@ export class TranscriptParser {
         text = colonMatch[2].trim();
       }
 
-      // Clean HTML tags — use proper tag regex to avoid incomplete sanitization
-      text = text.replace(/<\/?[a-zA-Z][a-zA-Z0-9]*(?:\s[^>]*)?\/? *>/g, "").trim();
+      // Clean HTML tags iteratively (CodeQL-safe)
+      text = stripHtmlTags(text).trim();
 
       if (text) {
         segments.push({ speaker, text, timestamp });
@@ -237,7 +248,7 @@ export class TranscriptParser {
         text = colonMatch[2].trim();
       }
 
-      text = text.replace(/<\/?[a-zA-Z][a-zA-Z0-9]*(?:\s[^>]*)?\/? *>/g, "").trim();
+      text = stripHtmlTags(text).trim();
       if (text) {
         segments.push({ speaker, text, timestamp });
       }
@@ -662,7 +673,6 @@ export class TranscriptParser {
     let currentSegments: TranscriptSegment[] = [];
 
     for (const seg of realSegments) {
-      const text = seg.text.toLowerCase();
 
       // Detect topic transitions
       const topicSignals = [
@@ -682,7 +692,6 @@ export class TranscriptParser {
         { pattern: /\b(report|dashboard|analytics|chart|graph|insight)\b/i, topic: "Reporting & Analytics" },
       ];
 
-      let detected = false;
       for (const signal of topicSignals) {
         if (signal.pattern.test(seg.text)) {
           if (signal.topic !== currentTopic) {
@@ -692,7 +701,6 @@ export class TranscriptParser {
             currentTopic = signal.topic;
             currentSegments = [];
           }
-          detected = true;
           break;
         }
       }
@@ -724,7 +732,7 @@ export class TranscriptParser {
   }
 
   private extractDecisions(segments: TranscriptSegment[]): string[] {
-    const realSegments = this.contentSegments(segments);
+    this.contentSegments(segments);
     const decisions: string[] = [];
     const decisionPatterns = [
       /\b(decid|decided|decision|let's go with|we'll use|vamos com|decidimos|ficou decidido|a decisão é|definimos que)\b/i,

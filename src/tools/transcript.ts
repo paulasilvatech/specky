@@ -73,7 +73,7 @@ export function registerTranscriptTools(
         }
 
         // Save the clean markdown version for reference
-        const markdown = transcriptParser.toMarkdown(analysis);
+        transcriptParser.toMarkdown(analysis);
 
         const result = {
           status: "transcript_parsed",

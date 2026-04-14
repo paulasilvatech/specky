@@ -476,7 +476,7 @@ function extractAction(text: string): string {
   return action || "perform the specified action";
 }
 
-export function generateAcceptanceCriteria(candidate: RequirementCandidate, earsText: string): string[] {
+export function generateAcceptanceCriteria(candidate: RequirementCandidate, _earsText: string): string[] {
   const criteria: string[] = [];
   const lower = candidate.text.toLowerCase();
 

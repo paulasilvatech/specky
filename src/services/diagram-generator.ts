@@ -335,7 +335,7 @@ export class DiagramGenerator {
     return lines.join("\n");
   }
 
-  private generateC4Code(content: string, title: string): string {
+  private generateC4Code(content: string, _title: string): string {
     const interfaces = this.extractInterfaces(content);
     if (interfaces.length === 0) {
       return `classDiagram\n  class IService {\n    <<interface>>\n    +execute()\n    +validate()\n  }\n  class ServiceImpl {\n    +execute()\n    +validate()\n  }\n  IService <|.. ServiceImpl`;
@@ -406,7 +406,7 @@ export class DiagramGenerator {
     return lines.join("\n");
   }
 
-  private generateDFD(content: string, title: string): string {
+  private generateDFD(content: string, _title: string): string {
     const entities = this.extractEntities(content);
     const components = this.extractComponents(content);
     const lines = [`flowchart LR`];
@@ -440,7 +440,7 @@ export class DiagramGenerator {
     return lines.join("\n");
   }
 
-  private generateDeployment(content: string, title: string): string {
+  private generateDeployment(content: string, _title: string): string {
     const components = this.extractComponents(content);
     const lines = [`flowchart TB`];
     // Internet/Load Balancer layer
@@ -476,7 +476,7 @@ export class DiagramGenerator {
     return lines.join("\n");
   }
 
-  private generateNetworkTopology(content: string, title: string): string {
+  private generateNetworkTopology(content: string, _title: string): string {
     const lines = [`flowchart TB`];
     // External zone
     lines.push(`  subgraph "Public Zone"`);

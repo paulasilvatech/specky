@@ -19,9 +19,9 @@ export class TemplateEngine {
   /** Optional path to project-local templates directory (from .specky/config.yml) */
   private customTemplatesDir: string;
 
-  constructor(private fileManager: FileManager, customTemplatesPath?: string) {
+  constructor(_fileManager: FileManager, customTemplatesPath?: string) {
     this.customTemplatesDir = customTemplatesPath
-      ? join(fileManager.workspaceRoot, customTemplatesPath)
+      ? join(_fileManager.workspaceRoot, customTemplatesPath)
       : "";
   }
 

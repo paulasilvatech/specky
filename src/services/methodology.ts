@@ -4,7 +4,7 @@
  * No constructor dependencies — import and use directly.
  */
 
-import { Phase, PHASE_ORDER, TOOL_NAMES } from "../constants.js";
+import { Phase, PHASE_ORDER } from "../constants.js";
 import type { PhaseStatus } from "../types.js";
 
 export class MethodologyGuide {

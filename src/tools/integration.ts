@@ -33,7 +33,7 @@ export function registerIntegrationTools(
   server: McpServer,
   fileManager: FileManager,
   stateMachine: StateMachine,
-  templateEngine: TemplateEngine,
+  _templateEngine: TemplateEngine,
   gitManager: GitManager,
   workItemExporter: WorkItemExporter
 ): void {
