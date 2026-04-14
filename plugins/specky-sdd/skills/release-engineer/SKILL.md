@@ -275,3 +275,19 @@ If post-release issues detected:
 3. Create incident report in ANALYSIS.md
 4. Schedule post-mortem
 5. Update release procedures to prevent recurrence
+
+## MCP Tools
+
+| Tool | Purpose |
+|------|---------|
+| `sdd_create_pr` | Generate PR payload with spec summary and correct branch target |
+| `sdd_generate_all_docs` | Parallel generation of all documentation types |
+| `sdd_generate_docs` | Generate user documentation from SPECIFICATION.md |
+| `sdd_generate_api_docs` | Generate API reference from DESIGN.md |
+| `sdd_generate_runbook` | Generate operational runbook from DESIGN.md |
+| `sdd_generate_onboarding` | Generate developer onboarding guide |
+| `sdd_export_work_items` | Export tasks to GitHub Issues / Azure DevOps / Jira |
+
+## Companion Agent
+
+**@release-engineer** — Phase 9 agent that runs blocking gates and calls these tools. Load this skill as first step.

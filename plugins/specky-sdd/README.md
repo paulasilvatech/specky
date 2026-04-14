@@ -4,6 +4,8 @@ Spec-Driven Development plugin that provides 57 MCP tools for a structured
 10-phase pipeline — from requirements through release — with EARS notation
 validation, model routing, cognitive debt metrics, and enterprise security.
 
+13 agents, 22 prompts, 8 skills, 14 hook scripts.
+
 Powered by the [specky-sdd](https://www.npmjs.com/package/specky-sdd) MCP server.
 
 ## What it does
@@ -58,12 +60,18 @@ DESIGN.md, TASKS.md, VERIFICATION.md, ANALYSIS.md).
 
 | Agent | Phase | Purpose |
 |-------|-------|---------|
+| `@specky-onboarding` | Pre | Interactive wizard and default entry point |
+| `@specky-orchestrator` | All | Full pipeline coordinator |
 | `@sdd-init` | 0 | Initialize the SDD pipeline for a new feature |
 | `@research-analyst` | 1 | Gather technical context before specification |
 | `@sdd-clarify` | 2 | Find and resolve ambiguities in requirements |
+| `@spec-engineer` | 3 | Write SPECIFICATION.md with EARS notation |
+| `@design-architect` | 4 | Write DESIGN.md with architecture + diagrams |
+| `@task-planner` | 5 | Write TASKS.md + CHECKLIST.md |
 | `@requirements-engineer` | — | Analyze raw input and produce FRD/NFRD documents |
 | `@implementer` | 6 | Generate implementation plans and scaffolding |
 | `@test-verifier` | 7 | Verify test coverage and detect spec drift |
+| `@quality-reviewer` | 8 | Completeness audit, compliance, gate decision |
 | `@release-engineer` | 9 | Prepare features for release |
 
 ## Branching Strategy
@@ -85,6 +93,8 @@ for git commands and detailed workflow.
 
 | Command | Description |
 |---------|-------------|
+| `/specky-onboarding` | Interactive wizard — get started with Specky |
+| `/specky-orchestrate` | Run the full 10-phase pipeline end-to-end |
 | `/specky-greenfield` | Start a new project from scratch |
 | `/specky-brownfield` | Onboard an existing codebase |
 | `/specky-research` | Run Phase 1 research |
@@ -95,6 +105,7 @@ for git commands and detailed workflow.
 | `/specky-implement` | Run Phase 6 implementation |
 | `/specky-verify` | Run Phase 7 verification |
 | `/specky-release` | Run Phase 9 release |
+| `/specky-deploy` | Generate deployment artifacts (IaC, Docker, runbook) |
 | `/specky-pipeline-status` | Check pipeline status |
 | `/specky-check-drift` | Detect spec-code drift |
 | `/specky-api` | Generate API documentation |

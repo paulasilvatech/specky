@@ -59,15 +59,17 @@ Artifacts are created **progressively** — each phase produces its own files in
 
 | # | Phase | Prompt | Agent | Artifacts Created |
 |---|-------|--------|-------|-------------------|
+| — | Onboarding | /specky-onboarding | @specky-onboarding | — (wizard) |
+| — | Full Pipeline | /specky-orchestrate | @specky-orchestrator | All (coordinated) |
 | 0 | Init | /specky-greenfield | @sdd-init | CONSTITUTION.md, .sdd-state.json |
 | 1 | Research | /specky-research | @research-analyst | RESEARCH.md |
 | 2 | Clarify | /specky-clarify | @sdd-clarify | (updates RESEARCH.md) |
-| 3 | Specify | /specky-specify | — | SPECIFICATION.md |
-| 4 | Design | /specky-design | — | DESIGN.md |
-| 5 | Tasks | /specky-tasks | — | TASKS.md, CHECKLIST.md |
+| 3 | Specify | /specky-specify | @spec-engineer | SPECIFICATION.md |
+| 4 | Design | /specky-design | @design-architect | DESIGN.md |
+| 5 | Tasks | /specky-tasks | @task-planner | TASKS.md, CHECKLIST.md |
 | 6 | Implement | /specky-implement | @implementer | src/ code, test stubs |
 | 7 | Verify | /specky-verify | @test-verifier | VERIFICATION.md, CROSS_ANALYSIS.md |
-| 8 | Review | — | — | ANALYSIS.md, COMPLIANCE.md |
+| 8 | Review | — | @quality-reviewer | ANALYSIS.md, COMPLIANCE.md |
 | 9 | Release | /specky-release | @release-engineer | PR, changelog, docs |
 
 > **Note:** You don't need to run every phase. Skip Research (Phase 1) if requirements are clear. Skip Design (Phase 4) if architecture is pre-existing. The pipeline adapts to your needs — but artifacts only appear when their phase runs.
@@ -158,12 +160,13 @@ Every requirement follows one of 6 patterns:
 | | Plugin (this) | MCP Server Only |
 |--|:-:|:-:|
 | 57 MCP tools | ✅ | ✅ |
-| 7 specialized agents | ✅ | — |
-| 19 reusable prompts | ✅ | — |
-| 6 domain skills | ✅ | — |
-| 10 automation hooks | ✅ | — |
+| 13 specialized agents | ✅ | — |
+| 22 reusable prompts | ✅ | — |
+| 8 domain skills | ✅ | — |
+| 14 automation hooks | ✅ | — |
 | EARS notation reference | ✅ | — |
 | Model routing guidance | ✅ | — |
-| Pipeline config | ✅ | — |
+| Pipeline orchestrator | ✅ | — |
+| Onboarding wizard | ✅ | — |
 
 For MCP-only installation, see the [main README](../../README.md#install-mcp-server-only).

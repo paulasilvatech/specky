@@ -149,3 +149,23 @@ All Phase 6 outputs ready for Phase 7 (Verify):
 ```
 
 Reference: **arXiv:2502.08235** — Use standard inference (no extended thinking) for Phase 6 scaffolding to optimize quality-cost tradeoff. Extended thinking adds 43% cost with 30% quality reduction in code generation.
+
+## MCP Tools
+
+| Tool | Purpose |
+|------|---------|
+| `sdd_implement` | Generate ordered implementation plan (Foundation → Core → Integration → Polish) |
+| `sdd_checklist` | Generate domain-specific quality checklists (security, testing, NFRs) |
+| `sdd_generate_tests` | Generate test stubs with REQ-ID traceability (vitest, jest, pytest, junit, xunit, playwright) |
+| `sdd_generate_pbt` | Generate property-based tests from EARS invariants |
+| `sdd_generate_iac` | Generate Terraform/Bicep infrastructure from DESIGN.md |
+| `sdd_validate_iac` | Validate generated IaC against best practices |
+| `sdd_generate_dockerfile` | Generate Dockerfile + docker-compose from tech stack |
+| `sdd_generate_devcontainer` | Generate devcontainer.json for Codespaces/Dev Containers |
+| `sdd_setup_local_env` | Generate local development environment setup |
+| `sdd_setup_codespaces` | Generate GitHub Codespaces configuration |
+| `sdd_create_branch` | Generate branch name following spec/NNN-feature convention |
+
+## Companion Agent
+
+**@implementer** — Phase 6 agent that calls these tools in sequence. Load this skill as first step.

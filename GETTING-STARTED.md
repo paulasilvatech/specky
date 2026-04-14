@@ -63,12 +63,14 @@ Configure VS Code (`.vscode/mcp.json`):
 | | Plugin (recommended) | MCP Server Only |
 |--|:-:|:-:|
 | 57 MCP tools | ✅ | ✅ |
-| 7 specialized agents | ✅ | — |
-| 19 reusable prompts | ✅ | — |
-| 6 domain skills | ✅ | — |
-| 10 automation hooks | ✅ | — |
+| 13 specialized agents | ✅ | — |
+| 22 reusable prompts | ✅ | — |
+| 8 domain skills | ✅ | — |
+| 14 automation hooks | ✅ | — |
 | EARS notation reference | ✅ | — |
 | Model routing guidance | ✅ | — |
+| Pipeline orchestrator | ✅ | — |
+| Onboarding wizard | ✅ | — |
 | `copilot plugin install` | ✅ | — |
 
 ---
@@ -77,12 +79,18 @@ Configure VS Code (`.vscode/mcp.json`):
 
 ### VS Code + GitHub Copilot (@ agents + /prompts)
 ```
+@specky-onboarding        → Interactive wizard (default entry point)
+@specky-orchestrator      → Full pipeline coordinator
 @sdd-init                 → Initialize pipeline
 @requirements-engineer    → Extract FRD + NFRD
 @research-analyst         → Research and discovery
 @sdd-clarify              → Resolve ambiguities
+@spec-engineer            → Write SPECIFICATION.md
+@design-architect         → Write DESIGN.md + diagrams
+@task-planner             → Write TASKS.md + CHECKLIST.md
 @implementer              → Generate implementation plan
 @test-verifier            → Verify test coverage
+@quality-reviewer         → Completeness audit + compliance
 @release-engineer         → Release checklist and PR
 ```
 

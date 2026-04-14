@@ -13,6 +13,20 @@ pipeline:
     7: "verify"
     8: "review"
     9: "release"
+  phase_agents:
+    pre: "specky-onboarding"
+    all: "specky-orchestrator"
+    0: "sdd-init"
+    1: "research-analyst"
+    2: "sdd-clarify"
+    3: "spec-engineer"
+    4: "design-architect"
+    5: "task-planner"
+    6: "implementer"
+    7: "test-verifier"
+    8: "quality-reviewer"
+    9: "release-engineer"
+  lgtm_gates: [3, 4, 5]
 hooks:
   shared_path: ".github/plugin/specky/hooks/scripts"
   blocking:

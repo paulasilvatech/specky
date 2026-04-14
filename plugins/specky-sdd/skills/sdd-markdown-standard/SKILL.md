@@ -276,3 +276,7 @@ Enforce consistency:
 - Line length target: 100 characters (hard limit 120)
 
 Run markdown linter: `markdownlint sdd-artifacts/`
+
+## Companion Agent
+
+**@requirements-engineer** — Pre-pipeline agent that produces FRD/NFRD documents using this formatting standard. Load this skill as first step.

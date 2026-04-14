@@ -198,3 +198,36 @@ git merge --no-ff stage
 git tag -a v1.0.0 -m "Release v1.0.0"
 git push origin main --tags
 ```
+
+## MCP Tools per Phase
+
+| Phase | Tools |
+|-------|-------|
+| 0 Init | `sdd_init`, `sdd_scan_codebase`, `sdd_create_branch` |
+| 1 Research | `sdd_discover`, `sdd_research`, `sdd_import_document`, `sdd_import_transcript`, `sdd_batch_import`, `sdd_check_ecosystem` |
+| 2 Clarify | `sdd_clarify`, `sdd_validate_ears`, `sdd_turnkey_spec` |
+| 3 Specify | `sdd_write_spec`, `sdd_turnkey_spec`, `sdd_validate_ears`, `sdd_figma_to_spec` |
+| 4 Design | `sdd_write_design`, `sdd_generate_all_diagrams`, `sdd_generate_diagram` |
+| 5 Tasks | `sdd_write_tasks`, `sdd_checklist` |
+| 6 Implement | `sdd_implement`, `sdd_generate_tests`, `sdd_generate_pbt`, `sdd_generate_iac`, `sdd_generate_dockerfile`, `sdd_generate_devcontainer` |
+| 7 Verify | `sdd_verify_tests`, `sdd_verify_tasks`, `sdd_check_sync`, `sdd_validate_ears` |
+| 8 Review | `sdd_run_analysis`, `sdd_cross_analyze`, `sdd_compliance_check`, `sdd_check_sync` |
+| 9 Release | `sdd_create_pr`, `sdd_generate_all_docs`, `sdd_export_work_items` |
+| Any | `sdd_get_status`, `sdd_advance_phase`, `sdd_checkpoint`, `sdd_restore`, `sdd_metrics`, `sdd_model_routing` |
+
+## Agent Routing
+
+| Phase | Agent | Model |
+|-------|-------|-------|
+| Pre | @specky-onboarding | Haiku |
+| All | @specky-orchestrator | Sonnet |
+| 0 | @sdd-init | Haiku |
+| 1 | @research-analyst | Sonnet |
+| 2 | @sdd-clarify | Opus |
+| 3 | @spec-engineer | Opus |
+| 4 | @design-architect | Opus |
+| 5 | @task-planner | Sonnet |
+| 6 | @implementer | Sonnet |
+| 7 | @test-verifier | Sonnet |
+| 8 | @quality-reviewer | Opus |
+| 9 | @release-engineer | Haiku |

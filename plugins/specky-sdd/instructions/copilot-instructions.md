@@ -13,22 +13,47 @@ This project uses Spec-Driven Development (SDD) via the Specky pipeline.
 
 ## Available Agents
 
+- @specky-onboarding — Interactive wizard and default entry point
+- @specky-orchestrator — Full pipeline coordinator (all 10 phases)
 - @sdd-init — Initialize pipeline (Phase 0)
 - @requirements-engineer — Produce FRD + NFRD
 - @research-analyst — Technical research (Phase 1)
 - @sdd-clarify — Resolve ambiguities (Phase 2)
+- @spec-engineer — Write SPECIFICATION.md with EARS (Phase 3)
+- @design-architect — Write DESIGN.md + diagrams (Phase 4)
+- @task-planner — Write TASKS.md + CHECKLIST.md (Phase 5)
 - @implementer — Implementation scaffolding (Phase 6)
 - @test-verifier — Coverage verification (Phase 7)
+- @quality-reviewer — Completeness audit + compliance (Phase 8)
 - @release-engineer — Release preparation (Phase 9)
 
 ## Available Prompts
 
 Use in Copilot Chat with `@workspace /prompt-name`:
 
-**Quick Start:** /specky-greenfield, /specky-brownfield, /specky-migration, /specky-api
-**Pipeline:** /specky-research, /specky-clarify, /specky-specify, /specky-design, /specky-tasks, /specky-implement, /specky-verify, /specky-release
+**Quick Start:** /specky-onboarding, /specky-orchestrate, /specky-greenfield, /specky-brownfield, /specky-migration, /specky-api
+**Pipeline:** /specky-research, /specky-clarify, /specky-specify, /specky-design, /specky-tasks, /specky-implement, /specky-verify, /specky-release, /specky-deploy
 **Special:** /specky-from-figma, /specky-from-meeting, /specky-check-drift, /specky-resolve-conflict
 **Debug:** /specky-debug-hook, /specky-pipeline-status, /specky-reset-phase
+
+## Hook Enforcement
+
+Hooks fire automatically on MCP tool calls:
+- **Pre-tool:** artifact-validator (BLOCKING) + branch-validator (advisory) before every phase tool
+- **Post-tool:** phase-gate (BLOCKING) + lgtm-gate (advisory) + quality hooks after artifact writes
+- **LGTM gates:** Phases 3 (Specify), 4 (Design), 5 (Tasks) pause for human review
+- **Blocking gates:** security-scan + release-gate before PR creation
+
+## Work Modes
+
+- **Full Pipeline:** Use @specky-orchestrator or /specky-orchestrate for automated end-to-end
+- **Agent-by-agent:** Call individual agents (@spec-engineer, @implementer, etc.)
+- **Direct MCP tools:** Call sdd_* tools directly for maximum control
+- **Use /specky-onboarding to choose your mode**
+
+## Rule #7
+
+7. **Load companion SKILL.md first.** Every agent must read its companion skill file as the first workflow step.
 
 ## MCP Server
 

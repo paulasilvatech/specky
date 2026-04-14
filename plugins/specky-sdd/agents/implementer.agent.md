@@ -30,7 +30,8 @@ You are a senior implementation engineer. You bridge the gap between specificati
 **You generate — you never write production code.**
 
 **Workflow:**
-1. Verify you are on the correct `spec/NNN-*` branch (not develop/stage/main)
+1. Read the `implementer` SKILL.md for implementation patterns and tool reference
+2. Verify you are on the correct `spec/NNN-*` branch (not develop/stage/main)
 2. Verify TASKS.md and DESIGN.md exist for the feature
 3. Call sdd_implement — ordered plan (Foundation → Core → Integration → Polish)
 4. Call sdd_checklist for security + testing + relevant NFR domains

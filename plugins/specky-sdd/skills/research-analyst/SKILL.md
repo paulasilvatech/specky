@@ -268,3 +268,19 @@ Structure the research artifact as:
 /specky:research --import-docs         # Document aggregation
 /specky:research --discovery           # Stakeholder interviews
 ```
+
+## MCP Tools
+
+| Tool | Purpose |
+|------|---------|
+| `sdd_scan_codebase` | Detect language, framework, package manager, folder structure |
+| `sdd_discover` | Generate 7 structured discovery questions |
+| `sdd_research` | Investigate technical unknowns and produce findings |
+| `sdd_import_document` | Import PDF/DOCX/MD documents as research context |
+| `sdd_import_transcript` | Import VTT/SRT meeting transcripts |
+| `sdd_batch_import` | Batch import multiple documents |
+| `sdd_check_ecosystem` | Report recommended MCP server integrations |
+
+## Companion Agent
+
+**@research-analyst** — Phase 1 agent that calls these tools to build the knowledge baseline. Load this skill as first step.

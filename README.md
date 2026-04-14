@@ -58,7 +58,7 @@ Specky is an open-source **MCP server** that turns the [Spec-Kit](https://github
 
 **Spec-Kit** provides the methodology: EARS notation, gated pipeline phases, constitution model, quality patterns. **Specky** reimplements all of it as MCP tools and adds programmatic enforcement: a state machine that blocks phase-skipping, an EARS validator, cross-artifact analysis, compliance engines, test generation, and MCP-to-MCP routing.
 
-**Install the Specky plugin and you get everything.** The Spec-Kit methodology is built in. The plugin bundles 7 agents, 19 prompts, 6 skills, 10 automation hooks, and the MCP server — all configured automatically. It works inside VS Code with Copilot, Claude Code, Cursor, Windsurf, or any MCP-compatible client. See the [plugin documentation](plugins/specky-sdd/) or how Spec-Kit and Specky [complement each other](#the-spec-driven-development-platform).
+**Install the Specky plugin and you get everything.** The Spec-Kit methodology is built in. The plugin bundles 13 agents, 22 prompts, 8 skills, 14 automation hooks, and the MCP server — all configured automatically. It works inside VS Code with Copilot, Claude Code, Cursor, Windsurf, or any MCP-compatible client. See the [plugin documentation](plugins/specky-sdd/) or how Spec-Kit and Specky [complement each other](#the-spec-driven-development-platform).
 
 
 ## Why Specifications Matter in the AI Era
@@ -127,15 +127,16 @@ Specky adds a **deterministic engine** between your intent and your code:
 
 ### Install as Plugin (recommended)
 
-The **Specky plugin** bundles everything: 7 agents, 19 prompts, 6 skills, 10 automation hooks, and the MCP server. There are two ways to install — choose based on your needs:
+The **Specky plugin** bundles everything: 13 agents, 22 prompts, 8 skills, 14 automation hooks, and the MCP server. There are two ways to install — choose based on your needs:
 
 | What you get | MCP Only | Plugin (global) | Plugin (per-project) |
 |-------------|:-:|:-:|:-:|
 | 57 MCP tools | ✅ | ✅ | ✅ |
-| 6 domain skills | — | ✅ | ✅ |
-| 7 agents in Copilot Chat | — | — | ✅ |
-| 19 slash-command prompts | — | — | ✅ |
-| 10 automation hooks | — | — | ✅ |
+| 8 domain skills | — | ✅ | ✅ |
+| 13 agents in Copilot Chat | — | — | ✅ |
+| 22 slash-command prompts | — | — | ✅ |
+| 14 automation hooks | — | — | ✅ |
+| Pipeline orchestrator | — | — | ✅ |
 | MCP server auto-configured | — | — | ✅ |
 | Team sharing via Git | — | — | ✅ |
 
@@ -146,7 +147,7 @@ The **Specky plugin** bundles everything: 7 agents, 19 prompts, 6 skills, 10 aut
 3. Click the **+** button
 4. Type `paulasilvatech/specky` and press Enter
 
-This installs **6 skills globally** across all your projects. For the full experience (agents, prompts, hooks), use the per-project install below.
+This installs **8 skills globally** across all your projects. For the full experience (agents, prompts, hooks), use the per-project install below.
 
 #### Via Copilot CLI (global — skills only)
 

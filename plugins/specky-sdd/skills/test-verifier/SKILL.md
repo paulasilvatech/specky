@@ -201,3 +201,17 @@ Produce standardized verification artifact:
 /specky:verify --phantoms     # Phantom detection only
 /specky:verify --gates        # Gate criteria check
 ```
+
+## MCP Tools
+
+| Tool | Purpose |
+|------|---------|
+| `sdd_verify_tests` | Parse test results, map to REQ-IDs, build coverage report |
+| `sdd_verify_tasks` | Detect phantom completions (tasks done but tests failing) |
+| `sdd_check_sync` | Detect spec-code drift (requirements vs implementation) |
+| `sdd_validate_ears` | Re-validate EARS pattern integrity |
+| `sdd_get_status` | Check pipeline state and current phase |
+
+## Companion Agent
+
+**@test-verifier** — Phase 7 agent that calls these tools in sequence. Load this skill as first step.
