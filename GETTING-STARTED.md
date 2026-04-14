@@ -1,6 +1,30 @@
-# Specky SDD Ecosystem — Getting Started
+# Specky SDD — Getting Started
 
-> **Spec-Driven Development** is the practice of writing formal specifications (in EARS notation) *before* writing code. Specky automates this 10-phase pipeline, ensuring full traceability from requirement to PR.
+> **Spec-Driven Development** is the practice of writing formal specifications (in EARS notation) *before* writing code. Specky is a **complete plugin** that automates this 10-phase pipeline, ensuring full traceability from requirement to PR.
+
+---
+
+## What is a Plugin?
+
+Specky is not just an MCP server — it's a **plugin**: a complete AI development package that bundles agents, prompts, skills, hooks, and an MCP engine into one installable unit.
+
+| What you get | What it does |
+|-------------|-------------|
+| **13 Agents** | Specialized AI personas — `@specky-orchestrator` runs the full pipeline, `@specky-onboarding` guides setup, `@spec-engineer` writes specs, etc. |
+| **22 Prompts** | Slash commands — `/specky-greenfield`, `/specky-specify`, `/specky-release`. One command activates the right agent. |
+| **8 Skills** | Domain knowledge loaded into agents — EARS patterns, implementation rules, test criteria, release gate protocol. |
+| **14 Hooks** | Pre/post validation scripts — check artifacts exist, validate branch, enforce gates, pause for LGTM. |
+| **57 MCP Tools** | The engine underneath — validates, generates, and enforces. Agents call it; hooks guard it. |
+
+**Why does this matter?** Instead of calling raw MCP tools and hoping you're in the right phase with the right prerequisites, you call an agent and it does everything correctly — validates, routes, enforces hooks, and pauses for review.
+
+### What is APM?
+
+[APM](https://microsoft.github.io/apm/) (Agent Package Manager) is the `npm` for AI agent configuration — from Microsoft. It manages agents, skills, prompts, hooks, and MCP servers as versioned packages with lock files. One command installs everything:
+
+```bash
+apm install paulasilvatech/specky
+```
 
 ---
 

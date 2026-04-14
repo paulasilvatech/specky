@@ -34,9 +34,10 @@
 | | Section | Description |
 |---|---------|-------------|
 | **Start** | [What is Specky?](#what-is-specky) | Overview and ecosystem |
+| | [What is a Plugin?](#what-is-a-plugin) | Agents, prompts, skills, hooks, and APM |
 | | [Why Specifications Matter](#why-specifications-matter-in-the-ai-era) | Vibe coding vs deterministic development |
 | | [Getting Started](GETTING-STARTED.md) | Complete educational guide |
-| **Use** | [Quick Start](#quick-start) | Install via npm or Docker, connect to your IDE |
+| **Use** | [Quick Start](#quick-start) | Install the plugin via APM, curl, or npm |
 | | [Where Specifications Live](#where-specifications-live) | File structure and naming conventions |
 | | [Input Methods](#input-methods-6-ways-to-start) | 6 ways to feed Specky |
 | | [Three Project Types](#three-project-types-one-pipeline) | Greenfield, Brownfield, Modernization |
@@ -54,6 +55,38 @@
 Specky is a **complete Spec-Driven Development plugin** — 13 specialized agents, 57 MCP tools, 22 prompts, 8 skills, and 14 automation hooks — that enforces a deterministic 10-phase pipeline from **any input** (meeting transcripts, documents, Figma designs, or natural language prompts) through specifications, architecture, infrastructure as code, implementation, and deployment.
 
 The plugin is powered by the [specky-sdd](https://www.npmjs.com/package/specky-sdd) MCP engine and the [Spec-Kit](https://github.com/paulasilvatech/spec-kit) methodology. Install Specky and you get **everything**: the agents orchestrate the pipeline, the tools enforce validation, the hooks guard every phase transition, and the skills provide domain knowledge.
+
+
+## What is a Plugin?
+
+A plugin is a **complete AI development package** — not just a tool server. It bundles everything your AI IDE needs into a single installable unit:
+
+| Primitive | What it is | Specky includes |
+|-----------|-----------|------------------|
+| **Agents** | Specialized AI personas with defined roles, tools, and guardrails | 13 agents — @specky-orchestrator (full pipeline), @specky-onboarding (wizard), @spec-engineer, @design-architect, @task-planner, @quality-reviewer, and 7 more |
+| **Prompts** | Slash commands that activate the right agent for a task | 22 prompts — `/specky-greenfield`, `/specky-specify`, `/specky-release`, `/specky-orchestrate`, etc. |
+| **Skills** | Domain knowledge files loaded into agent context automatically | 8 skills — SDD pipeline rules, EARS patterns, implementation patterns, test criteria, release gate protocol |
+| **Hooks** | Scripts that run before/after every tool call for validation | 14 hooks — artifact-validator, branch-validator, phase-gate, lgtm-gate, security-scan, etc. |
+| **MCP Server** | The tool engine that validates, generates, and enforces | 57 tools via Model Context Protocol (the runtime underneath) |
+
+### Why not just an MCP server?
+
+An MCP server gives you **tools**. A plugin gives you the **experience**:
+
+- **Tools alone**: You call `sdd_write_spec` and hope you're in the right phase, with the right prerequisites, on the right branch.
+- **Plugin**: You type `@specky-orchestrator` and the agent validates your phase, checks your branch, loads the right skill, calls the right tool, runs pre/post hooks, and pauses for LGTM before advancing.
+
+The MCP engine is the runtime. The plugin is the product.
+
+### How to install
+
+Specky is distributed via [APM](https://microsoft.github.io/apm/) (Agent Package Manager) — the `npm` for AI agent configuration, from Microsoft:
+
+```bash
+apm install paulasilvatech/specky
+```
+
+This single command installs all 13 agents, 22 prompts, 8 skills, 14 hooks, configures the MCP server, and generates a lock file (`apm.lock.yaml`) for version reproducibility. No manual setup, no configuration drift across your team. [Install APM](https://microsoft.github.io/apm/getting-started/installation/) if you don't have it yet.
 
 
 ## Why Specifications Matter in the AI Era
@@ -79,7 +112,8 @@ The result? Teams spend 40% of their time on rework because requirements were ne
 | **Markdown** | The universal language that both humans and AI read fluently | All spec artifacts are `.md` files in your repo, versioned with Git |
 | **MCP** | Model Context Protocol — an open standard that lets AI assistants call external tools | Specky is an MCP server; any AI IDE can connect to it |
 | **EARS Notation** | A method for writing requirements that forces precision with 6 patterns | Eliminates vague statements like "the system should be fast" |
-| **Agents and Skills** | Specialized AI roles that invoke Specky tools with domain expertise | Defined in `.github/agents/` and `.claude/commands/` |
+| **Agents and Skills** | Specialized AI roles that invoke Specky tools with domain expertise | 13 agents + 8 skills orchestrate the full pipeline |
+| **Plugins** | A complete AI development package: agents + prompts + skills + hooks + MCP server | Installed via [APM](https://microsoft.github.io/apm/) — the `npm` for AI configuration |
 
 ### How Specky Enforces Determinism
 
