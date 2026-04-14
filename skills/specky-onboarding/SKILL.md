@@ -70,13 +70,13 @@ Check for:
 - /specky-api — API design
 
 **Pipeline Phases:**
-- /specky-research — Phase 1
-- /specky-clarify — Phase 2
-- /specky-specify — Phase 3
+- /specky-research — Phase 1 (Discover)
+- /specky-specify — Phase 2 (Specify)
+- /specky-clarify — Phase 3 (Clarify)
 - /specky-design — Phase 4
 - /specky-tasks — Phase 5
-- /specky-implement — Phase 6
-- /specky-verify — Phase 7
+- /specky-implement — Phase 7 (Implement)
+- /specky-verify — Phase 8 (Verify)
 - /specky-release — Phase 9
 - /specky-deploy — Deployment artifacts
 

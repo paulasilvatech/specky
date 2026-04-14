@@ -13,14 +13,14 @@ Phase 9 executes final release gates, creates deployment artifacts, generates us
 
 Before Phase 9 begins, verify these mandatory conditions:
 
-### From Phase 8 (Review)
+### From Phase 6 (Analyze)
 - ANALYSIS.md exists and is marked APPROVE (not CONDITIONAL or REJECT)
 - All P0 and P1 review items resolved
 - Security scan completed with no critical findings
 - Performance benchmarks validated
 - Code review sign-off from 2+ maintainers
 
-### From Phase 7 (Verify)
+### From Phase 8 (Verify)
 - VERIFICATION.md shows ≥90% test pass rate
 - All P0 (critical) tests passing
 - Coverage ≥80% overall, ≥90% for security modules
@@ -171,7 +171,7 @@ Approvals:
 
 Set PR to merge following the Gitflow-SDD branching strategy:
 
-- From `spec/NNN-*` branch → target `develop` (after Phase 7 verification)
+- From `spec/NNN-*` branch → target `develop` (after Phase 8 verification)
 - From `develop` → target `stage` (after integration review)
 - From `stage` → target `main` (after all blocking gates pass)
 

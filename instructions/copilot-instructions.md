@@ -18,13 +18,13 @@ This project uses Spec-Driven Development (SDD) via the Specky pipeline.
 - @sdd-init — Initialize pipeline (Phase 0)
 - @requirements-engineer — Produce FRD + NFRD
 - @research-analyst — Technical research (Phase 1)
-- @sdd-clarify — Resolve ambiguities (Phase 2)
-- @spec-engineer — Write SPECIFICATION.md with EARS (Phase 3)
+- @spec-engineer — Write SPECIFICATION.md with EARS (Phase 2)
+- @sdd-clarify — Resolve ambiguities (Phase 3)
 - @design-architect — Write DESIGN.md + diagrams (Phase 4)
 - @task-planner — Write TASKS.md + CHECKLIST.md (Phase 5)
-- @implementer — Implementation scaffolding (Phase 6)
-- @test-verifier — Coverage verification (Phase 7)
-- @quality-reviewer — Completeness audit + compliance (Phase 8)
+- @quality-reviewer — Completeness audit + compliance (Phase 6)
+- @implementer — Implementation scaffolding (Phase 7)
+- @test-verifier — Coverage verification (Phase 8)
 - @release-engineer — Release preparation (Phase 9)
 
 ## Available Prompts
@@ -41,7 +41,7 @@ Use in Copilot Chat with `@workspace /prompt-name`:
 Hooks fire automatically on MCP tool calls:
 - **Pre-tool:** artifact-validator (BLOCKING) + branch-validator (advisory) before every phase tool
 - **Post-tool:** phase-gate (BLOCKING) + lgtm-gate (advisory) + quality hooks after artifact writes
-- **LGTM gates:** Phases 3 (Specify), 4 (Design), 5 (Tasks) pause for human review
+- **LGTM gates:** Phases 2 (Specify), 4 (Design), 5 (Tasks) pause for human review
 - **Blocking gates:** security-scan + release-gate before PR creation
 
 ## Work Modes

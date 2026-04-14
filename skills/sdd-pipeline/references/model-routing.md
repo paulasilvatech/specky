@@ -9,19 +9,19 @@ The SDD pipeline routes each phase to the most cost-effective model based on tas
 | Phase | Name | Model | Cost | Thinking | Rationale |
 |-------|------|-------|------|----------|-----------|
 | 0 | Init | claude-haiku-4-5 | 0.33x | No | Pure scaffolding — directory creation, template population |
-| 1 | Research | claude-sonnet-4-6 | 1x | No | Information synthesis, not deep reasoning |
-| 2 | Clarify | claude-opus-4-6 | 3x | Yes | Deep language understanding for ambiguity detection |
-| 3 | Specify | claude-opus-4-6 | 3x | Yes | EARS pattern formulation requires precise reasoning |
+| 1 | Discover | claude-sonnet-4-6 | 1x | No | Information synthesis, not deep reasoning |
+| 2 | Specify | claude-opus-4-6 | 3x | Yes | EARS pattern formulation requires precise reasoning |
+| 3 | Clarify | claude-opus-4-6 | 3x | Yes | Deep language understanding for ambiguity detection |
 | 4 | Design | claude-opus-4-6 | 3x | Yes | Architecture decisions, trade-off analysis |
 | 5 | Tasks | claude-sonnet-4-6 | 1x | No | Dependency sequencing is algorithmic |
-| 6 | Implement | claude-sonnet-4-6 | 1x | No | Iterative with executable feedback |
-| 7 | Verify | claude-sonnet-4-6 | 1x | No | Pattern-matching, programmatic comparison |
-| 8 | Review | claude-opus-4-6 | 3x | Yes | Cross-artifact analysis, cognitive debt detection |
+| 6 | Analyze | claude-sonnet-4-6 | 1x | No | Cross-artifact analysis, compliance checks |
+| 7 | Implement | claude-sonnet-4-6 | 1x | No | Iterative with executable feedback |
+| 8 | Verify | claude-opus-4-6 | 3x | Yes | Coverage analysis, drift detection |
 | 9 | Release | claude-haiku-4-5 | 0.33x | No | Deterministic, template-based outputs |
 
 ## Key Research Finding
 
-**arXiv:2502.08235** found that enabling extended thinking on Phase 6 (implementation):
+**arXiv:2502.08235** found that enabling extended thinking on Phase 7 (implementation):
 - Increases cost by +43%
 - Degrades output quality by -30%
 
@@ -49,14 +49,14 @@ For a typical medium feature (30 requirements, 50 tasks):
 | Phase | Calls | Model | Est. Cost |
 |-------|-------|-------|-----------|
 | 0 Init | 2-3 | Haiku | $0.02 |
-| 1 Research | 5-8 | Sonnet | $0.15 |
-| 2 Clarify | 3-5 | Opus | $0.45 |
-| 3 Specify | 5-10 | Opus | $0.90 |
+| 1 Discover | 5-8 | Sonnet | $0.15 |
+| 2 Specify | 3-5 | Opus | $0.45 |
+| 3 Clarify | 5-10 | Opus | $0.90 |
 | 4 Design | 3-5 | Opus | $0.45 |
 | 5 Tasks | 3-5 | Sonnet | $0.10 |
-| 6 Implement | 10-20 | Sonnet | $0.40 |
-| 7 Verify | 5-8 | Sonnet | $0.15 |
-| 8 Review | 3-5 | Opus | $0.45 |
+| 6 Analyze | 10-20 | Sonnet | $0.40 |
+| 7 Implement | 5-8 | Sonnet | $0.15 |
+| 8 Verify | 3-5 | Opus | $0.45 |
 | 9 Release | 3-5 | Haiku | $0.02 |
 | **Total** | **42-74** | — | **~$3.09** |
 

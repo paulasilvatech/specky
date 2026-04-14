@@ -113,14 +113,14 @@ Hooks are configured in `sdd-hooks.json` with PreToolUse and PostToolUse matcher
 **Direct CLI:**
 ```
 /specky:init
-/specky:research
-/specky:clarify
+/specky:discover
 /specky:specify
+/specky:clarify
 /specky:design
 /specky:tasks
+/specky:analyze
 /specky:implement
 /specky:verify
-/specky:review
 /specky:release
 ```
 
@@ -134,8 +134,8 @@ Hooks are configured in `sdd-hooks.json` with PreToolUse and PostToolUse matcher
 ## Workflow Entry Points
 
 - **Greenfield** — Start at Phase 0 with new project initialization
-- **Brownfield** — Start at Phase 1 to analyze existing codebase, then Phase 3 to specify new work
-- **Rapid** — Skip Phase 2 if requirements are pre-clarified; proceed directly to Phase 3
+- **Brownfield** — Start at Phase 1 to analyze existing codebase, then Phase 2 to specify new work
+- **Rapid** — Skip Phase 3 if requirements are pre-clarified; proceed directly to Phase 4
 - **Emergency** — Jump to Phase 5 if architecture and design are pre-existing; focus on tasks and implementation
 
 Use the `/specky:check` command to validate artifact completeness before advancing phases.
@@ -155,7 +155,7 @@ spec/003-notifs    ──→    ↑
 | Branch | Phases | Artifacts Created | When to Merge |
 |--------|--------|-------------------|---------------|
 | `spec/NNN-feature-name` | 0-7 | CONSTITUTION.md, .sdd-state.json, RESEARCH.md, SPECIFICATION.md, DESIGN.md, TASKS.md, CHECKLIST.md, VERIFICATION.md, CROSS_ANALYSIS.md | After Phase 7 passes |
-| `develop` | 8 (Review) | ANALYSIS.md, COMPLIANCE.md | After integration review |
+| `develop` | 8 (Verify) | ANALYSIS.md, COMPLIANCE.md | After integration review |
 | `stage` | 8-9 (QA + Gates) | Release docs, changelog | After blocking gates pass |
 | `main` | Production | — | Protected; deploy-ready |
 
@@ -164,7 +164,7 @@ spec/003-notifs    ──→    ↑
 1. Each spec MUST have its own branch: `spec/NNN-feature-name`
 2. Create spec branch from `develop`, never from `main`
 3. All `.specs/` artifacts are created on the spec branch (Phases 0-7)
-4. Merge to `develop` only after Phase 7 (verify) passes
+4. Merge to `develop` only after Phase 8 (verify) passes
 5. Merge to `stage` only after integration review on develop
 6. Merge to `main` only after blocking gates pass on stage
 7. Delete spec branch after successful merge to develop
@@ -208,14 +208,14 @@ git push origin main --tags
 | Phase | Tools |
 |-------|-------|
 | 0 Init | `sdd_init`, `sdd_scan_codebase`, `sdd_create_branch` |
-| 1 Research | `sdd_discover`, `sdd_research`, `sdd_import_document`, `sdd_import_transcript`, `sdd_batch_import`, `sdd_check_ecosystem` |
-| 2 Clarify | `sdd_clarify`, `sdd_validate_ears`, `sdd_turnkey_spec` |
-| 3 Specify | `sdd_write_spec`, `sdd_turnkey_spec`, `sdd_validate_ears`, `sdd_figma_to_spec` |
+| 1 Discover | `sdd_discover`, `sdd_research`, `sdd_import_document`, `sdd_import_transcript`, `sdd_batch_import`, `sdd_check_ecosystem` |
+| 2 Specify | `sdd_write_spec`, `sdd_turnkey_spec`, `sdd_validate_ears`, `sdd_figma_to_spec` |
+| 3 Clarify | `sdd_clarify`, `sdd_validate_ears`, `sdd_turnkey_spec` |
 | 4 Design | `sdd_write_design`, `sdd_generate_all_diagrams`, `sdd_generate_diagram` |
 | 5 Tasks | `sdd_write_tasks`, `sdd_checklist` |
-| 6 Implement | `sdd_implement`, `sdd_generate_tests`, `sdd_generate_pbt`, `sdd_generate_iac`, `sdd_generate_dockerfile`, `sdd_generate_devcontainer` |
-| 7 Verify | `sdd_verify_tests`, `sdd_verify_tasks`, `sdd_check_sync`, `sdd_validate_ears` |
-| 8 Review | `sdd_run_analysis`, `sdd_cross_analyze`, `sdd_compliance_check`, `sdd_check_sync` |
+| 6 Analyze | `sdd_run_analysis`, `sdd_cross_analyze`, `sdd_compliance_check`, `sdd_check_sync` |
+| 7 Implement | `sdd_implement`, `sdd_generate_tests`, `sdd_generate_pbt`, `sdd_generate_iac`, `sdd_generate_dockerfile`, `sdd_generate_devcontainer` |
+| 8 Verify | `sdd_verify_tests`, `sdd_verify_tasks`, `sdd_check_sync`, `sdd_validate_ears` |
 | 9 Release | `sdd_create_pr`, `sdd_generate_all_docs`, `sdd_export_work_items` |
 | Any | `sdd_get_status`, `sdd_advance_phase`, `sdd_checkpoint`, `sdd_restore`, `sdd_metrics`, `sdd_model_routing` |
 
@@ -227,11 +227,11 @@ git push origin main --tags
 | All | @specky-orchestrator | Sonnet |
 | 0 | @sdd-init | Haiku |
 | 1 | @research-analyst | Sonnet |
-| 2 | @sdd-clarify | Opus |
-| 3 | @spec-engineer | Opus |
+| 2 | @spec-engineer | Opus |
+| 3 | @sdd-clarify | Opus |
 | 4 | @design-architect | Opus |
 | 5 | @task-planner | Sonnet |
-| 6 | @implementer | Sonnet |
-| 7 | @test-verifier | Sonnet |
-| 8 | @quality-reviewer | Opus |
+| 6 | @quality-reviewer | Sonnet |
+| 7 | @implementer | Sonnet |
+| 8 | @test-verifier | Opus |
 | 9 | @release-engineer | Haiku |

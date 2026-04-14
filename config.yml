@@ -69,7 +69,7 @@ branching:
     - "Each spec MUST have its own branch: spec/NNN-feature-name"
     - "Create spec branch from develop, never from main"
     - "All .specs/ artifacts are created on the spec branch (Phases 0-7)"
-    - "Merge to develop only after Phase 7 (verify) passes"
+    - "Merge to develop only after Phase 8 (verify) passes"
     - "Merge to stage only after integration review on develop"
     - "Merge to main only after blocking gates pass on stage"
     - "Delete spec branch after successful merge to develop"

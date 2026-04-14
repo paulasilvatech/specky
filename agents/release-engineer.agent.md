@@ -44,8 +44,8 @@ You are a senior release engineer. You prepare features for delivery.
 8. Deliver release summary with branch, target, and merge instructions
 
 **Branching rules:**
-- `spec/NNN-feature-name` → `develop` (after Phase 7 verification passes)
-- `develop` → `stage` (after integration review and Phase 8 approval)
+- `spec/NNN-feature-name` → `develop` (after Phase 8 verification passes)
+- `develop` → `stage` (after integration and Phase 6 analysis approval)
 - `stage` → `main` (after all blocking gates pass)
 - Never merge a spec branch directly to `main` or `stage`
 - Delete spec branch after successful merge to develop

@@ -1,13 +1,13 @@
 ---
 name: Implementation Orchestrator
-description: "This skill should be used when the user asks to 'generate implementation plan', 'create test stubs', 'set up infrastructure', 'generate quality checklists', 'transition from spec to code', or needs guidance on Phase 6 implementation scaffolding. Also trigger on 'sdd implement', 'implementation handoff', 'IaC generation', or 'test framework selection'."
+description: "This skill should be used when the user asks to 'generate implementation plan', 'create test stubs', 'set up infrastructure', 'generate quality checklists', 'transition from spec to code', or needs guidance on Phase 7 implementation scaffolding. Also trigger on 'sdd implement', 'implementation handoff', 'IaC generation', or 'test framework selection'."
 ---
 
-# Implementation Orchestrator (Phase 6)
+# Implementation Orchestrator (Phase 7)
 
 ## Overview
 
-Phase 6 transforms specification and design artifacts into a structured implementation plan with code scaffolding, infrastructure definitions, and quality assurance frameworks.
+Phase 7 transforms specification and design artifacts into a structured implementation plan with code scaffolding, infrastructure definitions, and quality assurance frameworks.
 
 ## Prerequisites Check
 
@@ -123,7 +123,7 @@ Continuous synchronization between SPECIFICATION.md and implementation:
 
 ## Implementation Handoff Template
 
-When Phase 6 completes, provide handoff document including:
+When Phase 7 completes, provide handoff document including:
 
 ```
 ## Implementation Status
@@ -134,7 +134,7 @@ When Phase 6 completes, provide handoff document including:
 - Infrastructure templates generated: [yes/no]
 
 ## Next Phase Entry Criteria
-All Phase 6 outputs ready for Phase 7 (Verify):
+All Phase 7 outputs ready for Phase 8 (Verify):
 - Code compiles without errors
 - All test stubs created
 - CI/CD pipeline functional
@@ -148,7 +148,7 @@ All Phase 6 outputs ready for Phase 7 (Verify):
 - [Technical notes for implementation team]
 ```
 
-Reference: **arXiv:2502.08235** — Use standard inference (no extended thinking) for Phase 6 scaffolding to optimize quality-cost tradeoff. Extended thinking adds 43% cost with 30% quality reduction in code generation.
+Reference: **arXiv:2502.08235** — Use standard inference (no extended thinking) for Phase 7 scaffolding to optimize quality-cost tradeoff. Extended thinking adds 43% cost with 30% quality reduction in code generation.
 
 ## MCP Tools
 
@@ -168,4 +168,4 @@ Reference: **arXiv:2502.08235** — Use standard inference (no extended thinking
 
 ## Companion Agent
 
-**@implementer** — Phase 6 agent that calls these tools in sequence. Load this skill as first step.
+**@implementer** — Phase 7 agent that calls these tools in sequence. Load this skill as first step.

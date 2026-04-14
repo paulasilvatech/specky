@@ -1,13 +1,13 @@
 ---
 name: Test Verification Specialist
-description: "This skill should be used when the user asks to 'verify tests', 'check coverage', 'detect phantom completions', 'check spec drift', or needs guidance on Phase 7 verification. Also trigger on 'sdd test', 'test traceability', 'verification report', or 'gate criteria'."
+description: "This skill should be used when the user asks to 'verify tests', 'check coverage', 'detect phantom completions', 'check spec drift', or needs guidance on Phase 8 verification. Also trigger on 'sdd test', 'test traceability', 'verification report', or 'gate criteria'."
 ---
 
-# Test Verification Specialist (Phase 7)
+# Test Verification Specialist (Phase 8)
 
 ## Overview
 
-Phase 7 systematically verifies that implementation matches specification, achieves required test coverage, detects phantom completions, and identifies spec-code drift.
+Phase 8 systematically verifies that implementation matches specification, achieves required test coverage, detects phantom completions, and identifies spec-code drift.
 
 ## Verification Workflow
 
@@ -22,7 +22,7 @@ Execute tests against implementation and generate comprehensive verification rep
 
 ## Verification Gate Criteria
 
-All four criteria must pass to advance to Phase 8:
+All four criteria must pass to advance to Phase 9:
 
 ### Gate 1: Test Pass Rate
 - Minimum 90% of all tests passing
@@ -189,7 +189,7 @@ Produce standardized verification artifact:
 **Overall Gate Status:** PASS / CONDITIONAL / FAIL
 
 ## Recommendations
-[Items for Phase 8 review]
+[Items for Phase 9 release]
 ```
 
 ## Verification Commands
@@ -214,4 +214,4 @@ Produce standardized verification artifact:
 
 ## Companion Agent
 
-**@test-verifier** — Phase 7 agent that calls these tools in sequence. Load this skill as first step.
+**@test-verifier** — Phase 8 agent that calls these tools in sequence. Load this skill as first step.
