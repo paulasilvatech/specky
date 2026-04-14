@@ -77,8 +77,8 @@ const server = new McpServer(
     name: SERVER_NAME,
     version: VERSION,
     title: "Specky",
-    description: "57 MCP tools for Spec-Driven Development. 10-phase enforced pipeline, EARS notation, 17 diagram types, 6 compliance frameworks.",
-    websiteUrl: "https://paulasilvatech.github.io/specky-site/",
+    description: "Agentic Spec-Driven Development plugin — 13 agents, 57 MCP tools, 10-phase enforced pipeline, EARS notation, 22 prompts, 8 skills, 14 hooks.",
+    websiteUrl: "https://getspecky.ai",
     icons: [
       {
         src: "https://raw.githubusercontent.com/paulasilvatech/specky/main/media/specky-brand-icon.svg",

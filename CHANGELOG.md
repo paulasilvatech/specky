@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Server title**: MCP panel now shows "Specky" with description instead of raw binary name
 - **Server icon**: SVG + PNG icons served from GitHub raw content, visible in VS Code MCP panel
-- **Website URL**: Links to [specky-site](https://paulasilvatech.github.io/specky-site/) from server metadata
+- **Website URL**: Links to [getspecky.ai](https://getspecky.ai) from server metadata
 - **Instructions**: AI clients receive pipeline guidance during MCP handshake
 - **Template path fix**: Templates now resolve from `dist/templates/` (self-contained npm package)
 
@@ -47,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tool count**: Updated 56 → 57 across all documentation
 - **EARS patterns**: Fixed 5 → 6 pattern count (includes Complex)
 - **Broken links**: Fixed references to private files (CLAUDE.md, SYSTEM-DESIGN.md, ears-notation.md)
-- **Site fixes**: Updated EARS count and footer links on [specky-site](https://paulasilvatech.github.io/specky-site/)
+- **Site fixes**: Updated EARS count and footer links on [getspecky.ai](https://getspecky.ai)
 
 ## [3.2.0] - 2026-04-12
 
