@@ -53,11 +53,5 @@ jobs:
         uses: anchore/sbom-action@f6c3d0fe42c3cf876e3462574e4c9416b5e0f07a # v0
         with:
           format: cyclonedx-json
-          output-file: sbom.json
-
-      - name: Upload SBOM
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: sbom
-          path: sbom.json
+          artifact-name: specky-sbom
 
