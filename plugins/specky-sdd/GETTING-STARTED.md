@@ -81,12 +81,16 @@ your-project/
 │           ├── hooks/
 │           │   ├── scripts/   ← 10 hook shell scripts
 │           │   └── sdd-hooks.json
-│           ├── instructions/  ← Copilot instructions
-│           └── config.yml     ← Pipeline configuration
+│           ├── instructions/
+│           │   └── copilot-instructions.md  ← SDD rules + agents + prompts
+│           ├── config.yml     ← Pipeline configuration
+│           ├── README.md
+│           ├── GETTING-STARTED.md
+│           └── LICENSE
 ├── .vscode/
 │   ├── mcp.json               ← MCP server (mcpServers key)
-│   └── settings.json          ← Hook integration
-└── GETTING-STARTED.md
+│   └── settings.json          ← Copilot + hook settings
+└── ...
 ```
 
 ## EARS Notation

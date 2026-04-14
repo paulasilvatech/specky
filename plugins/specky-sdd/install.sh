@@ -91,6 +91,7 @@ cp "$S/instructions/copilot-instructions.md" "$P/instructions/"
 
 # ─── Plugin metadata ───
 echo "📋 Installing plugin metadata..."
+cp "$S/README.md" "$P/"
 cp "$S/GETTING-STARTED.md" "$P/"
 cp "$S/LICENSE" "$P/"
 
@@ -163,6 +164,7 @@ check "config.yml" ".github/plugin/specky/config.yml"
 check "copilot-instructions" ".github/plugin/specky/instructions/copilot-instructions.md"
 
 echo "  Plugin files:"
+check "README" ".github/plugin/specky/README.md"
 check "GETTING-STARTED" ".github/plugin/specky/GETTING-STARTED.md"
 check "LICENSE" ".github/plugin/specky/LICENSE"
 
@@ -185,12 +187,11 @@ if [ "$FAIL" -eq 0 ]; then
   echo "  ├── prompts/         (19)"
   echo "  ├── skills/          (6)"
   echo "  ├── hooks/scripts/   (10)"
-  echo "  ├── instructions/"
+  echo "  ├── instructions/    (copilot-instructions.md)"
   echo "  ├── config.yml"
-  echo "  ├── mcp.json"
-  echo "  ├── LICENSE"
+  echo "  ├── README.md"
   echo "  ├── GETTING-STARTED.md"
-  echo "  └── install.sh"
+  echo "  └── LICENSE"
   echo ""
   echo "  Open Copilot Chat → @workspace /specky-greenfield"
   echo ""

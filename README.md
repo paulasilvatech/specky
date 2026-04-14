@@ -172,12 +172,16 @@ your-project/
 │   ├── prompts/                    ← 19 reusable prompts
 │   ├── skills/                     ← 6 domain skills
 │   ├── hooks/scripts/              ← 10 automation hooks
-│   ├── instructions/               ← Copilot instructions
-│   └── config.yml                  ← Pipeline configuration
+│   ├── instructions/
+│   │   └── copilot-instructions.md ← SDD rules + agents + prompts
+│   ├── config.yml                  ← Pipeline configuration
+│   ├── README.md
+│   ├── GETTING-STARTED.md
+│   └── LICENSE
 ├── .vscode/
 │   ├── mcp.json                    ← MCP server configuration
-│   └── settings.json               ← Hook integration
-└── GETTING-STARTED.md
+│   └── settings.json               ← Copilot + hook settings
+└── ...
 ```
 
 > **Tip:** Commit `.github/plugin/` and `.vscode/` to Git so every team member gets Specky automatically on clone.
