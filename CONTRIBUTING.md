@@ -91,23 +91,25 @@ templates/                    21 Markdown templates with {{variable}} placeholde
 
 ### Plugin Structure
 
-The repository also ships a **Copilot plugin** at `plugins/specky-sdd/` that bundles agents, skills, prompts, hooks, and the MCP server config into a single installable package. Key files:
+The repository also ships a **Copilot plugin** with agents, skills, prompts, hooks, and the MCP server config at the repo root. Key directories:
 
 ```
-plugins/specky-sdd/
-├── .github/plugin/plugin.json   ← Claude Code spec (agents, commands, skills)
-├── .mcp.json                    ← MCP server config (mcpServers key)
-├── README.md                    ← Plugin documentation
-├── agents/                      ← 7 agent .agent.md files
-├── prompts/                     ← 19 prompt .prompt.md files
-├── skills/                      ← 6 SKILL.md directories
-├── hooks/                       ← sdd-hooks.json + 10 shell scripts
+specky/
+├── apm.yml                      ← APM manifest (version, MCP dependency)
+├── plugin.json                  ← Plugin metadata (agents, commands, skills)
+├── agents/                      ← 13 agent .agent.md files
+├── commands/                    ← 22 prompt .prompt.md files
+├── skills/                      ← 8 SKILL.md directories
+├── hooks/                       ← sdd-hooks.json + 14 shell scripts
 ├── instructions/                ← copilot-instructions.md
 ├── config.yml                   ← Pipeline configuration
-└── install.sh                   ← Manual installer script
+├── .mcp.json                    ← MCP server config (mcpServers key)
+├── install.sh                   ← Fallback installer (auto-detects APM)
+├── src/                         ← MCP engine (TypeScript, published to npm)
+└── package.json                 ← npm package config
 ```
 
-The marketplace manifest at `.github/plugin/marketplace.json` registers the repo as a plugin marketplace. Changes to agents, prompts, or skills should be made in `plugins/specky-sdd/` and kept in sync with the Claude Code equivalents in `.claude/`.
+The `plugin.json` at root is the source of truth. `.github/plugin/plugin.json` is a symlink for backward compatibility with `copilot plugin install`. Changes to agents, prompts, or skills should be made in the root directories (`agents/`, `commands/`, `skills/`).
 
 ### Service Layer
 

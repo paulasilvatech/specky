@@ -1,0 +1,22 @@
+name: specky-sdd
+version: 3.3.0
+description: "Agentic Spec-Driven Development — 10-phase pipeline with 57 MCP tools, 13 agents, EARS notation, model routing, and enterprise security"
+author: Paula Silva
+license: MIT
+target: all
+type: hybrid
+
+dependencies:
+  mcp:
+    - name: specky-sdd
+      registry: false
+      transport: stdio
+      command: npx
+      args: ["-y", "specky-sdd@latest"]
+      env:
+        SDD_WORKSPACE: "${workspaceFolder}"
+      tools: ["*"]
+
+scripts:
+  onboard: "echo 'Open Copilot Chat → @specky-onboarding'"
+  status: "echo 'Open Copilot Chat → /specky-pipeline-status'"

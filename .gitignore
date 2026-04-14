@@ -38,20 +38,16 @@ Specky_v3.2.0_Master_Prompt_v2_npm_default_*.md
 .github/prompts/
 .github/copilot-instructions.md
 
-# ── SDD process artifacts (how Specky was built) ─────────
+# ── SDD process artifacts (per-project, not repo content) ─
 .specs/
 .specky/
 SDD/
-hooks/
-references/
 ARCHITECTURE.md
-apm.yml
 
-# ── Plugin content overrides (must be tracked) ───────────
-!plugins/specky-sdd/hooks/
-!plugins/specky-sdd/hooks/**
-!plugins/specky-sdd/skills/**/references/
-!plugins/specky-sdd/skills/**/references/**
+# ── APM internals ───────────────────────────────────
+.apm/
+apm_modules/
+apm.lock.yaml
 
 # ── Build, test, packaging config (internal) ─────────────
 templates/

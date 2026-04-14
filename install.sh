@@ -1,10 +1,19 @@
 #!/bin/bash
 set -euo pipefail
 
-VERSION="3.2.2"
+VERSION="3.3.0"
 REPO="paulasilvatech/specky"
 BRANCH="main"
-PLUGIN_PATH="plugins/specky-sdd"
+
+# ─── APM detection ───
+if command -v apm &>/dev/null; then
+  echo "✅ APM detected! Using apm install..."
+  apm install "$REPO"
+  echo ""
+  echo "🎉 Specky SDD installed via APM!"
+  echo "   Open Copilot Chat → @specky-onboarding"
+  exit 0
+fi
 
 echo ""
 echo "╔══════════════════════════════════════════════╗"
@@ -26,7 +35,7 @@ if [[ "$SCRIPT_DIR" == /dev/fd* ]] || [[ "$SCRIPT_DIR" == /proc/* ]] || [[ ! -d 
   TMP_SRC=$(mktemp -d)
   CLEANUP_TMP=1
   git clone --depth 1 --branch "$BRANCH" "https://github.com/${REPO}.git" "$TMP_SRC/repo" 2>/dev/null
-  S="$TMP_SRC/repo/$PLUGIN_PATH"
+  S="$TMP_SRC/repo"
   if [ ! -d "$S/agents" ]; then
     echo "❌ Failed to download plugin from GitHub"
     rm -rf "$TMP_SRC"
@@ -73,7 +82,7 @@ cp "$S/agents/"*.agent.md "$P/agents/"
 
 # ─── Prompts ───
 echo "💬 Installing 22 prompts..."
-cp "$S/prompts/"*.prompt.md "$P/prompts/"
+cp "$S/commands/"*.prompt.md "$P/prompts/"
 
 # ─── Skills ───
 echo "🧠 Installing 8 skills..."

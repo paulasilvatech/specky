@@ -1,6 +1,6 @@
 {
   "name": "specky-sdd",
-  "version": "3.2.2",
+  "version": "3.3.0",
   "description": "Specky — 57 MCP tools for Spec-Driven Development. 10-phase pipeline, enterprise security (rate limiting, HMAC state integrity, RBAC, hash-chained audit), model routing guidance, context tiering, cognitive debt metrics, EARS notation, 17 diagram types.",
   "type": "module",
   "main": "dist/index.js",

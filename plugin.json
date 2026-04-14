@@ -1,0 +1,78 @@
+{
+  "name": "specky-sdd",
+  "description": "57 MCP tools, 13 agents, 22 prompts, 8 skills, 14 hooks for Spec-Driven Development. 10-phase pipeline with EARS notation, model routing, and enterprise security.",
+  "version": "3.3.0",
+  "keywords": [
+    "mcp",
+    "spec-driven-development",
+    "sdd",
+    "ears-notation",
+    "requirements",
+    "specification",
+    "pipeline",
+    "apm"
+  ],
+  "author": {
+    "name": "Paula Silva",
+    "url": "https://github.com/paulasilvatech"
+  },
+  "repository": "https://github.com/paulasilvatech/specky",
+  "license": "MIT",
+  "agents": [
+    "./agents/design-architect.agent.md",
+    "./agents/implementer.agent.md",
+    "./agents/quality-reviewer.agent.md",
+    "./agents/release-engineer.agent.md",
+    "./agents/requirements-engineer.agent.md",
+    "./agents/research-analyst.agent.md",
+    "./agents/sdd-clarify.agent.md",
+    "./agents/sdd-init.agent.md",
+    "./agents/spec-engineer.agent.md",
+    "./agents/specky-onboarding.agent.md",
+    "./agents/specky-orchestrator.agent.md",
+    "./agents/task-planner.agent.md",
+    "./agents/test-verifier.agent.md"
+  ],
+  "commands": [
+    "./commands/specky-api.prompt.md",
+    "./commands/specky-brownfield.prompt.md",
+    "./commands/specky-check-drift.prompt.md",
+    "./commands/specky-clarify.prompt.md",
+    "./commands/specky-debug-hook.prompt.md",
+    "./commands/specky-deploy.prompt.md",
+    "./commands/specky-design.prompt.md",
+    "./commands/specky-from-figma.prompt.md",
+    "./commands/specky-from-meeting.prompt.md",
+    "./commands/specky-greenfield.prompt.md",
+    "./commands/specky-implement.prompt.md",
+    "./commands/specky-migration.prompt.md",
+    "./commands/specky-onboarding.prompt.md",
+    "./commands/specky-orchestrate.prompt.md",
+    "./commands/specky-pipeline-status.prompt.md",
+    "./commands/specky-release.prompt.md",
+    "./commands/specky-research.prompt.md",
+    "./commands/specky-reset-phase.prompt.md",
+    "./commands/specky-resolve-conflict.prompt.md",
+    "./commands/specky-specify.prompt.md",
+    "./commands/specky-tasks.prompt.md",
+    "./commands/specky-verify.prompt.md"
+  ],
+  "skills": [
+    "./skills/sdd-pipeline/",
+    "./skills/specky-orchestrator/",
+    "./skills/specky-onboarding/",
+    "./skills/implementer/",
+    "./skills/test-verifier/",
+    "./skills/release-engineer/",
+    "./skills/research-analyst/",
+    "./skills/sdd-markdown-standard/"
+  ],
+  "hooks": "./hooks/sdd-hooks.json",
+  "mcpServers": {
+    "specky-sdd": {
+      "command": "npx",
+      "args": ["-y", "specky-sdd@latest"],
+      "tools": ["*"]
+    }
+  }
+}

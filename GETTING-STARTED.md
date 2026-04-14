@@ -4,36 +4,37 @@
 
 ---
 
-## Installation — Plugin (recommended)
+## Installation
 
-The **plugin** is the enterprise-grade way to install Specky. It includes *everything*: MCP server, agents, prompts, skills, hooks, and configuration — version-controlled with your repo.
+The **Specky plugin** bundles everything: 13 agents, 22 prompts, 8 skills, 14 hooks, and the MCP server (57 tools) — version-controlled with your repo.
 
-### Via Copilot CLI
+### Via APM (recommended)
+
+```bash
+apm install paulasilvatech/specky
+```
+
+One command: installs all primitives + configures MCP server + generates lock file. [Install APM](https://microsoft.github.io/apm/getting-started/installation/) if you don't have it.
+
+### Via curl installer (no APM required)
+
+```bash
+cd your-project/
+bash <(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/install.sh)
+```
+
+### Via Copilot CLI (skills only)
 
 ```bash
 copilot plugin install paulasilvatech/specky
 ```
 
-Or via marketplace:
-
-```bash
-copilot plugin marketplace add paulasilvatech/specky   # one-time
-copilot plugin install specky-sdd@specky
-```
-
-### Via script (any project)
-
-```bash
-cd your-project/
-bash <(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/plugins/specky-sdd/install.sh)
-```
-
 The installer automatically configures:
 - MCP server `specky-sdd` via npx → `.vscode/mcp.json`
-- 7 Copilot agents → `.github/plugin/specky/agents/`
-- 19 ready-to-use prompts → `.github/plugin/specky/prompts/`
-- 6 shared skills → `.github/plugin/specky/skills/`
-- 10 hook scripts → `.github/plugin/specky/hooks/scripts/`
+- 13 Copilot agents → `.github/plugin/specky/agents/`
+- 22 ready-to-use prompts → `.github/plugin/specky/prompts/`
+- 8 shared skills → `.github/plugin/specky/skills/`
+- 14 hook scripts → `.github/plugin/specky/hooks/scripts/`
 - Copilot instructions → `.github/plugin/specky/instructions/`
 - Pipeline config → `.github/plugin/specky/config.yml`
 - VS Code hooks → `.vscode/settings.json`
@@ -463,9 +464,9 @@ A: The `@implementer` (Phase 6) generates detailed implementation plans, test st
 ## Next Steps
 
 1. Install the plugin: `copilot plugin install paulasilvatech/specky`
-2. Or install manually: `bash <(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/plugins/specky-sdd/install.sh)`
+2. Or install manually: `bash <(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/install.sh)`
 3. Start with `/specky-pipeline-status` to see if there are active features, or
 4. Use `/specky-greenfield` (new project) or `/specky-brownfield` (existing feature) to begin
 5. Refer to this guide whenever you're unsure which prompt to use
 
-Plugin documentation: [`plugins/specky-sdd/README.md`](plugins/specky-sdd/README.md) | Changelog: [`CHANGELOG.md`](CHANGELOG.md) | Security: [`SECURITY.md`](SECURITY.md)
+Plugin documentation: [`GETTING-STARTED.md`](GETTING-STARTED.md) | Changelog: [`CHANGELOG.md`](CHANGELOG.md) | Security: [`SECURITY.md`](SECURITY.md)
