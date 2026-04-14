@@ -1,31 +1,52 @@
 #!/bin/bash
 set -euo pipefail
 
+VERSION="3.2.2"
+REPO="paulasilvatech/specky"
+BRANCH="main"
+PLUGIN_PATH="plugins/specky-sdd"
+
 echo ""
 echo "╔══════════════════════════════════════════════╗"
-echo "║  Specky SDD v3.2.1 — VS Code + Copilot      ║"
+echo "║  Specky SDD v${VERSION} — VS Code + Copilot       ║"
 echo "╚══════════════════════════════════════════════╝"
 echo ""
 
-# Detect plugin source directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(pwd)"
-
-# install.sh lives inside plugins/specky-sdd/
-# Source = where this script is (the plugin directory)
-S="$SCRIPT_DIR"
 P="$REPO_DIR/.github/plugin/specky"
-
-# If running from inside the target repo already, S and P might overlap
-# Handle by using a temp copy
 CLEANUP_TMP=0
-if [ "$(cd "$S" && pwd)" = "$(cd "$P" 2>/dev/null && pwd)" ] 2>/dev/null; then
+
+# Detect if running via curl pipe (BASH_SOURCE points to /dev/fd/*)
+# or locally from within the specky repo
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd 2>/dev/null || echo "/dev/fd")"
+
+if [[ "$SCRIPT_DIR" == /dev/fd* ]] || [[ "$SCRIPT_DIR" == /proc/* ]] || [[ ! -d "$SCRIPT_DIR/agents" ]]; then
+  # Running via curl — download from GitHub
+  echo "📥 Downloading plugin from GitHub..."
   TMP_SRC=$(mktemp -d)
-  cp -r "$S/." "$TMP_SRC/"
-  S="$TMP_SRC"
   CLEANUP_TMP=1
+  git clone --depth 1 --branch "$BRANCH" "https://github.com/${REPO}.git" "$TMP_SRC/repo" 2>/dev/null
+  S="$TMP_SRC/repo/$PLUGIN_PATH"
+  if [ ! -d "$S/agents" ]; then
+    echo "❌ Failed to download plugin from GitHub"
+    rm -rf "$TMP_SRC"
+    exit 1
+  fi
+  echo "✅ Downloaded"
+else
+  # Running locally — use script's directory
+  S="$SCRIPT_DIR"
+  # If S and P overlap, use a temp copy
+  if [ "$(cd "$S" && pwd)" = "$(cd "$P" 2>/dev/null && pwd)" ] 2>/dev/null; then
+    TMP_SRC=$(mktemp -d)
+    cp -r "$S/." "$TMP_SRC/"
+    S="$TMP_SRC"
+    CLEANUP_TMP=1
+  fi
 fi
+
 cleanup() { [ "${CLEANUP_TMP:-0}" = "1" ] && rm -rf "$TMP_SRC" 2>/dev/null || true; }
+trap cleanup EXIT
 
 PASS=0; FAIL=0; FAILS=()
 check() {

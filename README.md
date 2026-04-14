@@ -127,41 +127,43 @@ Specky adds a **deterministic engine** between your intent and your code:
 
 ### Install as Plugin (recommended)
 
-The **Specky plugin** is the enterprise-grade installation method. It bundles everything your team needs: 7 agents, 19 prompts, 6 skills, 10 automation hooks, and the MCP server — configured automatically and version-controlled with your repo.
+The **Specky plugin** bundles everything: 7 agents, 19 prompts, 6 skills, 10 automation hooks, and the MCP server. There are two ways to install — choose based on your needs:
 
-| What you get | MCP Server Only | Plugin |
-|-------------|:-:|:-:|
-| 57 MCP tools | ✅ | ✅ |
-| 7 specialized agents | — | ✅ |
-| 19 reusable prompts | — | ✅ |
-| 6 domain skills (SKILL.md) | — | ✅ |
-| 10 automation hooks (2 blocking) | — | ✅ |
-| EARS notation reference | — | ✅ |
-| Model routing guidance | — | ✅ |
-| Pipeline config (config.yml) | — | ✅ |
-| `copilot plugin install` ready | — | ✅ |
+| What you get | MCP Only | Plugin (global) | Plugin (per-project) |
+|-------------|:-:|:-:|:-:|
+| 57 MCP tools | ✅ | ✅ | ✅ |
+| 6 domain skills | — | ✅ | ✅ |
+| 7 agents in Copilot Chat | — | — | ✅ |
+| 19 slash-command prompts | — | — | ✅ |
+| 10 automation hooks | — | — | ✅ |
+| MCP server auto-configured | — | — | ✅ |
+| Team sharing via Git | — | — | ✅ |
 
-#### Via Copilot CLI
+#### Via VS Code UI (global — skills only)
+
+1. Open the **Extensions** sidebar (`Cmd+Shift+X`)
+2. Expand **Agent Plugins - Installed**
+3. Click the **+** button
+4. Type `paulasilvatech/specky` and press Enter
+
+This installs **6 skills globally** across all your projects. For the full experience (agents, prompts, hooks), use the per-project install below.
+
+#### Via Copilot CLI (global — skills only)
 
 ```bash
 copilot plugin install paulasilvatech/specky
 ```
 
-Or via marketplace:
+Same as VS Code UI — installs skills globally. Agents and prompts require per-project files.
 
-```bash
-copilot plugin marketplace add paulasilvatech/specky   # one-time
-copilot plugin install specky-sdd@specky
-```
-
-#### Manual Installation
+#### Per-Project Install (full experience — recommended)
 
 ```bash
 cd your-project/
 bash <(curl -sL https://raw.githubusercontent.com/paulasilvatech/specky/main/plugins/specky-sdd/install.sh)
 ```
 
-The installer creates:
+This creates **workspace files** that VS Code Copilot Chat discovers automatically:
 
 ```
 your-project/
