@@ -121,15 +121,8 @@ The repository also ships a **Copilot plugin** with agents, skills, prompts, hoo
 ```
 specky/
 ├── apm.yml                      ← APM manifest (version, MCP dependency)
-├── plugin.json                  ← Plugin metadata (agents, commands, skills)
-├── agents/                      ← 13 agent .agent.md files
-├── commands/                    ← 22 prompt .prompt.md files
-├── skills/                      ← 8 SKILL.md directories
-├── hooks/                       ← sdd-hooks.json + 14 shell scripts
-├── instructions/                ← copilot-instructions.md
+├── .apm/                        ← APM package (agents, prompts, skills, hooks, instructions)
 ├── config.yml                   ← Pipeline configuration
-├── .mcp.json                    ← MCP server config (mcpServers key)
-├── install.sh                   ← Fallback installer (auto-detects APM)
 ├── src/                         ← MCP engine (TypeScript, published to npm)
 └── package.json                 ← npm package config
 ```
