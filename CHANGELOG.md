@@ -5,6 +5,25 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.2] - 2026-04-14
+
+### Security & Code Quality
+
+- **CodeQL fixes**: Resolved all High-severity alerts — incomplete HTML sanitization in transcript-parser and document-converter, incomplete string escaping in pbt-generator and test-generator
+- **HTML tag stripping**: Replaced single-pass regex with iterative loop-based approach (CodeQL-safe)
+- **String escaping**: Added backslash, newline, and carriage return escaping alongside double-quote escaping
+- **Regex escaping**: Full special-character escape in XML zip extraction
+- **Unused code cleanup**: Removed 40 unused variables, imports, and parameters across 28 files
+- **GitHub Actions**: Pinned all actions to commit SHA, added `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24`, minimal `permissions` on all workflows
+- **Scorecard**: Moved to schedule-only (weekly) to avoid verification failures on push
+- **Removed**: Dead Docker CI job (no Dockerfile), conflicting CodeQL workflow (default setup active)
+
+### APM
+
+- **APM-native package**: All primitives in `.apm/` directory (13 agents, 22 prompts, 8 skills, 14 hooks, 1 instruction)
+- **Repo cleanup**: Removed 17 redundant files/dirs (agents/, commands/, skills/, hooks/, plugin.json, install.sh, etc.)
+- **Phase alignment**: Fixed all phase ordering across all skills, agents, prompts, instructions, and config
+
 ## [3.3.0] - 2026-04-14
 
 ### Plugin Architecture (APM)
