@@ -28,10 +28,10 @@ jobs:
       - name: Run unit tests
         run: npm test
 
-      - name: Check for ": any" usage in src/
+      - name: 'Check for : any usage in src/'
         run: |
           if grep -r ": any" src/; then
-            echo "::error::Found ': any' in src/ — please use explicit types"
+            echo "::error::Found : any in src/ -- please use explicit types"
             exit 1
           fi
 
