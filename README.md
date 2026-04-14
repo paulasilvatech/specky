@@ -172,43 +172,6 @@ Specky adds a **deterministic engine** between your intent and your code:
 apm install paulasilvatech/specky
 ```
 
-#### Via Copilot CLI (skills only)
-
-```bash
-copilot plugin install paulasilvatech/specky
-```
-
-<details>
-<summary><strong>MCP server only (advanced — tools without agents/prompts/hooks)</strong></summary>
-
-```bash
-npm install -g specky-sdd
-```
-
-**VS Code** (`.vscode/mcp.json`):
-```json
-{
-  "servers": {
-    "specky": {
-      "command": "specky-sdd",
-      "env": { "SDD_WORKSPACE": "${workspaceFolder}" }
-    }
-  }
-}
-```
-
-**Claude Code**:
-```bash
-claude mcp add specky -- specky-sdd
-```
-
-**Docker** (HTTP mode, no Node.js):
-```bash
-docker run -d --name specky -p 3200:3200 -v $(pwd):/workspace ghcr.io/paulasilvatech/specky:latest
-```
-
-</details>
-
 ### Verify
 
 Open Copilot Chat and type:
@@ -861,7 +824,7 @@ Together they form the **SDD layer** of the GitHub + Microsoft enterprise platfo
 }
 ```
 
-> **Note:** This example assumes `specky-sdd` is installed globally (`npm install -g specky-sdd`). See the [Installation](#installation) section for per-workspace and Docker alternatives.
+> **Note:** This example assumes Specky is installed via `apm install paulasilvatech/specky`. See the [Installation](#installation) section for details.
 
 ## Project Configuration
 
