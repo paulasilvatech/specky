@@ -193,10 +193,9 @@ Running `npx specky-sdd` without a pinned version downloads the latest package f
 
 | Approach | Risk reduction | Notes |
 |----------|---------------|-------|
-| `npm install -g specky-sdd` | **High** — fetches once, runs offline after | Recommended default |
-| `npm install -g specky-sdd@3.3.0` | **Higher** — version-pinned, no silent upgrades | Best for reproducible environments |
+| `apm install paulasilvatech/specky` | **High** — fetches once, lock file pins version | Recommended default |
+| `apm install paulasilvatech/specky@3.3.0` | **Higher** — version-pinned, no silent upgrades | Best for reproducible environments |
 | Docker (`ghcr.io/paulasilvatech/specky:3.3.0`) | **Highest** — immutable image by digest | Best for CI/CD and air-gapped |
-| `npx specky-sdd` (unversioned) | **Baseline** — re-downloads on each invocation | Avoid in production pipelines |
 
 **Workspace isolation pattern** (CI/CD):
 

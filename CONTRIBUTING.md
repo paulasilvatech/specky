@@ -134,7 +134,7 @@ specky/
 └── package.json                 ← npm package config
 ```
 
-The `plugin.json` at root is the source of truth. `.github/plugin/plugin.json` is a symlink for backward compatibility with `copilot plugin install`. Changes to agents, prompts, or skills should be made in the root directories (`agents/`, `commands/`, `skills/`).
+The `plugin.json` at root is the source of truth. `.github/plugin/plugin.json` is a symlink for backward compatibility. Changes to agents, prompts, or skills should be made in the root directories (`agents/`, `commands/`, `skills/`). Install via `apm install paulasilvatech/specky`.
 
 ### Service Layer
 
