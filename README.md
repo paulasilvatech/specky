@@ -1081,7 +1081,7 @@ curl http://localhost:3200/health
 | JSONL audit logger (optional) | Stable |
 | 507 unit tests | Stable |
 
-### v3.2+ (planned)
+### v3.4+ (planned)
 
 | Feature | Description |
 |---------|-------------|

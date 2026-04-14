@@ -5,6 +5,54 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-04-14
+
+### Plugin Architecture (APM)
+
+- **APM distribution**: Specky is now installable via `apm install paulasilvatech/specky` — the official Agent Package Manager from Microsoft
+- **`apm.yml`**: Root-level manifest with MCP server dependency (`npx specky-sdd@latest`)
+- **`plugin.json`**: Root-level plugin descriptor with 13 agents, 22 commands, 8 skills
+- **Root-level primitives**: All agents, commands, skills, and hooks moved from `plugins/specky-sdd/` to repo root (APM convention)
+- **`.npmignore`**: Excludes APM primitives from npm tarball — npm gets only the MCP engine
+
+### 13 Agents
+
+- `@specky-orchestrator`, `@specky-onboarding`, `@sdd-init`, `@sdd-clarify`, `@requirements-engineer`, `@research-analyst`, `@specifier`, `@designer`, `@implementer`, `@test-verifier`, `@release-engineer`, `@sdd-review`, `@specky-greenfield`
+- Each agent loads a companion SKILL.md as its first step (lean agent + rich skill pattern)
+
+### 22 Prompts
+
+- Phase prompts for all 10 pipeline phases plus utility prompts: `/specky-onboarding`, `/specky-greenfield`, `/specky-brownfield`, `/specky-bugfix`, `/specky-refactor`, `/specky-compliance`, `/specky-research`, `/specky-handoff`, `/specky-sync`, `/specky-dashboard`, `/specky-migrate`, `/specky-iac`
+
+### 8 Skills
+
+- Domain knowledge for every pipeline stage: `sdd-pipeline`, `sdd-markdown-standard`, `research-analyst`, `implementer`, `test-verifier`, `release-engineer`, `svg-paulasilvatech`, `suggest-awesome-github-copilot-skills`
+
+### 14 Hooks
+
+- Pre/post automation for every phase: artifact validation, branch checks, LGTM gates, security scan, spec sync, drift monitor
+- `sdd-hooks.json` configuration with phase-to-hook mapping
+
+### Gitflow-SDD Branching
+
+- Branch-aware pipeline: `spec/NNN` → `develop` → `stage` → `main`
+- Phase 10 (Release Gate) enforces branching strategy with blocking gates
+
+### Site & Branding
+
+- **getspecky.ai**: Custom domain live on GitHub Pages
+- **Plugin-first messaging**: Hero, features, install sections all updated to plugin product positioning
+- **"What is a Plugin?" section**: Educational content explaining agents, prompts, skills, hooks, MCP servers, and APM distribution
+- **Comparison table**: Side-by-side vs Kiro, Cursor, Windsurf, Antigravity
+
+### Documentation
+
+- **README**: Plugin-first hero, APM install as primary Quick Start, "What is a Plugin?" section
+- **GETTING-STARTED**: Plugin intro, APM section, "What is a Plugin?" with primitives table
+- **CONTRIBUTING**: Updated to v3.3.x architecture
+- **SECURITY**: Version references updated to 3.3.0
+- **All version references**: Aligned to 3.3.0 across all files
+
 ## [3.2.2] - 2026-04-13
 
 ### Documentation (npm republish)
