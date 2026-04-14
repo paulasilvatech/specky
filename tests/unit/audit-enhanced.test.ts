@@ -12,6 +12,8 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createHash } from "node:crypto";
 
+const ROTATION_THRESHOLD_MB = 0.0001;
+
 describe("AuditLogger — enhanced (v3.2.0)", () => {
   let tempDir: string;
 
@@ -75,7 +77,7 @@ describe("AuditLogger — enhanced (v3.2.0)", () => {
 
   it("rotates log file when size exceeds max_file_size_mb", async () => {
     // Use 0.0001 MB threshold (~100 bytes) so any entry triggers rotation
-    const logger = new AuditLogger(tempDir, true, "jsonl", 0.0001);
+    const logger = new AuditLogger(tempDir, true, "jsonl", ROTATION_THRESHOLD_MB);
     const specDir = join(tempDir, ".specs");
     mkdirSync(specDir, { recursive: true });
     const auditFile = join(specDir, ".audit.jsonl");

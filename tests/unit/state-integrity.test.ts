@@ -114,8 +114,13 @@ describe("StateMachine — state file integrity (HMAC-SHA256)", () => {
     await stateMachine.saveState(specDir, state);
     writeFileSync(join(tempDir, specDir, ".sdd-state.json.sig"), "wrongsig");
 
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    const stderrSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const loaded = await stateMachine.loadState(specDir);
     expect(loaded.project_name).toBe("degrade-test");
+    const tamperCalls = stderrSpy.mock.calls.filter((c) =>
+      String(c[0]).toLowerCase().includes("tamper"),
+    );
+    expect(tamperCalls.length).toBeGreaterThan(0);
+    stderrSpy.mockRestore();
   });
 });

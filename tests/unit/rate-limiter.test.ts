@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { RateLimiter } from "../../src/services/rate-limiter.js";
 
+const ONE_MINUTE_MS = 60_000;
+
 describe("RateLimiter", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -54,7 +56,7 @@ describe("RateLimiter", () => {
   it("does not exceed burst on refill", () => {
     const limiter = new RateLimiter(60, 3);
     // Advance far into the future — should still cap at burst
-    vi.advanceTimersByTime(60_000);
+    vi.advanceTimersByTime(ONE_MINUTE_MS);
     limiter.checkRateLimit("client1");
     limiter.checkRateLimit("client1");
     limiter.checkRateLimit("client1");

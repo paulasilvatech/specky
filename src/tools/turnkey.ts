@@ -13,8 +13,32 @@ import type { TemplateEngine } from "../services/template-engine.js";
 import type { EarsValidator } from "../services/ears-validator.js";
 import { enrichResponse } from "./response-builder.js";
 
+// Context snippets of 5 chars or fewer are typically not meaningful conditions.
+const MIN_CONDITION_CONTEXT_LENGTH = 5;
+
+const MAX_CLARIFICATION_QUESTIONS = 5;
+
+/** Maximum display length (in characters) for a requirement text cell in the acceptance-criteria table. */
+const MAX_REQUIREMENT_DISPLAY_LENGTH = 60;
+
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
+}
+
+/**
+ * Truncates `text` to at most `maxLength` characters without cutting mid-word.
+ * If a space is found within the truncated slice, the text is cut at the last
+ * space; otherwise the hard limit is used as-is.
+ *
+ * @param text - The string to truncate.
+ * @param maxLength - Maximum number of characters to keep.
+ * @returns The truncated string with no trailing whitespace.
+ */
+function truncateAtWordBoundary(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  const sliced = text.slice(0, maxLength);
+  const lastSpace = sliced.lastIndexOf(" ");
+  return (lastSpace > 0 ? sliced.slice(0, lastSpace) : sliced).trimEnd();
 }
 
 function truncate(text: string): string {
@@ -154,7 +178,7 @@ export function registerTurnkeyTools(
         });
 
         const acTable = allRequirements
-          .map((req) => `| ${req.id} | ${req.text.slice(0, 60)}... | Acceptance test |`)
+          .map((req) => `| ${req.id} | ${truncateAtWordBoundary(req.text, MAX_REQUIREMENT_DISPLAY_LENGTH)}... | Acceptance test |`)
           .join("\n");
 
         const content = await templateEngine.renderWithFrontmatter("specification", {
@@ -177,6 +201,7 @@ export function registerTurnkeyTools(
 
         // Initialize pipeline state properly using advancePhase
         const state = await stateMachine.loadState(spec_dir);
+        let constitutionCreated = false;
         if (state.current_phase === Phase.Init && state.features.length === 0) {
           // Auto-init: create Constitution first (required for Init phase)
           const constitutionContent = await templateEngine.renderWithFrontmatter("constitution", {
@@ -192,11 +217,18 @@ export function registerTurnkeyTools(
             scope_out: "Features not mentioned in the original description",
           });
           await fileManager.writeSpecFile(featureDir, "CONSTITUTION.md", constitutionContent, force);
+          constitutionCreated = true;
 
           // Initialize state with features, then advance through phases properly
           const newState = stateMachine.createDefaultState(feature_name);
           newState.features = [featureDir];
-          newState.phases[Phase.Init] = { status: "completed", started_at: new Date().toISOString(), completed_at: new Date().toISOString() };
+          const initStartedAt = new Date();
+          const initCompletedAt = new Date(initStartedAt.getTime() + 1);
+          newState.phases[Phase.Init] = {
+            status: "completed",
+            started_at: initStartedAt.toISOString(),
+            completed_at: initCompletedAt.toISOString(),
+          };
           await stateMachine.saveState(spec_dir, newState);
 
           // Advance Init → Discover → Specify using proper state transitions
@@ -220,7 +252,7 @@ export function registerTurnkeyTools(
           ears_invalid: allRequirements.length - validCount,
           pattern_distribution: countPatterns(allRequirements),
           clarification_questions: clarifications,
-          files_created: state.features.length === 0
+          files_created: constitutionCreated
             ? ["CONSTITUTION.md", "SPECIFICATION.md", ".sdd-state.json"]
             : ["SPECIFICATION.md"],
           next_steps:
@@ -406,7 +438,7 @@ function extractCondition(text: string, keywords: string[]): string {
       const start = Math.max(0, idx - 30);
       const end = Math.min(text.length, idx + keyword.length + 40);
       const context = text.slice(start, end).trim();
-      return context.length > 5 ? `${context} occurs` : `an ${keyword} occurs`;
+      return context.length > MIN_CONDITION_CONTEXT_LENGTH ? `${context} occurs` : `an ${keyword} occurs`;
     }
   }
   return "an unexpected condition occurs";
@@ -550,7 +582,7 @@ export function generateClarifications(
 
   // Check for invalid EARS requirements
   for (const req of requirements) {
-    if (!req.valid && req.issues && qNum <= 5) {
+    if (!req.valid && req.issues && qNum <= MAX_CLARIFICATION_QUESTIONS) {
       questions.push({
         id: `CQ-${String(qNum++).padStart(3, "0")}`,
         question: `Requirement ${req.id} has validation issues: ${req.issues.join("; ")}. Can you clarify this requirement?`,
@@ -559,7 +591,7 @@ export function generateClarifications(
     }
   }
 
-  return questions.slice(0, 5);
+  return questions.slice(0, MAX_CLARIFICATION_QUESTIONS);
 }
 
 export function inferNonFunctionalRequirements(description: string): Array<{ text: string; criterion: string }> {
