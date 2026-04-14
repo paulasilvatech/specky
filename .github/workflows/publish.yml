@@ -74,7 +74,7 @@ jobs:
 
       # T-083: Generate SBOM in CycloneDX format and attach as release artifact
       - name: Generate SBOM
-        uses: anchore/sbom-action@e11c554e6e2de32368a3fae542631b624c75d3d8 # v0
+        uses: anchore/sbom-action@v0
         with:
           image: ghcr.io/paulasilvatech/specky:${{ steps.pkg.outputs.version }}
           format: cyclonedx-json
