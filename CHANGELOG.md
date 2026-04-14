@@ -417,6 +417,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Zod schema validation on all tool inputs
 - Published to npm (`specky-sdd`), GitHub Container Registry, and GitHub Releases
 
+[3.3.2]: https://github.com/paulasilvatech/specky/compare/v3.3.0...v3.3.2
+[3.3.0]: https://github.com/paulasilvatech/specky/compare/v3.2.2...v3.3.0
+[3.2.2]: https://github.com/paulasilvatech/specky/compare/v3.2.1...v3.2.2
+[3.2.1]: https://github.com/paulasilvatech/specky/compare/v3.2.0...v3.2.1
+[3.2.0]: https://github.com/paulasilvatech/specky/compare/v3.1.0...v3.2.0
+[3.1.0]: https://github.com/paulasilvatech/specky/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/paulasilvatech/specky/compare/v2.3.1...v3.0.0
 [2.3.1]: https://github.com/paulasilvatech/specky/compare/v2.3.0...v2.3.1
 [2.3.0]: https://github.com/paulasilvatech/specky/compare/v2.2.0...v2.3.0
