@@ -49,13 +49,13 @@ Check for:
 | @specky-orchestrator | All | Full pipeline coordinator |
 | @sdd-init | 0 | Initialize pipeline + create spec branch |
 | @research-analyst | 1 | Codebase scan + discovery |
-| @sdd-clarify | 2 | Resolve ambiguities + EARS validation |
-| @spec-engineer | 3 | Write SPECIFICATION.md with EARS |
+| @spec-engineer | 2 | Write SPECIFICATION.md with EARS |
+| @sdd-clarify | 3 | Resolve ambiguities + EARS validation |
 | @design-architect | 4 | Write DESIGN.md + diagrams |
 | @task-planner | 5 | Write TASKS.md + CHECKLIST.md |
-| @implementer | 6 | Implementation plan + test stubs + IaC |
-| @test-verifier | 7 | Coverage + drift + phantom detection |
-| @quality-reviewer | 8 | Completeness audit + compliance |
+| @quality-reviewer | 6 | Completeness audit + compliance |
+| @implementer | 7 | Implementation plan + test stubs + IaC |
+| @test-verifier | 8 | Coverage + drift + phantom detection |
 | @requirements-engineer | Pre | FRD + NFRD from raw input |
 | @release-engineer | 9 | Gates + PR + docs + work items |
 

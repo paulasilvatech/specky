@@ -1,6 +1,6 @@
 ---
 name: SDD Pipeline Guide
-description: "This skill should be used when the user asks about 'spec-driven development', 'SDD pipeline', 'specky', 'pipeline phases', 'EARS notation', 'requirements engineering', 'model routing', or needs guidance on the 10-phase SDD workflow (Init → Research → Clarify → Specify → Design → Tasks → Implement → Verify → Review → Release). Also trigger on 'spec this', 'plan this feature', 'break into tasks', 'quality gate', 'constitution', or 'spec sync'."
+description: "This skill should be used when the user asks about 'spec-driven development', 'SDD pipeline', 'specky', 'pipeline phases', 'EARS notation', 'requirements engineering', 'model routing', or needs guidance on the 10-phase SDD workflow (Init → Discover → Specify → Clarify → Design → Tasks → Analyze → Implement → Verify → Release). Also trigger on 'spec this', 'plan this feature', 'break into tasks', 'quality gate', 'constitution', or 'spec sync'."
 ---
 
 # Spec-Driven Development (SDD) Pipeline
@@ -11,21 +11,21 @@ The SDD pipeline consists of 10 sequential phases designed to transform feature 
 
 **Phase 0: Init** — Project initialization, scope definition, stakeholder identification, and initial artifact setup (CONSTITUTION.md).
 
-**Phase 1: Research** — Brownfield/greenfield analysis, technology stack discovery, document import, and ecosystem investigation. Produces RESEARCH.md.
+**Phase 1: Discover** — Brownfield/greenfield analysis, technology stack discovery, document import, and ecosystem investigation. Produces RESEARCH.md.
 
-**Phase 2: Clarify** — Refinement of ambiguous requirements, stakeholder interviews, discovery questions, and context enrichment. Prepares input for specification phase.
+**Phase 2: Specify** — Detailed requirements capture using EARS notation, acceptance criteria definition, and constraint documentation. Produces SPECIFICATION.md.
 
-**Phase 3: Specify** — Detailed requirements capture using EARS notation, acceptance criteria definition, and constraint documentation. Produces SPECIFICATION.md.
+**Phase 3: Clarify** — Refinement of ambiguous requirements, stakeholder interviews, discovery questions, and context enrichment. Updates SPECIFICATION.md.
 
 **Phase 4: Design** — System architecture, data flow diagrams, API contracts, and technical approach documentation. Produces DESIGN.md.
 
 **Phase 5: Tasks** — Work breakdown structure, task dependencies, story points estimation, and implementation sequencing. Produces TASKS.md.
 
-**Phase 6: Implement** — Code generation, infrastructure setup, test scaffolding, and quality checklist generation based on specifications.
+**Phase 6: Analyze** — Cross-artifact analysis, quality checklist, compliance checks, and completeness audit. Produces ANALYSIS.md, COMPLIANCE.md.
 
-**Phase 7: Verify** — Test execution, coverage analysis, phantom completion detection, and spec-code drift verification. Produces VERIFICATION.md.
+**Phase 7: Implement** — Code generation, infrastructure setup, test scaffolding, and quality checklist generation based on specifications.
 
-**Phase 8: Review** — Code review, security scanning, performance validation, and compliance checks.
+**Phase 8: Verify** — Test execution, coverage analysis, phantom completion detection, and spec-code drift verification. Produces VERIFICATION.md.
 
 **Phase 9: Release** — Release gate execution, documentation generation, PR creation, work item export, and changelog preparation.
 
@@ -58,51 +58,55 @@ Route specification and implementation tasks to models based on phase complexity
 | Phase | Model | Reasoning |
 |-------|-------|-----------|
 | 0 (Init) | Haiku | Basic scope definition, lightweight |
-| 1 (Research) | Sonnet | Multi-source synthesis, ecosystem analysis |
-| 2 (Clarify) | Sonnet | Interactive refinement, stakeholder context |
-| 3 (Specify) | Opus | Complex requirement formalization, EARS patterns |
+| 1 (Discover) | Sonnet | Multi-source synthesis, ecosystem analysis |
+| 2 (Specify) | Opus | Complex requirement formalization, EARS patterns |
+| 3 (Clarify) | Opus | Interactive refinement, stakeholder context |
 | 4 (Design) | Opus | Architecture decisions, multi-component systems |
 | 5 (Tasks) | Sonnet | Work breakdown, dependency mapping |
-| 6 (Implement) | Sonnet | Code scaffolding, quality checklists |
-| 7 (Verify) | Opus | Coverage analysis, drift detection |
-| 8 (Review) | Opus | Complex security/performance validation |
+| 6 (Analyze) | Sonnet | Cross-artifact analysis, compliance checks |
+| 7 (Implement) | Sonnet | Code scaffolding, quality checklists |
+| 8 (Verify) | Opus | Coverage analysis, drift detection |
 | 9 (Release) | Haiku | Final gates, documentation assembly |
 
 ## Extended Thinking Impact
 
 Reference: **arXiv:2502.08235** — "Extended Thinking and Specification Quality in Large Language Models"
 
-Key finding for Phase 6 (Implementation): Enabling extended thinking (chain-of-thought) reduces quality by 30% while increasing cost by 43% in code generation tasks. Recommendation: Use standard inference for Phase 6 scaffolding; reserve extended thinking for Phase 7 verification and Phase 8 review gates.
+Key finding for Phase 7 (Implementation): Enabling extended thinking (chain-of-thought) reduces quality by 30% while increasing cost by 43% in code generation tasks. Recommendation: Use standard inference for Phase 7 scaffolding; reserve extended thinking for Phase 8 verification.
 
 ## Hook System
 
-The pipeline includes 10 integration hooks for customization:
+The pipeline includes 14 automation hooks for customization:
 
-**Blocking Hooks** (workflow stops if hook fails):
-- `init-hook` — Pre-initialization validation
-- `release-gate-hook` — Final release approval gate
+**Blocking Hooks** (workflow stops if hook fails — exit code 2):
+1. `artifact-validator` — Pre-tool: blocks if required artifacts missing
+2. `phase-gate` — Post-tool: blocks if output artifact wasn't created
+3. `security-scan` — Pre-release: blocks if hardcoded secrets detected
+4. `release-gate` — Pre-release: blocks if gate conditions not met
 
 **Advisory Hooks** (workflow continues; failures logged):
-1. `research-hook` — Post-research artifact enrichment
-2. `clarify-hook` — Post-clarification refinement
-3. `specify-hook` — Post-specification validation
-4. `design-hook` — Post-design review
-5. `tasks-hook` — Post-task breakdown
-6. `implement-hook` — Post-implementation scaffolding
-7. `verify-hook` — Post-verification analysis
-8. `review-hook` — Post-code-review collection
+1. `branch-validator` — Pre-tool: warns if wrong branch for phase
+2. `spec-sync` — Post-tool: checks spec-code drift
+3. `auto-checkpoint` — Post-tool: suggests checkpoint after artifact changes
+4. `spec-quality` — Post-spec: validates specification quality
+5. `task-tracer` — Post-tasks: traces task dependencies
+6. `ears-validator` — Post-spec: validates EARS notation patterns
+7. `lgtm-gate` — Post-spec/design/tasks: pauses for human LGTM
+8. `drift-monitor` — Post-verify/review: monitors specification drift
+9. `cognitive-debt-alert` — Post-analysis: flags cognitive debt metrics
+10. `metrics-dashboard` — Post-analysis: updates metrics dashboard
 
-Hooks can trigger external tools, log metrics, or invoke custom CI/CD pipelines.
+Hooks are configured in `sdd-hooks.json` with PreToolUse and PostToolUse matchers.
 
 ## Key Artifacts per Phase
 
-- **CONSTITUTION.md** (Phase 0) — Project charter, scope boundaries, success criteria, stakeholder register
-- **RESEARCH.md** (Phase 1) — Technology scan, document inventory, ecosystem analysis, discovery findings
-- **SPECIFICATION.md** (Phase 3) — Requirements in EARS notation, acceptance criteria, constraints, compliance matrix
-- **DESIGN.md** (Phase 4) — Architecture diagrams, API contracts, data schema, deployment topology
-- **TASKS.md** (Phase 5) — WBS, task cards, dependencies, story points, implementation sequence
-- **VERIFICATION.md** (Phase 7) — Test results, coverage report, drift analysis, gate status
-- **ANALYSIS.md** (Phase 8) — Review findings, security scan results, performance metrics, approval status
+- **CONSTITUTION.md** (Phase 0 — Init) — Project charter, scope boundaries, success criteria, stakeholder register
+- **RESEARCH.md** (Phase 1 — Discover) — Technology scan, document inventory, ecosystem analysis, discovery findings
+- **SPECIFICATION.md** (Phase 2 — Specify) — Requirements in EARS notation, acceptance criteria, constraints, compliance matrix
+- **DESIGN.md** (Phase 4 — Design) — Architecture diagrams, API contracts, data schema, deployment topology
+- **TASKS.md** (Phase 5 — Tasks) — WBS, task cards, dependencies, story points, implementation sequence
+- **ANALYSIS.md** (Phase 6 — Analyze) — Cross-artifact analysis, compliance checks, quality gate decision
+- **VERIFICATION.md** (Phase 8 — Verify) — Test results, coverage report, drift analysis, gate status
 
 ## Invocation Methods
 

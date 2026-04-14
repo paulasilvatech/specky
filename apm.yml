@@ -13,8 +13,6 @@ dependencies:
       transport: stdio
       command: npx
       args: ["-y", "specky-sdd@latest"]
-      env:
-        SDD_WORKSPACE: "${workspaceFolder}"
       tools: ["*"]
 
 scripts:

@@ -22,27 +22,36 @@ Thank you for your interest in contributing to Specky. This guide covers the v3.
 
 ## Architecture Overview
 
-Specky v3.3.0 is an MCP server that exposes **57 tools** organized into a 10-phase Spec-Driven Development pipeline. The codebase comprises **66 source files**, **23 templates**, and is structured as follows:
+Specky v3.3.0 is an MCP server that exposes **57 tools** organized into a 10-phase Spec-Driven Development pipeline. The codebase comprises **69 source files**, **23 templates**, and is structured as follows:
 
 ```
 src/
 ├── index.ts                  Entry point: creates MCP server, wires all services and tools
 ├── constants.ts              Enums, tool names, config values, type aliases
+├── config.ts                 Project-local configuration loader (.specky/config.yml)
 ├── types.ts                  All TypeScript interfaces (zero `any`)
-├── schemas/                  10 Zod validation schemas
+├── schemas/                  15 Zod validation schemas
 │   ├── common.ts             Shared schemas (spec_dir, feature_number, force)
-│   ├── pipeline.ts           Schemas for 8 pipeline tools
-│   ├── utility.ts            Schemas for 6 utility tools
-│   ├── transcript.ts         Schemas for 3 transcript tools
-│   ├── input.ts              Schemas for document import and Figma conversion
-│   ├── quality.ts            Schemas for checklist, compliance, cross-analysis
-│   ├── visualization.ts      Schemas for diagram generation and user stories
-│   ├── infrastructure.ts     Schemas for IaC generation and validation
+│   ├── context.ts            Schemas for context tiering tools
 │   ├── environment.ts        Schemas for dev environment setup
-│   └── integration.ts        Schemas for Git, work items, PR, implement, research
-├── services/                 26 service classes (business logic)
+│   ├── infrastructure.ts     Schemas for IaC generation and validation
+│   ├── input.ts              Schemas for document import and Figma conversion
+│   ├── integration.ts        Schemas for Git, work items, PR, implement, research
+│   ├── metrics.ts            Schemas for metrics tools
+│   ├── pbt.ts                Schemas for property-based testing
+│   ├── pipeline.ts           Schemas for 8 pipeline tools
+│   ├── quality.ts            Schemas for checklist, compliance, cross-analysis
+│   ├── routing.ts            Schemas for model routing tools
+│   ├── testing.ts            Schemas for test generation and verification
+│   ├── transcript.ts         Schemas for 3 transcript tools
+│   ├── utility.ts            Schemas for 6 utility tools
+│   └── visualization.ts      Schemas for diagram generation and user stories
+├── utils/                    2 utility helpers
+│   ├── context-helper.ts     Context tiering helper functions
+│   └── routing-helper.ts     Model routing helper functions
+├── services/                 28 service classes (business logic)
 │   ├── file-manager.ts       All disk I/O (atomic writes, path sanitization)
-│   ├── state-machine.ts      10-phase pipeline enforcement
+│   ├── state-machine.ts      10-phase pipeline enforcement with HMAC integrity
 │   ├── template-engine.ts    Markdown template rendering with {{variables}}
 │   ├── ears-validator.ts     EARS pattern detection and validation (pure, no I/O)
 │   ├── codebase-scanner.ts   Tech stack detection via file system analysis
@@ -57,9 +66,19 @@ src/
 │   ├── git-manager.ts        Branch creation and PR payload generation
 │   ├── methodology.ts        SDD methodology enforcement and guidance
 │   ├── dependency-graph.ts   Dependency graph analysis for parallel execution
-│   ├── response-builder.ts   Enriched interactive response construction
-│   └── pbt-generator.ts      Property-based test generation (fast-check/hypothesis)
-└── tools/                    14 tool registration files (thin handlers)
+│   ├── pbt-generator.ts      Property-based test generation (fast-check/hypothesis)
+│   ├── audit-logger.ts       Hash-chained JSONL audit log with rotation and syslog export
+│   ├── cognitive-debt-engine.ts  Cognitive debt scoring at LGTM gates
+│   ├── context-tiering-engine.ts Hot/Domain/Cold artifact tier assignment
+│   ├── intent-drift-engine.ts    Constitution-to-spec drift detection
+│   ├── metrics-generator.ts  Project metrics dashboard generation
+│   ├── model-routing-engine.ts   10-phase model routing decision table
+│   ├── rate-limiter.ts       Token bucket rate limiting for HTTP transport
+│   ├── rbac-engine.ts        Role-based access control (viewer/contributor/admin)
+│   ├── test-generator.ts     Test stub generation for 6 frameworks
+│   ├── test-result-parser.ts Vitest/pytest/JUnit XML result parser
+│   └── test-traceability-mapper.ts  REQ-ID → test coverage mapping
+└── tools/                    20 tool registration files (thin handlers)
     ├── pipeline.ts           8 pipeline tools (init through advance_phase)
     ├── analysis.ts           1 analysis tool (sdd_check_sync)
     ├── utility.ts            5 utility tools (status, template, bugfix, scan, amend)
@@ -73,9 +92,15 @@ src/
     ├── documentation.ts      4 documentation tools (docs, API, runbook, onboarding)
     ├── pbt.ts                1 property-based testing tool
     ├── turnkey.ts            1 turnkey specification tool
-    └── checkpoint.ts         3 checkpoint/restore tools
+    ├── checkpoint.ts         3 checkpoint/restore tools
+    ├── context.ts            1 context tiering tool (sdd_context_status)
+    ├── metrics.ts            1 metrics tool (sdd_metrics)
+    ├── rbac.ts               1 RBAC tool (sdd_check_access)
+    ├── routing.ts            1 model routing tool (sdd_model_routing)
+    ├── testing.ts            2 testing tools (generate_tests, verify_tests)
+    └── response-builder.ts   Response enrichment helpers (enrichResponse, buildPhaseError)
 
-templates/                    21 Markdown templates with {{variable}} placeholders
+templates/                    23 Markdown templates with {{variable}} placeholders
 ```
 
 ### Key Principles
@@ -116,7 +141,7 @@ The `plugin.json` at root is the source of truth. `.github/plugin/plugin.json` i
 | Service | File | Purpose |
 |---------|------|---------|
 | FileManager | `file-manager.ts` | Atomic file writes, path resolution, directory creation, file reading |
-| StateMachine | `state-machine.ts` | 10-phase pipeline enforcement with required-file gates |
+| StateMachine | `state-machine.ts` | 10-phase pipeline enforcement with required-file gates and HMAC integrity |
 | TemplateEngine | `template-engine.ts` | Load and render Markdown templates with variable substitution |
 | EarsValidator | `ears-validator.ts` | Classify and validate EARS notation patterns (pure function, no I/O) |
 | CodebaseScanner | `codebase-scanner.ts` | Detect tech stack, frameworks, and project structure |
@@ -132,7 +157,17 @@ The `plugin.json` at root is the source of truth. `.github/plugin/plugin.json` i
 | PbtGenerator | `pbt-generator.ts` | Generate property-based tests using fast-check or Hypothesis |
 | Methodology | `methodology.ts` | SDD methodology enforcement and guidance |
 | DependencyGraph | `dependency-graph.ts` | Dependency graph analysis for parallel execution |
-| ResponseBuilder | `response-builder.ts` | Enriched interactive response construction for all tools |
+| AuditLogger | `audit-logger.ts` | Hash-chained JSONL audit log with rotation and syslog export |
+| CognitiveDebtEngine | `cognitive-debt-engine.ts` | LGTM-without-modification detection and cognitive debt scoring |
+| ContextTieringEngine | `context-tiering-engine.ts` | Hot/Domain/Cold tier assignment for spec artifacts |
+| IntentDriftEngine | `intent-drift-engine.ts` | Constitution-to-spec drift detection with amendment suggestions |
+| MetricsGenerator | `metrics-generator.ts` | Project metrics HTML dashboard generation |
+| ModelRoutingEngine | `model-routing-engine.ts` | 10-phase model routing decision table with cost analysis |
+| RateLimiter | `rate-limiter.ts` | Token bucket rate limiting for HTTP transport (opt-in) |
+| RbacEngine | `rbac-engine.ts` | Role-based access control: viewer/contributor/admin (opt-in) |
+| TestGenerator | `test-generator.ts` | Test stub generation for 6 frameworks |
+| TestResultParser | `test-result-parser.ts` | Auto-detect and parse Vitest JSON, pytest JSON, JUnit XML |
+| TestTraceabilityMapper | `test-traceability-mapper.ts` | Map test names to REQ-IDs for per-requirement coverage |
 
 ---
 

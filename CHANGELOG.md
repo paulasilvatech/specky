@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 22 Prompts
 
-- Phase prompts for all 10 pipeline phases plus utility prompts: `/specky-onboarding`, `/specky-greenfield`, `/specky-brownfield`, `/specky-bugfix`, `/specky-refactor`, `/specky-compliance`, `/specky-research`, `/specky-handoff`, `/specky-sync`, `/specky-dashboard`, `/specky-migrate`, `/specky-iac`
+- Phase prompts for all 10 pipeline phases plus utility prompts (see `commands/` for full list): `/specky-onboarding`, `/specky-greenfield`, `/specky-brownfield`, `/specky-from-meeting`, `/specky-from-figma`, `/specky-research`, `/specky-clarify`, `/specky-specify`, `/specky-design`, `/specky-tasks`, `/specky-implement`, `/specky-verify`
 
 ### 8 Skills
 
@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Gitflow-SDD Branching
 
 - Branch-aware pipeline: `spec/NNN` → `develop` → `stage` → `main`
-- Phase 10 (Release Gate) enforces branching strategy with blocking gates
+- Phase 9 (Release) enforces branching strategy with blocking gates
 
 ### Site & Branding
 

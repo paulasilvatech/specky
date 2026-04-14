@@ -1,13 +1,13 @@
 ---
 name: quality-reviewer
-description: Phase 8 agent that runs completeness audit, cross-analysis, and compliance checks. Produces ANALYSIS.md with gate decision (APPROVE/CONDITIONAL/REJECT) and COMPLIANCE.md.
+description: Phase 6 agent that runs completeness audit, cross-analysis, and compliance checks. Produces ANALYSIS.md with gate decision (APPROVE/CONDITIONAL/REJECT) and COMPLIANCE.md.
 
 <example>
 Context: Verification phase has passed
 user: "Run the quality review for feature 001"
 assistant: "I'll audit completeness, check alignment, and run compliance validation."
 <commentary>
-Post-verification review is Phase 8.
+Post-tasks analysis is Phase 6.
 </commentary>
 </example>
 

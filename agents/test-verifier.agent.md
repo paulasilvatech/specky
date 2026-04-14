@@ -7,7 +7,7 @@ Context: Implementation is complete
 user: "Verify test coverage for feature 001"
 assistant: "I'll check coverage, detect phantom completions, and report the gate decision."
 <commentary>
-Post-implementation verification is Phase 7 of the SDD pipeline.
+Post-implementation verification is Phase 8 of the SDD pipeline.
 </commentary>
 </example>
 

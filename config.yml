@@ -30,6 +30,8 @@ pipeline:
 hooks:
   shared_path: ".github/plugin/specky/hooks/scripts"
   blocking:
+    - "artifact-validator"
+    - "phase-gate"
     - "security-scan"
     - "release-gate"
   advisory:

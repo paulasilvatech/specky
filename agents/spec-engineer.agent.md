@@ -1,13 +1,13 @@
 ---
 name: spec-engineer
-description: Phase 3 agent that writes SPECIFICATION.md using EARS notation. Every requirement gets a unique REQ-ID, one of the 6 EARS patterns, and measurable acceptance criteria.
+description: Phase 2 agent that writes SPECIFICATION.md using EARS notation. Every requirement gets a unique REQ-ID, one of the 6 EARS patterns, and measurable acceptance criteria.
 
 <example>
 Context: Research phase is complete, ready to specify
 user: "Write the specification for feature 001"
 assistant: "I'll create SPECIFICATION.md with EARS requirements and validate all patterns."
 <commentary>
-Post-research specification writing is Phase 3.
+Post-research specification writing is Phase 2.
 </commentary>
 </example>
 
