@@ -1,10 +1,9 @@
 name: specky-sdd
 version: 3.3.0
-description: "Agentic Spec-Driven Development — 10-phase pipeline with 57 MCP tools, 13 agents, EARS notation, model routing, and enterprise security"
+description: "Agentic Spec-Driven Development — 10-phase pipeline with 57 MCP tools, 13 agents, 22 prompts, 8 skills, 14 hooks, EARS notation, model routing, and enterprise security"
 author: Paula Silva
 license: MIT
 target: all
-type: hybrid
 
 dependencies:
   mcp:

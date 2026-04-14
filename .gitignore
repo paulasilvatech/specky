@@ -45,7 +45,7 @@ SDD/
 ARCHITECTURE.md
 
 # ── APM internals ───────────────────────────────────
-.apm/
+
 apm_modules/
 apm.lock.yaml
 

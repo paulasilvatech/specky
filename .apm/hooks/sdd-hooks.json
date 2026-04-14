@@ -1,0 +1,343 @@
+{
+  "PreToolUse": [
+    {
+      "matcher": "sdd_init|sdd_create_branch",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": "sdd_discover|sdd_research|sdd_import_document|sdd_import_transcript|sdd_batch_import",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": "sdd_write_spec|sdd_turnkey_spec|sdd_figma_to_spec",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": "sdd_write_design|sdd_generate_all_diagrams",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": "sdd_write_tasks|sdd_checklist",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": "sdd_implement|sdd_generate_tests|sdd_generate_pbt",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": "sdd_verify_tests|sdd_verify_tasks|sdd_check_sync",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": "sdd_run_analysis|sdd_cross_analyze|sdd_compliance_check",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": "sdd_create_pr|sdd_export_work_items",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "timeout": 5
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/security-scan.sh",
+          "timeout": 30
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/release-gate.sh",
+          "timeout": 15
+        }
+      ]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "matcher": "sdd_init",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/phase-gate.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-checkpoint.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": "sdd_write_spec|sdd_turnkey_spec|sdd_figma_to_spec",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/phase-gate.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/spec-quality.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/ears-validator.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/lgtm-gate.sh",
+          "timeout": 5
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/spec-sync.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-checkpoint.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": "sdd_write_design|sdd_generate_all_diagrams",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/phase-gate.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/spec-sync.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/lgtm-gate.sh",
+          "timeout": 5
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-checkpoint.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": "sdd_write_tasks|sdd_checklist",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/phase-gate.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/task-tracer.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/lgtm-gate.sh",
+          "timeout": 5
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/spec-sync.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-checkpoint.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": "sdd_import_document|sdd_import_transcript|sdd_batch_import",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-checkpoint.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": "sdd_implement|sdd_generate_tests|sdd_generate_pbt",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/spec-sync.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-checkpoint.sh",
+          "timeout": 5
+        }
+      ]
+    },
+    {
+      "matcher": "sdd_verify_tests|sdd_verify_tasks",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/phase-gate.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/drift-monitor.sh",
+          "timeout": 10
+        }
+      ]
+    },
+    {
+      "matcher": "sdd_run_analysis|sdd_cross_analyze|sdd_compliance_check",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/phase-gate.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/cognitive-debt-alert.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/metrics-dashboard.sh",
+          "timeout": 5
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/drift-monitor.sh",
+          "timeout": 10
+        }
+      ]
+    },
+    {
+      "matcher": "Write|Edit|MultiEdit",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/spec-sync.sh",
+          "timeout": 10
+        },
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-checkpoint.sh",
+          "timeout": 5
+        }
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "matcher": "",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/security-scan.sh",
+          "timeout": 30
+        }
+      ]
+    }
+  ]
+}
