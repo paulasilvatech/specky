@@ -1043,9 +1043,15 @@
       <div class="code-block" style="margin-top:12px">
         <div class="code-block-header">
           <span class="code-block-title">Terminal — via APM (requires <a href="https://microsoft.github.io/apm/getting-started/installation/" target="_blank" style="color:inherit;text-decoration:underline">installing APM</a> first)</span>
-          <button class="code-copy-btn" data-copy="apm install paulasilvatech/specky">Copy</button>
+          <button class="code-copy-btn" data-copy="curl -sSL https://aka.ms/apm-unix | sh">Copy</button>
         </div>
-        <pre><span class="dk">$</span> apm install paulasilvatech/specky</pre>
+        <pre><span class="cm"># Install APM (one-time) — pick one:</span>
+<span class="dk">$</span> curl -sSL https://aka.ms/apm-unix | sh        <span class="cm"># macOS / Linux</span>
+<span class="dk">$</span> brew install microsoft/apm/apm                 <span class="cm"># Homebrew</span>
+<span class="dk">$</span> irm https://aka.ms/apm-windows | iex           <span class="cm"># Windows PowerShell</span>
+
+<span class="cm"># Then install Specky:</span>
+<span class="dk">$</span> apm install paulasilvatech/specky</pre>
       </div>
       <div class="install-note" style="margin-top:12px">
         <span class="in-icon">💡</span>
