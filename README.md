@@ -15,9 +15,19 @@
 
   <p>
     <a href="https://www.npmjs.com/package/specky-sdd"><img src="https://img.shields.io/npm/v/specky-sdd?style=flat-square&color=7c3aed" alt="npm"/></a>
+    <a href="https://www.npmjs.com/package/specky-sdd"><img src="https://img.shields.io/npm/dm/specky-sdd?style=flat-square&color=6d28d9" alt="npm downloads"/></a>
     <a href="https://github.com/paulasilvatech/specky/actions/workflows/ci.yml"><img src="https://github.com/paulasilvatech/specky/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
     <a href="https://securityscorecards.dev/viewer/?uri=github.com/paulasilvatech/specky"><img src="https://api.securityscorecards.dev/projects/github.com/paulasilvatech/specky/badge" alt="OpenSSF Scorecard"/></a>
     <a href="https://github.com/paulasilvatech/specky"><img src="https://img.shields.io/github/stars/paulasilvatech/specky?style=flat-square&color=6d28d9" alt="Stars"/></a>
+  </p>
+
+  <p>
+    <img src="https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript Strict"/>
+    <img src="https://img.shields.io/badge/dependencies-2-green?style=flat-square" alt="2 Dependencies"/>
+    <img src="https://img.shields.io/badge/APM-compatible-7c3aed?style=flat-square" alt="APM Compatible"/>
+    <img src="https://img.shields.io/badge/OWASP_MCP-Top_10-green?style=flat-square" alt="OWASP MCP Top 10"/>
+    <img src="https://img.shields.io/node/v/specky-sdd?style=flat-square&color=5b21b6" alt="Node.js"/>
+    <a href="https://github.com/paulasilvatech/specky/issues"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs Welcome"/></a>
   </p>
 
   <p>
