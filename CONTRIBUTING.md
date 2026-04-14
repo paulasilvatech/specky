@@ -332,7 +332,7 @@ Compliance frameworks live in `src/services/compliance-engine.ts` as a static `F
    ],
    ```
 
-3. Update the `complianceCheckInputSchema` in `src/schemas/quality.ts` to include the new framework in its enum.
+3. Update the `complianceCheckInputSchema` in `src/schemas/quality.ts` to include the new framework in its enum, using the exact same string literal as the `ComplianceFramework` type and `FRAMEWORKS` key (for example, `"fedramp"`).
 
 4. Add a `compliance.md` template section if needed, or the existing template will handle it generically.
 
