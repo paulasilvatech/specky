@@ -205,8 +205,8 @@ export class TranscriptParser {
         text = colonMatch[2].trim();
       }
 
-      // Clean HTML tags
-      text = text.replace(/<[^>]+>/g, "").trim();
+      // Clean HTML tags — use proper tag regex to avoid incomplete sanitization
+      text = text.replace(/<\/?[a-zA-Z][a-zA-Z0-9]*(?:\s[^>]*)?\/? *>/g, "").trim();
 
       if (text) {
         segments.push({ speaker, text, timestamp });
@@ -237,7 +237,7 @@ export class TranscriptParser {
         text = colonMatch[2].trim();
       }
 
-      text = text.replace(/<[^>]+>/g, "").trim();
+      text = text.replace(/<\/?[a-zA-Z][a-zA-Z0-9]*(?:\s[^>]*)?\/? *>/g, "").trim();
       if (text) {
         segments.push({ speaker, text, timestamp });
       }

@@ -254,7 +254,7 @@ export class DocumentConverter {
     // Extract text content from XML tags (strip all tags)
     const xmlContent = xmlMatch[0];
     const textContent = xmlContent
-      .replace(/<[^>]+>/g, " ")
+      .replace(/<\/?[a-zA-Z][a-zA-Z0-9]*(?:\s[^>]*)?\/? *>/g, " ")
       .replace(/\s+/g, " ")
       .replace(/PK$/, "")
       .trim();

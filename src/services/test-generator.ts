@@ -138,7 +138,7 @@ export class TestGenerator {
   }
 
   private generateTestBody(description: string, framework: TestFramework): string {
-    const safeDesc = description.replace(/"/g, '\\"');
+    const safeDesc = description.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
     switch (framework) {
       case "vitest":
       case "jest":

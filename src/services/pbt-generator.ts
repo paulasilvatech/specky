@@ -192,12 +192,12 @@ export class PbtGenerator {
     framework: PbtFramework,
     _featureDir: string,
   ): string {
-    const safeDesc = description.replace(/"/g, '\\"');
+    const safeDesc = description.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
 
     if (framework === "fast-check") {
       return this.generateFastCheckTest(propId, safeDesc, requirementText, propertyType);
     }
-    return this.generateHypothesisTest(propId, description, requirementText, propertyType);
+    return this.generateHypothesisTest(propId, safeDesc, requirementText, propertyType);
   }
 
   private generateFastCheckTest(
@@ -206,7 +206,7 @@ export class PbtGenerator {
     requirementText: string,
     propertyType: PbtPropertyType,
   ): string {
-    const safeReq = requirementText.replace(/"/g, '\\"');
+    const safeReq = requirementText.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
 
     switch (propertyType) {
       case "invariant":
