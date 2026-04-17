@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { RbacEngine, type RbacRole } from "../../src/services/rbac-engine.js";
 
 describe("RbacEngine", () => {

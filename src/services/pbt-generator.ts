@@ -121,13 +121,18 @@ export class PbtGenerator {
       return "commutativity";
     }
 
-    // Monotonicity: proportional/scaling relationships
+    const increaseOccurrences = (lower.match(/\bincreas(?:e|es|ed|ing)\b/g) ?? []).length;
+    const moreOccurrences = (lower.match(/\bmore\b/g) ?? []).length;
+    const largerOccurrences = (lower.match(/\blarger\b/g) ?? []).length;
+
+    // Monotonicity: proportional/scaling relationships that align with
+    // the generated non-decreasing monotonicity test.
     if (
       lower.includes("monoton") ||
       lower.includes("proportional") ||
-      (lower.includes("increase") && lower.includes("increase")) ||
-      (lower.includes("more") && lower.includes("more")) ||
-      (lower.includes("larger") && lower.includes("larger")) ||
+      increaseOccurrences >= 2 ||
+      moreOccurrences >= 2 ||
+      largerOccurrences >= 2 ||
       (lower.includes("grow") && lower.includes("scale"))
     ) {
       return "monotonicity";
