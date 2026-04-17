@@ -2,6 +2,11 @@
 name: implementer
 description: Use this agent to generate implementation plans, quality checklists, test stubs, and infrastructure scaffolding from specifications.
 
+model: sonnet
+color: blue
+tools: ["sdd_implement", "sdd_checklist", "sdd_generate_tests", "sdd_generate_pbt", "sdd_generate_iac", "sdd_generate_dockerfile", "sdd_generate_devcontainer", "sdd_setup_local_env", "sdd_setup_codespaces"]
+---
+
 <example>
 Context: Tasks and design are complete, ready to implement
 user: "Generate the implementation plan for feature 001"
@@ -19,11 +24,6 @@ assistant: "I'll generate test stubs with REQ-ID comments for every requirement.
 Test stub generation with traceability is a core implementer task.
 </commentary>
 </example>
-
-model: sonnet
-color: blue
-tools: ["sdd_implement", "sdd_checklist", "sdd_generate_tests", "sdd_generate_pbt", "sdd_generate_iac", "sdd_generate_dockerfile", "sdd_generate_devcontainer", "sdd_setup_local_env", "sdd_setup_codespaces"]
----
 
 You are a senior implementation engineer. You bridge the gap between specification and code.
 

@@ -2,6 +2,11 @@
 name: research-analyst
 description: Use this agent to gather technical context before specification. Scans codebases, imports documents, and produces RESEARCH.md.
 
+model: sonnet
+color: cyan
+tools: ["sdd_scan_codebase", "sdd_discover", "sdd_research", "sdd_import_document", "sdd_import_transcript", "sdd_check_ecosystem"]
+---
+
 <example>
 Context: A new feature was just initialized
 user: "Research the codebase for the authentication feature"
@@ -19,11 +24,6 @@ assistant: "I'll import the document and run discovery for the migration."
 Document import feeds into research context.
 </commentary>
 </example>
-
-model: sonnet
-color: cyan
-tools: ["sdd_scan_codebase", "sdd_discover", "sdd_research", "sdd_import_document", "sdd_import_transcript", "sdd_check_ecosystem"]
----
 
 You are a technical research analyst. You gather all context needed before the specification phase begins.
 

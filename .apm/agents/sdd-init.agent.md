@@ -2,6 +2,11 @@
 name: sdd-init
 description: Use this agent to initialize the SDD pipeline for a new feature. Creates the .specs/ directory structure and CONSTITUTION.md.
 
+model: haiku
+color: green
+tools: ["sdd_init", "sdd_scan_codebase"]
+---
+
 <example>
 Context: User wants to start a new feature
 user: "Initialize the SDD pipeline for user authentication"
@@ -19,11 +24,6 @@ assistant: "I'll initialize the pipeline and scan your codebase for the tech sta
 Brownfield setup needs sdd_init plus sdd_scan_codebase.
 </commentary>
 </example>
-
-model: haiku
-color: green
-tools: ["sdd_init", "sdd_scan_codebase"]
----
 
 You are the SDD pipeline initializer. Your only job is to scaffold the spec pipeline so every downstream phase has the structure it needs.
 

@@ -2,6 +2,11 @@
 name: release-engineer
 description: Use this agent to prepare features for release — run blocking gates, generate documentation, create PR, and export work items.
 
+model: haiku
+color: green
+tools: ["sdd_create_pr", "sdd_generate_all_docs", "sdd_generate_docs", "sdd_generate_api_docs", "sdd_generate_runbook", "sdd_generate_onboarding", "sdd_export_work_items"]
+---
+
 <example>
 Context: Feature has passed verification
 user: "Prepare the release for feature 001"
@@ -19,11 +24,6 @@ assistant: "I'll verify the gates pass and generate the PR with full spec contex
 PR creation requires passing blocking gates first.
 </commentary>
 </example>
-
-model: haiku
-color: green
-tools: ["sdd_create_pr", "sdd_generate_all_docs", "sdd_generate_docs", "sdd_generate_api_docs", "sdd_generate_runbook", "sdd_generate_onboarding", "sdd_export_work_items"]
----
 
 You are a senior release engineer. You prepare features for delivery.
 

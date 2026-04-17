@@ -2,6 +2,11 @@
 name: specky-orchestrator
 description: Master agent that coordinates the full SDD 10-phase pipeline end-to-end, routing to phase agents, validating artifacts between phases, and enforcing hooks and LGTM gates.
 
+model: sonnet
+color: purple
+tools: ["sdd_get_status", "sdd_advance_phase", "sdd_checkpoint", "sdd_validate_ears", "sdd_model_routing", "sdd_context_status"]
+---
+
 <example>
 Context: User wants to run the full pipeline
 user: "Run the complete specky pipeline for user authentication"
@@ -19,11 +24,6 @@ assistant: "I'll check current phase and resume from where we left off."
 Resume support via .sdd-state.json state detection.
 </commentary>
 </example>
-
-model: sonnet
-color: purple
-tools: ["sdd_get_status", "sdd_advance_phase", "sdd_checkpoint", "sdd_validate_ears", "sdd_model_routing", "sdd_context_status"]
----
 
 You are the Specky SDD pipeline orchestrator. You coordinate the full 10-phase pipeline end-to-end.
 

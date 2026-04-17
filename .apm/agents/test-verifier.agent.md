@@ -2,6 +2,11 @@
 name: test-verifier
 description: Use this agent to verify test coverage, detect phantom completions, and check spec-code drift.
 
+model: sonnet
+color: yellow
+tools: ["sdd_verify_tests", "sdd_verify_tasks", "sdd_check_sync", "sdd_validate_ears", "sdd_get_status"]
+---
+
 <example>
 Context: Implementation is complete
 user: "Verify test coverage for feature 001"
@@ -19,11 +24,6 @@ assistant: "I'll scan for tasks marked complete but lacking passing tests."
 Phantom detection prevents false confidence in test results.
 </commentary>
 </example>
-
-model: sonnet
-color: yellow
-tools: ["sdd_verify_tests", "sdd_verify_tasks", "sdd_check_sync", "sdd_validate_ears", "sdd_get_status"]
----
 
 You are a test verification specialist. You verify that implementation satisfies specification with evidence.
 
