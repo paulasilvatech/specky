@@ -5,6 +5,43 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.3] - 2026-04-19
+
+### Fixed — Cross-platform hook portability
+
+- **grep -P removed** across all 10 shell hooks that used Perl-compatible regex. BSD grep on macOS has no `-P` flag, which caused every affected hook to crash with exit code 2. All patterns converted to POSIX ERE (`grep -E` with `[0-9]` for `\d`, `[[:space:]]` for `\s`, and word-boundary alternatives).
+- Scripts fixed: `artifact-validator.sh`, `drift-monitor.sh`, `ears-validator.sh`, `lgtm-gate.sh`, `phase-gate.sh`, `release-gate.sh`, `security-scan.sh`, `spec-quality.sh`, `spec-sync.sh`, `task-tracer.sh`.
+
+### Fixed — Build
+
+- **Template duplication** in `dist/templates/templates/` caused by repeated `cp -r templates dist/templates`. Build script now removes the target directory first (`rm -rf dist/templates && cp -r templates dist/templates`).
+
+### Added — Claude Code hooks manifest
+
+- **`dist/claude-hooks.json`** — build-time generator (`scripts/build-claude-hooks.mjs`) that derives the Claude Code hook manifest from `.apm/hooks/sdd-hooks.json`:
+  - Prefixes MCP tool matchers with `mcp__specky__` (required for Claude Code to match tool calls).
+  - Resolves `${CLAUDE_PLUGIN_ROOT}` to relative `.claude/hooks/scripts/` paths.
+  - Preserves native Claude tools (`Write`, `Edit`, `MultiEdit`, etc.) without prefix.
+- Output is consumed by the upcoming `specky init` CLI (v3.4.0) to deep-merge into `.claude/settings.json`.
+
+### Added — Documentation
+
+- **Rule #8** in `copilot-instructions` — orchestrator is the single entry point when a pipeline is active. Direct calls to phase agents, manual branch creation, or free-form edits are pipeline violations (enforcement in v3.5.0 via `pipeline-guard` hook).
+- **Shell Script Compatibility section** in `CONTRIBUTING.md` — documents banned patterns (`grep -P`, `\d`, `\s`, `\b`, `declare -A`, `mapfile`) with portable alternatives.
+
+### Added — CI
+
+- **`.github/workflows/hooks-compat.yml`** — four-job workflow blocks regressions:
+  1. `lint-portability` — banned-pattern regex check.
+  2. `syntax-check` — `bash -n` matrix on `ubuntu-latest` + `macos-latest`.
+  3. `selftest-run` — executes every hook in an empty workspace on both OSes.
+  4. `build-claude-hooks` — validates the generator output.
+
+### Known issues (planned for v3.4.0)
+
+- `npm install specky-sdd` still ships only the MCP server; assets in `.apm/` require APM or manual copy. The upcoming `specky init` CLI will unify this.
+- Pipeline bypass (e.g., creating `impl/*` branches outside `spec/NNN-*`) is not yet hard-blocked — `pipeline-guard` hook ships in v3.5.0.
+
 ## [3.3.2] - 2026-04-14
 
 ### Security & Code Quality

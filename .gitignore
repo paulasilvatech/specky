@@ -42,7 +42,8 @@ apm.lock.yaml
 .specky/
 
 # ── Build config (internal) ──────────────────────────────
-scripts/
+# NOTE: scripts/ and .apm/hooks/scripts/ are tracked — they contain
+# build tooling (generators) and user-facing hook scripts respectively.
 Dockerfile
 docker-compose.yml
 .dockerignore
