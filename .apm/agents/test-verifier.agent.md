@@ -4,7 +4,7 @@ description: Use this agent to verify test coverage, detect phantom completions,
 
 model: sonnet
 color: yellow
-tools: ["sdd_verify_tests", "sdd_verify_tasks", "sdd_check_sync", "sdd_validate_ears", "sdd_get_status"]
+tools: ["Read", "Glob", "Grep", "Edit", "Write", "Bash", "sdd_verify_tests", "sdd_verify_tasks", "sdd_check_sync", "sdd_validate_ears", "sdd_get_status"]
 ---
 
 <example>

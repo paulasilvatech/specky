@@ -4,7 +4,7 @@ description: Phase 4 agent that writes DESIGN.md with system architecture, API c
 
 model: opus
 color: blue
-tools: ["sdd_write_design", "sdd_generate_all_diagrams", "sdd_generate_diagram"]
+tools: ["Read", "Glob", "Grep", "Edit", "Write", "sdd_write_design", "sdd_generate_all_diagrams", "sdd_generate_diagram"]
 ---
 
 <example>

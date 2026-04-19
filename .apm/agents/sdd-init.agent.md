@@ -4,7 +4,7 @@ description: Use this agent to initialize the SDD pipeline for a new feature. Cr
 
 model: haiku
 color: green
-tools: ["sdd_init", "sdd_scan_codebase"]
+tools: ["Read", "Glob", "Grep", "Bash", "sdd_init", "sdd_scan_codebase"]
 ---
 
 <example>

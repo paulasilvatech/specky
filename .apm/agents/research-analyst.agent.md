@@ -4,7 +4,7 @@ description: Use this agent to gather technical context before specification. Sc
 
 model: sonnet
 color: cyan
-tools: ["sdd_scan_codebase", "sdd_discover", "sdd_research", "sdd_import_document", "sdd_import_transcript", "sdd_check_ecosystem"]
+tools: ["Read", "Glob", "Grep", "Bash", "WebFetch", "WebSearch", "sdd_scan_codebase", "sdd_discover", "sdd_research", "sdd_import_document", "sdd_import_transcript", "sdd_check_ecosystem"]
 ---
 
 <example>

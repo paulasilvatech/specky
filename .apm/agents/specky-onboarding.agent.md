@@ -4,7 +4,7 @@ description: Default entry point and interactive wizard for Specky SDD. Detects 
 
 model: haiku
 color: green
-tools: ["sdd_get_status", "sdd_scan_codebase", "sdd_check_ecosystem", "sdd_context_status"]
+tools: ["Read", "Glob", "Grep", "Bash", "Write", "sdd_get_status", "sdd_scan_codebase", "sdd_check_ecosystem", "sdd_context_status"]
 ---
 
 <example>

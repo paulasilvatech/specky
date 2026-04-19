@@ -4,7 +4,7 @@ description: Phase 5 agent that writes TASKS.md with dependency-resolved task se
 
 model: sonnet
 color: orange
-tools: ["sdd_write_tasks", "sdd_checklist"]
+tools: ["Read", "Glob", "Grep", "Edit", "Write", "sdd_write_tasks", "sdd_checklist"]
 ---
 
 <example>

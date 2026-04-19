@@ -4,7 +4,7 @@ description: Phase 6 agent that runs completeness audit, cross-analysis, and com
 
 model: opus
 color: red
-tools: ["sdd_run_analysis", "sdd_cross_analyze", "sdd_compliance_check", "sdd_check_sync", "sdd_metrics"]
+tools: ["Read", "Glob", "Grep", "Edit", "Write", "Bash", "sdd_run_analysis", "sdd_cross_analyze", "sdd_compliance_check", "sdd_check_sync", "sdd_metrics"]
 ---
 
 <example>

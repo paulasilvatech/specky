@@ -9,11 +9,13 @@ import {
   copyToCopilot,
   summarizeCopy,
   writeInstallLock,
+  type CopyResult,
 } from "../lib/asset-copier.js";
 import { detectIde, type IdeTarget } from "../lib/ide-detect.js";
-import { packageRoot, sourcePaths, targetPaths } from "../lib/paths.js";
+import { packageRoot, sourcePaths, targetPaths, type Targets } from "../lib/paths.js";
 import { loadClaudeHooksManifest, mergeClaudeHooks } from "../lib/settings-merger.js";
 import { writeMcpRegistration } from "../lib/mcp-writer.js";
+import { writeVscodeSettings } from "../lib/vscode-settings-writer.js";
 
 export interface InitOptions {
   ide?: IdeTarget | "auto";
@@ -22,105 +24,137 @@ export interface InitOptions {
   workspace?: string;
 }
 
-export async function runInit(opts: InitOptions): Promise<number> {
-  const workspace = opts.workspace ?? process.cwd();
-  const pkg = packageRoot();
-  const targets = targetPaths(workspace);
-  const src = sourcePaths(pkg);
+interface Ctx {
+  workspace: string;
+  pkg: string;
+  targets: Targets;
+  src: ReturnType<typeof sourcePaths>;
+  copyOpts: { force: boolean; dryRun: boolean };
+  dryRun: boolean;
+}
 
-  const detected = detectIde(workspace);
-  const resolvedIde: IdeTarget =
-    !opts.ide || opts.ide === "auto" ? detected.recommendation : opts.ide;
+function installClaude(ctx: Ctx): CopyResult {
+  console.log("[specky init] Installing to .claude/ …");
+  const r = copyToClaude(ctx.pkg, ctx.targets, ctx.copyOpts);
+  console.log(summarizeCopy(".claude", r));
 
-  const copyOpts = { force: opts.force, dryRun: opts.dryRun };
+  try {
+    const hooks = loadClaudeHooksManifest(ctx.src.claudeHooksManifest);
+    const merge = mergeClaudeHooks(ctx.targets, hooks, { dryRun: ctx.dryRun });
+    console.log(`  settings.json: ${merge.written ? "merged" : "dry-run"} at ${merge.path}`);
+    if (merge.addedPermissions > 0) {
+      console.log(`  permissions:   ${merge.addedPermissions} allow rules added (specky MCP + native tools)`);
+    }
+  } catch (err) {
+    console.warn(`  ⚠️  ${(err as Error).message}`);
+  }
 
+  const mcp = writeMcpRegistration(ctx.targets.shared.claudeMcp, {
+    dryRun: ctx.dryRun,
+    serverName: "specky",
+    useVscodeSchema: false,
+  });
+  console.log(`  .mcp.json: ${mcp.action}`);
+  console.log("");
+  return r;
+}
+
+function installCopilot(ctx: Ctx): CopyResult {
+  console.log("[specky init] Installing to .github/ …");
+  const r = copyToCopilot(ctx.pkg, ctx.targets, ctx.copyOpts);
+  console.log(summarizeCopy(".github", r));
+
+  const mcp = writeMcpRegistration(ctx.targets.shared.vscodeMcp, {
+    dryRun: ctx.dryRun,
+    serverName: "specky",
+    useVscodeSchema: true,
+  });
+  console.log(`  .vscode/mcp.json: ${mcp.action}`);
+
+  const vscodeSettingsPath = resolve(ctx.workspace, ".vscode/settings.json");
+  const vs = writeVscodeSettings(vscodeSettingsPath, { dryRun: ctx.dryRun });
+  if (vs.addedKeys.length > 0) {
+    console.log(`  .vscode/settings.json: +${vs.addedKeys.length} key(s) (${vs.addedKeys.join(", ")})`);
+  } else {
+    console.log(`  .vscode/settings.json: already configured`);
+  }
+  console.log("");
+  return r;
+}
+
+function writeSpeckyMeta(ctx: Ctx, resolvedIde: IdeTarget): void {
+  if (ctx.dryRun) return;
+  mkdirSync(ctx.targets.shared.specky, { recursive: true });
+
+  const configDest = resolve(ctx.targets.shared.specky, "config.yml");
+  if (!existsSync(configDest) && existsSync(ctx.src.configYml)) {
+    copyFileSync(ctx.src.configYml, configDest);
+    console.log(`[specky init] Wrote ${configDest}`);
+  }
+
+  const meta = {
+    version: VERSION,
+    ide: resolvedIde,
+    installed_at: new Date().toISOString(),
+  };
+  writeFileSync(
+    resolve(ctx.targets.shared.specky, "install.json"),
+    JSON.stringify(meta, null, 2) + "\n",
+    "utf8",
+  );
+}
+
+function printHeader(opts: InitOptions, workspace: string, resolvedIde: IdeTarget, detected: ReturnType<typeof detectIde>): void {
+  const autoNote = opts.ide === "auto" || !opts.ide ? " (auto-detected)" : "";
   console.log(`[specky init] Version ${VERSION}`);
   console.log(`[specky init] Workspace: ${workspace}`);
-  console.log(`[specky init] IDE target: ${resolvedIde}${opts.ide === "auto" || !opts.ide ? " (auto-detected)" : ""}`);
+  console.log(`[specky init] IDE target: ${resolvedIde}${autoNote}`);
   if (detected.signals.length) {
     console.log(`[specky init] Detected signals: ${detected.signals.join(", ")}`);
   }
   if (opts.dryRun) console.log(`[specky init] DRY RUN — no files will be written`);
   console.log("");
+}
 
-  const results = [];
-
-  // Claude Code install
-  if (resolvedIde === "claude" || resolvedIde === "both") {
-    console.log("[specky init] Installing to .claude/ …");
-    const r = copyToClaude(pkg, targets, copyOpts);
-    console.log(summarizeCopy(".claude", r));
-    results.push(r);
-
-    // Merge hooks into settings.json
-    try {
-      const hooks = loadClaudeHooksManifest(src.claudeHooksManifest);
-      const merge = mergeClaudeHooks(targets, hooks, { dryRun: opts.dryRun });
-      console.log(`  settings.json: ${merge.written ? "merged" : "dry-run"} at ${merge.path}`);
-    } catch (err) {
-      console.warn(`  ⚠️  ${(err as Error).message}`);
-    }
-
-    // Write .mcp.json
-    const mcp = writeMcpRegistration(targets.shared.claudeMcp, {
-      dryRun: opts.dryRun,
-      serverName: "specky",
-      useVscodeSchema: false,
-    });
-    console.log(`  .mcp.json: ${mcp.action}`);
-    console.log("");
-  }
-
-  // GitHub Copilot install
-  if (resolvedIde === "copilot" || resolvedIde === "both") {
-    console.log("[specky init] Installing to .github/ …");
-    const r = copyToCopilot(pkg, targets, copyOpts);
-    console.log(summarizeCopy(".github", r));
-    results.push(r);
-
-    // Write .vscode/mcp.json
-    const mcp = writeMcpRegistration(targets.shared.vscodeMcp, {
-      dryRun: opts.dryRun,
-      serverName: "specky",
-      useVscodeSchema: true,
-    });
-    console.log(`  .vscode/mcp.json: ${mcp.action}`);
-    console.log("");
-  }
-
-  // Write .specky/config.yml (canonical project config)
-  if (!opts.dryRun) {
-    mkdirSync(targets.shared.specky, { recursive: true });
-    const dest = resolve(targets.shared.specky, "config.yml");
-    if (!existsSync(dest) && existsSync(src.configYml)) {
-      copyFileSync(src.configYml, dest);
-      console.log(`[specky init] Wrote ${dest}`);
-    }
-  }
-
-  // Write install.lock
-  const lockPath = writeInstallLock(targets, results, VERSION, copyOpts);
-  console.log(`[specky init] Integrity manifest: ${lockPath}`);
-
-  // Write meta marker for `specky doctor` and upgrades
-  if (!opts.dryRun) {
-    const meta = {
-      version: VERSION,
-      ide: resolvedIde,
-      installed_at: new Date().toISOString(),
-    };
-    writeFileSync(
-      resolve(targets.shared.specky, "install.json"),
-      JSON.stringify(meta, null, 2) + "\n",
-      "utf8",
-    );
-  }
-
+function printFooter(): void {
   console.log("");
   console.log("[specky init] ✅ Done. Next steps:");
   console.log("  • In Claude Code or VS Code: restart the session to activate MCP + hooks");
   console.log("  • Start the pipeline: invoke @specky-onboarding (Copilot) or /specky-onboarding (Claude)");
   console.log("  • Run `npx specky doctor` anytime to validate install integrity");
+}
 
+export async function runInit(opts: InitOptions): Promise<number> {
+  const workspace = opts.workspace ?? process.cwd();
+  const pkg = packageRoot();
+  const ctx: Ctx = {
+    workspace,
+    pkg,
+    targets: targetPaths(workspace),
+    src: sourcePaths(pkg),
+    copyOpts: { force: opts.force, dryRun: opts.dryRun },
+    dryRun: opts.dryRun,
+  };
+
+  const detected = detectIde(workspace);
+  const resolvedIde: IdeTarget =
+    !opts.ide || opts.ide === "auto" ? detected.recommendation : opts.ide;
+
+  printHeader(opts, workspace, resolvedIde, detected);
+
+  const results: CopyResult[] = [];
+  if (resolvedIde === "claude" || resolvedIde === "both") {
+    results.push(installClaude(ctx));
+  }
+  if (resolvedIde === "copilot" || resolvedIde === "both") {
+    results.push(installCopilot(ctx));
+  }
+
+  writeSpeckyMeta(ctx, resolvedIde);
+
+  const lockPath = writeInstallLock(ctx.targets, results, VERSION, ctx.copyOpts);
+  console.log(`[specky init] Integrity manifest: ${lockPath}`);
+
+  printFooter();
   return 0;
 }

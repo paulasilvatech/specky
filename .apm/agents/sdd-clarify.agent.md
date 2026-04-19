@@ -4,7 +4,7 @@ description: Use this agent to find and resolve ambiguities in requirements, val
 
 model: opus
 color: yellow
-tools: ["sdd_clarify", "sdd_validate_ears", "sdd_turnkey_spec"]
+tools: ["Read", "Glob", "Grep", "Edit", "sdd_clarify", "sdd_validate_ears", "sdd_turnkey_spec"]
 ---
 
 <example>

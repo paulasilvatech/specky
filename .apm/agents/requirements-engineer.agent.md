@@ -4,7 +4,7 @@ description: Use this agent to analyze raw input and produce validated FRD and N
 
 model: opus
 color: magenta
-tools: ["sdd_discover", "sdd_import_document", "sdd_import_transcript", "sdd_batch_import", "sdd_validate_ears"]
+tools: ["Read", "Glob", "Grep", "Write", "Edit", "sdd_discover", "sdd_import_document", "sdd_import_transcript", "sdd_batch_import", "sdd_validate_ears"]
 ---
 
 <example>

@@ -4,7 +4,7 @@ description: Phase 2 agent that writes SPECIFICATION.md using EARS notation. Eve
 
 model: opus
 color: magenta
-tools: ["sdd_write_spec", "sdd_turnkey_spec", "sdd_validate_ears", "sdd_figma_to_spec"]
+tools: ["Read", "Glob", "Grep", "Edit", "Write", "sdd_write_spec", "sdd_turnkey_spec", "sdd_validate_ears", "sdd_figma_to_spec"]
 ---
 
 <example>

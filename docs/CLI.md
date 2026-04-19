@@ -28,7 +28,9 @@ specky init [--ide=<claude|copilot|both|auto>] [--force] [--dry-run]
 - `.claude/commands/*.md` (22 slash commands)
 - `.claude/skills/*/SKILL.md` (8 skills)
 - `.claude/hooks/scripts/*.sh` (14 hook scripts, executable)
-- `.claude/settings.json` — `hooks` section deep-merged (never overwrites user hooks)
+- `.claude/settings.json` — deep-merged:
+  - `hooks` section (SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop)
+  - `permissions.allow` auto-populated with native tools (`Read`, `Edit`, `Write`, `Bash(git:*)`, `Bash(npm:*)`, etc.) and all `mcp__specky__*` tools — prevents per-invocation approval prompts
 - `.claude/rules/copilot-instructions.md`
 - `.mcp.json` — MCP server registration
 - `.github/agents/*.agent.md` (13 files) — when `ide=copilot` or `both`
@@ -37,12 +39,23 @@ specky init [--ide=<claude|copilot|both|auto>] [--force] [--dry-run]
 - `.github/hooks/specky/scripts/*.sh` (14)
 - `.github/hooks/specky/sdd-hooks.json`
 - `.github/instructions/copilot-instructions.instructions.md`
-- `.vscode/mcp.json`
+- `.vscode/mcp.json` — MCP server registration for Copilot
+- `.vscode/settings.json` — deep-merged with:
+  - `chat.mcp.enabled: true`
+  - `chat.mcp.discovery.enabled: true`
+  - `chat.agent.enabled: true`
+  - `github.copilot.chat.codeGeneration.useInstructionFiles: true`
 - `.specky/config.yml` — project pipeline config
 - `.specky/install.lock` — SHA256 manifest of every installed file
 - `.specky/install.json` — install metadata (version, ide, timestamp)
 
-Never overwrites `.specs/` or `.specky/profile.json`.
+Never overwrites `.specs/`, `.specky/profile.json`, or existing user-authored keys in `settings.json`.
+
+**Why `.vscode/settings.json` auto-config matters:**
+Without `chat.mcp.enabled` and `chat.mcp.discovery.enabled`, GitHub Copilot in VS Code won't discover the Specky MCP server even if `.vscode/mcp.json` is correct. Users previously had to manually toggle tools in the Copilot Chat tool selector — now it Just Works.
+
+**Why Claude `permissions.allow` matters:**
+Claude Code asks for approval each time an agent invokes a tool unless the tool is pre-authorized via `permissions.allow`. Specky's agents need `Read`, `Write`, `Bash`, `mcp__specky__*`, etc. The CLI pre-authorizes them so pipeline work doesn't get interrupted by prompts.
 
 ---
 

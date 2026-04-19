@@ -23,11 +23,42 @@ interface HooksSection {
   [event: string]: HookGroup[];
 }
 
-interface ClaudeSettings {
-  hooks?: HooksSection;
-  permissions?: unknown;
+interface PermissionsSection {
+  allow?: string[];
+  deny?: string[];
+  ask?: string[];
+  defaultMode?: string;
   [k: string]: unknown;
 }
+
+interface ClaudeSettings {
+  hooks?: HooksSection;
+  permissions?: PermissionsSection;
+  [k: string]: unknown;
+}
+
+/** Tools that Specky agents need pre-authorized (avoids per-invocation prompts). */
+export const SPECKY_REQUIRED_ALLOWS: string[] = [
+  // Native Claude tools used by agents
+  "Read",
+  "Glob",
+  "Grep",
+  "Edit",
+  "Write",
+  "MultiEdit",
+  "Bash(git:*)",
+  "Bash(npm:*)",
+  "Bash(node:*)",
+  "Bash(bash:*)",
+  "Bash(ls:*)",
+  "Bash(mkdir:*)",
+  "Bash(cat:*)",
+  "WebFetch",
+  "WebSearch",
+  "Task",
+  // All Specky MCP tools
+  "mcp__specky__*",
+];
 
 function readSettings(path: string): ClaudeSettings {
   if (!existsSync(path)) return {};
@@ -77,6 +108,31 @@ export interface MergeResult {
   written: boolean;
   path: string;
   addedEvents: string[];
+  addedPermissions: number;
+}
+
+/**
+ * Merge permissions.allow — union with existing, dedupe.
+ * Never removes user-authored entries.
+ */
+function mergePermissions(
+  existing: PermissionsSection | undefined,
+  requiredAllows: string[],
+): { merged: PermissionsSection; added: number } {
+  const base: PermissionsSection = existing ?? {};
+  const currentAllow = Array.isArray(base.allow) ? base.allow : [];
+  const set = new Set(currentAllow);
+  let added = 0;
+  for (const a of requiredAllows) {
+    if (!set.has(a)) {
+      set.add(a);
+      added++;
+    }
+  }
+  return {
+    merged: { ...base, allow: [...set] },
+    added,
+  };
 }
 
 export function mergeClaudeHooks(
@@ -86,16 +142,28 @@ export function mergeClaudeHooks(
 ): MergeResult {
   const path = targets.claude.settingsJson;
   const existing = readSettings(path);
-  const merged = mergeHooks(existing.hooks ?? {}, claudeHooks);
-  const addedEvents = Object.keys(merged).filter(
+
+  const mergedHooks = mergeHooks(existing.hooks ?? {}, claudeHooks);
+  const addedEvents = Object.keys(mergedHooks).filter(
     (k) => !existing.hooks || !existing.hooks[k],
   );
-  const final: ClaudeSettings = { ...existing, hooks: merged };
+
+  const { merged: mergedPerms, added: addedPermissions } = mergePermissions(
+    existing.permissions,
+    SPECKY_REQUIRED_ALLOWS,
+  );
+
+  const final: ClaudeSettings = {
+    ...existing,
+    hooks: mergedHooks,
+    permissions: mergedPerms,
+  };
+
   if (!opts.dryRun) {
     mkdirSync(dirname(path), { recursive: true });
     writeFileSync(path, JSON.stringify(final, null, 2) + "\n", "utf8");
   }
-  return { written: !opts.dryRun, path, addedEvents };
+  return { written: !opts.dryRun, path, addedEvents, addedPermissions };
 }
 
 export function loadClaudeHooksManifest(manifestPath: string): HooksSection {

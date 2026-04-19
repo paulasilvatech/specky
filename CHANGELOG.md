@@ -5,6 +5,83 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0-rc.3] - 2026-04-19
+
+### Fixed — Tool access configuration
+
+Resolves the field-reported issue where agents and MCP tools were unavailable
+in a fresh install ("tool_search returns no results, MCP specky-sdd not
+loaded, read_file/run_in_terminal disabled"). Three root causes addressed:
+
+**Agent tool declarations expanded:**
+
+All 13 agents had `tools:` frontmatter listing only their MCP tools
+(whitelist mode). This meant agents could invoke `sdd_*` MCP tools but
+could NOT use native tools like `Read`, `Write`, `Edit`, `Bash`, `Grep`
+which they need to validate state, scaffold code, or inspect the workspace.
+
+- `specky-orchestrator`: added `Read`, `Glob`, `Grep`, `Bash`, `Task`
+- `specky-onboarding`: added `Read`, `Glob`, `Grep`, `Bash`, `Write`
+- `sdd-init`: added `Read`, `Glob`, `Grep`, `Bash`
+- `research-analyst`: added `Read`, `Glob`, `Grep`, `Bash`, `WebFetch`, `WebSearch`
+- `requirements-engineer`: added `Read`, `Glob`, `Grep`, `Write`, `Edit`
+- `spec-engineer`: added `Read`, `Glob`, `Grep`, `Edit`, `Write`
+- `sdd-clarify`: added `Read`, `Glob`, `Grep`, `Edit`
+- `design-architect`: added `Read`, `Glob`, `Grep`, `Edit`, `Write`
+- `task-planner`: added `Read`, `Glob`, `Grep`, `Edit`, `Write`
+- `quality-reviewer`: added `Read`, `Glob`, `Grep`, `Edit`, `Write`, `Bash`
+- `implementer`: added `Read`, `Glob`, `Grep`, `Edit`, `Write`, `MultiEdit`, `Bash`
+- `test-verifier`: added `Read`, `Glob`, `Grep`, `Edit`, `Write`, `Bash`
+- `release-engineer`: added `Read`, `Glob`, `Grep`, `Edit`, `Write`, `Bash`
+
+**Claude Code permissions pre-authorized:**
+
+`specky init` now deep-merges a `permissions.allow` allowlist into
+`.claude/settings.json`:
+
+- Native tools: `Read`, `Glob`, `Grep`, `Edit`, `Write`, `MultiEdit`,
+  `Bash(git:*)`, `Bash(npm:*)`, `Bash(node:*)`, `Bash(bash:*)`,
+  `Bash(ls:*)`, `Bash(mkdir:*)`, `Bash(cat:*)`, `WebFetch`, `WebSearch`, `Task`
+- All Specky MCP tools: `mcp__specky__*`
+
+Users no longer face per-invocation approval prompts during pipeline
+execution. Existing user-authored `allow` entries are preserved (union merge).
+
+**VS Code Copilot MCP auto-enabled:**
+
+`specky init` now writes `.vscode/settings.json` with:
+
+- `chat.mcp.enabled: true`
+- `chat.mcp.discovery.enabled: true`
+- `chat.agent.enabled: true`
+- `github.copilot.chat.codeGeneration.useInstructionFiles: true`
+
+Without these keys, Copilot Chat does not discover `.vscode/mcp.json` even
+if it is present — matching the field incident where MCP tools were
+unavailable despite correct installation. Existing user keys in
+`settings.json` are preserved; only missing keys are added.
+
+**`specky doctor` extended:**
+
+New configuration checks (alongside existing integrity checks):
+
+- Claude `permissions.allow` contains all required rules
+- `.mcp.json` registers the `specky` server
+- `.vscode/mcp.json` registers the `specky` server
+- `.vscode/settings.json` has Copilot MCP discovery enabled
+
+Output now distinguishes file integrity (SHA256 against install.lock)
+from configuration health.
+
+### Refactored
+
+- `src/cli/commands/init.ts`: extracted `installClaude`, `installCopilot`,
+  `writeSpeckyMeta`, `printHeader`, `printFooter` to reduce cognitive
+  complexity and support future per-IDE customization.
+- `src/cli/commands/doctor.ts`: extracted `verifyIntegrity`,
+  `checkClaudePermissions`, `checkVscodeSettings`, `checkMcpRegistration`,
+  `runConfigChecks`, `printIntegrity`, `printChecks`.
+
 ## [3.4.0-rc.2] - 2026-04-19
 
 ### Added — Pipeline flow enforcement (Sprint 3)
