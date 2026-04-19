@@ -5,6 +5,53 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0-rc.6] - 2026-04-19
+
+### Changed — Node.js minimum bumped to 20.0
+
+CI (matrix macOS + Windows + Linux × Node 18/20/22) revealed that our
+test runner `vitest ^4.1.0` depends on `rolldown`, which uses
+`node:util.styleText` — an API introduced in Node 20. Node 18 left LTS
+in April 2025 and cannot run our test suite.
+
+- `package.json` `engines.node`: `>=18` → `>=20`
+- `install-smoke.yml` matrix: removed Node 18; kept Node 20 + 22
+- `docs/INSTALL.md`: updated prerequisite table
+
+Not breaking for any user on Node 20+ (current LTS).
+
+## [3.4.0-rc.5] - 2026-04-19
+
+### Fixed — CI green: `\b` Perl escape + smoke-test hook count
+
+Two bugs + one false positive surfaced by the first full CI run after rc.4:
+
+**Real bug (`pipeline-guard.sh`):**
+Lines 70 and 76 used `\b` (Perl word boundary) inside `grep -E` patterns.
+`\b` in ERE is a GNU extension; BSD grep on macOS does not support it.
+Replaced with explicit POSIX char-class boundaries:
+
+```bash
+# before (BSD-incompatible):
+grep -qE '\b(implement|create|...)\b'
+# after (portable):
+grep -qE '(^|[^a-z0-9])(implement|create|...)([^a-z0-9]|$)'
+```
+
+**False positive (`drift-monitor.sh`):**
+A comment contained the literal string `\b and (?:) not portable` which
+our own lint regex matched. Rephrased the comment to avoid triggering
+the scanner.
+
+**CI lint hardening (`hooks-compat.yml`):**
+The banned-pattern scan now strips `^\s*#` comment lines before linting,
+so documentation referencing banned patterns doesn't cause false positives.
+
+**Install smoke count (`install-smoke.yml`):**
+Sprint 3 added `pipeline-guard.sh` and `session-banner.sh`, bringing the
+total to 16. The smoke assertions were still checking 14 — updated to 16
+for both `.claude/hooks/scripts` and `.github/hooks/specky/scripts`.
+
 ## [3.4.0-rc.4] - 2026-04-19
 
 ### Fixed — Complete permission allowlist for hooks and utilities

@@ -10,7 +10,7 @@ Specky is distributed as a single npm package (`specky-sdd`) that bundles both t
 
 | Tool | Minimum | Check |
 |---|---|---|
-| Node.js | 18.0.0 (LTS) | `node --version` |
+| Node.js | 20.0.0 (current LTS) | `node --version` |
 | npm | 9 (ships with Node 18+) | `npm --version` |
 | git | 2.30+ | `git --version` |
 
