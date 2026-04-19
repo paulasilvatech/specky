@@ -5,6 +5,75 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0-rc.1] - 2026-04-19
+
+### Added — Unified `specky` CLI
+
+Specky now ships as a single npm package with a cross-platform CLI that
+consolidates installation, validation, and upgrade. Replaces the previous
+fragmented distribution (npm: server only, APM: broken `.claude/` install,
+no Claude Code plugin).
+
+**New commands:**
+
+- `specky init [--ide=claude|copilot|both|auto] [--force] [--dry-run]`
+  Auto-detects the IDE and installs 13 agents, 22 prompts, 8 skills, 14
+  hooks to the correct locations (`.claude/` and/or `.github/`). Writes
+  `.mcp.json`, `.vscode/mcp.json`, merges hooks into `.claude/settings.json`,
+  and produces `.specky/install.lock` (SHA256 manifest) for integrity.
+- `specky doctor [--fix]` — validates every installed file against
+  `install.lock`; `--fix` re-installs.
+- `specky status` — pipeline + install summary.
+- `specky upgrade` — refresh assets while preserving `.specs/` and
+  `.specky/profile.json`.
+- `specky hooks <list|test|run NAME>` — inspect and test installed hooks.
+- `specky serve [--http] [--port=N]` — canonical MCP server entry point.
+
+**Legacy compatibility:**
+
+- `specky-sdd` bin remains — routes to `specky serve` when invoked without
+  a subcommand. Existing MCP configs using `npx -y specky-sdd` keep working.
+
+### Added — Multi-OS support
+
+- Windows, macOS, Linux, and WSL all work identically — the CLI runs on
+  Node, no bash required for the CLI itself.
+- New CI workflow `.github/workflows/install-smoke.yml` runs the full
+  install flow on `[ubuntu-latest, macos-latest, windows-latest]` ×
+  `[node-18, node-20, node-22]` and asserts exact file counts per target.
+
+### Added — Claude Code native plugin
+
+- New `.claude-plugin/plugin.json` enables `/plugin install paulasilvatech/specky`.
+
+### Changed — npm package contents
+
+- `.apm/`, `templates/`, `apm.yml`, `config.yml` now ship in the npm tarball
+  (previously excluded). Package size: 356kB compressed, 1.6MB unpacked.
+- `.npmignore` rewritten as a minimal exclusion list (relies on `files` in
+  `package.json` for the allowlist).
+
+### Changed — Bin entries
+
+- `specky` bin now points to `./dist/cli/index.js` (unified CLI).
+- `specky-sdd` bin also points to the CLI; legacy-name detection routes to
+  `serve` automatically.
+
+### Changed — Start script
+
+- `npm start` now runs `node dist/cli/index.js serve` (was `node dist/index.js`).
+
+### Docs
+
+- `docs/CLI.md` — complete CLI reference.
+- `docs/INSTALL.md` — per-OS walkthroughs, offline install, troubleshooting.
+- `README.md` — install section rewritten around `npx specky init`.
+
+### Removed
+
+- No breaking removals in this release. Legacy bin and MCP server entry
+  (`dist/index.js`) are preserved.
+
 ## [3.3.3] - 2026-04-19
 
 ### Fixed — Cross-platform hook portability

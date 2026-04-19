@@ -1,0 +1,74 @@
+# npm tarball contents — controlled by `files` in package.json (allowlist).
+# This .npmignore covers files that slip past the allowlist (anything explicitly
+# included via `files: ["dist/", ".apm/", "templates/", ...]` is kept).
+
+# Never ship:
+.DS_Store
+Thumbs.db
+*.log
+*.tgz
+node_modules/
+coverage/
+
+# Editor / OS
+.vscode/
+.idea/
+
+# Environments & secrets
+.env
+.env.*
+
+# Dev-only config
+tsconfig.json
+vitest.config.ts
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Keep `.apm/` EXCEPT internal drafts
+.apm/**/.draft
+.apm/**/*.local.md
+
+# Keep `templates/` — user-facing scaffolding
+
+# Source is never shipped — only compiled dist/ goes out
+src/
+tests/
+
+# Site / internal docs
+site/
+docs/
+index.html
+
+# AI tooling internals (per-project, not repo)
+.claude/
+.remember/
+CLAUDE.md
+BUILD_PROMPT.md
+SESSION_LOG_*.md
+.specs/
+.specky/
+
+# APM consumer artifacts (populated after install; not package content)
+apm_modules/
+apm.lock.yaml
+
+# Internal build tooling — not needed at runtime
+scripts/
+PUBLISH.md
+ONBOARDING.md
+CONTRIBUTING.md
+
+# Brand assets not included in published package
+media/specky-brand-logo.svg
+media/specky-brand-icon.svg
+*.svg
+!media/specky-icon-256.png
+!media/specky-icon-128.png
+
+# Repo admin files
+zip/
+.git/
+.github/
+.gitignore
+.claude-plugin/

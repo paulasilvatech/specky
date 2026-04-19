@@ -90,19 +90,28 @@ The MCP engine is the runtime. The plugin is the product.
 
 ### How to install
 
-Specky is distributed via [APM](https://microsoft.github.io/apm/) (Agent Package Manager) — Microsoft's open-source dependency manager for AI agents:
+Specky ships as a single npm package with a unified `specky` CLI. Works on macOS, Linux, Windows, and WSL.
 
 ```bash
-# Install APM (one-time) — pick one:
-curl -sSL https://aka.ms/apm-unix | sh        # macOS / Linux
-brew install microsoft/apm/apm                 # Homebrew
-irm https://aka.ms/apm-windows | iex           # Windows PowerShell
+cd your-project
+npm install --save-dev specky-sdd@latest
+npx specky init
+```
 
-# Then install Specky:
+That's it. The CLI auto-detects whether you use Claude Code, GitHub Copilot, or both, and installs the 13 agents, 22 prompts, 8 skills, 14 hooks, and MCP server to the correct locations (`.claude/` and/or `.github/`). Run `npx specky doctor` anytime to validate integrity.
+
+**Alternate channels** (same package, same layout):
+
+```bash
+# Claude Code native plugin
+/plugin marketplace add paulasilvatech/specky
+/plugin install specky@paulasilvatech
+
+# Microsoft APM (for teams already using APM)
 apm install paulasilvatech/specky
 ```
 
-This installs all 13 agents, 22 prompts, 8 skills, 14 hooks, configures the MCP server, and generates a lock file (`apm.lock.yaml`) for version reproducibility. No configuration drift across your team. See [APM installation docs](https://microsoft.github.io/apm/getting-started/installation/) for more options.
+Full walkthroughs per OS, offline install, and CLI reference: [docs/INSTALL.md](docs/INSTALL.md) · [docs/CLI.md](docs/CLI.md).
 
 
 ## Why Specifications Matter in the AI Era
