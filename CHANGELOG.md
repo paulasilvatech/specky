@@ -5,6 +5,55 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0-rc.2] - 2026-04-19
+
+### Added — Pipeline flow enforcement (Sprint 3)
+
+Prevents the SIFAP-style incident where a user creates `impl/*` branches and
+commits code without invoking the Specky orchestrator. Rule #8 is now
+hard-enforced via three coordinated hooks.
+
+**New hooks:**
+
+- `pipeline-guard.sh` — `UserPromptSubmit` matcher. Blocks free-form
+  implementation prompts ("implement X", "build Y", "fix Z", etc.) when
+  `.specs/*/​.sdd-state.json` shows an active pipeline. Allowlist includes
+  `@specky-*`, `/specky-*`, `specky <subcommand>`, and informational
+  prompts (what/why/how/show/explain). Exits 2 with clear remediation.
+- `session-banner.sh` — `SessionStart` matcher. Prints a one-screen banner
+  at every new session showing active feature, phase, and branch. Warns if
+  the current branch doesn't match the expected pattern for the phase
+  (P0-P7 → `spec/NNN-*`, P8 → `develop`, P9 → `stage`).
+
+**Changed — `branch-validator.sh`:**
+
+- Now **BLOCKING** (exit 2) for `Write|Edit|MultiEdit` when a pipeline is
+  active and the branch doesn't match the expected pattern.
+- Remains **advisory** (exit 0 with warning) for `sdd_*` MCP tools to avoid
+  breaking legitimate pipeline operations.
+- Registered under new `Write|Edit|MultiEdit` matcher in both hook manifests.
+
+**Escape hatch — `SPECKY_GUARD=off`:**
+
+- Env var that bypasses both pipeline-guard and branch-validator blocks.
+- Logs a warning every time it's used.
+- Deprecated — will be removed in v3.6.
+
+**Integration tests:**
+
+- `tests/integration/flow-enforcement.test.ts` — 16 tests covering:
+  - Greenfield user not harmed (no `.specs/` → no blocks)
+  - Active pipeline + free-form prompts → blocked
+  - Active pipeline + orchestrator/onboarding prompts → allowed
+  - Active pipeline + info prompts (what/show/explain) → allowed
+  - Active P7 + impl/* branch + Write tool → blocked
+  - Active P7 + spec/* branch + Write tool → allowed
+  - SPECKY_GUARD=off → allowed with warning
+  - sdd_* tools remain advisory
+  - P8 enforces `develop`, P9 enforces `stage`
+
+**Test suite:** 70 total (54 unit + 16 integration), all passing.
+
 ## [3.4.0-rc.1] - 2026-04-19
 
 ### Added — Unified `specky` CLI
