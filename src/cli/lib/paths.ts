@@ -38,6 +38,7 @@ export function sourcePaths(pkgRoot: string): {
   instructionsDir: string;
   templatesDir: string;
   claudeHooksManifest: string;
+  copilotHooksManifest: string;
   configYml: string;
   apmYml: string;
 } {
@@ -51,6 +52,7 @@ export function sourcePaths(pkgRoot: string): {
     instructionsDir: resolve(pkgRoot, ".apm/instructions"),
     templatesDir: resolve(pkgRoot, "templates"),
     claudeHooksManifest: resolve(pkgRoot, "dist/claude-hooks.json"),
+    copilotHooksManifest: resolve(pkgRoot, "dist/copilot-hooks.json"),
     configYml: resolve(pkgRoot, "config.yml"),
     apmYml: resolve(pkgRoot, "apm.yml"),
   };

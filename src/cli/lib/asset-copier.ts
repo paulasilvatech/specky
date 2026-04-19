@@ -148,7 +148,13 @@ export function copyToCopilot(
   copyDir(src.promptsDir, targets.copilot.prompts, opts, result);
   copyDir(src.skillsDir, targets.copilot.skills, opts, result);
   copyDir(src.hookScriptsDir, targets.copilot.hooksScripts, opts, result);
-  copyFile(src.hooksManifest, targets.copilot.hooksManifest, opts, result);
+  // IMPORTANT: use the build-time copilot-hooks.json (paths already resolved
+  // to .github/hooks/specky/scripts/), NOT the raw .apm/hooks/sdd-hooks.json
+  // which still contains ${CLAUDE_PLUGIN_ROOT}. See rc.12 CHANGELOG.
+  const copilotHooksSrc = existsSync(src.copilotHooksManifest)
+    ? src.copilotHooksManifest
+    : src.hooksManifest; // fallback for dev builds without the generator run
+  copyFile(copilotHooksSrc, targets.copilot.hooksManifest, opts, result);
   copyDir(src.instructionsDir, targets.copilot.instructions, opts, result);
 
   if (!opts.dryRun && process.platform !== "win32") {

@@ -5,6 +5,62 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0-rc.12] - 2026-04-19
+
+### Fixed — CRITICAL: Copilot hook executor denied all tools
+
+Field incident: in projects installed with rc.10 or earlier, the GitHub
+Copilot Autopilot agent blocked every tool call (including native
+`read_file`, `list_dir`, `grep_search`, `manage_todo_list`) with the
+message "Denied by PreToolUse hook: Tried to use X - an unexpected
+error occurred".
+
+**Root cause:** `specky install` copied `.apm/hooks/sdd-hooks.json`
+verbatim to `.github/hooks/specky/sdd-hooks.json`. That source file
+references `${CLAUDE_PLUGIN_ROOT}/hooks/scripts/` — a Claude Code plugin
+variable that does NOT resolve in Copilot. When Copilot's hook executor
+tried to spawn `bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-banner.sh`,
+the shell treated `${CLAUDE_PLUGIN_ROOT}` as an empty string and
+searched for `/hooks/scripts/session-banner.sh` (absolute path), which
+doesn't exist. Copilot generically reported "unexpected error" and
+denied the tool.
+
+51 unresolved `${CLAUDE_PLUGIN_ROOT}` references in the Copilot-facing
+hooks manifest caused every tool call to be denied.
+
+**Fix:**
+
+- `scripts/build-claude-hooks.mjs` now generates TWO manifests:
+  - `dist/claude-hooks.json` — existing (Claude Code format with `mcp__specky__` prefix)
+  - `dist/copilot-hooks.json` — NEW (Copilot format with resolved `.github/hooks/specky/scripts/` paths, no prefix)
+- `src/cli/lib/asset-copier.ts` now copies `dist/copilot-hooks.json` to
+  `.github/hooks/specky/sdd-hooks.json` (falling back to `.apm/hooks/sdd-hooks.json`
+  only when the generator hasn't run, e.g. during dev builds).
+- `src/cli/lib/paths.ts` exposes the new `copilotHooksManifest` source path.
+
+**Validation:**
+
+```bash
+specky install
+grep -c 'CLAUDE_PLUGIN_ROOT' .github/hooks/specky/sdd-hooks.json
+# Before rc.12: 51
+# After rc.12:  0 ✅
+grep -c '.github/hooks/specky/scripts' .github/hooks/specky/sdd-hooks.json
+# 51 (all paths resolved)
+```
+
+**Migration for existing installs:**
+
+```bash
+npm install -g specky-sdd@next     # pulls rc.12+
+cd affected-project
+specky install --force              # overwrites the broken hooks manifest
+# reload Copilot Chat / restart VS Code
+```
+
+74/74 tests still passing. No production code in agents/hooks changed —
+only the hook manifest generation and copy step.
+
 ## [3.4.0-rc.11] - 2026-04-19
 
 ### Fixed — Windows CI flaky test timeout
