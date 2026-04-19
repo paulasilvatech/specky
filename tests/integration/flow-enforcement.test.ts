@@ -74,7 +74,11 @@ function runBranch(
   return { code: res.status ?? -1, stderr: res.stderr };
 }
 
-describe("pipeline-guard.sh", () => {
+// Integration tests spawn bash + git repeatedly; Windows Git Bash is slow.
+// 20s covers worst case (3 spawns × ~5s each on slow Windows CI).
+const INTEGRATION_TIMEOUT = 20_000;
+
+describe("pipeline-guard.sh", { timeout: INTEGRATION_TIMEOUT }, () => {
   let ws: string;
   beforeEach(() => {
     ws = makeWorkspace();
@@ -130,7 +134,7 @@ describe("pipeline-guard.sh", () => {
   });
 });
 
-describe("branch-validator.sh (BLOCKING for Write|Edit|MultiEdit)", () => {
+describe("branch-validator.sh (BLOCKING for Write|Edit|MultiEdit)", { timeout: INTEGRATION_TIMEOUT }, () => {
   let ws: string;
   beforeEach(() => {
     ws = makeWorkspace();

@@ -5,6 +5,21 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0-rc.11] - 2026-04-19
+
+### Fixed — Windows CI flaky test timeout
+
+CI on rc.10 revealed that `tests/integration/flow-enforcement.test.ts`
+timed out intermittently on `windows-latest` (Git Bash spawn is slow;
+3 sequential spawns + workspace setup can exceed the 5s default).
+Linux and macOS matrix jobs passed consistently.
+
+Fix: set `{ timeout: 20_000 }` at the describe block level for both
+integration test suites (`pipeline-guard.sh` and `branch-validator.sh`).
+20s covers worst-case Windows CI with margin; local runs remain <5s.
+
+No production code change. 74/74 tests still passing.
+
 ## [3.4.0-rc.10] - 2026-04-19
 
 ### Fixed — CRITICAL UX: `specky install` polluted git with ~125 vendored files
