@@ -2,7 +2,8 @@
 name: quality-reviewer
 description: Phase 6 agent that runs completeness audit, cross-analysis, and compliance checks. Produces ANALYSIS.md with gate decision (APPROVE/CONDITIONAL/REJECT) and COMPLIANCE.md.
 
-model: opus
+model: claude-opus-4-7
+model_fallback: ["claude-opus-4-6", "claude-sonnet-4-6", "gpt-5", "gpt-4.5"]
 color: red
 tools: ["Read", "Glob", "Grep", "Edit", "Write", "Bash", "sdd_run_analysis", "sdd_cross_analyze", "sdd_compliance_check", "sdd_check_sync", "sdd_metrics"]
 ---

@@ -2,7 +2,8 @@
 name: sdd-init
 description: Use this agent to initialize the SDD pipeline for a new feature. Creates the .specs/ directory structure and CONSTITUTION.md.
 
-model: haiku
+model: claude-haiku-4-5
+model_fallback: ["claude-sonnet-4-6", "gpt-4.5"]
 color: green
 tools: ["Read", "Glob", "Grep", "Bash", "sdd_init", "sdd_scan_codebase"]
 ---

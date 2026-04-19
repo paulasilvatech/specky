@@ -5,6 +5,59 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0-rc.7] - 2026-04-19
+
+### Changed — Model routing: Opus 4.7 for reasoning phases, explicit fallback chains
+
+Upgraded Specky's default model recommendations to the latest generation and
+made the fallback strategy explicit for teams without top-tier access.
+
+**Primary model matrix (new defaults):**
+
+| Phase | Agent | Old model | New model |
+|---|---|---|---|
+| 0 Init | sdd-init | haiku | `claude-haiku-4-5` (unchanged, explicit version) |
+| 1 Discover | research-analyst | sonnet | `claude-sonnet-4-6` (explicit) |
+| 2 Specify | spec-engineer | opus-4-6 | **`claude-opus-4-7`** |
+| 3 Clarify | sdd-clarify | opus-4-6 | **`claude-opus-4-7`** |
+| 4 Design | design-architect | opus-4-6 | **`claude-opus-4-7`** |
+| 5 Tasks | task-planner | sonnet | `claude-sonnet-4-6` (explicit) |
+| 6 Analyze | quality-reviewer | sonnet-4-6 | **`claude-opus-4-7`** (upgraded — gate decisions need deep reasoning) |
+| 7 Implement | implementer | sonnet | `claude-sonnet-4-6` (explicit) |
+| 8 Verify | test-verifier | sonnet-4-6 | **`claude-opus-4-7`** (upgraded — REQ-ID traceability needs reasoning) |
+| 9 Release | release-engineer | haiku | `claude-haiku-4-5` (explicit) |
+| — Orchestrator | specky-orchestrator | sonnet | `claude-sonnet-4-6` (explicit) |
+
+**Fallback chains** (new `fallback_chain` field in `ModelRoutingHint`):
+
+- **Reasoning-heavy**: `opus-4-7 → opus-4-6 → sonnet-4-6 → gpt-5 → gpt-4.5`
+- **Balanced**: `sonnet-4-6 → opus-4-6 → gpt-5 → gpt-4.5`
+- **Fast**: `haiku-4-5 → sonnet-4-6 → gpt-4.5`
+- **Coding**: `sonnet-4-6 → codex → gpt-5 → opus-4-6`
+
+Every agent's frontmatter now includes a `model_fallback` list that users
+can consult if they don't have access to the primary. `sdd_model_routing`
+MCP tool returns the full chain programmatically for CI integrations.
+
+**Key takeaways:**
+
+- Analyze (Phase 6) and Verify (Phase 8) upgraded from Sonnet to Opus 4.7.
+  Research (arXiv:2509.11079, arXiv:2604.02547) shows these phases produce
+  downstream-critical decisions (gate approvals, phantom completions) that
+  justify top-tier reasoning.
+- Implement (Phase 7) stays on Sonnet 4.6 — extended thinking is actively
+  harmful for iterative code tasks with test feedback (arXiv:2502.08235).
+- New `docs/MODEL_GUIDE.md` documents the full matrix, fallback strategy,
+  cost implications, and when to enable extended thinking.
+
+**New ModelTier values:**
+`claude-opus-4-7`, `gpt-5`, `codex` added. `gpt-4-5` renamed to `gpt-4.5`
+for consistency with provider naming.
+
+### Added
+
+- `docs/MODEL_GUIDE.md` — complete model routing reference with fallback chains.
+
 ## [3.4.0-rc.6] - 2026-04-19
 
 ### Changed — Node.js minimum bumped to 20.0

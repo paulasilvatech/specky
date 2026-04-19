@@ -2,7 +2,8 @@
 name: design-architect
 description: Phase 4 agent that writes DESIGN.md with system architecture, API contracts, data models, and Mermaid diagrams. All design decisions trace to specification requirements.
 
-model: opus
+model: claude-opus-4-7
+model_fallback: ["claude-opus-4-6", "claude-sonnet-4-6", "gpt-5", "gpt-4.5"]
 color: blue
 tools: ["Read", "Glob", "Grep", "Edit", "Write", "sdd_write_design", "sdd_generate_all_diagrams", "sdd_generate_diagram"]
 ---

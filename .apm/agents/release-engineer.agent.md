@@ -2,7 +2,8 @@
 name: release-engineer
 description: Use this agent to prepare features for release — run blocking gates, generate documentation, create PR, and export work items.
 
-model: haiku
+model: claude-haiku-4-5
+model_fallback: ["claude-sonnet-4-6", "gpt-4.5"]
 color: green
 tools: ["Read", "Glob", "Grep", "Edit", "Write", "Bash", "sdd_create_pr", "sdd_generate_all_docs", "sdd_generate_docs", "sdd_generate_api_docs", "sdd_generate_runbook", "sdd_generate_onboarding", "sdd_export_work_items"]
 ---

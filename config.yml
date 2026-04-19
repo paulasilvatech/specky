@@ -74,13 +74,24 @@ branching:
     - "Merge to main only after blocking gates pass on stage"
     - "Delete spec branch after successful merge to develop"
 model_routing:
+  # Primary (recommended) models per phase. Requires Anthropic plan with Opus access.
+  # Without Opus, fall back per `fallback_chain` in src/services/model-routing-engine.ts.
+  # Short summary of fallback tiers:
+  #   Reasoning-heavy (specify/clarify/design/analyze/verify):
+  #     claude-opus-4-7 → claude-opus-4-6 → claude-sonnet-4-6 → gpt-5 → gpt-4.5
+  #   Balanced (discover/tasks):
+  #     claude-sonnet-4-6 → claude-opus-4-6 → gpt-5 → gpt-4.5
+  #   Fast (init/release):
+  #     claude-haiku-4-5 → claude-sonnet-4-6 → gpt-4.5
+  #   Coding (implement):
+  #     claude-sonnet-4-6 → codex → gpt-5 → claude-opus-4-6
   phase_0: "claude-haiku-4-5"
   phase_1: "claude-sonnet-4-6"
-  phase_2: "claude-opus-4-6"
-  phase_3: "claude-opus-4-6"
-  phase_4: "claude-opus-4-6"
+  phase_2: "claude-opus-4-7"
+  phase_3: "claude-opus-4-7"
+  phase_4: "claude-opus-4-7"
   phase_5: "claude-sonnet-4-6"
-  phase_6: "claude-sonnet-4-6"
+  phase_6: "claude-opus-4-7"
   phase_7: "claude-sonnet-4-6"
-  phase_8: "claude-opus-4-6"
+  phase_8: "claude-opus-4-7"
   phase_9: "claude-haiku-4-5"
