@@ -72,10 +72,20 @@ export async function runStatus(opts: StatusOptions): Promise<number> {
     const statePath = resolve(t.shared.specs, feat, ".sdd-state.json");
     try {
       const state = JSON.parse(readFileSync(statePath, "utf8")) as {
+        current_phase?: string;
         phase?: number | string;
+        gate_decision?: string | null;
         feature?: string;
+        phases?: Record<string, { status?: string }>;
       };
-      console.log(`  ${feat}: phase=${state.phase ?? "?"}`);
+      // Primary key is `current_phase` (schema v4); fall back to legacy `phase`.
+      const phase = state.current_phase ?? state.phase ?? "unknown";
+      const completed = state.phases
+        ? Object.values(state.phases).filter((p) => p?.status === "completed").length
+        : 0;
+      const total = state.phases ? Object.keys(state.phases).length : 10;
+      const gate = state.gate_decision ? ` gate=${state.gate_decision}` : "";
+      console.log(`  ${feat}: phase=${phase} (${completed}/${total})${gate}`);
     } catch {
       console.log(`  ${feat}: (unreadable state)`);
     }

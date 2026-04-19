@@ -49,7 +49,8 @@ Usage:
   specky <command> [options]
 
 Commands:
-  init                   Install Specky assets into the current workspace
+  install                Install Specky assets into the current workspace
+  init                   Alias of 'install' (same command)
     --ide=<claude|copilot|both|auto>   Default: auto
     --force                             Overwrite existing files
     --dry-run                           Show changes without writing
@@ -80,6 +81,7 @@ async function dispatch(command: string, rest: string[]): Promise<number> {
   const { positional, flags } = parseFlags(rest);
 
   switch (command) {
+    case "install":
     case "init": {
       const { runInit } = await import("./commands/init.js");
       const ideRaw = flags["ide"];
@@ -144,7 +146,7 @@ async function main(): Promise<void> {
 
   // Legacy back-compat: `specky-sdd` with no subcommand OR with --http maps to serve
   const knownCommands = new Set([
-    "init", "doctor", "status", "upgrade", "hooks", "serve",
+    "install", "init", "doctor", "status", "upgrade", "hooks", "serve",
     "help", "--help", "-h", "--version", "-v",
   ]);
 

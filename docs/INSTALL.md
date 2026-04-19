@@ -18,15 +18,25 @@ Specky is distributed as a single npm package (`specky-sdd`) that bundles both t
 
 ## Quick install (recommended)
 
-**Default recommendation: global CLI + per-project assets.** The CLI binary goes in your PATH (so `specky init` works from any project), and the agents/hooks/skills get copied per-project on first run.
+**Default recommendation: global CLI + per-project assets.** The CLI binary goes in your PATH (so `specky install` works from any project), and the agents/hooks/skills get copied per-project on first run.
 
 ```bash
-# 1. Install the CLI globally (one time)
+# 1. Install the CLI globally (one time per machine)
 npm install -g specky-sdd@latest
 
 # 2. Bootstrap each project
 cd your-project
-specky init
+specky install          # `init` is the same — install is the alias
+```
+
+**After the global install, you never type `npx` or `npm` again for day-to-day Specky commands:**
+
+```bash
+specky install          # bootstrap .claude/, .github/, etc.
+specky doctor           # validate integrity
+specky status           # show pipeline state
+specky upgrade          # refresh assets (preserves .specs/)
+specky hooks list       # list hooks
 ```
 
 That's it. The CLI auto-detects whether you use Claude Code, GitHub Copilot, or both, and installs the correct assets to `.claude/` and/or `.github/`.

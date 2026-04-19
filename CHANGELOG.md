@@ -5,6 +5,40 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0-rc.9] - 2026-04-19
+
+### Added — `specky install` as a first-class alias for `specky init`
+
+Feedback from the field: users expect `install` (matches `npm install` mental
+model) over `init` for a bootstrap command. Adding it as an alias rather
+than a rename preserves any existing muscle memory or docs.
+
+```bash
+specky install          # new preferred spelling
+specky init             # still works — identical behavior
+```
+
+Both resolve to the same underlying `runInit()` in the CLI dispatcher.
+
+### Fixed — `specky status` showed `phase=?` for active features
+
+Cosmetic bug in the CLI `status` command (not MCP `sdd_get_status` — that
+was fixed in rc.8). The CLI proxy read `state.phase` but the schema key
+is `state.current_phase`. Now reads both (current_phase preferred, phase as
+legacy fallback) and adds progress/gate info:
+
+```
+Before:  001-sifap: phase=?
+After:   001-sifap: phase=implement (7/10) gate=APPROVE
+```
+
+### Changed — Docs recommend global install as default
+
+`README.md` and `docs/INSTALL.md` updated to make global install the
+first-listed option (`npm install -g specky-sdd` → `specky install`),
+matching field feedback that users find `npx specky` cumbersome for
+day-to-day use. Per-project and zero-install modes still documented.
+
 ## [3.4.0-rc.8] - 2026-04-19
 
 ### Fixed — CRITICAL: `sdd_get_status` ignored existing `.specs/` features

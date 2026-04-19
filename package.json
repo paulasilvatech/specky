@@ -1,6 +1,6 @@
 {
   "name": "specky-sdd",
-  "version": "3.4.0-rc.8",
+  "version": "3.4.0-rc.9",
   "description": "Specky — Spec-Driven Development engine. 57 MCP tools, 13 agents, 22 prompts, 8 skills, 14 hooks. Unified `specky` CLI installs to Claude Code and GitHub Copilot on macOS, Linux, and Windows.",
   "type": "module",
   "main": "dist/index.js",
