@@ -16,7 +16,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "smoke": "node scripts/smoke-install.mjs"
+    "smoke": "node scripts/release.mjs"
   },
   "icon": "media/specky-icon-256.png",
   "files": [
