@@ -93,12 +93,20 @@ The MCP engine is the runtime. The plugin is the product.
 Specky ships as a single npm package with a unified `specky` CLI. Works on macOS, Linux, Windows, and WSL.
 
 ```bash
+# Global install (recommended for individual devs)
+npm install -g specky-sdd@latest
+cd your-project && specky init
+```
+
+Or per-project (recommended for teams — pins version in `package.json`):
+
+```bash
 cd your-project
 npm install --save-dev specky-sdd@latest
 npx specky init
 ```
 
-That's it. The CLI auto-detects whether you use Claude Code, GitHub Copilot, or both, and installs the 13 agents, 22 prompts, 8 skills, 14 hooks, and MCP server to the correct locations (`.claude/` and/or `.github/`). Run `npx specky doctor` anytime to validate integrity.
+The CLI auto-detects whether you use Claude Code, GitHub Copilot, or both, and installs the 13 agents, 22 prompts, 8 skills, 14 hooks, the MCP server registration (`.mcp.json` + `.vscode/mcp.json`), and **pre-authorizes all required tools** (`permissions.allow` in Claude settings, `chat.mcp.enabled` in VS Code). Run `specky doctor` anytime to validate integrity and config.
 
 **Alternate channels** (same package, same layout):
 

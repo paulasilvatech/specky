@@ -18,15 +18,38 @@ Specky is distributed as a single npm package (`specky-sdd`) that bundles both t
 
 ## Quick install (recommended)
 
+**Default recommendation: global CLI + per-project assets.** The CLI binary goes in your PATH (so `specky init` works from any project), and the agents/hooks/skills get copied per-project on first run.
+
 ```bash
+# 1. Install the CLI globally (one time)
+npm install -g specky-sdd@latest
+
+# 2. Bootstrap each project
 cd your-project
-npm install --save-dev specky-sdd@latest
-npx specky init
+specky init
 ```
 
-That's it. The CLI auto-detects whether you use Claude Code, GitHub Copilot, or both, and installs the correct assets.
+That's it. The CLI auto-detects whether you use Claude Code, GitHub Copilot, or both, and installs the correct assets to `.claude/` and/or `.github/`.
 
 **Next:** open Claude Code or VS Code and invoke `@specky-onboarding` (Copilot) or `/specky-onboarding` (Claude) to start the pipeline.
+
+---
+
+## Install modes — which one should I use?
+
+| Mode | Command | When to use |
+|---|---|---|
+| **Global** (default) | `npm install -g specky-sdd` | Individual developers, CLI-first workflow, multiple projects. CLI always in PATH. |
+| **Project-local** | `npm install --save-dev specky-sdd` | Teams that want version pinning via `package.json`. Reproducible across teammates. Use `npx specky` instead of `specky`. |
+| **Zero-install** | `npx -y specky-sdd@latest init` | One-shot bootstrap, no persistent install. Downloads fresh each time. |
+| **Offline** | `npm pack` + `npm install ./specky-sdd-*.tgz` | Air-gapped environments. |
+
+**Both modes produce the same workspace layout** (`.claude/`, `.github/`, `.vscode/`, `.specky/`). The only difference is where the `specky` binary lives.
+
+**Rule of thumb**:
+- If you maintain many projects → **global**
+- If your team needs reproducible builds → **project-local**
+- If in doubt → **global** (easier; you can always switch later)
 
 ---
 

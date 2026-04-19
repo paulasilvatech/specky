@@ -5,6 +5,35 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0-rc.4] - 2026-04-19
+
+### Fixed — Complete permission allowlist for hooks and utilities
+
+Expanded `SPECKY_REQUIRED_ALLOWS` from 17 → 37 entries to cover every
+command that Specky hooks and agents invoke. Previously, when an agent
+needed to run `jq`, `find`, `wc`, `sed`, etc., the user would still get
+approval prompts even after v3.4.0-rc.3.
+
+New allow rules (all `Bash(<cmd>:*)` patterns):
+`sh`, `npx`, `rm`, `cp`, `mv`, `touch`, `chmod`, `head`, `tail`, `wc`,
+`find`, `grep`, `sed`, `awk`, `jq`, `bc`, `pip`, `pip3`, `python`, `python3`.
+
+Determined by auditing actual hook scripts:
+
+```bash
+grep -rhoE '\b(bash|jq|find|wc|...)\b' .apm/hooks/scripts/*.sh | sort -u
+```
+
+### Changed — Install mode guidance
+
+README and `docs/INSTALL.md` now recommend **global install** as the default
+for individual developers, with project-local install clearly marked as the
+team/reproducibility option. Matches the intuition that CLI tools like
+`specky`, `gh`, `npm` are typically global.
+
+New "which install mode?" table in INSTALL.md covers: global, project-local,
+zero-install (`npx -y`), and offline (`npm pack`) scenarios.
+
 ## [3.4.0-rc.3] - 2026-04-19
 
 ### Fixed — Tool access configuration
