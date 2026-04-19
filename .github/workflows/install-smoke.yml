@@ -62,10 +62,10 @@ jobs:
           assert_eq "$(count .claude/agents)"        13 "claude agents"
           assert_eq "$(count .claude/commands)"      22 "claude commands"
           assert_eq "$(countd .claude/skills)"       8  "claude skills"
-          assert_eq "$(count .claude/hooks/scripts)" 14 "claude hooks"
+          assert_eq "$(count .claude/hooks/scripts)" 16 "claude hooks"
           assert_eq "$(count .github/agents)"        13 "copilot agents"
           assert_eq "$(count .github/prompts)"       22 "copilot prompts"
-          assert_eq "$(count .github/hooks/specky/scripts)" 14 "copilot hooks"
+          assert_eq "$(count .github/hooks/specky/scripts)" 16 "copilot hooks"
           test -f .claude/settings.json || { echo "::error::missing .claude/settings.json"; fail=1; }
           test -f .mcp.json || { echo "::error::missing .mcp.json"; fail=1; }
           test -f .vscode/mcp.json || { echo "::error::missing .vscode/mcp.json"; fail=1; }

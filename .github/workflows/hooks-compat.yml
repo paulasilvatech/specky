@@ -27,22 +27,23 @@ jobs:
         run: |
           set -e
           FAIL=0
-          if grep -rnE 'grep [^|]*-[a-zA-Z]*P' .apm/hooks/scripts/; then
-            echo "::error::Found 'grep -P' — use 'grep -E' with POSIX ERE (see CONTRIBUTING.md)"
-            FAIL=1
-          fi
-          if grep -rnE '\\d|\\D|\\s|\\S|\\b' .apm/hooks/scripts/; then
-            echo "::error::Found Perl regex escapes (\\d, \\s, \\b) — replace with POSIX classes"
-            FAIL=1
-          fi
-          if grep -rn 'declare -A' .apm/hooks/scripts/; then
-            echo "::error::Found 'declare -A' — requires bash 4+; macOS ships bash 3.2"
-            FAIL=1
-          fi
-          if grep -rnE '\bmapfile\b|\breadarray\b' .apm/hooks/scripts/; then
-            echo "::error::Found mapfile/readarray — requires bash 4+"
-            FAIL=1
-          fi
+          # Strip comment lines (lines starting with # after optional whitespace)
+          # before linting, so documentation referencing banned patterns doesn't
+          # trigger false positives.
+          SCAN=$(find .apm/hooks/scripts -name '*.sh' -print0 | xargs -0 grep -Hn -v '^[[:space:]]*#')
+          check() {
+            local pattern="$1" label="$2"
+            if echo "$SCAN" | grep -E "$pattern" >/dev/null 2>&1; then
+              echo "$SCAN" | grep -nE "$pattern" || true
+              echo "::error::$label"
+              return 1
+            fi
+            return 0
+          }
+          check 'grep [^|]*-[a-zA-Z]*P' "Found 'grep -P' — use 'grep -E' with POSIX ERE" || FAIL=1
+          check '\\d|\\D|\\s|\\S|\\b' "Found Perl regex escapes (\\d, \\s, \\b) — replace with POSIX classes" || FAIL=1
+          check 'declare -A' "Found 'declare -A' — requires bash 4+; macOS ships bash 3.2" || FAIL=1
+          check '\bmapfile\b|\breadarray\b' "Found mapfile/readarray — requires bash 4+" || FAIL=1
           exit $FAIL
 
   syntax-check:

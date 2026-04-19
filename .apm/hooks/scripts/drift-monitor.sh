@@ -14,7 +14,7 @@ SPEC="$LATEST/SPECIFICATION.md"
 
 echo "🧭 Drift Monitor: $(basename "$LATEST")"
 
-# Simple drift: compare key terms in constitution vs spec (POSIX ERE; \b and (?:) not portable)
+# Simple drift: compare key terms in constitution vs spec (POSIX ERE for portability)
 CONST_TERMS=$(grep -oE '[A-Z][a-z]+([[:space:]][A-Z][a-z]+)+' "$CONST" 2>/dev/null | sort -u | wc -l)
 SPEC_TERMS=$(grep -oE '[A-Z][a-z]+([[:space:]][A-Z][a-z]+)+' "$SPEC" 2>/dev/null | sort -u | wc -l)
 

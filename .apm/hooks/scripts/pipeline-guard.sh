@@ -67,13 +67,15 @@ if echo "$PROMPT_LC" | grep -qE '(@specky-|@sdd-|/specky-|/sdd-|specky-orchestra
 fi
 
 # ── Allowlist: pure informational / read-only ──
-if echo "$PROMPT_LC" | grep -qE '^(what|why|how|where|when|show|list|explain|describe|status|help)\b'; then
+# Word-boundary emulated with POSIX char classes for BSD/GNU portability.
+if echo "$PROMPT_LC" | grep -qE '^(what|why|how|where|when|show|list|explain|describe|status|help)([^a-z0-9]|$)'; then
   exit 0
 fi
 
 # ── Blocklist: free-form code / build / edit requests ──
-# Keywords that trigger when a pipeline is active
-if echo "$PROMPT_LC" | grep -qE '\b(implement|create|build|write|code|fix|add|refactor|deploy|release|merge|commit|push|test|install|setup|configure)\b'; then
+# Keywords that trigger when a pipeline is active.
+# Pattern: keyword must be preceded and followed by a non-alphanumeric (or bounds).
+if echo "$PROMPT_LC" | grep -qE '(^|[^a-z0-9])(implement|create|build|write|code|fix|add|refactor|deploy|release|merge|commit|push|test|install|setup|configure)([^a-z0-9]|$)'; then
   echo "" >&2
   echo "🚫 [pipeline-guard] BLOCKED — active Specky pipeline detected" >&2
   echo "" >&2
