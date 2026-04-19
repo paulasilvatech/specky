@@ -5,8 +5,8 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "specky": "./dist/cli/index.js",
-    "specky-sdd": "./dist/cli/index.js"
+    "specky": "dist/cli/index.js",
+    "specky-sdd": "dist/cli/index.js"
   },
   "scripts": {
     "build": "tsc && rm -rf dist/templates && cp -r templates dist/templates && node scripts/build-claude-hooks.mjs && node scripts/finalize-build.mjs",
@@ -51,7 +51,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/paulasilvatech/specky"
+    "url": "git+https://github.com/paulasilvatech/specky.git"
   },
   "homepage": "https://github.com/paulasilvatech/specky#readme",
   "dependencies": {
