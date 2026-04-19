@@ -5,6 +5,48 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0-rc.8] - 2026-04-19
+
+### Fixed — CRITICAL: `sdd_get_status` ignored existing `.specs/` features
+
+Field-reported blocker: users running `sdd_get_status` on projects with
+active features in `.specs/` (e.g., `.specs/001-sifap/.sdd-state.json`
+showing phase 7) got back `features: []` and `current_phase: "init"` —
+as if no pipeline existed. This broke every brownfield workflow and
+made pipeline resumption impossible.
+
+**Root cause:** `sdd_get_status` called `stateMachine.loadState(spec_dir)`
+which reads `<spec_dir>/.sdd-state.json` — but state actually lives
+per-feature at `<spec_dir>/<NNN-name>/.sdd-state.json`. The tool never
+opened feature directories, so `state.features` was always the empty
+default array.
+
+**Fix (`src/tools/utility.ts`):**
+
+- `sdd_get_status` now scans `<spec_dir>/` for feature directories via
+  `fileManager.listFeatures()` (which already existed but was ignored).
+- For each feature on disk, loads its per-feature state file.
+- Response now includes:
+  - `features: [...]` — full list of features with `phase`, `phase_progress`, `gate_decision`
+  - `active_feature: { number, name, phase, directory }` — resolves explicit `feature_number` or picks the last feature
+- When `feature_number` is provided, loads THAT feature's state as the current phase.
+- Falls back to root state only when no features exist on disk (preserves greenfield behavior).
+
+**Regression test (`tests/integration/status-detection.test.ts`):**
+
+4 new tests covering:
+1. Greenfield (no `.specs/`) → features:[] + current_phase:init ✅
+2. Single feature in progress → detected with correct phase/progress ✅
+3. Multiple features → aggregated independently with per-feature state ✅
+4. Explicit `feature_number` → targets that feature's state ✅
+
+Total test suite: 74/74 passing (70 prior + 4 new).
+
+**Impact:** this fix makes Specky usable for brownfield projects and
+enables the SIFAP-style workflow where a team works on features across
+days/weeks and needs to resume where they left off. Without this fix,
+every session would reset state to init regardless of what's on disk.
+
 ## [3.4.0-rc.7] - 2026-04-19
 
 ### Changed — Model routing: Opus 4.7 for reasoning phases, explicit fallback chains
