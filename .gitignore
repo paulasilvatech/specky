@@ -47,5 +47,4 @@ apm.lock.yaml
 Dockerfile
 docker-compose.yml
 .dockerignore
-PUBLISH.md
 ONBOARDING.md
