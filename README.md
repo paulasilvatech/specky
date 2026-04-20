@@ -141,7 +141,7 @@ The result? Teams spend 40% of their time on rework because requirements were ne
 | **MCP** | Model Context Protocol — an open standard that lets AI assistants call external tools | Specky is an MCP server; any AI IDE can connect to it |
 | **EARS Notation** | A method for writing requirements that forces precision with 6 patterns | Eliminates vague statements like "the system should be fast" |
 | **Agents and Skills** | Specialized AI roles that invoke Specky tools with domain expertise | 13 agents + 8 skills orchestrate the full pipeline |
-| **Plugins** | A complete AI development package: agents + prompts + skills + hooks + MCP server | Installed via [APM](https://microsoft.github.io/apm/) — Microsoft's dependency manager for AI agents |
+| **CLI Toolkit** | A complete AI development package: agents + prompts + skills + hooks + MCP server | Installed via npm: `npm install -g specky-sdd` |
 
 ### How Specky Enforces Determinism
 
@@ -873,7 +873,7 @@ Together they form the **SDD layer** of the GitHub + Microsoft enterprise platfo
 }
 ```
 
-> **Note:** This example assumes Specky is installed via `specky install` (after `npm install -g specky-sdd@latest`). See [Install the Plugin](#install-the-plugin) for details.
+> **Note:** This example assumes Specky is installed via `specky install --ide=copilot` (after `npm install -g specky-sdd@latest`). See [Quick Start](#quick-start) for details.
 
 ## Project Configuration
 
@@ -1041,7 +1041,7 @@ Every pipeline phase produces a traceable artifact in `.specs/NNN-feature/`. The
 - **EARS Validator** — programmatic requirement quality enforcement
 - **Cross-Artifact Analysis** — automatic alignment checking between spec, design, and tasks
 - **Phase Enforcement** — state machine blocks phase-skipping; required files gate advancement
-- **507 unit tests** — CI enforces thresholds on every push
+- **Unit tests** — CI enforces thresholds on every push
 
 
 ## Development

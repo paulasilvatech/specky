@@ -102,7 +102,7 @@ winget install OpenJS.NodeJS.LTS
 
 cd your-project
 npm install --save-dev specky-sdd@latest
-npx specky init
+npx specky init --ide=copilot
 ```
 
 Specky hooks run under Node (no bash required on Windows). Path separators are auto-normalized.
