@@ -2,12 +2,15 @@
 # branch-validator.sh — Validate git branch matches expected pattern for current tool.
 #
 # Type: Mixed (see below) | Trigger: PreToolUse | All phases
-#   • Advisory (exit 0, warn) for sdd_* pipeline tools
-#   • BLOCKING (exit 2) for Write|Edit|MultiEdit when a pipeline is active
-#     on a non-spec branch — prevents the SIFAP-style bypass where user
-#     edits code from impl/* instead of spec/NNN-*.
+#   • Advisory (exit 0, warn) for sdd_* pipeline tools (always).
+#   • For native edit tools (Write|Edit|MultiEdit) on a wrong branch during
+#     an active pipeline:
+#       - default (SPECKY_GUARD unset OR "off"/"advisory") → warn, exit 0
+#       - SPECKY_GUARD=strict                              → exit 2 (BLOCK)
 #
-# Escape hatch: SPECKY_GUARD=off allows bypass with warning (deprecated v3.6).
+# Rationale (rc.13): rc.10-rc.12 defaulted Write|Edit|MultiEdit to BLOCKING,
+# which burned pilots who run `specky init` and then edit anything from
+# develop/main. Enforcement is now explicit opt-in.
 
 set -euo pipefail
 
@@ -15,51 +18,53 @@ TOOL="${SDD_TOOL_NAME:-unknown}"
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr -d '\n' || true)
 [ -z "$CURRENT_BRANCH" ] && CURRENT_BRANCH="unknown"
 
-# ── BLOCKING path for native edit tools when pipeline is active ──
+# Mode selection (rc.13): strict = block, anything else = advisory.
+SPECKY_GUARD_MODE="${SPECKY_GUARD:-advisory}"
+if [ "$SPECKY_GUARD_MODE" = "off" ]; then
+  SPECKY_GUARD_MODE="advisory"
+fi
+
+# ── Branch enforcement for native edit tools when pipeline is active ──
 if [[ "$TOOL" == "Write" || "$TOOL" == "Edit" || "$TOOL" == "MultiEdit" ]]; then
-  # Check if a pipeline is active (same logic as pipeline-guard)
   LATEST=$(ls -td .specs/*/ 2>/dev/null | head -1 || true)
   if [ -z "$LATEST" ]; then exit 0; fi
   STATE="$LATEST/.sdd-state.json"
   if [ ! -f "$STATE" ]; then exit 0; fi
-
-  # Escape hatch
-  if [ "${SPECKY_GUARD:-on}" = "off" ]; then
-    echo "⚠️  [branch-validator] SPECKY_GUARD=off — allowing edit on '$CURRENT_BRANCH'" >&2
-    exit 0
-  fi
 
   PHASE="?"
   if command -v jq >/dev/null 2>&1; then
     PHASE=$(jq -r '.phase // "?"' "$STATE" 2>/dev/null || echo "?")
   fi
 
+  FEATURE=$(basename "$LATEST")
+
+  emit_violation() {
+    local expected="$1"
+    if [ "$SPECKY_GUARD_MODE" = "strict" ]; then
+      echo "" >&2
+      echo "🚫 [branch-validator] BLOCKED — $TOOL on '$CURRENT_BRANCH' (phase $PHASE expects $expected) [SPECKY_GUARD=strict]" >&2
+      echo "   Feature:  $FEATURE" >&2
+      echo "   Fix:      git checkout $expected   (or: git checkout -b spec/$FEATURE)" >&2
+      echo "   Disable:  unset SPECKY_GUARD" >&2
+      exit 2
+    fi
+    echo "⚠️  [branch-validator] $TOOL on '$CURRENT_BRANCH' during phase $PHASE (expected $expected). Enforce with: export SPECKY_GUARD=strict" >&2
+  }
+
   case "$PHASE" in
     0|1|2|3|4|5|6|7)
       if [[ "$CURRENT_BRANCH" != spec/* ]]; then
-        echo "" >&2
-        echo "🚫 [branch-validator] BLOCKED — edit on non-spec branch during active pipeline" >&2
-        echo "" >&2
-        echo "   Branch:   $CURRENT_BRANCH" >&2
-        echo "   Phase:    $PHASE (expects spec/NNN-*)" >&2
-        echo "   Feature:  $(basename "$LATEST")" >&2
-        echo "" >&2
-        echo "   Fix:      git checkout -b spec/$(basename "$LATEST")" >&2
-        echo "   Bypass:   export SPECKY_GUARD=off  (deprecated, removed v3.6)" >&2
-        echo "" >&2
-        exit 2
+        emit_violation "spec/$FEATURE"
       fi
       ;;
     8)
       if [[ "$CURRENT_BRANCH" != "develop" ]]; then
-        echo "🚫 [branch-validator] BLOCKED — Phase 8 requires 'develop' branch (you are on '$CURRENT_BRANCH')" >&2
-        exit 2
+        emit_violation "develop"
       fi
       ;;
     9)
       if [[ "$CURRENT_BRANCH" != "stage" ]]; then
-        echo "🚫 [branch-validator] BLOCKED — Phase 9 requires 'stage' branch (you are on '$CURRENT_BRANCH')" >&2
-        exit 2
+        emit_violation "stage"
       fi
       ;;
   esac

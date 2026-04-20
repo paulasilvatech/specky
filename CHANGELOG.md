@@ -5,6 +5,62 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0-rc.13] - 2026-04-19
+
+### Fixed — CRITICAL: Copilot still blocked after rc.12 (over-aggressive hooks)
+
+Field incident continuation: after migrating to rc.12 (which resolved the
+`${CLAUDE_PLUGIN_ROOT}` path bug), the pilot still saw "Blocked by
+Pre-Tool Use hook" on nearly every prompt in Copilot. Path resolution
+was fixed, but the hooks themselves were blocking by default.
+
+**Root cause:** two hooks shipped with blocking-by-default semantics that
+were too aggressive for real pilot usage:
+
+1. `pipeline-guard.sh` (UserPromptSubmit, `matcher=""` → runs on **every**
+   prompt): blocked any prompt containing the words
+   `implement|create|build|write|code|fix|add|refactor|deploy|release|merge|commit|push|test|install|setup|configure`.
+   That regex matches practically every developer prompt. Every block
+   surfaced as "Blocked by Pre-Tool Use hook" in Copilot.
+
+2. `branch-validator.sh` (PreToolUse, `matcher="Write|Edit|MultiEdit"`):
+   blocked every edit tool call whenever a `.specs/` pipeline existed and
+   the user wasn't on a `spec/*` branch. Pilots who ran `specky init` and
+   then edited anything from `develop`/`main` were blocked.
+
+The only escape hatch was `SPECKY_GUARD=off` (opt-OUT), which pilots had
+no way of knowing to set.
+
+**Fix — flipped polarity:** both hooks now default to **advisory**
+(warn on stderr, `exit 0`). Enforcement is explicit opt-in via
+`SPECKY_GUARD=strict`.
+
+| Mode                        | pipeline-guard | branch-validator |
+|-----------------------------|----------------|------------------|
+| `SPECKY_GUARD=strict`       | BLOCK (exit 2) | BLOCK (exit 2)   |
+| (unset) / `off` / `advisory`| warn, exit 0   | warn, exit 0     |
+
+No agents, prompts, or MCP tools changed. Only the two hook scripts +
+their integration tests.
+
+**Migration for existing installs:**
+
+```bash
+npm install -g specky-sdd@next     # pulls rc.13+
+cd affected-project
+specky install --force              # overwrites the hook scripts
+# reload Copilot Chat / restart VS Code — no more spurious blocks
+```
+
+To re-enable strict enforcement after pilot has adopted the orchestrator
+routing:
+
+```bash
+export SPECKY_GUARD=strict          # per-shell opt-in
+```
+
+Tests updated to verify the flipped semantics (74/74 still passing).
+
 ## [3.4.0-rc.12] - 2026-04-19
 
 ### Fixed — CRITICAL: Copilot hook executor denied all tools
