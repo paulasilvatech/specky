@@ -57,7 +57,7 @@
 | **Enterprise** | [Compliance Frameworks](#compliance-frameworks) | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 |
 | | [Enterprise Ready](#enterprise-ready) | Security, audit trail, quality gates |
 | **Platform** | [The SDD Platform](#the-spec-driven-development-platform) | Built on Spec-Kit, everything included |
-| | [Roadmap](#roadmap) | v3.0 current, v3.1+ planned |
+| | [Roadmap](#roadmap) | v3.4 current, v3.5+ planned |
 
 
 ## What is Specky?
@@ -1076,11 +1076,14 @@ curl http://localhost:3200/health
 
 ## Roadmap
 
-### v3.3 (current)
+### v3.4 (current)
 
 | Capability | Status |
 |------------|--------|
 | 57 MCP tools across 10 enforced pipeline phases | Stable |
+| Unified `specky` CLI: install, doctor, status, upgrade, hooks, serve | Stable |
+| IDE-specific install: `--ide=copilot` or `--ide=claude` | Stable |
+| Copilot-safe hook manifests (no lifecycle event cross-read) | Stable |
 | Phase validation on every tool with gate enforcement | Stable |
 | 17 software engineering diagram types (C4, sequence, ER, DFD, deployment, network) | Stable |
 | 12-section system design template (C4 model, security, infrastructure) | Stable |
@@ -1094,7 +1097,7 @@ curl http://localhost:3200/health
 | Cognitive debt metrics at LGTM gates | Stable |
 | Test traceability: REQ-ID → test coverage mapping | Stable |
 | Intent drift detection with amendment suggestions | Stable |
-| 14 automation hooks (4 blocking) | Stable |
+| 16 automation hooks (advisory-default, strict opt-in via SPECKY_GUARD) | Stable |
 | 13 specialized agents + 22 prompts + 8 skills | Stable |
 | 6 compliance frameworks (HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001) | Stable |
 | 6 input types (transcript, PDF, DOCX, Figma, codebase, raw text) | Stable |
@@ -1104,9 +1107,8 @@ curl http://localhost:3200/health
 | JSONL audit logger (optional) | Stable |
 | RBAC foundation (opt-in role-based access control) | Stable |
 | Rate limiting for HTTP transport (opt-in) | Stable |
-| 507 unit tests | Stable |
 
-### v3.4+ (planned)
+### v3.5+ (planned)
 
 | Feature | Description |
 |---------|-------------|
