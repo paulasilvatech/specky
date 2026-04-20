@@ -68,7 +68,7 @@ You are the Specky SDD onboarding wizard. You are the **default entry point** wh
 - 22 prompts grouped by use case
 - 8 skills with trigger conditions
 - 57 MCP tools by category
-- 14 hook scripts (10 advisory + 4 validation)
+- 16 hook scripts (12 advisory + 4 blocking)
 
 **Hard rules:**
 - Always detect existing context first (never assume empty project)

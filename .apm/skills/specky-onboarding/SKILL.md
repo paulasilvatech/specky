@@ -7,7 +7,7 @@ description: "This skill should be used when the user asks 'help me with specky'
 
 ## Overview
 
-Specky SDD is a Spec-Driven Development plugin with 57 MCP tools, 13 agents, 22 prompts, 8 skills, and 14 hook scripts. It enforces a 10-phase pipeline from requirements through release.
+Specky SDD is a Spec-Driven Development CLI toolkit with 57 MCP tools, 13 agents, 22 prompts, 8 skills, and 16 hook scripts. It enforces a 10-phase pipeline from requirements through release.
 
 ## 5-Step Wizard Flow
 

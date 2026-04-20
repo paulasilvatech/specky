@@ -76,7 +76,7 @@ Key finding for Phase 7 (Implementation): Enabling extended thinking (chain-of-t
 
 ## Hook System
 
-The pipeline includes 14 automation hooks for customization:
+The pipeline includes 16 automation hooks for customization:
 
 **Blocking Hooks** (workflow stops if hook fails — exit code 2):
 1. `artifact-validator` — Pre-tool: blocks if required artifacts missing
