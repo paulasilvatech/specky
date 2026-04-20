@@ -96,7 +96,7 @@ if echo "$PROMPT_LC" | grep -qE '(^|[^a-z0-9])(implement|create|build|write|code
     echo "" >&2
     echo "   What to do:" >&2
     echo "     • Resume:   invoke @specky-orchestrator (Copilot) or /specky-orchestrate (Claude)" >&2
-    echo "     • Status:   npx specky status" >&2
+    echo "     • Status:   specky status   (or: npx specky status)" >&2
     echo "     • Help:     invoke @specky-onboarding (Copilot) or /specky-onboarding (Claude)" >&2
     echo "" >&2
     echo "   Disable enforcement (default):" >&2

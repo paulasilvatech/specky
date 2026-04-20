@@ -1,7 +1,7 @@
 {
   "name": "specky",
   "version": "3.4.0-rc.1",
-  "description": "Specky — Spec-Driven Development engine. 10-phase pipeline with 57 MCP tools, 13 agents, 22 prompts, 8 skills, 14 hooks, EARS notation, enterprise security.",
+  "description": "Specky — Spec-Driven Development engine. 10-phase pipeline with 57 MCP tools, 13 agents, 22 prompts, 8 skills, 16 hooks, EARS notation, enterprise security.",
   "author": {
     "name": "Paula Silva",
     "url": "https://github.com/paulasilvatech"

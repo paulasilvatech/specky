@@ -13,52 +13,71 @@ Specky is not just an MCP server — it's a **plugin**: a complete AI developmen
 | **13 Agents** | Specialized AI personas — `@specky-orchestrator` runs the full pipeline, `@specky-onboarding` guides setup, `@spec-engineer` writes specs, etc. |
 | **22 Prompts** | Slash commands — `/specky-greenfield`, `/specky-specify`, `/specky-release`. One command activates the right agent. |
 | **8 Skills** | Domain knowledge loaded into agents — EARS patterns, implementation rules, test criteria, release gate protocol. |
-| **14 Hooks** | Pre/post validation scripts — check artifacts exist, validate branch, enforce gates, pause for LGTM. |
+| **16 Hooks** | Pre/post validation scripts + `pipeline-guard` (UserPromptSubmit) + `session-banner` (SessionStart) — check artifacts, validate branch, enforce gates, block out-of-flow prompts. |
 | **57 MCP Tools** | The engine underneath — validates, generates, and enforces. Agents call it; hooks guard it. |
 
 **Why does this matter?** Instead of calling raw MCP tools and hoping you're in the right phase with the right prerequisites, you call an agent and it does everything correctly — validates, routes, enforces hooks, and pauses for review.
 
-### What is APM?
-
-[APM](https://microsoft.github.io/apm/) (Agent Package Manager) is Microsoft's open-source dependency manager for AI agent configuration. It manages agents, skills, prompts, hooks, and MCP servers as versioned packages with lock files. APM must be [installed separately](https://microsoft.github.io/apm/getting-started/installation/) before use:
-
-```bash
-# Install APM (one-time) — pick one:
-curl -sSL https://aka.ms/apm-unix | sh        # macOS / Linux
-brew install microsoft/apm/apm                 # Homebrew
-irm https://aka.ms/apm-windows | iex           # Windows PowerShell
-
-# Then install Specky:
-apm install paulasilvatech/specky
-```
-
----
-
 ## Installation
 
-The **Specky plugin** bundles everything: 13 agents, 22 prompts, 8 skills, 14 hooks, and the MCP server (57 tools) — version-controlled with your repo.
+The **Specky plugin** bundles everything: 13 agents, 22 prompts, 8 skills, 16 hooks, and the MCP server (57 tools) — installed into your project via the `specky` CLI.
 
-### Via APM
-
-[Install APM](https://microsoft.github.io/apm/getting-started/installation/) first, then:
+### One-time CLI install (recommended)
 
 ```bash
-apm install paulasilvatech/specky
+# Install the CLI globally (once per machine)
+npm install -g specky-sdd@latest
+
+# Bootstrap each project
+cd your-project
+specky install
 ```
 
-Generates a lock file for version reproducibility across your team.
+The CLI auto-detects Claude Code and/or GitHub Copilot from workspace signals and installs everything to the right locations.
 
-The plugin automatically configures:
-- MCP server `specky-sdd` via npx → `.vscode/mcp.json`
-- 13 Copilot agents → `.github/plugin/specky/agents/`
-- 22 ready-to-use prompts → `.github/plugin/specky/prompts/`
-- 8 shared skills → `.github/plugin/specky/skills/`
-- 14 hook scripts → `.github/plugin/specky/hooks/scripts/`
-- Copilot instructions → `.github/plugin/specky/instructions/`
-- Pipeline config → `.github/plugin/specky/config.yml`
-- VS Code hooks → `.vscode/settings.json`
+### Other install modes
 
-> **Tip:** Commit `.github/plugin/` and `.vscode/` to Git so every team member gets Specky automatically on clone.
+```bash
+# Per-project (teams that want to pin the version in package.json)
+cd your-project
+npm install --save-dev specky-sdd@latest
+npx specky install
+
+# Zero-install (one command, no persistent CLI)
+cd your-project
+npx -y specky-sdd@latest install
+```
+
+### What `specky install` creates
+
+| Path | Purpose | Commit? |
+|---|---|---|
+| `.claude/agents/*.md` (13) | Claude Code agents | ❌ gitignored (regenerated) |
+| `.claude/commands/*.md` (22) | Claude slash commands | ❌ gitignored |
+| `.claude/skills/*/SKILL.md` (8) | Claude skills | ❌ gitignored |
+| `.claude/hooks/scripts/*.sh` (16) | Claude hook scripts | ❌ gitignored |
+| `.claude/settings.json` | Hooks + 37 permission rules | ✅ **commit** (team-shared) |
+| `.github/agents/*.agent.md` (13) | GitHub Copilot agents | ❌ gitignored |
+| `.github/prompts/*.prompt.md` (22) | Copilot slash prompts | ❌ gitignored |
+| `.github/skills/*/SKILL.md` (8) | Copilot skills | ❌ gitignored |
+| `.github/hooks/specky/scripts/*.sh` (16) | Copilot hook scripts | ❌ gitignored |
+| `.github/hooks/specky/sdd-hooks.json` | Copilot hook manifest | ❌ gitignored |
+| `.mcp.json`, `.vscode/mcp.json` | MCP server registration | ✅ **commit** |
+| `.vscode/settings.json` | Copilot MCP enablement | ✅ **commit** |
+| `.specky/config.yml` | Pipeline config | ✅ **commit** |
+| `.specky/install.lock` | SHA256 integrity manifest | ❌ gitignored |
+| `.gitignore` | Auto-appends managed block | ✅ **commit** |
+
+The CLI **automatically adds a `.gitignore` block** — vendored assets (regenerated on every `specky upgrade`) are excluded, while team-shared configs are committed.
+
+### Validation
+
+```bash
+specky doctor          # Integrity + config health (should be all green)
+specky status          # Active features and pipeline phase
+```
+
+> **Why CLI instead of APM?** Versions 3.4+ ship a unified CLI that works cross-platform (macOS/Linux/Windows/WSL) with no external tooling. This replaces the v3.3 APM-based distribution, which required a separate APM install and had inconsistent Copilot hook resolution. Existing APM-installed projects can migrate with `specky install --force`.
 
 ---
 
@@ -449,9 +468,11 @@ A: The `@implementer` (Phase 7) generates detailed implementation plans, test st
 
 ## Next Steps
 
-1. Install the plugin: `apm install paulasilvatech/specky` (requires [APM](https://microsoft.github.io/apm/getting-started/installation/))
-3. Start with `/specky-pipeline-status` to see if there are active features, or
-4. Use `/specky-greenfield` (new project) or `/specky-brownfield` (existing feature) to begin
-5. Refer to this guide whenever you're unsure which prompt to use
+1. Install the CLI: `npm install -g specky-sdd@latest`
+2. Bootstrap the project: `specky install`
+3. Validate: `specky doctor`
+4. Start with `/specky-pipeline-status` to see if there are active features
+5. Use `/specky-greenfield` (new project) or `/specky-brownfield` (existing feature) to begin
+6. Refer to this guide whenever you're unsure which prompt to use
 
 Plugin documentation: [`GETTING-STARTED.md`](GETTING-STARTED.md) | Changelog: [`CHANGELOG.md`](CHANGELOG.md) | Security: [`SECURITY.md`](SECURITY.md)

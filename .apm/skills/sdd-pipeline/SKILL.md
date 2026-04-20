@@ -126,10 +126,13 @@ Hooks are configured in `sdd-hooks.json` with PreToolUse and PostToolUse matcher
 
 **Agent-based:**
 ```
-@specky-sdd-agent init feature-name
-@specky-sdd-agent specify --input=RESEARCH.md
-@specky-sdd-agent implement --model=sonnet
+@specky-orchestrator           (end-to-end pipeline coordinator)
+@sdd-init feature-name         (Phase 0 — initialize feature)
+@spec-engineer                 (Phase 2 — write SPECIFICATION.md)
+@implementer                   (Phase 7 — scaffold code + tests)
 ```
+
+See [copilot-instructions.instructions.md](../../instructions/copilot-instructions.instructions.md) for the full agent catalog.
 
 ## Workflow Entry Points
 

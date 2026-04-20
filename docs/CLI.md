@@ -8,12 +8,13 @@ The `specky` CLI is the single write-path for installing, validating, and upgrad
 
 ## Commands
 
-### `specky init`
+### `specky install` (alias: `specky init`)
 
-Install Specky assets (agents, prompts, skills, hooks) into the current workspace.
+Install Specky assets (agents, prompts, skills, hooks) into the current workspace. `install` is the preferred spelling (matches `npm install` intuition); `init` remains as an alias and dispatches to the same implementation.
 
 ```
-specky init [--ide=<claude|copilot|both|auto>] [--force] [--dry-run]
+specky install [--ide=<claude|copilot|both|auto>] [--force] [--dry-run]
+specky init    [--ide=<claude|copilot|both|auto>] [--force] [--dry-run]   # alias
 ```
 
 | Flag | Default | Description |
@@ -27,7 +28,7 @@ specky init [--ide=<claude|copilot|both|auto>] [--force] [--dry-run]
 - `.claude/agents/*.md` (13 files) — when `ide=claude` or `both`
 - `.claude/commands/*.md` (22 slash commands)
 - `.claude/skills/*/SKILL.md` (8 skills)
-- `.claude/hooks/scripts/*.sh` (14 hook scripts, executable)
+- `.claude/hooks/scripts/*.sh` (16 hook scripts, executable — adds `pipeline-guard.sh` + `session-banner.sh` on top of the 14 phase hooks)
 - `.claude/settings.json` — deep-merged:
   - `hooks` section (SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop)
   - `permissions.allow` auto-populated with native tools (`Read`, `Edit`, `Write`, `Bash(git:*)`, `Bash(npm:*)`, etc.) and all `mcp__specky__*` tools — prevents per-invocation approval prompts

@@ -2,7 +2,7 @@
 
 > Works on macOS, Linux, Windows, and WSL. Requires Node.js ≥18.
 
-Specky is distributed as a single npm package (`specky-sdd`) that bundles both the MCP server and all plugin assets (13 agents, 22 prompts, 8 skills, 14 hooks). A unified CLI (`specky`) handles install, validation, and upgrade.
+Specky is distributed as a single npm package (`specky-sdd`) that bundles both the MCP server and all plugin assets (13 agents, 22 prompts, 8 skills, 16 hooks). A unified CLI (`specky`) handles install, validation, and upgrade.
 
 ---
 
@@ -179,9 +179,9 @@ npx specky init
 
 Reads `.claude-plugin/plugin.json` and produces the same `.claude/` layout as `specky init --ide=claude`.
 
-### APM (Microsoft Agent Package Manager)
+### APM (Microsoft Agent Package Manager) — legacy
 
-For teams already using APM:
+For teams already standardized on [APM](https://microsoft.github.io/apm/):
 
 ```bash
 brew install microsoft/apm/apm     # macOS
@@ -189,7 +189,9 @@ brew install microsoft/apm/apm     # macOS
 apm install paulasilvatech/specky
 ```
 
-APM downloads the package and delegates to `specky init` for file placement.
+APM downloads the package and delegates to `specky install` for file placement — so the resulting workspace layout is identical to the `npm install -g` path.
+
+> **Note**: new projects should prefer the native CLI install (`npm install -g specky-sdd@latest` + `specky install`). APM is kept working for backward compatibility but is no longer the primary distribution channel as of v3.4.
 
 ---
 
@@ -274,10 +276,23 @@ Alternative: use `npx specky` instead of `specky`.
 
 ### `settings.json hooks is empty {}`
 
-You installed via a version < v3.4.0 which had a broken APM integration. Fix:
+You installed via a version < v3.4.0 which had a broken APM integration that left `.claude/settings.json` without hooks. Fix:
 
 ```bash
-npx specky init --force
+npm install -g specky-sdd@latest   # update CLI to 3.4+
+specky install --force              # rewrite settings.json with hooks + permissions
+specky doctor                       # verify
+```
+
+### `Denied by Pre-Tool Use hook: unexpected error` in Copilot Chat
+
+You installed via v3.4.0-rc.10 or earlier, which shipped a Copilot hook manifest with unresolved `${CLAUDE_PLUGIN_ROOT}` paths. Copilot's hook executor failed to spawn hook scripts, denying every tool call. Fix:
+
+```bash
+npm install -g specky-sdd@latest   # pulls rc.12+ with fixed manifest
+cd affected-project
+specky install --force              # overwrites .github/hooks/specky/sdd-hooks.json
+# Reload VS Code: Cmd+Shift+P → "Developer: Reload Window"
 ```
 
 ### Build-time bundling
