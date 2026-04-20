@@ -23,6 +23,24 @@
 
 set -euo pipefail
 
+# ── rc.14: Copilot compatibility guard ───────────────────
+# VS Code Copilot reads .claude/settings.json hooks and treats SessionStart/
+# UserPromptSubmit as PreToolUse. When that happens, this script is invoked for
+# every tool call (Read, Glob, Grep…). The script tries to read the user prompt
+# from stdin but Copilot sends tool-call data instead → jq fails → cat hangs
+# → 5s timeout → "Blocked by Pre-Tool Use hook".
+#
+# Detection: Claude Code sets CLAUDE_PROJECT_DIR for its hooks. Copilot doesn't.
+# Also: if SDD_TOOL_NAME is set, we're being called as PreToolUse (not our event).
+if [ -z "${CLAUDE_PROJECT_DIR:-}" ] && [ -n "${SDD_TOOL_NAME:-}" ]; then
+  exit 0
+fi
+# Fallback: if no stdin is available and no CLAUDE_USER_PROMPT, skip gracefully.
+# This catches Copilot calling us as a lifecycle hook where stdin has tool data.
+if [ -z "${CLAUDE_USER_PROMPT:-}" ] && [ -z "${CLAUDE_PROJECT_DIR:-}" ]; then
+  exit 0
+fi
+
 # ── Mode selection ───────────────────────────────────────
 # strict  → block free-form edit prompts (exit 2)
 # advisory|off|<unset> → warn only (exit 0)

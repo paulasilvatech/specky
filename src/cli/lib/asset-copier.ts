@@ -15,6 +15,7 @@ import {
   statSync,
   writeFileSync,
   chmodSync,
+  unlinkSync,
 } from "node:fs";
 import { basename, resolve, relative } from "node:path";
 import type { Targets } from "./paths.js";
@@ -148,6 +149,15 @@ export function copyToCopilot(
   copyDir(src.promptsDir, targets.copilot.prompts, opts, result);
   copyDir(src.skillsDir, targets.copilot.skills, opts, result);
   copyDir(src.hookScriptsDir, targets.copilot.hooksScripts, opts, result);
+
+  // rc.14: Remove stale pre-rc.12 hooks manifest at .github/hooks/specky-sdd-hooks.json.
+  // Old installs placed it there with broken ${CLAUDE_PLUGIN_ROOT} paths. Copilot loads
+  // ALL .json files in .github/hooks/ so the broken one causes spurious blocks.
+  const staleManifest = resolve(targets.copilot.hooksRoot, "..", "specky-sdd-hooks.json");
+  if (!opts.dryRun && existsSync(staleManifest)) {
+    try { unlinkSync(staleManifest); } catch { /* ignore — might be read-only */ }
+  }
+
   // IMPORTANT: use the build-time copilot-hooks.json (paths already resolved
   // to .github/hooks/specky/scripts/), NOT the raw .apm/hooks/sdd-hooks.json
   // which still contains ${CLAUDE_PLUGIN_ROOT}. See rc.12 CHANGELOG.

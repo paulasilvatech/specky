@@ -105,6 +105,25 @@ async function main() {
     prefixMatchers: false,
     scriptsPath: COPILOT_SCRIPTS_PATH,
   });
+
+  // rc.14: Strip lifecycle events Copilot doesn't support.
+  // Copilot's hook executor treats ALL hooks as PreToolUse. SessionStart
+  // (session-banner.sh) and UserPromptSubmit (pipeline-guard.sh with matcher:"")
+  // fire on every tool call in Copilot. pipeline-guard.sh reads stdin to parse
+  // the user prompt; Copilot provides tool-call data instead → jq parse failure
+  // → cat hangs → 5s timeout → "Blocked by Pre-Tool Use hook".
+  delete copilotHooks.SessionStart;
+  delete copilotHooks.UserPromptSubmit;
+
+  // rc.14: Strip Write|Edit|MultiEdit matcher — these are Claude Code native
+  // tool names that don't exist in Copilot. Copilot's matcher may still fire
+  // branch-validator.sh for unrelated tools, causing spurious blocks.
+  if (Array.isArray(copilotHooks.PreToolUse)) {
+    copilotHooks.PreToolUse = copilotHooks.PreToolUse.filter(
+      (g) => !/^(Write|Edit|MultiEdit)(\|(Write|Edit|MultiEdit))*$/.test(g.matcher ?? ""),
+    );
+  }
+
   await writeManifest(COPILOT_OUTPUT, copilotHooks, "build-copilot-hooks");
 }
 

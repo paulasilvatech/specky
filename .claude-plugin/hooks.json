@@ -1,5 +1,0 @@
-{
-  "_comment": "Claude Code plugin hooks — auto-generated at build time. See dist/claude-hooks.json for the full transform.",
-  "_note": "This file references scripts at ../.apm/hooks/scripts/*.sh which are copied into the user's workspace by `specky init`.",
-  "include": "../dist/claude-hooks.json"
-}

@@ -2,7 +2,7 @@
 
 > Works on macOS, Linux, Windows, and WSL. Requires Node.js ≥18.
 
-Specky is distributed as a single npm package (`specky-sdd`) that bundles both the MCP server and all plugin assets (13 agents, 22 prompts, 8 skills, 16 hooks). A unified CLI (`specky`) handles install, validation, and upgrade.
+Specky is distributed as a single npm package (`specky-sdd`) that bundles both the MCP server and all assets (13 agents, 22 prompts, 8 skills, 16 hooks). A unified CLI (`specky`) handles install, validation, and upgrade.
 
 ---
 
@@ -24,10 +24,13 @@ Specky is distributed as a single npm package (`specky-sdd`) that bundles both t
 # 1. Install the CLI globally (one time per machine)
 npm install -g specky-sdd@latest
 
-# 2. Bootstrap each project
+# 2. Bootstrap each project — choose your IDE:
 cd your-project
-specky install          # `init` is the same — install is the alias
+specky install --ide=copilot   # VS Code + GitHub Copilot (recommended)
+specky install --ide=claude    # Claude Code
 ```
+
+> **Important:** Always specify `--ide=copilot` or `--ide=claude`. The default `--ide=auto` installs for both IDEs, which causes hook cross-read conflicts (Copilot reads `.claude/settings.json` hooks and blocks tool calls). See [IDE-specific install](#ide-specific-install) below.
 
 **After the global install, you never type `npx` or `npm` again for day-to-day Specky commands:**
 
@@ -39,9 +42,9 @@ specky upgrade          # refresh assets (preserves .specs/)
 specky hooks list       # list hooks
 ```
 
-That's it. The CLI auto-detects whether you use Claude Code, GitHub Copilot, or both, and installs the correct assets to `.claude/` and/or `.github/`.
+That's it. The `--ide` flag determines whether assets go to `.github/` (Copilot) or `.claude/` (Claude Code).
 
-**Next:** open Claude Code or VS Code and invoke `@specky-onboarding` (Copilot) or `/specky-onboarding` (Claude) to start the pipeline.
+**Next:** open VS Code and invoke `@specky-onboarding` (Copilot) or open Claude Code and use `/specky-onboarding` to start the pipeline.
 
 ---
 
@@ -54,7 +57,7 @@ That's it. The CLI auto-detects whether you use Claude Code, GitHub Copilot, or 
 | **Zero-install** | `npx -y specky-sdd@latest init` | One-shot bootstrap, no persistent install. Downloads fresh each time. |
 | **Offline** | `npm pack` + `npm install ./specky-sdd-*.tgz` | Air-gapped environments. |
 
-**Both modes produce the same workspace layout** (`.claude/`, `.github/`, `.vscode/`, `.specky/`). The only difference is where the `specky` binary lives.
+**Both modes produce the same workspace layout** (`.github/` for Copilot or `.claude/` for Claude Code, plus `.vscode/` and `.specky/`). The only difference is where the `specky` binary lives.
 
 **Rule of thumb**:
 - If you maintain many projects → **global**
@@ -72,7 +75,7 @@ That's it. The CLI auto-detects whether you use Claude Code, GitHub Copilot, or 
 brew install node
 cd your-project
 npm install --save-dev specky-sdd@latest
-npx specky init
+npx specky init --ide=copilot
 ```
 
 **Apple Silicon + Intel**: both supported. Node is universal2 via Homebrew.
@@ -86,7 +89,7 @@ sudo apt-get install -y nodejs git
 
 cd your-project
 npm install --save-dev specky-sdd@latest
-npx specky init
+npx specky init --ide=copilot
 ```
 
 Alpine (musl libc) and other distros work the same as long as Node ≥18 is installed.
@@ -108,7 +111,7 @@ Specky hooks run under Node (no bash required on Windows). Path separators are a
 
 ```cmd
 npm install --save-dev specky-sdd@latest
-npx specky init
+npx specky init --ide=copilot
 ```
 
 ### Windows Subsystem for Linux (WSL)
@@ -120,7 +123,7 @@ Treat as Linux. Install in the WSL workspace, not from the Windows host — othe
 sudo apt-get install -y nodejs git
 cd your-project
 npm install --save-dev specky-sdd@latest
-npx specky init
+npx specky init --ide=copilot
 ```
 
 ---
@@ -131,7 +134,7 @@ npx specky init
 
 ```bash
 npm install --save-dev specky-sdd@latest
-npx specky init
+npx specky init --ide=copilot
 ```
 
 Version pinned in `package.json`; reproducible across teammates.
@@ -141,14 +144,14 @@ Version pinned in `package.json`; reproducible across teammates.
 ```bash
 npm install -g specky-sdd@latest
 cd your-project
-specky init
+specky init --ide=copilot
 ```
 
 ### Zero-install
 
 ```bash
 cd your-project
-npx -y specky-sdd@latest init
+npx -y specky-sdd@latest init --ide=copilot
 ```
 
 No prior setup. Each invocation downloads the latest.
@@ -167,44 +170,27 @@ Transfer the tarball to the air-gapped machine, then:
 ```bash
 cd your-project
 npm install ./specky-sdd-<version>.tgz
-npx specky init
+npx specky init --ide=copilot
 ```
-
-### Claude Code native plugin
-
-```
-/plugin marketplace add paulasilvatech/specky
-/plugin install specky@paulasilvatech
-```
-
-Reads `.claude-plugin/plugin.json` and produces the same `.claude/` layout as `specky init --ide=claude`.
-
-### APM (Microsoft Agent Package Manager) — legacy
-
-For teams already standardized on [APM](https://microsoft.github.io/apm/):
-
-```bash
-brew install microsoft/apm/apm     # macOS
-# or see https://microsoft.github.io/apm/getting-started/installation/ for other OSes
-apm install paulasilvatech/specky
-```
-
-APM downloads the package and delegates to `specky install` for file placement — so the resulting workspace layout is identical to the `npm install -g` path.
-
-> **Note**: new projects should prefer the native CLI install (`npm install -g specky-sdd@latest` + `specky install`). APM is kept working for backward compatibility but is no longer the primary distribution channel as of v3.4.
 
 ---
 
 ## IDE-specific install
 
-Force a specific target when you only use one IDE:
+Always specify your target IDE explicitly to avoid hook cross-read conflicts:
 
 ```bash
-npx specky init --ide=claude      # only .claude/
-npx specky init --ide=copilot     # only .github/ + .vscode/
-npx specky init --ide=both        # default — install everything
-npx specky init --ide=auto        # detect based on what's present
+specky install --ide=copilot     # VS Code + GitHub Copilot (recommended)
+specky install --ide=claude      # Claude Code only
 ```
+
+> **⚠️ Do NOT use `--ide=both`** unless you understand the implications: VS Code Copilot reads `.claude/settings.json` hooks, which can cause "Blocked by Pre-Tool Use hook" errors. If you must support both IDEs in the same workspace, use `--ide=copilot` (the hooks are stripped from `.claude/settings.json` automatically).
+
+| IDE | Install command | Assets location |
+|---|---|---|
+| VS Code + Copilot | `specky install --ide=copilot` | `.github/agents/`, `.github/prompts/`, `.github/skills/`, `.github/hooks/specky/`, `.vscode/` |
+| Claude Code | `specky install --ide=claude` | `.claude/agents/`, `.claude/commands/`, `.claude/skills/`, `.claude/hooks/`, `.claude/settings.json` |
+| Both (not recommended) | `specky install --ide=both` | Both locations — may cause Copilot hook conflicts |
 
 ---
 
@@ -284,16 +270,18 @@ specky install --force              # rewrite settings.json with hooks + permiss
 specky doctor                       # verify
 ```
 
-### `Denied by Pre-Tool Use hook: unexpected error` in Copilot Chat
+### `Blocked by Pre-Tool Use hook` in Copilot Chat
 
-You installed via v3.4.0-rc.10 or earlier, which shipped a Copilot hook manifest with unresolved `${CLAUDE_PLUGIN_ROOT}` paths. Copilot's hook executor failed to spawn hook scripts, denying every tool call. Fix:
+This occurs when Copilot reads hooks from `.claude/settings.json`. Fix:
 
 ```bash
-npm install -g specky-sdd@latest   # pulls rc.12+ with fixed manifest
+npm install -g specky-sdd@latest   # pulls rc.14+ with Copilot fix
 cd affected-project
-specky install --force              # overwrites .github/hooks/specky/sdd-hooks.json
+specky install --force --ide=copilot  # strips hooks from .claude/settings.json
 # Reload VS Code: Cmd+Shift+P → "Developer: Reload Window"
 ```
+
+The `--ide=copilot` flag automatically removes hooks from `.claude/settings.json` to prevent cross-read.
 
 ### Build-time bundling
 

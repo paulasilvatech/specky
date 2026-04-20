@@ -250,7 +250,7 @@ Specky addresses the 12 threat categories from the CoSAI MCP Security White Pape
 | M4 | Insufficient Authentication | HTTP mode delegates to reverse proxy; stdio is process-isolated |
 | M5 | Broken Object-Level Authorization | RBAC engine enforces per-tool access by role (opt-in) |
 | M6 | Sensitive Data Exposure | FileManager path boundary; no credential logging; workspace-scoped I/O |
-| M7 | Insecure Plugin Composition | Fixed tool set at startup — no dynamic plugin loading |
+| M7 | Insecure Plugin Composition | Fixed tool set at startup — no dynamic loading |
 | M8 | Improper Error Handling | All service errors caught; tools return structured error responses |
 | M9 | Insufficient Logging | Hash-chained audit trail; syslog export available |
 | M10 | Vulnerable Dependencies | 2 runtime deps; `npm audit` in CI; Dependabot on GitHub |

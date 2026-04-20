@@ -19,33 +19,35 @@ specky init    [--ide=<claude|copilot|both|auto>] [--force] [--dry-run]   # alia
 
 | Flag | Default | Description |
 |---|---|---|
-| `--ide` | `auto` | Target IDE. `auto` detects based on workspace signals. |
+| `--ide` | `auto` | Target IDE. **Recommended: always specify `copilot` or `claude` explicitly.** `auto` detects based on workspace signals but may default to `both`, which causes hook cross-read conflicts. |
 | `--force` | false | Overwrite existing files. Required to re-install over an existing layout. |
 | `--dry-run` | false | Show what would be written without modifying the filesystem. |
 
-**What it writes:**
+**What it writes (depends on `--ide` flag):**
 
-- `.claude/agents/*.md` (13 files) — when `ide=claude` or `both`
-- `.claude/commands/*.md` (22 slash commands)
-- `.claude/skills/*/SKILL.md` (8 skills)
-- `.claude/hooks/scripts/*.sh` (16 hook scripts, executable — adds `pipeline-guard.sh` + `session-banner.sh` on top of the 14 phase hooks)
-- `.claude/settings.json` — deep-merged:
-  - `hooks` section (SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop)
-  - `permissions.allow` auto-populated with native tools (`Read`, `Edit`, `Write`, `Bash(git:*)`, `Bash(npm:*)`, etc.) and all `mcp__specky__*` tools — prevents per-invocation approval prompts
-- `.claude/rules/copilot-instructions.md`
-- `.mcp.json` — MCP server registration
-- `.github/agents/*.agent.md` (13 files) — when `ide=copilot` or `both`
+When `--ide=copilot`:
+- `.github/agents/*.agent.md` (13 files)
 - `.github/prompts/*.prompt.md` (22)
 - `.github/skills/*/SKILL.md` (8)
-- `.github/hooks/specky/scripts/*.sh` (14)
-- `.github/hooks/specky/sdd-hooks.json`
+- `.github/hooks/specky/scripts/*.sh` (16 hook scripts)
+- `.github/hooks/specky/sdd-hooks.json` — Copilot-specific manifest (no `SessionStart`/`UserPromptSubmit`, only `sdd_*` PreToolUse matchers)
 - `.github/instructions/copilot-instructions.instructions.md`
 - `.vscode/mcp.json` — MCP server registration for Copilot
-- `.vscode/settings.json` — deep-merged with:
-  - `chat.mcp.enabled: true`
-  - `chat.mcp.discovery.enabled: true`
-  - `chat.agent.enabled: true`
-  - `github.copilot.chat.codeGeneration.useInstructionFiles: true`
+- `.vscode/settings.json` — deep-merged with `chat.mcp.enabled`, `chat.agent.enabled`, etc.
+- If `.claude/settings.json` exists, **strips the `hooks` section** to prevent Copilot cross-read
+
+When `--ide=claude`:
+- `.claude/agents/*.md` (13 files)
+- `.claude/commands/*.md` (22 slash commands)
+- `.claude/skills/*/SKILL.md` (8 skills)
+- `.claude/hooks/scripts/*.sh` (16 hook scripts)
+- `.claude/settings.json` — deep-merged:
+  - `hooks` section (SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop)
+  - `permissions.allow` auto-populated with native tools (`Read`, `Edit`, `Write`, `Bash(git:*)`, etc.) and all `mcp__specky__*` tools
+- `.claude/rules/copilot-instructions.md`
+- `.mcp.json` — MCP server registration
+
+Both modes also write:
 - `.specky/config.yml` — project pipeline config
 - `.specky/install.lock` — SHA256 manifest of every installed file
 - `.specky/install.json` — install metadata (version, ide, timestamp)
@@ -141,7 +143,7 @@ This is the canonical replacement for `npx specky-sdd`. The legacy `specky-sdd` 
 
 ```bash
 npm install --save-dev specky-sdd@latest
-npx specky init
+npx specky init --ide=copilot
 ```
 
 Pins the version in `package.json` — reproducible across teammates.
@@ -150,7 +152,7 @@ Pins the version in `package.json` — reproducible across teammates.
 
 ```bash
 npm install -g specky-sdd@latest
-specky init
+specky init --ide=copilot
 ```
 
 Convenient for individual use; version not pinned per project.
@@ -158,7 +160,7 @@ Convenient for individual use; version not pinned per project.
 ### Zero install via npx
 
 ```bash
-npx -y specky-sdd@latest init
+npx -y specky-sdd@latest init --ide=copilot
 ```
 
 No prior install required. Each invocation downloads fresh.

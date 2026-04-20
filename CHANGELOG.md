@@ -5,6 +5,51 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0-rc.14] - 2026-04-20
+
+### Fixed — CRITICAL: Copilot still blocks after rc.13 (hook lifecycle mismatch)
+
+Field incident continuation: after rc.13 fixed the advisory-default polarity,
+the pilot still saw "Blocked by Pre-Tool Use hook" on @specky-onboarding in
+VS Code Copilot Chat. The onboarding agent's Read/Glob/Grep tools were blocked
+3 times before falling back to text-only guidance.
+
+**Root cause (three layers):**
+
+1. **Copilot treats ALL lifecycle events as PreToolUse.** The Copilot hooks
+   manifest included `SessionStart` (session-banner.sh) and `UserPromptSubmit`
+   (pipeline-guard.sh with `matcher: ""`) — Claude Code lifecycle events that
+   Copilot doesn't distinguish. Copilot ran pipeline-guard.sh on every tool
+   call. That script reads from stdin to parse the user prompt; Copilot provides
+   tool call data instead → jq parse failure → cat hangs → 5s timeout → block.
+
+2. **`Write|Edit|MultiEdit` matcher fires for unrelated tools in Copilot.**
+   Copilot uses different internal tool names (read_file, write_file, etc.).
+   The Claude Code native-tool matcher `Write|Edit|MultiEdit` may trigger
+   branch-validator.sh for unrelated Copilot tools.
+
+3. **Stale pre-rc.12 manifest not cleaned up.** Old installs left
+   `.github/hooks/specky-sdd-hooks.json` (with broken `${CLAUDE_PLUGIN_ROOT}`
+   paths) alongside the fixed `.github/hooks/specky/sdd-hooks.json`. Copilot
+   loads both → broken paths → script not found → block.
+
+**Fix:**
+
+- `build-claude-hooks.mjs` now strips `SessionStart`, `UserPromptSubmit`, and
+  `Write|Edit|MultiEdit` from the Copilot manifest. Only `sdd_*` PreToolUse
+  and PostToolUse hooks remain — these only fire for Specky MCP tool calls.
+- `asset-copier.ts` now deletes the stale `.github/hooks/specky-sdd-hooks.json`
+  during `specky install --force`.
+
+**Migration for existing installs:**
+
+```bash
+npm install -g specky-sdd@next     # pulls rc.14+
+cd affected-project
+specky install --force              # removes stale manifest + installs stripped hooks
+# Cmd+Shift+P → Developer: Reload Window
+```
+
 ## [3.4.0-rc.13] - 2026-04-19
 
 ### Fixed — CRITICAL: Copilot still blocked after rc.12 (over-aggressive hooks)

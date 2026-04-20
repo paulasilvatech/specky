@@ -114,15 +114,15 @@ templates/                    23 Markdown templates with {{variable}} placeholde
 7. **Educative outputs** -- Every tool response includes `next_steps` and `learning_note` fields to guide the AI client.
 8. **MCP-to-MCP routing** -- Integration tools produce payloads designed for forwarding to other MCP servers (GitHub, Docker, Terraform).
 
-### Plugin Structure
+### Project Structure
 
-The repository also ships a **Copilot plugin** with agents, skills, prompts, hooks, and the MCP server config at the repo root. Key directories:
+The repository ships a **CLI toolkit** with agents, skills, prompts, hooks, and the MCP server. Key directories:
 
 ```
 specky/
-├── apm.yml                      ← APM manifest (kept for APM compatibility; CLI is primary)
-├── .apm/                        ← Plugin source (agents, prompts, skills, hooks, instructions)
-├── .claude-plugin/              ← Claude Code native `/plugin install` manifest
+├── apm.yml                      ← APM manifest (legacy; CLI is primary)
+├── .apm/                        ← Asset source (agents, prompts, skills, hooks, instructions)
+├── .claude-plugin/              ← Claude Code native plugin manifest (legacy)
 ├── config.yml                   ← Pipeline configuration
 ├── scripts/                     ← Build tooling (build-claude-hooks.mjs, finalize-build.mjs, release.mjs)
 ├── src/                         ← MCP engine + CLI (TypeScript, published to npm)
@@ -133,9 +133,9 @@ specky/
 └── package.json                 ← npm package config
 ```
 
-**Source of truth**: everything lives under `.apm/` (agents, prompts, skills, hooks, instructions). The build step (`npm run build`) produces `dist/claude-hooks.json` and `dist/copilot-hooks.json` with IDE-specific path resolution. The `specky install` CLI copies `.apm/` assets into the user's workspace under `.claude/` (Claude Code) and `.github/` (GitHub Copilot).
+**Source of truth**: everything lives under `.apm/` (agents, prompts, skills, hooks, instructions). The build step (`npm run build`) produces `dist/claude-hooks.json` and `dist/copilot-hooks.json` with IDE-specific path resolution and event filtering (Copilot manifests strip `SessionStart`/`UserPromptSubmit`/`Write|Edit|MultiEdit`). The `specky install` CLI copies `.apm/` assets into the user's workspace under `.claude/` (Claude Code) or `.github/` (GitHub Copilot) based on the `--ide` flag.
 
-**Distribution**: as of v3.4, the primary channel is `npm install -g specky-sdd@latest` + `specky install`. APM (`apm install paulasilvatech/specky`) still works and now delegates to the CLI. Claude Code supports native `/plugin install paulasilvatech/specky` via `.claude-plugin/plugin.json`.
+**Distribution**: as of v3.4, the primary (and only recommended) channel is `npm install -g specky-sdd@latest` + `specky install --ide=copilot` (or `--ide=claude`). Always specify the target IDE explicitly to avoid cross-read conflicts.
 
 ### Service Layer
 

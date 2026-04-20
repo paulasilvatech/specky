@@ -1,7 +1,7 @@
 /**
  * init.ts — `specky init` — install Specky assets into the current workspace.
  */
-import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { VERSION } from "../../constants.js";
 import {
@@ -165,6 +165,27 @@ export async function runInit(opts: InitOptions): Promise<number> {
   }
   if (resolvedIde === "copilot" || resolvedIde === "both") {
     results.push(installCopilot(ctx));
+  }
+
+  // rc.14: When target is copilot-only, strip hooks from .claude/settings.json
+  // to prevent Copilot from cross-reading Claude Code lifecycle hooks.
+  // Copilot reads .claude/settings.json and treats SessionStart/UserPromptSubmit
+  // as PreToolUse, causing spurious "Blocked by Pre-Tool Use hook" errors.
+  if (resolvedIde === "copilot" && !ctx.dryRun) {
+    const claudeSettings = ctx.targets.claude.settingsJson;
+    if (existsSync(claudeSettings)) {
+      try {
+        const raw = readFileSync(claudeSettings, "utf8");
+        const parsed = JSON.parse(raw);
+        if (parsed.hooks) {
+          delete parsed.hooks;
+          writeFileSync(claudeSettings, JSON.stringify(parsed, null, 2) + "\n", "utf8");
+          console.log("  .claude/settings.json: stripped hooks (Copilot cross-read fix)");
+        }
+      } catch {
+        // ignore — user may have non-JSON content
+      }
+    }
   }
 
   writeSpeckyMeta(ctx, resolvedIde);

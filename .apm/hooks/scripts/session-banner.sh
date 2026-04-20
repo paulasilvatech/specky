@@ -10,6 +10,14 @@
 
 set -euo pipefail
 
+# ── rc.14: Copilot compatibility guard ───────────────────
+# VS Code Copilot reads .claude/settings.json hooks and treats SessionStart as
+# PreToolUse. This script is advisory-only but Copilot surfaces any output from
+# a hook as a block warning. Skip entirely when not in Claude Code context.
+if [ -z "${CLAUDE_PROJECT_DIR:-}" ]; then
+  exit 0
+fi
+
 SPECS_DIR=".specs"
 [ -d "$SPECS_DIR" ] || exit 0
 
