@@ -5,7 +5,667 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.3.1] - 2026-04-14
+## [3.4.0-rc.14] - 2026-04-20
+
+### Fixed — CRITICAL: Copilot still blocks after rc.13 (hook lifecycle mismatch)
+
+Field incident continuation: after rc.13 fixed the advisory-default polarity,
+the pilot still saw "Blocked by Pre-Tool Use hook" on @specky-onboarding in
+VS Code Copilot Chat. The onboarding agent's Read/Glob/Grep tools were blocked
+3 times before falling back to text-only guidance.
+
+**Root cause (three layers):**
+
+1. **Copilot treats ALL lifecycle events as PreToolUse.** The Copilot hooks
+   manifest included `SessionStart` (session-banner.sh) and `UserPromptSubmit`
+   (pipeline-guard.sh with `matcher: ""`) — Claude Code lifecycle events that
+   Copilot doesn't distinguish. Copilot ran pipeline-guard.sh on every tool
+   call. That script reads from stdin to parse the user prompt; Copilot provides
+   tool call data instead → jq parse failure → cat hangs → 5s timeout → block.
+
+2. **`Write|Edit|MultiEdit` matcher fires for unrelated tools in Copilot.**
+   Copilot uses different internal tool names (read_file, write_file, etc.).
+   The Claude Code native-tool matcher `Write|Edit|MultiEdit` may trigger
+   branch-validator.sh for unrelated Copilot tools.
+
+3. **Stale pre-rc.12 manifest not cleaned up.** Old installs left
+   `.github/hooks/specky-sdd-hooks.json` (with broken `${CLAUDE_PLUGIN_ROOT}`
+   paths) alongside the fixed `.github/hooks/specky/sdd-hooks.json`. Copilot
+   loads both → broken paths → script not found → block.
+
+**Fix:**
+
+- `build-claude-hooks.mjs` now strips `SessionStart`, `UserPromptSubmit`, and
+  `Write|Edit|MultiEdit` from the Copilot manifest. Only `sdd_*` PreToolUse
+  and PostToolUse hooks remain — these only fire for Specky MCP tool calls.
+- `asset-copier.ts` now deletes the stale `.github/hooks/specky-sdd-hooks.json`
+  during `specky install --force`.
+
+**Migration for existing installs:**
+
+```bash
+npm install -g specky-sdd@next     # pulls rc.14+
+cd affected-project
+specky install --force              # removes stale manifest + installs stripped hooks
+# Cmd+Shift+P → Developer: Reload Window
+```
+
+## [3.4.0-rc.13] - 2026-04-19
+
+### Fixed — CRITICAL: Copilot still blocked after rc.12 (over-aggressive hooks)
+
+Field incident continuation: after migrating to rc.12 (which resolved the
+`${CLAUDE_PLUGIN_ROOT}` path bug), the pilot still saw "Blocked by
+Pre-Tool Use hook" on nearly every prompt in Copilot. Path resolution
+was fixed, but the hooks themselves were blocking by default.
+
+**Root cause:** two hooks shipped with blocking-by-default semantics that
+were too aggressive for real pilot usage:
+
+1. `pipeline-guard.sh` (UserPromptSubmit, `matcher=""` → runs on **every**
+   prompt): blocked any prompt containing the words
+   `implement|create|build|write|code|fix|add|refactor|deploy|release|merge|commit|push|test|install|setup|configure`.
+   That regex matches practically every developer prompt. Every block
+   surfaced as "Blocked by Pre-Tool Use hook" in Copilot.
+
+2. `branch-validator.sh` (PreToolUse, `matcher="Write|Edit|MultiEdit"`):
+   blocked every edit tool call whenever a `.specs/` pipeline existed and
+   the user wasn't on a `spec/*` branch. Pilots who ran `specky init` and
+   then edited anything from `develop`/`main` were blocked.
+
+The only escape hatch was `SPECKY_GUARD=off` (opt-OUT), which pilots had
+no way of knowing to set.
+
+**Fix — flipped polarity:** both hooks now default to **advisory**
+(warn on stderr, `exit 0`). Enforcement is explicit opt-in via
+`SPECKY_GUARD=strict`.
+
+| Mode                        | pipeline-guard | branch-validator |
+|-----------------------------|----------------|------------------|
+| `SPECKY_GUARD=strict`       | BLOCK (exit 2) | BLOCK (exit 2)   |
+| (unset) / `off` / `advisory`| warn, exit 0   | warn, exit 0     |
+
+No agents, prompts, or MCP tools changed. Only the two hook scripts +
+their integration tests.
+
+**Migration for existing installs:**
+
+```bash
+npm install -g specky-sdd@next     # pulls rc.13+
+cd affected-project
+specky install --force              # overwrites the hook scripts
+# reload Copilot Chat / restart VS Code — no more spurious blocks
+```
+
+To re-enable strict enforcement after pilot has adopted the orchestrator
+routing:
+
+```bash
+export SPECKY_GUARD=strict          # per-shell opt-in
+```
+
+Tests updated to verify the flipped semantics (74/74 still passing).
+
+## [3.4.0-rc.12] - 2026-04-19
+
+### Fixed — CRITICAL: Copilot hook executor denied all tools
+
+Field incident: in projects installed with rc.10 or earlier, the GitHub
+Copilot Autopilot agent blocked every tool call (including native
+`read_file`, `list_dir`, `grep_search`, `manage_todo_list`) with the
+message "Denied by PreToolUse hook: Tried to use X - an unexpected
+error occurred".
+
+**Root cause:** `specky install` copied `.apm/hooks/sdd-hooks.json`
+verbatim to `.github/hooks/specky/sdd-hooks.json`. That source file
+references `${CLAUDE_PLUGIN_ROOT}/hooks/scripts/` — a Claude Code plugin
+variable that does NOT resolve in Copilot. When Copilot's hook executor
+tried to spawn `bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-banner.sh`,
+the shell treated `${CLAUDE_PLUGIN_ROOT}` as an empty string and
+searched for `/hooks/scripts/session-banner.sh` (absolute path), which
+doesn't exist. Copilot generically reported "unexpected error" and
+denied the tool.
+
+51 unresolved `${CLAUDE_PLUGIN_ROOT}` references in the Copilot-facing
+hooks manifest caused every tool call to be denied.
+
+**Fix:**
+
+- `scripts/build-claude-hooks.mjs` now generates TWO manifests:
+  - `dist/claude-hooks.json` — existing (Claude Code format with `mcp__specky__` prefix)
+  - `dist/copilot-hooks.json` — NEW (Copilot format with resolved `.github/hooks/specky/scripts/` paths, no prefix)
+- `src/cli/lib/asset-copier.ts` now copies `dist/copilot-hooks.json` to
+  `.github/hooks/specky/sdd-hooks.json` (falling back to `.apm/hooks/sdd-hooks.json`
+  only when the generator hasn't run, e.g. during dev builds).
+- `src/cli/lib/paths.ts` exposes the new `copilotHooksManifest` source path.
+
+**Validation:**
+
+```bash
+specky install
+grep -c 'CLAUDE_PLUGIN_ROOT' .github/hooks/specky/sdd-hooks.json
+# Before rc.12: 51
+# After rc.12:  0 ✅
+grep -c '.github/hooks/specky/scripts' .github/hooks/specky/sdd-hooks.json
+# 51 (all paths resolved)
+```
+
+**Migration for existing installs:**
+
+```bash
+npm install -g specky-sdd@next     # pulls rc.12+
+cd affected-project
+specky install --force              # overwrites the broken hooks manifest
+# reload Copilot Chat / restart VS Code
+```
+
+74/74 tests still passing. No production code in agents/hooks changed —
+only the hook manifest generation and copy step.
+
+## [3.4.0-rc.11] - 2026-04-19
+
+### Fixed — Windows CI flaky test timeout
+
+CI on rc.10 revealed that `tests/integration/flow-enforcement.test.ts`
+timed out intermittently on `windows-latest` (Git Bash spawn is slow;
+3 sequential spawns + workspace setup can exceed the 5s default).
+Linux and macOS matrix jobs passed consistently.
+
+Fix: set `{ timeout: 20_000 }` at the describe block level for both
+integration test suites (`pipeline-guard.sh` and `branch-validator.sh`).
+20s covers worst-case Windows CI with margin; local runs remain <5s.
+
+No production code change. 74/74 tests still passing.
+
+## [3.4.0-rc.10] - 2026-04-19
+
+### Fixed — CRITICAL UX: `specky install` polluted git with ~125 vendored files
+
+Field feedback from the pilot: after `specky install`, running `git add`
+staged 125+ files (agents, prompts, skills, hooks) that are **vendored
+from the npm package** — same mental model as `node_modules/`. Committing
+them produced huge diffs on every `specky upgrade` and pushed merge pain
+onto teams.
+
+**Fix:** `specky install` now writes (or refreshes) a managed block in
+the project's `.gitignore`. The block is idempotent — safe to run
+repeatedly on install/upgrade.
+
+Before rc.10: `git add -A` → 125+ files staged ❌
+After rc.10:  `git add -A` → 6 files staged ✅
+
+**Files gitignored (vendored — regenerated by the CLI):**
+
+- `.claude/agents/`, `.claude/commands/`, `.claude/skills/`, `.claude/hooks/`, `.claude/rules/`
+- `.github/agents/`, `.github/prompts/`, `.github/skills/`, `.github/hooks/specky/`, `.github/instructions/`
+- `.specky/install.lock`, `.specky/install.json`
+
+**Files kept in git (project-specific):**
+
+- `.specky/config.yml` — pipeline config
+- `.specky/profile.json` — onboarding answers
+- `.specs/` — your pipeline artifacts
+- `.claude/settings.json` — team-shared permissions + hooks
+- `.mcp.json`, `.vscode/mcp.json`, `.vscode/settings.json` — team-shared MCP + editor config
+
+**Implementation:** new `src/cli/lib/gitignore-writer.ts` with idempotent
+block management (delimited by `# ─── Specky ───` markers). Safe to run
+on existing `.gitignore` files — never touches user-authored entries
+outside the block.
+
+**Migration for existing installs** (if you already committed vendored files):
+
+```bash
+npm install -g specky-sdd@next
+cd your-project
+specky install --force       # writes .gitignore block
+
+git rm -r --cached .claude/agents .claude/commands .claude/skills \
+                   .claude/hooks .claude/rules \
+                   .github/agents .github/prompts .github/skills \
+                   .github/hooks/specky .github/instructions \
+                   .specky/install.lock .specky/install.json 2>/dev/null
+git commit -m "chore: remove vendored Specky assets (now gitignored)"
+```
+
+## [3.4.0-rc.9] - 2026-04-19
+
+### Added — `specky install` as a first-class alias for `specky init`
+
+Feedback from the field: users expect `install` (matches `npm install` mental
+model) over `init` for a bootstrap command. Adding it as an alias rather
+than a rename preserves any existing muscle memory or docs.
+
+```bash
+specky install          # new preferred spelling
+specky init             # still works — identical behavior
+```
+
+Both resolve to the same underlying `runInit()` in the CLI dispatcher.
+
+### Fixed — `specky status` showed `phase=?` for active features
+
+Cosmetic bug in the CLI `status` command (not MCP `sdd_get_status` — that
+was fixed in rc.8). The CLI proxy read `state.phase` but the schema key
+is `state.current_phase`. Now reads both (current_phase preferred, phase as
+legacy fallback) and adds progress/gate info:
+
+```
+Before:  001-sifap: phase=?
+After:   001-sifap: phase=implement (7/10) gate=APPROVE
+```
+
+### Changed — Docs recommend global install as default
+
+`README.md` and `docs/INSTALL.md` updated to make global install the
+first-listed option (`npm install -g specky-sdd` → `specky install`),
+matching field feedback that users find `npx specky` cumbersome for
+day-to-day use. Per-project and zero-install modes still documented.
+
+## [3.4.0-rc.8] - 2026-04-19
+
+### Fixed — CRITICAL: `sdd_get_status` ignored existing `.specs/` features
+
+Field-reported blocker: users running `sdd_get_status` on projects with
+active features in `.specs/` (e.g., `.specs/001-sifap/.sdd-state.json`
+showing phase 7) got back `features: []` and `current_phase: "init"` —
+as if no pipeline existed. This broke every brownfield workflow and
+made pipeline resumption impossible.
+
+**Root cause:** `sdd_get_status` called `stateMachine.loadState(spec_dir)`
+which reads `<spec_dir>/.sdd-state.json` — but state actually lives
+per-feature at `<spec_dir>/<NNN-name>/.sdd-state.json`. The tool never
+opened feature directories, so `state.features` was always the empty
+default array.
+
+**Fix (`src/tools/utility.ts`):**
+
+- `sdd_get_status` now scans `<spec_dir>/` for feature directories via
+  `fileManager.listFeatures()` (which already existed but was ignored).
+- For each feature on disk, loads its per-feature state file.
+- Response now includes:
+  - `features: [...]` — full list of features with `phase`, `phase_progress`, `gate_decision`
+  - `active_feature: { number, name, phase, directory }` — resolves explicit `feature_number` or picks the last feature
+- When `feature_number` is provided, loads THAT feature's state as the current phase.
+- Falls back to root state only when no features exist on disk (preserves greenfield behavior).
+
+**Regression test (`tests/integration/status-detection.test.ts`):**
+
+4 new tests covering:
+1. Greenfield (no `.specs/`) → features:[] + current_phase:init ✅
+2. Single feature in progress → detected with correct phase/progress ✅
+3. Multiple features → aggregated independently with per-feature state ✅
+4. Explicit `feature_number` → targets that feature's state ✅
+
+Total test suite: 74/74 passing (70 prior + 4 new).
+
+**Impact:** this fix makes Specky usable for brownfield projects and
+enables the SIFAP-style workflow where a team works on features across
+days/weeks and needs to resume where they left off. Without this fix,
+every session would reset state to init regardless of what's on disk.
+
+## [3.4.0-rc.7] - 2026-04-19
+
+### Changed — Model routing: Opus 4.7 for reasoning phases, explicit fallback chains
+
+Upgraded Specky's default model recommendations to the latest generation and
+made the fallback strategy explicit for teams without top-tier access.
+
+**Primary model matrix (new defaults):**
+
+| Phase | Agent | Old model | New model |
+|---|---|---|---|
+| 0 Init | sdd-init | haiku | `claude-haiku-4-5` (unchanged, explicit version) |
+| 1 Discover | research-analyst | sonnet | `claude-sonnet-4-6` (explicit) |
+| 2 Specify | spec-engineer | opus-4-6 | **`claude-opus-4-7`** |
+| 3 Clarify | sdd-clarify | opus-4-6 | **`claude-opus-4-7`** |
+| 4 Design | design-architect | opus-4-6 | **`claude-opus-4-7`** |
+| 5 Tasks | task-planner | sonnet | `claude-sonnet-4-6` (explicit) |
+| 6 Analyze | quality-reviewer | sonnet-4-6 | **`claude-opus-4-7`** (upgraded — gate decisions need deep reasoning) |
+| 7 Implement | implementer | sonnet | `claude-sonnet-4-6` (explicit) |
+| 8 Verify | test-verifier | sonnet-4-6 | **`claude-opus-4-7`** (upgraded — REQ-ID traceability needs reasoning) |
+| 9 Release | release-engineer | haiku | `claude-haiku-4-5` (explicit) |
+| — Orchestrator | specky-orchestrator | sonnet | `claude-sonnet-4-6` (explicit) |
+
+**Fallback chains** (new `fallback_chain` field in `ModelRoutingHint`):
+
+- **Reasoning-heavy**: `opus-4-7 → opus-4-6 → sonnet-4-6 → gpt-5 → gpt-4.5`
+- **Balanced**: `sonnet-4-6 → opus-4-6 → gpt-5 → gpt-4.5`
+- **Fast**: `haiku-4-5 → sonnet-4-6 → gpt-4.5`
+- **Coding**: `sonnet-4-6 → codex → gpt-5 → opus-4-6`
+
+Every agent's frontmatter now includes a `model_fallback` list that users
+can consult if they don't have access to the primary. `sdd_model_routing`
+MCP tool returns the full chain programmatically for CI integrations.
+
+**Key takeaways:**
+
+- Analyze (Phase 6) and Verify (Phase 8) upgraded from Sonnet to Opus 4.7.
+  Research (arXiv:2509.11079, arXiv:2604.02547) shows these phases produce
+  downstream-critical decisions (gate approvals, phantom completions) that
+  justify top-tier reasoning.
+- Implement (Phase 7) stays on Sonnet 4.6 — extended thinking is actively
+  harmful for iterative code tasks with test feedback (arXiv:2502.08235).
+- New `docs/MODEL_GUIDE.md` documents the full matrix, fallback strategy,
+  cost implications, and when to enable extended thinking.
+
+**New ModelTier values:**
+`claude-opus-4-7`, `gpt-5`, `codex` added. `gpt-4-5` renamed to `gpt-4.5`
+for consistency with provider naming.
+
+### Added
+
+- `docs/MODEL_GUIDE.md` — complete model routing reference with fallback chains.
+
+## [3.4.0-rc.6] - 2026-04-19
+
+### Changed — Node.js minimum bumped to 20.0
+
+CI (matrix macOS + Windows + Linux × Node 18/20/22) revealed that our
+test runner `vitest ^4.1.0` depends on `rolldown`, which uses
+`node:util.styleText` — an API introduced in Node 20. Node 18 left LTS
+in April 2025 and cannot run our test suite.
+
+- `package.json` `engines.node`: `>=18` → `>=20`
+- `install-smoke.yml` matrix: removed Node 18; kept Node 20 + 22
+- `docs/INSTALL.md`: updated prerequisite table
+
+Not breaking for any user on Node 20+ (current LTS).
+
+## [3.4.0-rc.5] - 2026-04-19
+
+### Fixed — CI green: `\b` Perl escape + smoke-test hook count
+
+Two bugs + one false positive surfaced by the first full CI run after rc.4:
+
+**Real bug (`pipeline-guard.sh`):**
+Lines 70 and 76 used `\b` (Perl word boundary) inside `grep -E` patterns.
+`\b` in ERE is a GNU extension; BSD grep on macOS does not support it.
+Replaced with explicit POSIX char-class boundaries:
+
+```bash
+# before (BSD-incompatible):
+grep -qE '\b(implement|create|...)\b'
+# after (portable):
+grep -qE '(^|[^a-z0-9])(implement|create|...)([^a-z0-9]|$)'
+```
+
+**False positive (`drift-monitor.sh`):**
+A comment contained the literal string `\b and (?:) not portable` which
+our own lint regex matched. Rephrased the comment to avoid triggering
+the scanner.
+
+**CI lint hardening (`hooks-compat.yml`):**
+The banned-pattern scan now strips `^\s*#` comment lines before linting,
+so documentation referencing banned patterns doesn't cause false positives.
+
+**Install smoke count (`install-smoke.yml`):**
+Sprint 3 added `pipeline-guard.sh` and `session-banner.sh`, bringing the
+total to 16. The smoke assertions were still checking 14 — updated to 16
+for both `.claude/hooks/scripts` and `.github/hooks/specky/scripts`.
+
+## [3.4.0-rc.4] - 2026-04-19
+
+### Fixed — Complete permission allowlist for hooks and utilities
+
+Expanded `SPECKY_REQUIRED_ALLOWS` from 17 → 37 entries to cover every
+command that Specky hooks and agents invoke. Previously, when an agent
+needed to run `jq`, `find`, `wc`, `sed`, etc., the user would still get
+approval prompts even after v3.4.0-rc.3.
+
+New allow rules (all `Bash(<cmd>:*)` patterns):
+`sh`, `npx`, `rm`, `cp`, `mv`, `touch`, `chmod`, `head`, `tail`, `wc`,
+`find`, `grep`, `sed`, `awk`, `jq`, `bc`, `pip`, `pip3`, `python`, `python3`.
+
+Determined by auditing actual hook scripts:
+
+```bash
+grep -rhoE '\b(bash|jq|find|wc|...)\b' .apm/hooks/scripts/*.sh | sort -u
+```
+
+### Changed — Install mode guidance
+
+README and `docs/INSTALL.md` now recommend **global install** as the default
+for individual developers, with project-local install clearly marked as the
+team/reproducibility option. Matches the intuition that CLI tools like
+`specky`, `gh`, `npm` are typically global.
+
+New "which install mode?" table in INSTALL.md covers: global, project-local,
+zero-install (`npx -y`), and offline (`npm pack`) scenarios.
+
+## [3.4.0-rc.3] - 2026-04-19
+
+### Fixed — Tool access configuration
+
+Resolves the field-reported issue where agents and MCP tools were unavailable
+in a fresh install ("tool_search returns no results, MCP specky-sdd not
+loaded, read_file/run_in_terminal disabled"). Three root causes addressed:
+
+**Agent tool declarations expanded:**
+
+All 13 agents had `tools:` frontmatter listing only their MCP tools
+(whitelist mode). This meant agents could invoke `sdd_*` MCP tools but
+could NOT use native tools like `Read`, `Write`, `Edit`, `Bash`, `Grep`
+which they need to validate state, scaffold code, or inspect the workspace.
+
+- `specky-orchestrator`: added `Read`, `Glob`, `Grep`, `Bash`, `Task`
+- `specky-onboarding`: added `Read`, `Glob`, `Grep`, `Bash`, `Write`
+- `sdd-init`: added `Read`, `Glob`, `Grep`, `Bash`
+- `research-analyst`: added `Read`, `Glob`, `Grep`, `Bash`, `WebFetch`, `WebSearch`
+- `requirements-engineer`: added `Read`, `Glob`, `Grep`, `Write`, `Edit`
+- `spec-engineer`: added `Read`, `Glob`, `Grep`, `Edit`, `Write`
+- `sdd-clarify`: added `Read`, `Glob`, `Grep`, `Edit`
+- `design-architect`: added `Read`, `Glob`, `Grep`, `Edit`, `Write`
+- `task-planner`: added `Read`, `Glob`, `Grep`, `Edit`, `Write`
+- `quality-reviewer`: added `Read`, `Glob`, `Grep`, `Edit`, `Write`, `Bash`
+- `implementer`: added `Read`, `Glob`, `Grep`, `Edit`, `Write`, `MultiEdit`, `Bash`
+- `test-verifier`: added `Read`, `Glob`, `Grep`, `Edit`, `Write`, `Bash`
+- `release-engineer`: added `Read`, `Glob`, `Grep`, `Edit`, `Write`, `Bash`
+
+**Claude Code permissions pre-authorized:**
+
+`specky init` now deep-merges a `permissions.allow` allowlist into
+`.claude/settings.json`:
+
+- Native tools: `Read`, `Glob`, `Grep`, `Edit`, `Write`, `MultiEdit`,
+  `Bash(git:*)`, `Bash(npm:*)`, `Bash(node:*)`, `Bash(bash:*)`,
+  `Bash(ls:*)`, `Bash(mkdir:*)`, `Bash(cat:*)`, `WebFetch`, `WebSearch`, `Task`
+- All Specky MCP tools: `mcp__specky__*`
+
+Users no longer face per-invocation approval prompts during pipeline
+execution. Existing user-authored `allow` entries are preserved (union merge).
+
+**VS Code Copilot MCP auto-enabled:**
+
+`specky init` now writes `.vscode/settings.json` with:
+
+- `chat.mcp.enabled: true`
+- `chat.mcp.discovery.enabled: true`
+- `chat.agent.enabled: true`
+- `github.copilot.chat.codeGeneration.useInstructionFiles: true`
+
+Without these keys, Copilot Chat does not discover `.vscode/mcp.json` even
+if it is present — matching the field incident where MCP tools were
+unavailable despite correct installation. Existing user keys in
+`settings.json` are preserved; only missing keys are added.
+
+**`specky doctor` extended:**
+
+New configuration checks (alongside existing integrity checks):
+
+- Claude `permissions.allow` contains all required rules
+- `.mcp.json` registers the `specky` server
+- `.vscode/mcp.json` registers the `specky` server
+- `.vscode/settings.json` has Copilot MCP discovery enabled
+
+Output now distinguishes file integrity (SHA256 against install.lock)
+from configuration health.
+
+### Refactored
+
+- `src/cli/commands/init.ts`: extracted `installClaude`, `installCopilot`,
+  `writeSpeckyMeta`, `printHeader`, `printFooter` to reduce cognitive
+  complexity and support future per-IDE customization.
+- `src/cli/commands/doctor.ts`: extracted `verifyIntegrity`,
+  `checkClaudePermissions`, `checkVscodeSettings`, `checkMcpRegistration`,
+  `runConfigChecks`, `printIntegrity`, `printChecks`.
+
+## [3.4.0-rc.2] - 2026-04-19
+
+### Added — Pipeline flow enforcement (Sprint 3)
+
+Prevents the SIFAP-style incident where a user creates `impl/*` branches and
+commits code without invoking the Specky orchestrator. Rule #8 is now
+hard-enforced via three coordinated hooks.
+
+**New hooks:**
+
+- `pipeline-guard.sh` — `UserPromptSubmit` matcher. Blocks free-form
+  implementation prompts ("implement X", "build Y", "fix Z", etc.) when
+  `.specs/*/​.sdd-state.json` shows an active pipeline. Allowlist includes
+  `@specky-*`, `/specky-*`, `specky <subcommand>`, and informational
+  prompts (what/why/how/show/explain). Exits 2 with clear remediation.
+- `session-banner.sh` — `SessionStart` matcher. Prints a one-screen banner
+  at every new session showing active feature, phase, and branch. Warns if
+  the current branch doesn't match the expected pattern for the phase
+  (P0-P7 → `spec/NNN-*`, P8 → `develop`, P9 → `stage`).
+
+**Changed — `branch-validator.sh`:**
+
+- Now **BLOCKING** (exit 2) for `Write|Edit|MultiEdit` when a pipeline is
+  active and the branch doesn't match the expected pattern.
+- Remains **advisory** (exit 0 with warning) for `sdd_*` MCP tools to avoid
+  breaking legitimate pipeline operations.
+- Registered under new `Write|Edit|MultiEdit` matcher in both hook manifests.
+
+**Escape hatch — `SPECKY_GUARD=off`:**
+
+- Env var that bypasses both pipeline-guard and branch-validator blocks.
+- Logs a warning every time it's used.
+- Deprecated — will be removed in v3.6.
+
+**Integration tests:**
+
+- `tests/integration/flow-enforcement.test.ts` — 16 tests covering:
+  - Greenfield user not harmed (no `.specs/` → no blocks)
+  - Active pipeline + free-form prompts → blocked
+  - Active pipeline + orchestrator/onboarding prompts → allowed
+  - Active pipeline + info prompts (what/show/explain) → allowed
+  - Active P7 + impl/* branch + Write tool → blocked
+  - Active P7 + spec/* branch + Write tool → allowed
+  - SPECKY_GUARD=off → allowed with warning
+  - sdd_* tools remain advisory
+  - P8 enforces `develop`, P9 enforces `stage`
+
+**Test suite:** 70 total (54 unit + 16 integration), all passing.
+
+## [3.4.0-rc.1] - 2026-04-19
+
+### Added — Unified `specky` CLI
+
+Specky now ships as a single npm package with a cross-platform CLI that
+consolidates installation, validation, and upgrade. Replaces the previous
+fragmented distribution (npm: server only, APM: broken `.claude/` install,
+no Claude Code plugin).
+
+**New commands:**
+
+- `specky init [--ide=claude|copilot|both|auto] [--force] [--dry-run]`
+  Auto-detects the IDE and installs 13 agents, 22 prompts, 8 skills, 14
+  hooks to the correct locations (`.claude/` and/or `.github/`). Writes
+  `.mcp.json`, `.vscode/mcp.json`, merges hooks into `.claude/settings.json`,
+  and produces `.specky/install.lock` (SHA256 manifest) for integrity.
+- `specky doctor [--fix]` — validates every installed file against
+  `install.lock`; `--fix` re-installs.
+- `specky status` — pipeline + install summary.
+- `specky upgrade` — refresh assets while preserving `.specs/` and
+  `.specky/profile.json`.
+- `specky hooks <list|test|run NAME>` — inspect and test installed hooks.
+- `specky serve [--http] [--port=N]` — canonical MCP server entry point.
+
+**Legacy compatibility:**
+
+- `specky-sdd` bin remains — routes to `specky serve` when invoked without
+  a subcommand. Existing MCP configs using `npx -y specky-sdd` keep working.
+
+### Added — Multi-OS support
+
+- Windows, macOS, Linux, and WSL all work identically — the CLI runs on
+  Node, no bash required for the CLI itself.
+- New CI workflow `.github/workflows/install-smoke.yml` runs the full
+  install flow on `[ubuntu-latest, macos-latest, windows-latest]` ×
+  `[node-18, node-20, node-22]` and asserts exact file counts per target.
+
+### Added — Claude Code native plugin
+
+- New `.claude-plugin/plugin.json` enables `/plugin install paulasilvatech/specky`.
+
+### Changed — npm package contents
+
+- `.apm/`, `templates/`, `apm.yml`, `config.yml` now ship in the npm tarball
+  (previously excluded). Package size: 356kB compressed, 1.6MB unpacked.
+- `.npmignore` rewritten as a minimal exclusion list (relies on `files` in
+  `package.json` for the allowlist).
+
+### Changed — Bin entries
+
+- `specky` bin now points to `./dist/cli/index.js` (unified CLI).
+- `specky-sdd` bin also points to the CLI; legacy-name detection routes to
+  `serve` automatically.
+
+### Changed — Start script
+
+- `npm start` now runs `node dist/cli/index.js serve` (was `node dist/index.js`).
+
+### Docs
+
+- `docs/CLI.md` — complete CLI reference.
+- `docs/INSTALL.md` — per-OS walkthroughs, offline install, troubleshooting.
+- `README.md` — install section rewritten around `npx specky init`.
+
+### Removed
+
+- No breaking removals in this release. Legacy bin and MCP server entry
+  (`dist/index.js`) are preserved.
+
+## [3.3.3] - 2026-04-19
+
+### Fixed — Cross-platform hook portability
+
+- **grep -P removed** across all 10 shell hooks that used Perl-compatible regex. BSD grep on macOS has no `-P` flag, which caused every affected hook to crash with exit code 2. All patterns converted to POSIX ERE (`grep -E` with `[0-9]` for `\d`, `[[:space:]]` for `\s`, and word-boundary alternatives).
+- Scripts fixed: `artifact-validator.sh`, `drift-monitor.sh`, `ears-validator.sh`, `lgtm-gate.sh`, `phase-gate.sh`, `release-gate.sh`, `security-scan.sh`, `spec-quality.sh`, `spec-sync.sh`, `task-tracer.sh`.
+
+### Fixed — Build
+
+- **Template duplication** in `dist/templates/templates/` caused by repeated `cp -r templates dist/templates`. Build script now removes the target directory first (`rm -rf dist/templates && cp -r templates dist/templates`).
+
+### Added — Claude Code hooks manifest
+
+- **`dist/claude-hooks.json`** — build-time generator (`scripts/build-claude-hooks.mjs`) that derives the Claude Code hook manifest from `.apm/hooks/sdd-hooks.json`:
+  - Prefixes MCP tool matchers with `mcp__specky__` (required for Claude Code to match tool calls).
+  - Resolves `${CLAUDE_PLUGIN_ROOT}` to relative `.claude/hooks/scripts/` paths.
+  - Preserves native Claude tools (`Write`, `Edit`, `MultiEdit`, etc.) without prefix.
+- Output is consumed by the upcoming `specky init` CLI (v3.4.0) to deep-merge into `.claude/settings.json`.
+
+### Added — Documentation
+
+- **Rule #8** in `copilot-instructions` — orchestrator is the single entry point when a pipeline is active. Direct calls to phase agents, manual branch creation, or free-form edits are pipeline violations (enforcement in v3.5.0 via `pipeline-guard` hook).
+- **Shell Script Compatibility section** in `CONTRIBUTING.md` — documents banned patterns (`grep -P`, `\d`, `\s`, `\b`, `declare -A`, `mapfile`) with portable alternatives.
+
+### Added — CI
+
+- **`.github/workflows/hooks-compat.yml`** — four-job workflow blocks regressions:
+  1. `lint-portability` — banned-pattern regex check.
+  2. `syntax-check` — `bash -n` matrix on `ubuntu-latest` + `macos-latest`.
+  3. `selftest-run` — executes every hook in an empty workspace on both OSes.
+  4. `build-claude-hooks` — validates the generator output.
+
+### Known issues (planned for v3.4.0)
+
+- `npm install specky-sdd` still ships only the MCP server; assets in `.apm/` require APM or manual copy. The upcoming `specky init` CLI will unify this.
+- Pipeline bypass (e.g., creating `impl/*` branches outside `spec/NNN-*`) is not yet hard-blocked — `pipeline-guard` hook ships in v3.5.0.
+
+## [3.3.2] - 2026-04-14
 
 ### Security & Code Quality
 

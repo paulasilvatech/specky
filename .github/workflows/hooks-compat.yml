@@ -1,0 +1,147 @@
+name: Hooks Compatibility
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - '.apm/hooks/scripts/**'
+      - 'scripts/build-claude-hooks.mjs'
+      - '.github/workflows/hooks-compat.yml'
+  pull_request:
+    paths:
+      - '.apm/hooks/scripts/**'
+      - 'scripts/build-claude-hooks.mjs'
+      - '.github/workflows/hooks-compat.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  lint-portability:
+    name: Lint — ban non-portable patterns
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Block grep -P and Perl regex
+        run: |
+          set -e
+          FAIL=0
+          # Strip comment lines (lines starting with # after optional whitespace)
+          # before linting, so documentation referencing banned patterns doesn't
+          # trigger false positives.
+          SCAN=$(find .apm/hooks/scripts -name '*.sh' -print0 | xargs -0 grep -Hn -v '^[[:space:]]*#')
+          check() {
+            local pattern="$1" label="$2"
+            if echo "$SCAN" | grep -E "$pattern" >/dev/null 2>&1; then
+              echo "$SCAN" | grep -nE "$pattern" || true
+              echo "::error::$label"
+              return 1
+            fi
+            return 0
+          }
+          check 'grep [^|]*-[a-zA-Z]*P' "Found 'grep -P' — use 'grep -E' with POSIX ERE" || FAIL=1
+          check '\\d|\\D|\\s|\\S|\\b' "Found Perl regex escapes (\\d, \\s, \\b) — replace with POSIX classes" || FAIL=1
+          check 'declare -A' "Found 'declare -A' — requires bash 4+; macOS ships bash 3.2" || FAIL=1
+          check '\bmapfile\b|\breadarray\b' "Found mapfile/readarray — requires bash 4+" || FAIL=1
+          exit $FAIL
+
+  syntax-check:
+    name: Syntax — bash -n
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: bash -n every hook
+        run: |
+          set -e
+          FAIL=0
+          for f in .apm/hooks/scripts/*.sh; do
+            if ! bash -n "$f"; then
+              echo "::error file=$f::Syntax error"
+              FAIL=1
+            fi
+          done
+          exit $FAIL
+
+  selftest-run:
+    name: Self-test — run each hook in empty workspace
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Run hooks in a fresh empty dir (must not crash)
+        shell: bash
+        run: |
+          set +e
+          SCRIPTS="$PWD/.apm/hooks/scripts"
+          TMP=$(mktemp -d)
+          cd "$TMP"
+          git init -q
+          FAIL=0
+          for f in "$SCRIPTS"/*.sh; do
+            name=$(basename "$f")
+            bash "$f" >/dev/null 2>&1
+            rc=$?
+            # Blocking hooks may exit 2 when prerequisites missing; advisory must be 0 or 1
+            case "$name" in
+              artifact-validator.sh|phase-gate.sh|release-gate.sh|security-scan.sh)
+                if [ $rc -ne 0 ] && [ $rc -ne 1 ] && [ $rc -ne 2 ]; then
+                  echo "::error file=$f::Unexpected exit code $rc"
+                  FAIL=1
+                fi
+                ;;
+              *)
+                if [ $rc -gt 1 ]; then
+                  echo "::error file=$f::Advisory hook exit $rc (expected 0 or 1)"
+                  FAIL=1
+                fi
+                ;;
+            esac
+            echo "  $name -> exit $rc"
+          done
+          exit $FAIL
+
+  build-claude-hooks:
+    name: Generate claude-hooks.json
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Run generator
+        run: |
+          mkdir -p dist
+          node scripts/build-claude-hooks.mjs
+
+      - name: Assert MCP matchers are prefixed
+        run: |
+          if ! grep -q 'mcp__specky__sdd_init' dist/claude-hooks.json; then
+            echo "::error::claude-hooks.json missing mcp__specky__ prefix"
+            exit 1
+          fi
+
+      - name: Assert CLAUDE_PLUGIN_ROOT is resolved
+        run: |
+          if grep -q 'CLAUDE_PLUGIN_ROOT' dist/claude-hooks.json; then
+            echo "::error::claude-hooks.json still contains \${CLAUDE_PLUGIN_ROOT}"
+            exit 1
+          fi
+
+      - name: Assert native Claude tools remain unprefixed
+        run: |
+          if ! grep -q '"matcher": "Write|Edit|MultiEdit"' dist/claude-hooks.json; then
+            echo "::error::Native Claude tools were incorrectly prefixed"
+            exit 1
+          fi

@@ -4,12 +4,24 @@
  * extended thinking setting. Based on empirical research.
  */
 
-export type ModelTier = 'claude-opus-4-6' | 'claude-sonnet-4-6' | 'claude-haiku-4-5' | 'gpt-4-5';
+export type ModelTier =
+  | 'claude-opus-4-7'
+  | 'claude-opus-4-6'
+  | 'claude-sonnet-4-6'
+  | 'claude-haiku-4-5'
+  | 'gpt-5'
+  | 'gpt-4.5'
+  | 'codex';
 export type ChatMode = 'ask' | 'plan' | 'agent';
 export type PremiumMultiplier = '3x' | '1x' | '0.33x';
 
 export interface ModelRoutingHint {
+  /** Primary (recommended) model — best quality for the task. */
   model: ModelTier;
+  /** Fallback chain in descending quality order. Used when the user
+   *  doesn't have access to the primary (e.g., Opus 4.7 requires
+   *  Claude Max/Team plan; free-tier users get Sonnet). */
+  fallback_chain: ModelTier[];
   mode: ChatMode;
   thinking: boolean;
   rationale: string;
@@ -33,9 +45,37 @@ export interface CostAnalysis {
 }
 
 export class ModelRoutingEngine {
+  // Fallback chains — ordered by quality. Users on tiers without access
+  // to the primary model can substitute the next available entry.
+  private static readonly FALLBACK_REASONING: ModelTier[] = [
+    'claude-opus-4-7',   // best Anthropic reasoning
+    'claude-opus-4-6',
+    'claude-sonnet-4-6', // strong alternative when Opus unavailable
+    'gpt-5',             // cross-provider alternative (top tier)
+    'gpt-4.5',
+  ];
+  private static readonly FALLBACK_BALANCED: ModelTier[] = [
+    'claude-sonnet-4-6', // primary balanced choice
+    'claude-opus-4-6',
+    'gpt-5',
+    'gpt-4.5',
+  ];
+  private static readonly FALLBACK_FAST: ModelTier[] = [
+    'claude-haiku-4-5',  // primary fast/cheap choice
+    'claude-sonnet-4-6',
+    'gpt-4.5',
+  ];
+  private static readonly FALLBACK_CODING: ModelTier[] = [
+    'claude-sonnet-4-6', // Anthropic's coding strength
+    'codex',             // OpenAI code-specialized alt
+    'gpt-5',
+    'claude-opus-4-6',
+  ];
+
   private static readonly ROUTING_TABLE: Record<string, ModelRoutingHint> = {
     init: {
       model: 'claude-haiku-4-5',
+      fallback_chain: ModelRoutingEngine.FALLBACK_FAST,
       mode: 'ask',
       thinking: false,
       rationale: 'Init is structured with no ambiguity — Haiku is optimal.',
@@ -44,6 +84,7 @@ export class ModelRoutingEngine {
     },
     discover: {
       model: 'claude-sonnet-4-6',
+      fallback_chain: ModelRoutingEngine.FALLBACK_BALANCED,
       mode: 'ask',
       thinking: false,
       rationale: 'Discovery questions are structured; reasoning depth adds no value.',
@@ -51,15 +92,17 @@ export class ModelRoutingEngine {
       premium_multiplier: '1x',
     },
     specify: {
-      model: 'claude-opus-4-6',
+      model: 'claude-opus-4-7',
+      fallback_chain: ModelRoutingEngine.FALLBACK_REASONING,
       mode: 'ask',
       thinking: true,
-      rationale: 'Specify has high ambiguity and no executable feedback — extended thinking justified.',
+      rationale: 'Specify has high ambiguity and no executable feedback — top-tier reasoning justified.',
       evidence_id: 'arXiv:2502.08235',
       premium_multiplier: '3x',
     },
     clarify: {
-      model: 'claude-opus-4-6',
+      model: 'claude-opus-4-7',
+      fallback_chain: ModelRoutingEngine.FALLBACK_REASONING,
       mode: 'ask',
       thinking: true,
       rationale: 'Clarify resolves implicit constraints and contradictions — reasoning depth critical.',
@@ -67,7 +110,8 @@ export class ModelRoutingEngine {
       premium_multiplier: '3x',
     },
     design: {
-      model: 'claude-opus-4-6',
+      model: 'claude-opus-4-7',
+      fallback_chain: ModelRoutingEngine.FALLBACK_REASONING,
       mode: 'plan',
       thinking: true,
       rationale: 'Design requires architectural judgment across multiple files.',
@@ -76,6 +120,7 @@ export class ModelRoutingEngine {
     },
     tasks: {
       model: 'claude-sonnet-4-6',
+      fallback_chain: ModelRoutingEngine.FALLBACK_BALANCED,
       mode: 'plan',
       thinking: false,
       rationale: 'Task decomposition from approved spec is structured — Sonnet sufficient.',
@@ -83,15 +128,17 @@ export class ModelRoutingEngine {
       premium_multiplier: '1x',
     },
     analyze: {
-      model: 'claude-sonnet-4-6',
+      model: 'claude-opus-4-7',
+      fallback_chain: ModelRoutingEngine.FALLBACK_REASONING,
       mode: 'ask',
-      thinking: false,
-      rationale: 'Cross-artifact analysis follows deterministic rules — no reasoning overhead needed.',
+      thinking: true,
+      rationale: 'Analysis produces gate decisions (APPROVE/CONDITIONAL/REJECT) — deep reasoning mitigates false approvals.',
       evidence_id: 'arXiv:2509.11079',
-      premium_multiplier: '1x',
+      premium_multiplier: '3x',
     },
     implement: {
       model: 'claude-sonnet-4-6',
+      fallback_chain: ModelRoutingEngine.FALLBACK_CODING,
       mode: 'agent',
       thinking: false,
       rationale: 'Implementation is iterative with test feedback — extended thinking actively harmful.',
@@ -99,15 +146,17 @@ export class ModelRoutingEngine {
       premium_multiplier: '1x',
     },
     verify: {
-      model: 'claude-sonnet-4-6',
+      model: 'claude-opus-4-7',
+      fallback_chain: ModelRoutingEngine.FALLBACK_REASONING,
       mode: 'ask',
-      thinking: false,
-      rationale: 'Verification checks against clear criteria — structured task, Sonnet optimal.',
+      thinking: true,
+      rationale: 'Verification maps every REQ-ID to test coverage — reasoning required to detect phantom completions.',
       evidence_id: 'arXiv:2604.02547',
-      premium_multiplier: '1x',
+      premium_multiplier: '3x',
     },
     release: {
       model: 'claude-haiku-4-5',
+      fallback_chain: ModelRoutingEngine.FALLBACK_FAST,
       mode: 'ask',
       thinking: false,
       rationale: 'Release artifacts (commit messages, PR descriptions, changelogs) need no reasoning depth.',
@@ -125,9 +174,10 @@ export class ModelRoutingEngine {
         (phase === 'design' || phase === 'implement')) {
       return {
         ...base,
-        model: 'claude-opus-4-6',
+        model: 'claude-opus-4-7',
+        fallback_chain: ModelRoutingEngine.FALLBACK_REASONING,
         premium_multiplier: '3x',
-        rationale: `Multi-file semantic complexity (${signals.file_count} files) exceeds Sonnet threshold — escalating to Opus.`,
+        rationale: `Multi-file semantic complexity (${signals.file_count} files) exceeds Sonnet threshold — escalating to Opus 4.7.`,
         evidence_id: 'arXiv:2509.16941',
       };
     }

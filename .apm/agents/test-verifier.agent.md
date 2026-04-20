@@ -2,9 +2,10 @@
 name: test-verifier
 description: Use this agent to verify test coverage, detect phantom completions, and check spec-code drift.
 
-model: sonnet
+model: claude-opus-4-7
+model_fallback: ["claude-opus-4-6", "claude-sonnet-4-6", "gpt-5", "gpt-4.5"]
 color: yellow
-tools: ["sdd_verify_tests", "sdd_verify_tasks", "sdd_check_sync", "sdd_validate_ears", "sdd_get_status"]
+tools: ["Read", "Glob", "Grep", "Edit", "Write", "Bash", "sdd_verify_tests", "sdd_verify_tasks", "sdd_check_sync", "sdd_validate_ears", "sdd_get_status"]
 ---
 
 <example>

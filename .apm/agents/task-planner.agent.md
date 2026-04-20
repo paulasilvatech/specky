@@ -2,9 +2,10 @@
 name: task-planner
 description: Phase 5 agent that writes TASKS.md with dependency-resolved task sequences, REQ-ID traceability, complexity estimates, and parallel markers. Also generates CHECKLIST.md.
 
-model: sonnet
+model: claude-sonnet-4-6
+model_fallback: ["claude-opus-4-6", "gpt-5", "gpt-4.5"]
 color: orange
-tools: ["sdd_write_tasks", "sdd_checklist"]
+tools: ["Read", "Glob", "Grep", "Edit", "Write", "sdd_write_tasks", "sdd_checklist"]
 ---
 
 <example>

@@ -2,14 +2,14 @@
   <br>
   <img src="media/specky-brand-logo.svg" alt="Specky" height="80">
   <br><br>
-  <p><strong>13 agents. 57 MCP tools. 10-phase pipeline. One plugin.</strong></p>
+  <p><strong>13 agents. 57 MCP tools. 10-phase pipeline. One CLI.</strong></p>
   <p>Agentic Spec-Driven Development</p>
 
   <p>
     <img src="https://img.shields.io/badge/agents-13-7c3aed?style=flat-square" alt="13 Agents"/>
     <img src="https://img.shields.io/badge/tools-57_MCP-6d28d9?style=flat-square" alt="57 Tools"/>
     <img src="https://img.shields.io/badge/phases-10_enforced-5b21b6?style=flat-square" alt="10 Phases"/>
-    <img src="https://img.shields.io/badge/hooks-14-4c1d95?style=flat-square" alt="14 Hooks"/>
+    <img src="https://img.shields.io/badge/hooks-16-4c1d95?style=flat-square" alt="16 Hooks"/>
     <img src="https://img.shields.io/badge/license-MIT-a78bfa?style=flat-square" alt="MIT"/>
   </p>
 
@@ -24,7 +24,7 @@
   <p>
     <img src="https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript Strict"/>
     <img src="https://img.shields.io/badge/dependencies-2-green?style=flat-square" alt="2 Dependencies"/>
-    <img src="https://img.shields.io/badge/APM-compatible-7c3aed?style=flat-square" alt="APM Compatible"/>
+    <img src="https://img.shields.io/badge/CLI-specky-7c3aed?style=flat-square" alt="CLI"/>
     <img src="https://img.shields.io/badge/OWASP_MCP-Top_10-green?style=flat-square" alt="OWASP MCP Top 10"/>
     <img src="https://img.shields.io/node/v/specky-sdd?style=flat-square&color=5b21b6" alt="Node.js"/>
     <a href="https://github.com/paulasilvatech/specky/issues"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs Welcome"/></a>
@@ -44,10 +44,10 @@
 | | Section | Description |
 |---|---------|-------------|
 | **Start** | [What is Specky?](#what-is-specky) | Overview and ecosystem |
-| | [What is a Plugin?](#what-is-a-plugin) | Agents, prompts, skills, hooks, and APM |
+| | [What's Included](#whats-included) | Agents, prompts, skills, hooks, and MCP tools |
 | | [Why Specifications Matter](#why-specifications-matter-in-the-ai-era) | Vibe coding vs deterministic development |
 | | [Getting Started](GETTING-STARTED.md) | Complete educational guide |
-| **Use** | [Quick Start](#quick-start) | Install the plugin via APM, curl, or npm |
+| **Use** | [Quick Start](#quick-start) | Install via npm CLI |
 | | [Where Specifications Live](#where-specifications-live) | File structure and naming conventions |
 | | [Input Methods](#input-methods-6-ways-to-start) | 6 ways to feed Specky |
 | | [Three Project Types](#three-project-types-one-pipeline) | Greenfield, Brownfield, Modernization |
@@ -62,47 +62,59 @@
 
 ## What is Specky?
 
-Specky is a **complete Spec-Driven Development plugin** — 13 specialized agents, 57 MCP tools, 22 prompts, 8 skills, and 14 automation hooks — that enforces a deterministic 10-phase pipeline from **any input** (meeting transcripts, documents, Figma designs, or natural language prompts) through specifications, architecture, infrastructure as code, implementation, and deployment.
+Specky is a **CLI toolkit for Spec-Driven Development** — 13 specialized agents, 57 MCP tools, 22 prompts, 8 skills, and 16 automation hooks — that enforces a deterministic 10-phase pipeline from **any input** (meeting transcripts, documents, Figma designs, or natural language prompts) through specifications, architecture, infrastructure as code, implementation, and deployment.
 
-The plugin is powered by the [specky-sdd](https://www.npmjs.com/package/specky-sdd) MCP engine and the [Spec-Kit](https://github.com/paulasilvatech/spec-kit) methodology. Install Specky and you get **everything**: the agents orchestrate the pipeline, the tools enforce validation, the hooks guard every phase transition, and the skills provide domain knowledge.
+Powered by the [Spec-Kit](https://github.com/paulasilvatech/spec-kit) methodology. Install the `specky` CLI and it places agents, prompts, skills, hooks, and the MCP server registration into your project — for **GitHub Copilot** (VS Code), **Claude Code**, or both.
 
 
-## What is a Plugin?
+## What's Included
 
-A plugin is a **complete AI development package** — not just a tool server. It bundles everything your AI IDE needs into a single installable unit:
+Specky is a **complete AI development toolkit** — not just an MCP server. The `specky` CLI installs everything your AI IDE needs into a single project:
 
 | Primitive | What it is | Specky includes |
 |-----------|-----------|------------------|
 | **Agents** | Specialized AI personas with defined roles, tools, and guardrails | 13 agents — @specky-orchestrator (full pipeline), @specky-onboarding (wizard), @spec-engineer, @design-architect, @task-planner, @quality-reviewer, and 7 more |
 | **Prompts** | Slash commands that activate the right agent for a task | 22 prompts — `/specky-greenfield`, `/specky-specify`, `/specky-release`, `/specky-orchestrate`, etc. |
 | **Skills** | Domain knowledge files loaded into agent context automatically | 8 skills — SDD pipeline rules, EARS patterns, implementation patterns, test criteria, release gate protocol |
-| **Hooks** | Scripts that run before/after every tool call for validation | 14 hooks — artifact-validator, branch-validator, phase-gate, lgtm-gate, security-scan, etc. |
+| **Hooks** | Scripts that run before/after every tool call for validation | 16 hooks — artifact-validator, branch-validator, phase-gate, lgtm-gate, security-scan, etc. |
 | **MCP Server** | The tool engine that validates, generates, and enforces | 57 tools via Model Context Protocol (the runtime underneath) |
 
 ### Why not just an MCP server?
 
-An MCP server gives you **tools**. A plugin gives you the **experience**:
+An MCP server gives you **tools**. The CLI toolkit gives you the **experience**:
 
 - **Tools alone**: You call `sdd_write_spec` and hope you're in the right phase, with the right prerequisites, on the right branch.
-- **Plugin**: You type `@specky-orchestrator` and the agent validates your phase, checks your branch, loads the right skill, calls the right tool, runs pre/post hooks, and pauses for LGTM before advancing.
+- **CLI toolkit**: You type `@specky-orchestrator` and the agent validates your phase, checks your branch, loads the right skill, calls the right tool, runs pre/post hooks, and pauses for LGTM before advancing.
 
-The MCP engine is the runtime. The plugin is the product.
+The MCP engine is the runtime. The agents + hooks + skills are the product.
 
 ### How to install
 
-Specky is distributed via [APM](https://microsoft.github.io/apm/) (Agent Package Manager) — Microsoft's open-source dependency manager for AI agents:
+Specky ships as a single npm package with a unified `specky` CLI. Works on macOS, Linux, Windows, and WSL.
 
 ```bash
-# Install APM (one-time) — pick one:
-curl -sSL https://aka.ms/apm-unix | sh        # macOS / Linux
-brew install microsoft/apm/apm                 # Homebrew
-irm https://aka.ms/apm-windows | iex           # Windows PowerShell
+# 1. Install the CLI globally (once per machine)
+npm install -g specky-sdd@latest
 
-# Then install Specky:
-apm install paulasilvatech/specky
+# 2. Bootstrap your project — choose your IDE:
+cd your-project
+specky install --ide=copilot   # VS Code + GitHub Copilot (recommended)
+specky install --ide=claude    # Claude Code
 ```
 
-This installs all 13 agents, 22 prompts, 8 skills, 14 hooks, configures the MCP server, and generates a lock file (`apm.lock.yaml`) for version reproducibility. No configuration drift across your team. See [APM installation docs](https://microsoft.github.io/apm/getting-started/installation/) for more options.
+> **Important:** Always specify `--ide=copilot` or `--ide=claude`. The default `--ide=auto` installs for both IDEs, which can cause hook cross-read conflicts between Copilot and Claude Code in the same workspace. See [docs/INSTALL.md](docs/INSTALL.md) for details.
+
+Or per-project (for teams — pins version in `package.json`, run via `npx`):
+
+```bash
+cd your-project
+npm install --save-dev specky-sdd@latest
+npx specky install --ide=copilot
+```
+
+The CLI installs 13 agents, 22 prompts, 8 skills, 16 hooks, the MCP server registration (`.mcp.json` + `.vscode/mcp.json`), and **pre-authorizes all required tools**. Run `specky doctor` anytime to validate integrity and config.
+
+Full walkthroughs per OS, offline install, and CLI reference: [docs/INSTALL.md](docs/INSTALL.md) · [docs/CLI.md](docs/CLI.md).
 
 
 ## Why Specifications Matter in the AI Era
@@ -146,7 +158,7 @@ Specky adds a **deterministic engine** between your intent and your code:
 
 | Capability | Specky |
 |---|---|
-| Complete plugin experience | 13 agents, 22 prompts, 8 skills, 14 hooks + 57 MCP tools |
+| Complete CLI toolkit | 13 agents, 22 prompts, 8 skills, 16 hooks + 57 MCP tools |
 | Pipeline orchestrator | @specky-orchestrator coordinates all 10 phases end-to-end |
 | Onboarding wizard | @specky-onboarding detects context and guides setup |
 | Any input (PDF, DOCX, PPTX, transcript, Figma) to spec | 57 MCP tools handle all input formats |
@@ -159,7 +171,7 @@ Specky adds a **deterministic engine** between your intent and your code:
 | 6 compliance frameworks | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 built-in |
 | Cross-artifact traceability | Requirement to design to task to test to code |
 | Gitflow-SDD branching | spec/NNN → develop → stage → main |
-| APM distribution | `apm install paulasilvatech/specky` — one command (requires [APM](https://microsoft.github.io/apm/getting-started/installation/)) |
+| Unified CLI distribution | `npm install -g specky-sdd && specky install --ide=copilot` — one binary, multi-OS (macOS/Linux/Windows/WSL) |
 | Works in any MCP host | VS Code + Copilot, Claude Code, Cursor, Windsurf, or any MCP client |
 | Zero outbound network calls | Fully air-gapped, code never leaves your machine |
 | MIT open source | Fork it, extend it, audit it. No vendor lock, no seat pricing |
@@ -169,22 +181,49 @@ Specky adds a **deterministic engine** between your intent and your code:
 
 ### Prerequisites
 
-- **Node.js 18+**: [Download here](https://nodejs.org/)
+- **Node.js 20+**: [Download here](https://nodejs.org/) (Node 20 LTS recommended)
 - **An AI IDE**: VS Code with Copilot, Claude Code, Cursor, or Windsurf
 
 ### Install the Plugin
 
-#### Via APM
-
-[Install APM](https://microsoft.github.io/apm/getting-started/installation/) first, then:
+**One-time CLI install:**
 
 ```bash
-apm install paulasilvatech/specky
+npm install -g specky-sdd@latest
 ```
+
+**Bootstrap each project:**
+
+```bash
+cd your-project
+specky install
+```
+
+That's it. The CLI auto-detects Claude Code and/or GitHub Copilot and installs the 13 agents, 22 prompts, 8 skills, 16 hooks, the MCP server registration, and pre-authorizes all required tools.
+
+**Other install modes:**
+
+```bash
+# Per-project (teams — pins version in package.json)
+cd your-project
+npm install --save-dev specky-sdd@latest
+npx specky install
+
+# Zero-install (one command, no persistent CLI)
+cd your-project
+npx -y specky-sdd@latest install
+```
+
+Full per-OS walkthrough: [docs/INSTALL.md](docs/INSTALL.md) · CLI reference: [docs/CLI.md](docs/CLI.md).
 
 ### Verify
 
-Open Copilot Chat and type:
+```bash
+specky doctor          # validates integrity + configuration
+specky status          # shows active features and pipeline phase
+```
+
+Then open your IDE and type:
 
 ```
 @specky-onboarding
@@ -807,14 +846,14 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 
 **[Spec-Kit](https://github.com/paulasilvatech/spec-kit)** is the open-source SDD methodology: EARS notation, gated pipeline phases, constitution model, 25+ specialized agents, and Markdown prompt templates. It defines **what** to do.
 
-**Specky** is the complete plugin that reimplements that methodology as 57 enforceable MCP tools with 13 agents, 22 prompts, 8 skills, and 14 hooks. It enforces **how** to do it.
+**Specky** is the CLI toolkit that reimplements that methodology as 57 enforceable MCP tools with 13 agents, 22 prompts, 8 skills, and 16 hooks. It enforces **how** to do it.
 
 | | Spec-Kit (Methodology) | Specky (Plugin) |
 |--|------------------------|-----------------|
-| **What it is** | Prompt templates + agent definitions | Complete plugin: 13 agents + 57 MCP tools + 22 prompts + 8 skills + 14 hooks |
+| **What it is** | Prompt templates + agent definitions | CLI toolkit: 13 agents + 57 MCP tools + 22 prompts + 8 skills + 16 hooks |
 | **How it works** | AI reads `.md` templates and follows instructions | AI calls agents that orchestrate tools with hook validation |
 | **Validation** | AI tries to follow the prompts | State machine, EARS regex, Zod schemas, pre/post hooks |
-| **Install** | Copy `.github/agents/` and `.claude/commands/` | `apm install paulasilvatech/specky` |
+| **Install** | Copy `.github/agents/` and `.claude/commands/` | `npm install -g specky-sdd && specky install` |
 | **Works standalone** | Yes, in any AI IDE | Yes, includes all Spec-Kit patterns |
 | **Best for** | Learning SDD, lightweight adoption | Production enforcement, enterprise, compliance |
 
@@ -834,7 +873,7 @@ Together they form the **SDD layer** of the GitHub + Microsoft enterprise platfo
 }
 ```
 
-> **Note:** This example assumes Specky is installed via `apm install paulasilvatech/specky`. See the [Installation](#installation) section for details.
+> **Note:** This example assumes Specky is installed via `specky install` (after `npm install -g specky-sdd@latest`). See [Install the Plugin](#install-the-plugin) for details.
 
 ## Project Configuration
 

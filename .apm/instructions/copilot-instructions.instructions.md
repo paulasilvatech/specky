@@ -55,6 +55,10 @@ Hooks fire automatically on MCP tool calls:
 
 7. **Load companion SKILL.md first.** Every agent must read its companion skill file as the first workflow step.
 
+## Rule #8
+
+8. **Orchestrator is the single entry point.** When `.specs/` exists with an active pipeline (`.sdd-state.json` present), ALL work — code, branches, commits, PRs — MUST flow through `@specky-orchestrator`. Direct calls to phase agents, manual branch creation outside `spec/NNN-*`, or free-form edits bypass the quality gates and are pipeline violations. If unsure where to start, invoke `@specky-onboarding`. The orchestrator validates branch, artifacts, phase prerequisites, and routes to the correct phase agent. Starting in v3.5, `pipeline-guard` hook enforces this automatically.
+
 ## MCP Server
 
 The specky-sdd MCP server (57 tools) is configured in .vscode/mcp.json and runs via npx.

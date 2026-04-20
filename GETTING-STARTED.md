@@ -1,64 +1,95 @@
 # Specky SDD — Getting Started
 
-> **Spec-Driven Development** is the practice of writing formal specifications (in EARS notation) *before* writing code. Specky is a **complete plugin** that automates this 10-phase pipeline, ensuring full traceability from requirement to PR.
+> **Spec-Driven Development** is the practice of writing formal specifications (in EARS notation) *before* writing code. Specky is a **CLI toolkit** that automates this 10-phase pipeline, ensuring full traceability from requirement to PR.
 
 ---
 
-## What is a Plugin?
+## What is Specky?
 
-Specky is not just an MCP server — it's a **plugin**: a complete AI development package that bundles agents, prompts, skills, hooks, and an MCP engine into one installable unit.
+Specky is a CLI toolkit that installs specialized agents, prompts, skills, hooks, and an MCP engine into your project — for **GitHub Copilot** (VS Code) or **Claude Code**.
 
 | What you get | What it does |
 |-------------|-------------|
 | **13 Agents** | Specialized AI personas — `@specky-orchestrator` runs the full pipeline, `@specky-onboarding` guides setup, `@spec-engineer` writes specs, etc. |
 | **22 Prompts** | Slash commands — `/specky-greenfield`, `/specky-specify`, `/specky-release`. One command activates the right agent. |
 | **8 Skills** | Domain knowledge loaded into agents — EARS patterns, implementation rules, test criteria, release gate protocol. |
-| **14 Hooks** | Pre/post validation scripts — check artifacts exist, validate branch, enforce gates, pause for LGTM. |
+| **16 Hooks** | Pre/post validation scripts + `pipeline-guard` (UserPromptSubmit) + `session-banner` (SessionStart) — check artifacts, validate branch, enforce gates, block out-of-flow prompts. |
 | **57 MCP Tools** | The engine underneath — validates, generates, and enforces. Agents call it; hooks guard it. |
 
 **Why does this matter?** Instead of calling raw MCP tools and hoping you're in the right phase with the right prerequisites, you call an agent and it does everything correctly — validates, routes, enforces hooks, and pauses for review.
 
-### What is APM?
-
-[APM](https://microsoft.github.io/apm/) (Agent Package Manager) is Microsoft's open-source dependency manager for AI agent configuration. It manages agents, skills, prompts, hooks, and MCP servers as versioned packages with lock files. APM must be [installed separately](https://microsoft.github.io/apm/getting-started/installation/) before use:
-
-```bash
-# Install APM (one-time) — pick one:
-curl -sSL https://aka.ms/apm-unix | sh        # macOS / Linux
-brew install microsoft/apm/apm                 # Homebrew
-irm https://aka.ms/apm-windows | iex           # Windows PowerShell
-
-# Then install Specky:
-apm install paulasilvatech/specky
-```
-
----
-
 ## Installation
 
-The **Specky plugin** bundles everything: 13 agents, 22 prompts, 8 skills, 14 hooks, and the MCP server (57 tools) — version-controlled with your repo.
+The `specky` CLI bundles everything: 13 agents, 22 prompts, 8 skills, 16 hooks, and the MCP server (57 tools) — installed into your project for your chosen IDE.
 
-### Via APM
-
-[Install APM](https://microsoft.github.io/apm/getting-started/installation/) first, then:
+### One-time CLI install (recommended)
 
 ```bash
-apm install paulasilvatech/specky
+# Install the CLI globally (once per machine)
+npm install -g specky-sdd@latest
+
+# Bootstrap each project — choose your IDE:
+cd your-project
+specky install --ide=copilot   # VS Code + GitHub Copilot
+specky install --ide=claude    # Claude Code
 ```
 
-Generates a lock file for version reproducibility across your team.
+> **Important:** Always specify `--ide=copilot` or `--ide=claude`. Do NOT use `--ide=both` — Copilot reads `.claude/settings.json` hooks, causing cross-read conflicts that block tool calls.
 
-The plugin automatically configures:
-- MCP server `specky-sdd` via npx → `.vscode/mcp.json`
-- 13 Copilot agents → `.github/plugin/specky/agents/`
-- 22 ready-to-use prompts → `.github/plugin/specky/prompts/`
-- 8 shared skills → `.github/plugin/specky/skills/`
-- 14 hook scripts → `.github/plugin/specky/hooks/scripts/`
-- Copilot instructions → `.github/plugin/specky/instructions/`
-- Pipeline config → `.github/plugin/specky/config.yml`
-- VS Code hooks → `.vscode/settings.json`
+The CLI installs agents, prompts, skills, hooks, and MCP registration to the correct IDE-specific locations.
 
-> **Tip:** Commit `.github/plugin/` and `.vscode/` to Git so every team member gets Specky automatically on clone.
+### Other install modes
+
+```bash
+# Per-project (teams that want to pin the version in package.json)
+cd your-project
+npm install --save-dev specky-sdd@latest
+npx specky install --ide=copilot
+
+# Zero-install (one command, no persistent CLI)
+cd your-project
+npx -y specky-sdd@latest install --ide=copilot
+```
+
+### What `specky install --ide=copilot` creates
+
+| Path | Purpose | Commit? |
+|---|---|---|
+| `.github/agents/*.agent.md` (13) | GitHub Copilot agents | ❌ gitignored |
+| `.github/prompts/*.prompt.md` (22) | Copilot slash prompts | ❌ gitignored |
+| `.github/skills/*/SKILL.md` (8) | Copilot skills | ❌ gitignored |
+| `.github/hooks/specky/scripts/*.sh` (16) | Copilot hook scripts | ❌ gitignored |
+| `.github/hooks/specky/sdd-hooks.json` | Copilot hook manifest | ❌ gitignored |
+| `.mcp.json`, `.vscode/mcp.json` | MCP server registration | ✅ **commit** |
+| `.vscode/settings.json` | Copilot MCP enablement | ✅ **commit** |
+| `.specky/config.yml` | Pipeline config | ✅ **commit** |
+| `.specky/install.lock` | SHA256 integrity manifest | ❌ gitignored |
+| `.gitignore` | Auto-appends managed block | ✅ **commit** |
+
+### What `specky install --ide=claude` creates
+
+| Path | Purpose | Commit? |
+|---|---|---|
+| `.claude/agents/*.md` (13) | Claude Code agents | ❌ gitignored (regenerated) |
+| `.claude/commands/*.md` (22) | Claude slash commands | ❌ gitignored |
+| `.claude/skills/*/SKILL.md` (8) | Claude skills | ❌ gitignored |
+| `.claude/hooks/scripts/*.sh` (16) | Claude hook scripts | ❌ gitignored |
+| `.claude/settings.json` | Hooks + 37 permission rules | ✅ **commit** (team-shared) |
+| `.mcp.json` | MCP server registration | ✅ **commit** |
+| `.specky/config.yml` | Pipeline config | ✅ **commit** |
+| `.specky/install.lock` | SHA256 integrity manifest | ❌ gitignored |
+| `.gitignore` | Auto-appends managed block | ✅ **commit** |
+
+The CLI **automatically adds a `.gitignore` block** — vendored assets (regenerated on every `specky upgrade`) are excluded, while team-shared configs are committed.
+
+### Validation
+
+```bash
+specky doctor          # Integrity + config health (should be all green)
+specky status          # Active features and pipeline phase
+```
+
+> **Why CLI instead of APM?** Versions 3.4+ ship a unified CLI that works cross-platform (macOS/Linux/Windows/WSL) with no external tooling. The `--ide` flag ensures clean separation between Copilot and Claude Code assets.
 
 ---
 
@@ -142,7 +173,7 @@ Ready-to-use prompts (slash commands):
 
 ## Use Cases and Ready-to-Use Prompts
 
-The prompts below are available in `.github/plugin/specky/prompts/` (Copilot) and `.claude/prompts/` (Claude Code).
+The prompts below are available in `.github/prompts/` (Copilot) and `.claude/commands/` (Claude Code).
 Copy, fill in the fields between `[brackets]`, and submit.
 
 ---
@@ -440,7 +471,7 @@ A: Easy Approach to Requirements Syntax — 6 patterns for writing requirements 
 A: arXiv:2502.08235 demonstrated that extended thinking during implementation phases reduces quality by 30% and increases cost by 43%. Thinking is reserved for reasoning phases (Clarify, Specify, Design) where the cost-benefit ratio is positive.
 
 **Q: Can I use Specky without GitHub?**
-A: Yes. The `.github/plugin/specky/agents/` and `.github/workflows/` require GitHub Copilot and GitHub Actions. But you can use Claude Code with `.claude/commands/` and `.specky/hooks/` without any GitHub dependency.
+A: Yes. The `.github/agents/` and `.github/prompts/` require GitHub Copilot. But you can use Claude Code with `.claude/commands/` and `.claude/hooks/` without any GitHub dependency. Use `specky install --ide=claude` to install Claude-only.
 
 **Q: Does Specky write the code for me?**
 A: The `@implementer` (Phase 7) generates detailed implementation plans, test stubs, and IaC scaffolding. The production code is written by your IDE's AI tool (Claude Code, Copilot) following the plan generated by Specky. Specky ensures that what is implemented matches exactly what was specified.
@@ -449,9 +480,11 @@ A: The `@implementer` (Phase 7) generates detailed implementation plans, test st
 
 ## Next Steps
 
-1. Install the plugin: `apm install paulasilvatech/specky` (requires [APM](https://microsoft.github.io/apm/getting-started/installation/))
-3. Start with `/specky-pipeline-status` to see if there are active features, or
-4. Use `/specky-greenfield` (new project) or `/specky-brownfield` (existing feature) to begin
-5. Refer to this guide whenever you're unsure which prompt to use
+1. Install the CLI: `npm install -g specky-sdd@latest`
+2. Bootstrap the project: `specky install --ide=copilot` (or `--ide=claude`)
+3. Validate: `specky doctor`
+4. Start with `/specky-pipeline-status` to see if there are active features
+5. Use `/specky-greenfield` (new project) or `/specky-brownfield` (existing feature) to begin
+6. Refer to this guide whenever you're unsure which prompt to use
 
-Plugin documentation: [`GETTING-STARTED.md`](GETTING-STARTED.md) | Changelog: [`CHANGELOG.md`](CHANGELOG.md) | Security: [`SECURITY.md`](SECURITY.md)
+CLI documentation: [`GETTING-STARTED.md`](GETTING-STARTED.md) | Changelog: [`CHANGELOG.md`](CHANGELOG.md) | Security: [`SECURITY.md`](SECURITY.md)

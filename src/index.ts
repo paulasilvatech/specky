@@ -77,7 +77,7 @@ const server = new McpServer(
     name: SERVER_NAME,
     version: VERSION,
     title: "Specky",
-    description: "Agentic Spec-Driven Development plugin — 13 agents, 57 MCP tools, 10-phase enforced pipeline, EARS notation, 22 prompts, 8 skills, 14 hooks.",
+    description: "Agentic Spec-Driven Development plugin — 13 agents, 57 MCP tools, 10-phase enforced pipeline, EARS notation, 22 prompts, 8 skills, 16 hooks.",
     websiteUrl: "https://getspecky.ai",
     icons: [
       {

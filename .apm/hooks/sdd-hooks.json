@@ -1,4 +1,28 @@
 {
+  "SessionStart": [
+    {
+      "matcher": "",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-banner.sh",
+          "timeout": 5
+        }
+      ]
+    }
+  ],
+  "UserPromptSubmit": [
+    {
+      "matcher": "",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pipeline-guard.sh",
+          "timeout": 5
+        }
+      ]
+    }
+  ],
   "PreToolUse": [
     {
       "matcher": "sdd_init|sdd_create_branch",
@@ -137,6 +161,16 @@
           "type": "command",
           "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/release-gate.sh",
           "timeout": 15
+        }
+      ]
+    },
+    {
+      "matcher": "Write|Edit|MultiEdit",
+      "hooks": [
+        {
+          "type": "command",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "timeout": 5
         }
       ]
     }

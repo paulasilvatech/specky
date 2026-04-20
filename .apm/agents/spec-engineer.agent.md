@@ -2,9 +2,10 @@
 name: spec-engineer
 description: Phase 2 agent that writes SPECIFICATION.md using EARS notation. Every requirement gets a unique REQ-ID, one of the 6 EARS patterns, and measurable acceptance criteria.
 
-model: opus
+model: claude-opus-4-7
+model_fallback: ["claude-opus-4-6", "claude-sonnet-4-6", "gpt-5", "gpt-4.5"]
 color: magenta
-tools: ["sdd_write_spec", "sdd_turnkey_spec", "sdd_validate_ears", "sdd_figma_to_spec"]
+tools: ["Read", "Glob", "Grep", "Edit", "Write", "sdd_write_spec", "sdd_turnkey_spec", "sdd_validate_ears", "sdd_figma_to_spec"]
 ---
 
 <example>

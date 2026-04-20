@@ -2,9 +2,10 @@
 name: requirements-engineer
 description: Use this agent to analyze raw input and produce validated FRD and NFRD documents ready for sdd_init.
 
-model: opus
+model: claude-opus-4-7
+model_fallback: ["claude-opus-4-6", "claude-sonnet-4-6", "gpt-5", "gpt-4.5"]
 color: magenta
-tools: ["sdd_discover", "sdd_import_document", "sdd_import_transcript", "sdd_batch_import", "sdd_validate_ears"]
+tools: ["Read", "Glob", "Grep", "Write", "Edit", "sdd_discover", "sdd_import_document", "sdd_import_transcript", "sdd_batch_import", "sdd_validate_ears"]
 ---
 
 <example>

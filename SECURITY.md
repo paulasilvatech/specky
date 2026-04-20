@@ -187,23 +187,35 @@ See [docs/SYSTEM-DESIGN.md](docs/SYSTEM-DESIGN.md) for the complete security arc
 
 ## NPX Supply Chain Risk
 
-Running `npx specky-sdd` without a pinned version downloads the latest package from npm on every invocation. This creates a supply-chain exposure: a compromised npm registry entry or a typosquat could execute malicious code in your environment before Specky even starts.
+Running `npx -y specky-sdd@latest` without a pinned version downloads the latest package from npm on every invocation. This creates a supply-chain exposure: a compromised npm registry entry or a typosquat could execute malicious code in your environment before Specky even starts.
 
-**Recommended mitigations:**
+**Recommended mitigations** (ordered by risk reduction):
 
 | Approach | Risk reduction | Notes |
 |----------|---------------|-------|
-| `apm install paulasilvatech/specky` | **High** — fetches once, lock file pins version | Recommended default |
-| `apm install paulasilvatech/specky@3.3.0` | **Higher** — version-pinned, no silent upgrades | Best for reproducible environments |
-| Docker (`ghcr.io/paulasilvatech/specky:3.3.0`) | **Highest** — immutable image by digest | Best for CI/CD and air-gapped |
+| `npm install -g specky-sdd@<pinned-version>` + `specky install` | **High** — fetched once, upgrades only when you explicitly run `npm install -g` again | Recommended for individual developers |
+| `npm install --save-dev specky-sdd@<pinned-version>` + `npx specky install` | **Higher** — version-pinned in `package.json`; `package-lock.json` pins transitive deps | Best for teams (reproducible across clones) |
+| Offline bundle: `npm pack specky-sdd@<version>` + `npm install ./specky-sdd-*.tgz` | **Higher** — no network access at install time after the initial download | Air-gapped environments |
+| `specky doctor` after install | **Defense-in-depth** — verifies SHA256 of every installed file against `install.lock` | Run after every `install`/`upgrade` |
+| Docker (`ghcr.io/paulasilvatech/specky:<version>`) | **Highest** — immutable image by digest | Best for CI/CD and air-gapped |
 
 **Workspace isolation pattern** (CI/CD):
 
 ```bash
 # Install into a local vendor directory — no global write permissions needed
-npm install specky-sdd@3.3.0 --prefix ./vendor --ignore-scripts
-./vendor/node_modules/.bin/specky-sdd
+npm install specky-sdd@3.4.0 --prefix ./vendor --ignore-scripts
+./vendor/node_modules/.bin/specky install
+./vendor/node_modules/.bin/specky doctor     # integrity check
 ```
+
+**CLI binary entry points** (both ship in the same package):
+
+- `specky` — unified CLI (`install`, `doctor`, `status`, `upgrade`, `hooks`, `serve`)
+- `specky-sdd` — legacy alias; with no subcommand it routes to `specky serve` (MCP stdio server), preserving any existing `.mcp.json` configs that reference `specky-sdd` directly
+
+**Install integrity check:**
+
+Every `specky install` produces `.specky/install.lock` with SHA256 of every deployed file. `specky doctor` validates these hashes — a tampered hook script or agent file is detected before any agent runs.
 
 The `--ignore-scripts` flag prevents npm lifecycle scripts from running during install, which is a common supply-chain attack vector.
 
@@ -238,7 +250,7 @@ Specky addresses the 12 threat categories from the CoSAI MCP Security White Pape
 | M4 | Insufficient Authentication | HTTP mode delegates to reverse proxy; stdio is process-isolated |
 | M5 | Broken Object-Level Authorization | RBAC engine enforces per-tool access by role (opt-in) |
 | M6 | Sensitive Data Exposure | FileManager path boundary; no credential logging; workspace-scoped I/O |
-| M7 | Insecure Plugin Composition | Fixed tool set at startup — no dynamic plugin loading |
+| M7 | Insecure Plugin Composition | Fixed tool set at startup — no dynamic loading |
 | M8 | Improper Error Handling | All service errors caught; tools return structured error responses |
 | M9 | Insufficient Logging | Hash-chained audit trail; syslog export available |
 | M10 | Vulnerable Dependencies | 2 runtime deps; `npm audit` in CI; Dependabot on GitHub |

@@ -2,9 +2,10 @@
 name: sdd-clarify
 description: Use this agent to find and resolve ambiguities in requirements, validate EARS patterns, and produce a clarification log.
 
-model: opus
+model: claude-opus-4-7
+model_fallback: ["claude-opus-4-6", "claude-sonnet-4-6", "gpt-5", "gpt-4.5"]
 color: yellow
-tools: ["sdd_clarify", "sdd_validate_ears", "sdd_turnkey_spec"]
+tools: ["Read", "Glob", "Grep", "Edit", "sdd_clarify", "sdd_validate_ears", "sdd_turnkey_spec"]
 ---
 
 <example>

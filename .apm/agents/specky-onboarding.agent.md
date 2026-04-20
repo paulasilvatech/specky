@@ -2,9 +2,10 @@
 name: specky-onboarding
 description: Default entry point and interactive wizard for Specky SDD. Detects project context, explains the plugin, guides through project type selection, work mode, and branch setup. Triggered when user says "specky" without specifics.
 
-model: haiku
+model: claude-haiku-4-5
+model_fallback: ["claude-sonnet-4-6", "gpt-4.5"]
 color: green
-tools: ["sdd_get_status", "sdd_scan_codebase", "sdd_check_ecosystem", "sdd_context_status"]
+tools: ["Read", "Glob", "Grep", "Bash", "Write", "sdd_get_status", "sdd_scan_codebase", "sdd_check_ecosystem", "sdd_context_status"]
 ---
 
 <example>

@@ -61,11 +61,42 @@ export function registerUtilityTools(
     },
     async ({ spec_dir, feature_number }) => {
       try {
-        const state = await stateMachine.loadState(spec_dir);
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
+        // Scan .specs/ for feature directories — source of truth for what
+        // features exist on disk. Per-feature state lives at
+        // <spec_dir>/<NNN-name>/.sdd-state.json.
+        const featuresOnDisk = await fileManager.listFeatures(spec_dir);
 
-        const filesFound = feature ? feature.files : [];
+        // Load per-feature state for each discovered directory.
+        const featuresWithState = await Promise.all(
+          featuresOnDisk.map(async (f) => {
+            const fstate = await stateMachine.loadState(f.directory);
+            return {
+              number: f.number,
+              name: f.name,
+              directory: f.directory,
+              files: f.files,
+              phase: fstate.current_phase,
+              phase_progress: `${
+                PHASE_ORDER.filter((p) => fstate.phases[p]?.status === "completed").length
+              }/${PHASE_ORDER.length}`,
+              gate_decision: fstate.gate_decision,
+            };
+          }),
+        );
+
+        // Resolve active feature: explicit feature_number wins; otherwise
+        // the most recently modified feature (first sort by dir mtime).
+        const targetFeature = feature_number
+          ? featuresWithState.find((f) => f.number === feature_number)
+          : featuresWithState.at(-1);
+
+        // Aggregate state: use the target feature's state when present,
+        // fall back to the root state file for pre-feature workflows.
+        const state = targetFeature
+          ? await stateMachine.loadState(targetFeature.directory)
+          : await stateMachine.loadState(spec_dir);
+
+        const filesFound = targetFeature ? targetFeature.files : [];
         const completedPhases = PHASE_ORDER.filter(
           (p) => state.phases[p]?.status === "completed"
         );
@@ -99,7 +130,18 @@ export function registerUtilityTools(
           current_phase: state.current_phase,
           phase_progress: progress.progress_bar,
           phases: state.phases,
-          features: state.features,
+          // Features discovered on disk with their per-feature phase state.
+          // Takes precedence over root state.features which only lists
+          // features initialized via sdd_init in the current session.
+          features: featuresWithState.length > 0 ? featuresWithState : state.features,
+          active_feature: targetFeature
+            ? {
+                number: targetFeature.number,
+                name: targetFeature.name,
+                phase: targetFeature.phase,
+                directory: targetFeature.directory,
+              }
+            : null,
           files_found: filesFound,
           completion_percent: completionPercent,
           gate_decision: state.gate_decision,

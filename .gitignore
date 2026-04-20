@@ -42,10 +42,9 @@ apm.lock.yaml
 .specky/
 
 # ── Build config (internal) ──────────────────────────────
-scripts/
+# NOTE: scripts/, .apm/hooks/scripts/, and .npmignore are tracked —
+# they control packaging and ship-time behavior.
 Dockerfile
 docker-compose.yml
 .dockerignore
-.npmignore
-PUBLISH.md
 ONBOARDING.md
