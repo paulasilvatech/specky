@@ -113,7 +113,7 @@ export class FileManager {
     const absPath = this.sanitizePath(featureDir);
     try {
       const entries = await readdir(absPath);
-      return entries.filter((e) => !e.startsWith("."));
+      return entries.filter((e) => !e.startsWith(".")).sort();
     } catch {
       return [];
     }
@@ -128,7 +128,7 @@ export class FileManager {
 
     try {
       const entries = await readdir(absPath, { withFileTypes: true });
-      for (const entry of entries) {
+      for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
         if (entry.isDirectory() && /^\d{3}-/.test(entry.name)) {
           const featureDir = join(specDir, entry.name);
           const match = entry.name.match(/^(\d{3})-(.+)$/);
@@ -172,6 +172,14 @@ export class FileManager {
   }
 
   /**
+   * Read a project file as bytes by relative path.
+   */
+  async readProjectFileBuffer(relativePath: string): Promise<Buffer> {
+    const absPath = this.sanitizePath(relativePath);
+    return readFile(absPath);
+  }
+
+  /**
    * List files in a directory matching given extensions.
    */
   async listFilesByExtension(
@@ -182,7 +190,7 @@ export class FileManager {
     try {
       const entries = await readdir(absPath, { withFileTypes: true });
       const matched: string[] = [];
-      for (const entry of entries) {
+      for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
         if (entry.isFile()) {
           const lower = entry.name.toLowerCase();
           if (extensions.some((ext) => lower.endsWith(ext))) {

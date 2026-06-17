@@ -4,7 +4,6 @@
  * mammoth/pdfjs-dist available when those dependencies are installed.
  */
 
-import { readFile } from "node:fs/promises";
 import { extname, basename } from "node:path";
 import type { FileManager } from "./file-manager.js";
 import type { DocumentConversionResult, DocumentFormat } from "../types.js";
@@ -21,7 +20,7 @@ function stripXmlTags(input: string): string {
 }
 
 export class DocumentConverter {
-  constructor(_fileManager: FileManager) {}
+  constructor(private readonly fileManager: FileManager) {}
 
   /**
    * Auto-detect format and convert to Markdown.
@@ -83,7 +82,7 @@ export class DocumentConverter {
    * Markdown pass-through.
    */
   private async convertMarkdown(filePath: string): Promise<DocumentConversionResult> {
-    const content = await readFile(filePath, "utf-8");
+    const content = await this.fileManager.readProjectFile(filePath);
     const sections = this.extractSections(content);
     const title = sections.length > 0 ? sections[0] : basename(filePath, ".md");
     return {
@@ -98,7 +97,7 @@ export class DocumentConverter {
    * Plain text → Markdown with basic structure.
    */
   private async convertText(filePath: string): Promise<DocumentConversionResult> {
-    const content = await readFile(filePath, "utf-8");
+    const content = await this.fileManager.readProjectFile(filePath);
     const title = basename(filePath, extname(filePath));
     const markdown = `# ${title}\n\n${content}`;
     return {
@@ -120,7 +119,7 @@ export class DocumentConverter {
       // @ts-ignore -- optional dependency, gracefully handled
       const mammoth = await import("mammoth").catch(() => null);
       if (mammoth) {
-        const result = await mammoth.convertToMarkdown({ path: filePath });
+        const result = await mammoth.convertToMarkdown({ path: this.fileManager.sanitizePath(filePath) });
         const sections = this.extractSections(result.value);
         return {
           format: "docx",
@@ -132,7 +131,7 @@ export class DocumentConverter {
     } catch { /* fall through to basic extraction */ }
 
     // Basic extraction: read as buffer, find text patterns
-    const content = await readFile(filePath);
+    const content = await this.fileManager.readProjectFileBuffer(filePath);
     const text = this.extractTextFromXmlZip(content, "word/document.xml");
     const title = basename(filePath, ".docx");
     const markdown = `# ${title}\n\n${text}`;
@@ -154,7 +153,7 @@ export class DocumentConverter {
       // @ts-ignore -- optional dependency, gracefully handled
       const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs").catch(() => null);
       if (pdfjs) {
-        const data = new Uint8Array(await readFile(filePath));
+        const data = new Uint8Array(await this.fileManager.readProjectFileBuffer(filePath));
         const doc = await pdfjs.getDocument({ data }).promise;
         const pages: string[] = [];
         for (let i = 1; i <= doc.numPages; i++) {
@@ -179,7 +178,7 @@ export class DocumentConverter {
     } catch { /* fall through */ }
 
     // Fallback: basic text extraction from PDF bytes
-    const buffer = await readFile(filePath);
+    const buffer = await this.fileManager.readProjectFileBuffer(filePath);
     const text = this.extractTextFromPdfBuffer(buffer);
     const title = basename(filePath, ".pdf");
     const markdown = `# ${title}\n\n${text}\n\n> Note: Basic PDF text extraction. Install pdfjs-dist for enhanced conversion.`;
@@ -196,7 +195,7 @@ export class DocumentConverter {
    * MVP: extracts text from slide XML files.
    */
   private async convertPptx(filePath: string): Promise<DocumentConversionResult> {
-    const content = await readFile(filePath);
+    const content = await this.fileManager.readProjectFileBuffer(filePath);
     const slides: string[] = [];
 
     // PPTX is a zip with ppt/slides/slide1.xml, slide2.xml, etc.
@@ -221,7 +220,7 @@ export class DocumentConverter {
    * Transcript (VTT/SRT) → Markdown.
    */
   private async convertTranscript(filePath: string, format: DocumentFormat): Promise<DocumentConversionResult> {
-    const content = await readFile(filePath, "utf-8");
+    const content = await this.fileManager.readProjectFile(filePath);
     // Strip VTT/SRT timestamps and formatting, keep speaker text
     const lines = content.split("\n");
     const textLines: string[] = [];

@@ -23,7 +23,7 @@
 
   <p>
     <img src="https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript Strict"/>
-    <img src="https://img.shields.io/badge/dependencies-2-green?style=flat-square" alt="2 Dependencies"/>
+    <img src="https://img.shields.io/badge/dependencies-3-green?style=flat-square" alt="3 Dependencies"/>
     <img src="https://img.shields.io/badge/CLI-specky-7c3aed?style=flat-square" alt="CLI"/>
     <img src="https://img.shields.io/badge/OWASP_MCP-Top_10-green?style=flat-square" alt="OWASP MCP Top 10"/>
     <img src="https://img.shields.io/node/v/specky-sdd?style=flat-square&color=5b21b6" alt="Node.js"/>
@@ -978,7 +978,7 @@ Specky is built with enterprise adoption in mind.
 
 ### Security Posture
 
-- **2 runtime dependencies** — minimal attack surface (`@modelcontextprotocol/sdk`, `zod`)
+- **3 runtime dependencies** — minimal attack surface (`@modelcontextprotocol/sdk`, `zod`, `yaml`)
 - **Zero outbound network requests** — all data stays local
 - **No `eval()` or dynamic code execution** — template rendering is string replacement only
 - **Path traversal prevention**: FileManager sanitizes all paths, blocks `..` sequences

@@ -3,12 +3,12 @@
 ## Supported Versions
 
 | Version | Supported |
-|---------|-----------|
-| 3.3.x   | ✅ Active  |
+| --- | --- |
+| 3.3.x | ✅ Active |
 | 3.0.x–3.2.x | ✅ Security fixes only |
-| 2.3.x   | ❌ End of life |
-| 2.0.x   | ❌ End of life |
-| 1.0.x   | ❌ End of life |
+| 2.3.x | ❌ End of life |
+| 2.0.x | ❌ End of life |
+| 1.0.x | ❌ End of life |
 
 ## Reporting a Vulnerability
 
@@ -52,14 +52,15 @@ Specky operates entirely locally. It makes zero outbound network requests. All d
 
 ### Dependency Minimalism
 
-Specky has only **2 runtime dependencies**:
+Specky has only **3 runtime dependencies**:
 
 | Dependency | Purpose | Security Profile |
-|------------|---------|------------------|
+| --- | --- | --- |
 | `@modelcontextprotocol/sdk` | MCP protocol implementation | Official SDK from Anthropic |
 | `zod` | Input schema validation | Zero dependencies, widely audited |
+| `yaml` | Project configuration parsing | Focused parser used for `.specky/config.yml` |
 
-No transitive runtime dependencies beyond these two packages.
+Runtime dependencies are kept intentionally small and are audited in CI.
 
 ### Logging
 
@@ -70,13 +71,13 @@ No transitive runtime dependencies beyond these two packages.
 ### OWASP Top 10 Coverage
 
 | OWASP Category | Mitigation |
-|----------------|------------|
+| --- | --- |
 | A01 Broken Access Control | Path sanitization in FileManager; workspace-scoped operations |
 | A02 Cryptographic Failures | No cryptographic operations; no secrets handling |
 | A03 Injection | Zod `.strict()` validation on all inputs; no SQL/eval/shell execution |
 | A04 Insecure Design | State machine enforces phase ordering; thin tools / fat services separation |
 | A05 Security Misconfiguration | Minimal config surface; no default credentials; no admin endpoints |
-| A06 Vulnerable Components | 2 runtime deps only; Dependabot enabled; regular audits |
+| A06 Vulnerable Components | 3 runtime deps only; Dependabot enabled; regular audits |
 | A07 Authentication Failures | No authentication layer (local tool); MCP transport handles auth |
 | A08 Data Integrity Failures | Atomic file writes via FileManager; Zod schema enforcement |
 | A09 Logging Failures | Structured stderr logging; no stdout pollution |
@@ -97,7 +98,7 @@ We run `npm audit` in CI on every pull request. Any `high` or `critical` vulnera
 ## Security-Related Configuration
 
 | Variable | Purpose | Default |
-|----------|---------|---------|
+| --- | --- | --- |
 | `SDD_WORKSPACE` | Restricts file operations to this directory | Current working directory |
 | `PORT` | HTTP transport port (when using `--http` mode) | 3200 |
 
@@ -116,7 +117,7 @@ When using HTTP transport mode (`--http`), bind to `localhost` only. Do not expo
 ### Always Use These Practices
 
 | Practice | Details |
-|----------|---------|
+| --- | --- |
 | **Use stdio mode by default** | `specky-sdd` (global install) — no network exposure, process-level isolation |
 | **Never expose HTTP mode publicly** | `--http` mode has no authentication or TLS. If you need remote access, place behind a reverse proxy (nginx, Caddy, Traefik) with TLS and authentication |
 | **Protect `.specs/` directory** | Contains architecture details, API contracts, security models. Add to `.gitignore` for sensitive projects, or use a private repository |
@@ -124,7 +125,7 @@ When using HTTP transport mode (`--http`), bind to `localhost` only. Do not expo
 | **Keep security-scan hook active** | `.claude/hooks/security-scan.sh` scans for hardcoded secrets and blocks commits (exit 2). Do not disable |
 | **Review auto-generated specs** | `sdd_turnkey_spec` and `sdd_auto_pipeline` generate from natural language — review before committing to ensure no sensitive details leaked |
 | **Use environment variables** | Never write actual secrets in spec artifacts. Reference them as `$VAR_NAME` |
-| **Run `npm audit` regularly** | Catches dependency vulnerabilities in the 2 runtime dependencies |
+| **Run `npm audit` regularly** | Catches dependency vulnerabilities in runtime and development dependencies |
 
 ### HTTP Deployment Checklist
 
@@ -163,7 +164,7 @@ server {
 ### Data Sensitivity Classification
 
 | Data | Classification | Storage | Protection |
-|------|---------------|---------|------------|
+| --- | --- | --- | --- |
 | CONSTITUTION.md | Internal | `.specs/` | Filesystem permissions |
 | SPECIFICATION.md | Business Confidential | `.specs/` | May contain business logic — review before sharing |
 | DESIGN.md | **Confidential** | `.specs/` | Contains architecture, API contracts, security model |
@@ -173,15 +174,16 @@ server {
 | docs/journey-*.md | Business Confidential | `docs/` | Complete audit trail |
 | Routing payloads | Transient | Memory only | Never persisted by Specky |
 
-### What Specky Never Does
+### Architectural Security Guarantees
 
-These are **architectural guarantees**, not configuration options:
+These guarantees describe the intended product boundary. Known implementation gaps are tracked in [docs/DETERMINISM.md](docs/DETERMINISM.md) and [docs/ENTERPRISE-CONTROLS.md](docs/ENTERPRISE-CONTROLS.md).
 
-- **Never makes outbound network calls** — zero HTTP/HTTPS/DNS from the Specky process
-- **Never executes shell commands** — no `exec()`, `spawn()`, `eval()`, `Function()`
-- **Never stores credentials** — no API keys, tokens, or passwords in any file
-- **Never reads outside workspace** — `FileManager.sanitizePath()` enforces boundary
-- **Never logs sensitive data** — logs go to stderr, contain only operational messages
+- **No outbound network calls from core MCP tools** — optional external MCP integrations are returned as routing payloads for the AI client to execute.
+- **No dynamic code execution** — no `eval()`, `Function()`, or `vm.runInNewContext()` in the Specky core.
+- **No credential storage by design** — no API keys, tokens, or passwords are intentionally stored by Specky.
+- **Workspace-scoped I/O is the target boundary** — `FileManager.sanitizePath()` enforces this for core file operations; document import hardening is tracked as an enterprise remediation item.
+- **No sensitive operational logging by design** — logs go to stderr and should contain only operational messages.
+- **Explicit hook execution is administrative** — `specky hooks` intentionally runs installed hook scripts for diagnostics and compatibility testing.
 
 See [docs/SYSTEM-DESIGN.md](docs/SYSTEM-DESIGN.md) for the complete security architecture with threat model.
 
@@ -192,7 +194,7 @@ Running `npx -y specky-sdd@latest` without a pinned version downloads the latest
 **Recommended mitigations** (ordered by risk reduction):
 
 | Approach | Risk reduction | Notes |
-|----------|---------------|-------|
+| --- | --- | --- |
 | `npm install -g specky-sdd@<pinned-version>` + `specky install` | **High** — fetched once, upgrades only when you explicitly run `npm install -g` again | Recommended for individual developers |
 | `npm install --save-dev specky-sdd@<pinned-version>` + `npx specky install` | **Higher** — version-pinned in `package.json`; `package-lock.json` pins transitive deps | Best for teams (reproducible across clones) |
 | Offline bundle: `npm pack specky-sdd@<version>` + `npm install ./specky-sdd-*.tgz` | **Higher** — no network access at install time after the initial download | Air-gapped environments |
@@ -226,7 +228,7 @@ The `--ignore-scripts` flag prevents npm lifecycle scripts from running during i
 Specky addresses the 12 threat categories from the CoSAI MCP Security White Paper:
 
 | ID | Threat Category | Specky Mitigation |
-|----|----------------|-------------------|
+| --- | --- | --- |
 | T-01 | Tool Poisoning | Zod `.strict()` on all 57 tool inputs — no unknown fields accepted |
 | T-02 | Prompt Injection via Tool Results | No user-controlled data interpolated into tool responses |
 | T-03 | Excessive Tool Permissions | Thin Tools pattern — each tool does exactly one operation |
@@ -234,7 +236,7 @@ Specky addresses the 12 threat categories from the CoSAI MCP Security White Pape
 | T-05 | Insufficient Input Validation | All inputs validated with Zod schemas before reaching service layer |
 | T-06 | Uncontrolled Resource Consumption | Rate limiter (opt-in) for HTTP mode; stdio is single-session |
 | T-07 | Broken Access Control | RBAC engine (opt-in) — viewer/contributor/admin roles; path sanitization |
-| T-08 | Supply Chain Compromise | 2 runtime deps only; Dependabot enabled; global install recommended |
+| T-08 | Supply Chain Compromise | 3 runtime deps only; Dependabot enabled; global install recommended |
 | T-09 | Credential Leakage | No secrets in logs (stderr only); no credentials in spec artifacts |
 | T-10 | Insecure Communication | stdio mode has zero network exposure; HTTP mode binds to localhost |
 | T-11 | State Manipulation | HMAC-SHA256 signature on `.sdd-state.json`; tamper detection on load |
@@ -243,7 +245,7 @@ Specky addresses the 12 threat categories from the CoSAI MCP Security White Pape
 ### OWASP MCP Top 10 Coverage
 
 | # | OWASP MCP Risk | Specky Mitigation |
-|---|---------------|-------------------|
+| --- | --- | --- |
 | M1 | Prompt Injection | No dynamic content in tool descriptions; outputs are structured JSON |
 | M2 | Insecure Tool Design | Thin Tools / Fat Services — tools are pure input/output wrappers |
 | M3 | Excessive Agency | No shell execution, no outbound network, no code eval |
@@ -253,4 +255,4 @@ Specky addresses the 12 threat categories from the CoSAI MCP Security White Pape
 | M7 | Insecure Plugin Composition | Fixed tool set at startup — no dynamic loading |
 | M8 | Improper Error Handling | All service errors caught; tools return structured error responses |
 | M9 | Insufficient Logging | Hash-chained audit trail; syslog export available |
-| M10 | Vulnerable Dependencies | 2 runtime deps; `npm audit` in CI; Dependabot on GitHub |
+| M10 | Vulnerable Dependencies | 3 runtime deps; `npm audit` in CI; Dependabot on GitHub |

@@ -1,6 +1,6 @@
 # Installing Specky
 
-> Works on macOS, Linux, Windows, and WSL. Requires Node.js ≥18.
+> Works on macOS, Linux, Windows, and WSL. Requires Node.js ≥20.
 
 Specky is distributed as a single npm package (`specky-sdd`) that bundles both the MCP server and all assets (13 agents, 22 prompts, 8 skills, 16 hooks). A unified CLI (`specky`) handles install, validation, and upgrade.
 
@@ -9,7 +9,7 @@ Specky is distributed as a single npm package (`specky-sdd`) that bundles both t
 ## Prerequisites
 
 | Tool | Minimum | Check |
-|---|---|---|
+| --- | --- | --- |
 | Node.js | 20.0.0 (current LTS) | `node --version` |
 | npm | 9 (ships with Node 18+) | `npm --version` |
 | git | 2.30+ | `git --version` |
@@ -51,7 +51,7 @@ That's it. The `--ide` flag determines whether assets go to `.github/` (Copilot)
 ## Install modes — which one should I use?
 
 | Mode | Command | When to use |
-|---|---|---|
+| --- | --- | --- |
 | **Global** (default) | `npm install -g specky-sdd` | Individual developers, CLI-first workflow, multiple projects. CLI always in PATH. |
 | **Project-local** | `npm install --save-dev specky-sdd` | Teams that want version pinning via `package.json`. Reproducible across teammates. Use `npx specky` instead of `specky`. |
 | **Zero-install** | `npx -y specky-sdd@latest init` | One-shot bootstrap, no persistent install. Downloads fresh each time. |
@@ -60,6 +60,7 @@ That's it. The `--ide` flag determines whether assets go to `.github/` (Copilot)
 **Both modes produce the same workspace layout** (`.github/` for Copilot or `.claude/` for Claude Code, plus `.vscode/` and `.specky/`). The only difference is where the `specky` binary lives.
 
 **Rule of thumb**:
+
 - If you maintain many projects → **global**
 - If your team needs reproducible builds → **project-local**
 - If in doubt → **global** (easier; you can always switch later)
@@ -92,7 +93,7 @@ npm install --save-dev specky-sdd@latest
 npx specky init --ide=copilot
 ```
 
-Alpine (musl libc) and other distros work the same as long as Node ≥18 is installed.
+Alpine (musl libc) and other distros work the same as long as Node ≥20 is installed.
 
 ### Windows (PowerShell)
 
@@ -187,7 +188,7 @@ specky install --ide=claude      # Claude Code only
 > **⚠️ Do NOT use `--ide=both`** unless you understand the implications: VS Code Copilot reads `.claude/settings.json` hooks, which can cause "Blocked by Pre-Tool Use hook" errors. If you must support both IDEs in the same workspace, use `--ide=copilot` (the hooks are stripped from `.claude/settings.json` automatically).
 
 | IDE | Install command | Assets location |
-|---|---|---|
+| --- | --- | --- |
 | VS Code + Copilot | `specky install --ide=copilot` | `.github/agents/`, `.github/prompts/`, `.github/skills/`, `.github/hooks/specky/`, `.vscode/` |
 | Claude Code | `specky install --ide=claude` | `.claude/agents/`, `.claude/commands/`, `.claude/skills/`, `.claude/hooks/`, `.claude/settings.json` |
 | Both (not recommended) | `specky install --ide=both` | Both locations — may cause Copilot hook conflicts |
