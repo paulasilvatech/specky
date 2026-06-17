@@ -72,7 +72,7 @@ stash@{0}: On develop: specky-pre-branch-reset-develop-dirty-20260617T205947Z
 | Determinism | Same input and fixed clock generate identical artifacts | Pending |
 | Filesystem boundary | Path traversal and outside-workspace paths rejected | Pending |
 | ID contracts | Shared requirement/task ID helpers and parser tests | In progress; core parsers now accept canonical `T-001` and legacy `T001` |
-| Semantic gate | Orphaned requirements/tests/compliance failures block approval | Pending |
+| Semantic gate | Orphaned requirements/tests/compliance failures block approval | In progress; EARS/design/task mapping gate tested |
 | Documentation | C4, controls, determinism, branch governance and evidence docs present | In progress |
 
 ## 2026-06-17 Validation Results
@@ -194,6 +194,26 @@ Coverage added:
 - Canonical task ID formatting as `T-001`.
 - Legacy `T001` compatibility in extractors/parsers.
 - Sorted unique requirement and task extraction.
+
+### Semantic Analysis Gate
+
+Command:
+
+```bash
+npx vitest run tests/integration/analysis-gate.test.ts
+```
+
+Result:
+
+```text
+Test Files  1 passed (1)
+Tests       2 passed (2)
+```
+
+Coverage added:
+
+- `sdd_run_analysis` approves when requirements are valid EARS and mapped through design and tasks.
+- `sdd_run_analysis` does not approve when design/task mappings are missing.
 
 ### Dependency Audit
 

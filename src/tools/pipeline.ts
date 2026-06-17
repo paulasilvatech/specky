@@ -12,6 +12,7 @@ import type { TemplateEngine } from "../services/template-engine.js";
 import type { EarsValidator } from "../services/ears-validator.js";
 import { enrichResponse } from "./response-builder.js";
 import { routingEngine } from "../utils/routing-helper.js";
+import { extractRequirementIds } from "../utils/id-contracts.js";
 import {
   initInputSchema,
   discoverInputSchema,
@@ -723,37 +724,81 @@ export function registerPipelineTools(
         const hasDesign = files.includes("DESIGN.md");
         const hasTasks = files.includes("TASKS.md");
 
-        // Calculate coverage
-        const totalChecks = 4;
-        const passedChecks = [hasConstitution, hasSpec, hasDesign, hasTasks].filter(Boolean).length;
-        const coveragePercent = Math.round((passedChecks / totalChecks) * 100);
-
-        // Determine gate decision
         const gaps: string[] = [];
         if (!hasConstitution) gaps.push("CONSTITUTION.md missing");
         if (!hasSpec) gaps.push("SPECIFICATION.md missing");
         if (!hasDesign) gaps.push("DESIGN.md missing");
         if (!hasTasks) gaps.push("TASKS.md missing");
 
+        const specContent = hasSpec ? await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md") : "";
+        const designContent = hasDesign ? await fileManager.readSpecFile(feature.directory, "DESIGN.md") : "";
+        const tasksContent = hasTasks ? await fileManager.readSpecFile(feature.directory, "TASKS.md") : "";
+
+        const reqIds = extractRequirementIds(specContent);
+        const requirementRows = reqIds.map((reqId) => {
+          const reqSectionPattern = new RegExp(String.raw`###\s+${reqId}[^\n]*\n+([\s\S]*?)(?=\n###\s+REQ-|\n---|$)`, "m");
+          const reqSection = reqSectionPattern.exec(specContent)?.[1] ?? "";
+          const requirementText = reqSection
+            .split("\n")
+            .map((line) => line.trim())
+            .find((line) => /\bshall\b/i.test(line)) ?? "";
+          const earsValidation = requirementText
+            ? earsValidator.validate(requirementText)
+            : { valid: false, pattern: "unknown" as const, issues: ["No EARS statement found"] };
+          const designMapped = designContent.includes(reqId);
+          const taskMapped = tasksContent.includes(reqId);
+
+          return {
+            reqId,
+            earsValid: earsValidation.valid,
+            designMapped,
+            taskMapped,
+            status: earsValidation.valid && designMapped && taskMapped ? "Pass" : "Gap",
+          };
+        });
+
+        if (hasSpec && reqIds.length === 0) gaps.push("No requirement IDs found in SPECIFICATION.md");
+
+        const invalidEars = requirementRows.filter((row) => !row.earsValid).map((row) => row.reqId);
+        const missingDesignRefs = requirementRows.filter((row) => !row.designMapped).map((row) => row.reqId);
+        const missingTaskRefs = requirementRows.filter((row) => !row.taskMapped).map((row) => row.reqId);
+        if (invalidEars.length > 0) gaps.push(`EARS invalid or missing for: ${invalidEars.join(", ")}`);
+        if (missingDesignRefs.length > 0) gaps.push(`Design mapping missing for: ${missingDesignRefs.join(", ")}`);
+        if (missingTaskRefs.length > 0) gaps.push(`Task mapping missing for: ${missingTaskRefs.join(", ")}`);
+
+        const documentCoverage = Math.round(([hasConstitution, hasSpec, hasDesign, hasTasks].filter(Boolean).length / 4) * 100);
+        const earsCoverage = reqIds.length > 0
+          ? Math.round(((reqIds.length - invalidEars.length) / reqIds.length) * 100)
+          : 0;
+        const designCoverage = reqIds.length > 0
+          ? Math.round(((reqIds.length - missingDesignRefs.length) / reqIds.length) * 100)
+          : 0;
+        const taskCoverage = reqIds.length > 0
+          ? Math.round(((reqIds.length - missingTaskRefs.length) / reqIds.length) * 100)
+          : 0;
+        const coveragePercent = Math.round((documentCoverage + earsCoverage + designCoverage + taskCoverage) / 4);
+
         let decision: "APPROVE" | "CHANGES_NEEDED" | "BLOCK";
         const reasons: string[] = [];
 
-        if (coveragePercent >= 90) {
+        if (gaps.length === 0 && coveragePercent >= 90) {
           decision = "APPROVE";
-          reasons.push("All core specification documents are present.");
+          reasons.push("All core documents are present and requirements are mapped through design and tasks.");
         } else if (coveragePercent >= 70) {
           decision = "CHANGES_NEEDED";
-          reasons.push(`Coverage at ${coveragePercent}% — some documents missing.`);
+          reasons.push(`Evidence coverage at ${coveragePercent}% — gaps require remediation.`);
         } else {
           decision = "BLOCK";
-          reasons.push(`Coverage at ${coveragePercent}% — critical documents missing.`);
+          reasons.push(`Evidence coverage at ${coveragePercent}% — critical specification evidence is missing.`);
         }
 
         // Build traceability matrix
-        const traceMatrix = `| CONSTITUTION.md | ${hasConstitution ? "Present" : "Missing"} | — | — | ${hasConstitution ? "✅" : "❌"} |
-| SPECIFICATION.md | ${hasSpec ? "Present" : "Missing"} | — | — | ${hasSpec ? "✅" : "❌"} |
-| DESIGN.md | ${hasDesign ? "Present" : "Missing"} | — | — | ${hasDesign ? "✅" : "❌"} |
-| TASKS.md | ${hasTasks ? "Present" : "Missing"} | — | — | ${hasTasks ? "✅" : "❌"} |`;
+        const fallbackDesignStatus = hasDesign ? "Present" : "Missing";
+        const fallbackTaskStatus = hasTasks ? "Present" : "Missing";
+        const fallbackStatus = hasSpec ? "No requirements found" : "Missing spec";
+        const traceMatrix = requirementRows.length > 0
+          ? requirementRows.map((row) => `| ${row.reqId} | ${row.designMapped ? "Mapped" : "Missing"} | ${row.taskMapped ? "Mapped" : "Missing"} | Pending | ${row.status} |`).join("\n")
+          : `| Documents | ${fallbackDesignStatus} | ${fallbackTaskStatus} | Pending | ${fallbackStatus} |`;
 
         const gateDecision = {
           decision,
@@ -770,18 +815,18 @@ export function registerPipelineTools(
           gate_decision: decision,
           coverage_percent: String(coveragePercent),
           traceability_matrix: traceMatrix,
-          design_coverage: hasDesign ? "100%" : "0%",
-          task_coverage: hasTasks ? "100%" : "0%",
+          design_coverage: `${designCoverage}%`,
+          task_coverage: `${taskCoverage}%`,
           test_coverage: "Pending",
           gaps,
           recommendations: gaps.length > 0
-            ? gaps.map((g) => `Create ${g.replace(" missing", "")}`)
-            : ["All documents present — proceed to implementation."],
-          ears_compliance: hasSpec ? "Pass" : "N/A",
-          ears_status: hasSpec ? "✅" : "❌",
+            ? gaps.map((g) => `Remediate: ${g}`)
+            : ["All requirements are mapped through design and tasks — proceed to implementation."],
+          ears_compliance: `${earsCoverage}%`,
+          ears_status: earsCoverage === 100 ? "✅" : "❌",
           coverage_status: coveragePercent >= 90 ? "✅" : "❌",
-          orphan_count: "0",
-          orphan_status: "✅",
+          orphan_count: String(missingDesignRefs.length + missingTaskRefs.length),
+          orphan_status: missingDesignRefs.length + missingTaskRefs.length === 0 ? "✅" : "❌",
         });
 
         const filePath = await fileManager.writeSpecFile(feature.directory, "ANALYSIS.md", content, force);
