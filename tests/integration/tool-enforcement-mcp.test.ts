@@ -94,6 +94,11 @@ describe("MCP tool enforcement", () => {
     expect(entries[0].role).toBe("viewer");
     expect(entries[0].input_hash).toEqual(expect.any(String));
     expect(entries[1].output_hash).toEqual(expect.any(String));
+
+    const verifyResponse = callTool(ws, "sdd_verify_audit", { spec_dir: ".specs" }, "viewer");
+    const verification = JSON.parse(extractText(verifyResponse)) as { valid: boolean; total_entries: number };
+    expect(verification.valid).toBe(true);
+    expect(verification.total_entries).toBeGreaterThanOrEqual(3);
   });
 
   it("blocks viewer write tools before execution and records denial", () => {

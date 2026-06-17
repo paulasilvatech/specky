@@ -3,7 +3,7 @@
 > Manually maintained — last updated 2026-04-14.
 > Align with `src/constants.ts` TOOL_NAMES when adding or removing tools.
 
-**Total tools: 57**
+**Total tools: 58**
 
 ## Categories
 
@@ -18,7 +18,7 @@
 - [Pipeline](#pipeline) (9 tools)
 - [Property-Based Testing](#property-based-testing) (1 tools)
 - [Quality & Validation](#quality-validation) (5 tools)
-- [Security](#security) (1 tools)
+- [Security](#security) (2 tools)
 - [Testing](#testing) (2 tools)
 - [Transcript](#transcript) (3 tools)
 - [Turnkey](#turnkey) (1 tools)
@@ -163,6 +163,5 @@
 
 ## Security {#security}
 
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_check_access` | Check RBAC Access | Check RBAC access for the current role. Returns the active role, whether a specific tool is accessible, and a summary of what each role can do. Useful for diagnosing permission issues in enterprise deployments. | `role_override`, `tool_name` |
+- `sdd_check_access` — Check RBAC Access. Inputs: `role_override`, `tool_name`.
+- `sdd_verify_audit` — Verify Audit Trail. Inputs: `spec_dir`.

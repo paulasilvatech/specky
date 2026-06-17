@@ -2,12 +2,12 @@
   <br>
   <img src="media/specky-brand-logo.svg" alt="Specky" height="80">
   <br><br>
-  <p><strong>13 agents. 57 MCP tools. 10-phase pipeline. One CLI.</strong></p>
+  <p><strong>13 agents. 58 MCP tools. 10-phase pipeline. One CLI.</strong></p>
   <p>Agentic Spec-Driven Development</p>
 
   <p>
     <img src="https://img.shields.io/badge/agents-13-7c3aed?style=flat-square" alt="13 Agents"/>
-    <img src="https://img.shields.io/badge/tools-57_MCP-6d28d9?style=flat-square" alt="57 Tools"/>
+    <img src="https://img.shields.io/badge/tools-58_MCP-6d28d9?style=flat-square" alt="58 Tools"/>
     <img src="https://img.shields.io/badge/phases-10_enforced-5b21b6?style=flat-square" alt="10 Phases"/>
     <img src="https://img.shields.io/badge/hooks-16-4c1d95?style=flat-square" alt="16 Hooks"/>
     <img src="https://img.shields.io/badge/license-MIT-a78bfa?style=flat-square" alt="MIT"/>
@@ -62,7 +62,7 @@
 
 ## What is Specky?
 
-Specky is a **CLI toolkit for Spec-Driven Development** — 13 specialized agents, 57 MCP tools, 22 prompts, 8 skills, and 16 automation hooks — that enforces a deterministic 10-phase pipeline from **any input** (meeting transcripts, documents, Figma designs, or natural language prompts) through specifications, architecture, infrastructure as code, implementation, and deployment.
+Specky is a **CLI toolkit for Spec-Driven Development** — 13 specialized agents, 58 MCP tools, 22 prompts, 8 skills, and 16 automation hooks — that enforces a deterministic 10-phase pipeline from **any input** (meeting transcripts, documents, Figma designs, or natural language prompts) through specifications, architecture, infrastructure as code, implementation, and deployment.
 
 Powered by the [Spec-Kit](https://github.com/paulasilvatech/spec-kit) methodology. Install the `specky` CLI and it places agents, prompts, skills, hooks, and the MCP server registration into your project — for **GitHub Copilot** (VS Code), **Claude Code**, or both.
 
@@ -77,7 +77,7 @@ Specky is a **complete AI development toolkit** — not just an MCP server. The 
 | **Prompts** | Slash commands that activate the right agent for a task | 22 prompts — `/specky-greenfield`, `/specky-specify`, `/specky-release`, `/specky-orchestrate`, etc. |
 | **Skills** | Domain knowledge files loaded into agent context automatically | 8 skills — SDD pipeline rules, EARS patterns, implementation patterns, test criteria, release gate protocol |
 | **Hooks** | Scripts that run before/after every tool call for validation | 16 hooks — artifact-validator, branch-validator, phase-gate, lgtm-gate, security-scan, etc. |
-| **MCP Server** | The tool engine that validates, generates, and enforces | 57 tools via Model Context Protocol (the runtime underneath) |
+| **MCP Server** | The tool engine that validates, generates, and enforces | 58 tools via Model Context Protocol (the runtime underneath) |
 
 ### Why not just an MCP server?
 

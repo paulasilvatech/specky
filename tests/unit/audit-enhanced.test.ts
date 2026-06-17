@@ -62,6 +62,38 @@ describe("AuditLogger — enhanced (v3.2.0)", () => {
     expect(logger.currentHash).toBe("specky-audit-v1");
   });
 
+  it("verifyChain returns valid for an intact audit log", async () => {
+    const logger = new AuditLogger(tempDir, true);
+    await logger.logSuccess("sdd_init", ".specs");
+    await logger.logSuccess("sdd_write_spec", ".specs");
+
+    const verification = await logger.verifyChain(".specs");
+
+    expect(verification.valid).toBe(true);
+    expect(verification.audit_file_exists).toBe(true);
+    expect(verification.total_entries).toBe(2);
+    expect(verification.errors).toEqual([]);
+    expect(verification.current_hash).toEqual(expect.any(String));
+  });
+
+  it("verifyChain detects tampering in previous_hash", async () => {
+    const logger = new AuditLogger(tempDir, true);
+    await logger.logSuccess("sdd_init", ".specs");
+    await logger.logSuccess("sdd_write_spec", ".specs");
+
+    const auditFile = join(tempDir, ".specs", ".audit.jsonl");
+    const lines = readFileSync(auditFile, "utf-8").trim().split("\n");
+    const secondEntry = JSON.parse(lines[1]);
+    secondEntry.previous_hash = "tampered";
+    lines[1] = JSON.stringify(secondEntry);
+    writeFileSync(auditFile, lines.join("\n") + "\n", "utf8");
+
+    const verification = await logger.verifyChain(".specs");
+
+    expect(verification.valid).toBe(false);
+    expect(verification.errors).toContain("Line 2: previous_hash mismatch");
+  });
+
   it("does NOT write anything when disabled (hash chain still advances in memory only)", async () => {
     const logger = new AuditLogger(tempDir, false);
     await logger.logSuccess("sdd_init", ".specs");

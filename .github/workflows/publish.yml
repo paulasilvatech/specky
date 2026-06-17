@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write
   packages: write
 
 jobs:
@@ -22,9 +23,24 @@ jobs:
           registry-url: https://registry.npmjs.org
 
       - run: npm ci
+
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
       - run: npm run build
 
-      - run: npm publish
+      - name: Run tests with coverage thresholds
+        run: npm run test:coverage
+
+      - name: Verify npm package contents
+        run: npm pack --dry-run
+
+      - name: CLI smoke test
+        run: |
+          node dist/cli/index.js --version
+          node dist/cli/index.js --help >/dev/null
+
+      - run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

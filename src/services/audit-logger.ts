@@ -64,6 +64,8 @@ export class AuditLogger {
       // Rotate if needed before appending
       await this.rotateIfNeeded(auditFile);
 
+      entry.previous_hash = await this.readCurrentChainHash(auditFile);
+
       const line = JSON.stringify(entry) + "\n";
 
       if (this.exportFormat === "syslog") {
@@ -179,6 +181,22 @@ export class AuditLogger {
 
   private resolveAuditFile(specDir: string, _featureNumber?: string): string {
     return join(this.workspaceRoot, specDir, ".audit.jsonl");
+  }
+
+  /** Read the hash of the current last audit entry from disk. */
+  private async readCurrentChainHash(auditFile: string): Promise<string> {
+    try {
+      const raw = await readFile(auditFile, "utf-8");
+      const lines = raw.split("\n").filter((line) => line.trim().length > 0);
+      const lastLine = lines.at(-1);
+      if (!lastLine) return CHAIN_SEED;
+      const hash = createHash("sha256").update(lastLine).digest("hex");
+      this.lastHash = hash;
+      return hash;
+    } catch {
+      this.lastHash = CHAIN_SEED;
+      return CHAIN_SEED;
+    }
   }
 
   /** Rotate log files when size exceeds threshold */

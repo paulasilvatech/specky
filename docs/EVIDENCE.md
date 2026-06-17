@@ -68,7 +68,7 @@ stash@{0}: On develop: specky-pre-branch-reset-develop-dirty-20260617T205947Z
 | MCP handshake | JSON-RPC initialize response includes Specky server metadata | Pending |
 | Fresh install | `npm pack` plus fresh workspace `npx specky install`, `doctor`, `status` | Pending |
 | RBAC enforcement | Viewer/contributor/admin integration tests | In progress; viewer allow/deny verified through MCP |
-| Audit chain | Hash-chain generated and verification detects tampering | In progress; global tool execution writes audit entries |
+| Audit chain | Hash-chain generated and verification detects tampering | In progress; global tool execution writes audit entries and `sdd_verify_audit` verifies chain integrity |
 | Determinism | Same input and fixed clock generate identical artifacts | Pending |
 | Filesystem boundary | Path traversal and outside-workspace paths rejected | Pending |
 | ID contracts | Shared requirement/task ID helpers and parser tests | In progress; core parsers now accept canonical `T-001` and legacy `T001` |

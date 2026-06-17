@@ -22,7 +22,8 @@ Specky should provide these enterprise guarantees:
 | RBAC engine | Implemented and globally enforced | Continue expanding role policy coverage as new tools are added. |
 | Audit logger | Implemented and globally attached | Add user-facing audit chain verification command/tool. |
 | Rate limiting | Implemented for HTTP mode | Add enterprise defaults and docs. |
-| HMAC state signature | Implemented | Add user-facing verification command/tool. |
+| HMAC state signature | Implemented | Add user-facing state signature verification command/tool. |
+| Audit chain verification | Implemented | Extend verification reporting into release evidence automation. |
 | Compliance checks | Implemented as keyword controls | Integrate into semantic gate. |
 | Cross-analysis | Implemented | Integrate into semantic gate. |
 | Test traceability | Implemented | Integrate into verification and release gates. |

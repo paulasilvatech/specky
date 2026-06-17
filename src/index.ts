@@ -62,6 +62,7 @@ import { RateLimiter } from "./services/rate-limiter.js";
 import { RbacEngine } from "./services/rbac-engine.js";
 import { registerRbacTools } from "./tools/rbac.js";
 import { installToolEnforcement } from "./tools/tool-enforcement.js";
+import { registerAuditTools } from "./tools/audit.js";
 
 // Resolve workspace root
 const workspaceRoot = process.env["SDD_WORKSPACE"] || process.cwd();
@@ -163,6 +164,7 @@ registerMetricsTools(server, fileManager, stateMachine, metricsGenerator, cognit
 registerRoutingTools(server, modelRoutingEngine);
 registerContextTools(server, fileManager, stateMachine, contextTieringEngine);
 registerRbacTools(server, rbacEngine);
+registerAuditTools(server, auditLogger);
 
 // Graceful shutdown
 let isShuttingDown = false;
