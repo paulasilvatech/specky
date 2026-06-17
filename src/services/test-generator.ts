@@ -3,6 +3,7 @@
  * Reads acceptance criteria and produces framework-specific test files.
  */
 import type { FileManager } from "./file-manager.js";
+import { currentDateString } from "../utils/runtime-context.js";
 import { extractRequirementIds } from "../utils/id-contracts.js";
 
 export type TestFramework = "vitest" | "jest" | "playwright" | "pytest" | "junit" | "xunit";
@@ -159,7 +160,7 @@ export class TestGenerator {
     const cfg = FRAMEWORK_CONFIG[framework];
     const featureName = featureDir.replace(/.*\d{3}-/, "").replace(/[^a-zA-Z0-9 -]/g, "") || "Feature";
     const body = stubs.map(s => s.test_code).join("\n\n");
-    const header = `/**\n * Auto-generated test stubs from Specky SDD\n * Feature: ${featureName}\n * Framework: ${framework}\n * Generated: ${new Date().toISOString().split("T")[0]}\n *\n * Each test traces to an acceptance criterion from SPECIFICATION.md.\n * Replace the TODO placeholders with real assertions.\n */\n`;
+    const header = `/**\n * Auto-generated test stubs from Specky SDD\n * Feature: ${featureName}\n * Framework: ${framework}\n * Generated: ${currentDateString()}\n *\n * Each test traces to an acceptance criterion from SPECIFICATION.md.\n * Replace the TODO placeholders with real assertions.\n */\n`;
 
     return `${header}\n${cfg.imports}\n\n${cfg.wrapper(featureName, body)}\n`;
   }

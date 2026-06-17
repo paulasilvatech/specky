@@ -4,6 +4,7 @@
  * for fast-check (TypeScript) or hypothesis (Python).
  */
 import type { FileManager } from "./file-manager.js";
+import { currentDateString } from "../utils/runtime-context.js";
 
 export type PbtFramework = "fast-check" | "hypothesis";
 
@@ -441,7 +442,7 @@ export class PbtGenerator {
   renderFile(properties: PbtProperty[], framework: PbtFramework, featureDir: string): string {
     const featureName =
       featureDir.replace(/.*\d{3}-/, "").replace(/[^a-zA-Z0-9 -]/g, "") || "Feature";
-    const date = new Date().toISOString().split("T")[0];
+    const date = currentDateString();
     const body = properties.map((p) => p.test_code).join("\n\n");
 
     if (framework === "fast-check") {

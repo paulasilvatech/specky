@@ -10,6 +10,7 @@ import type { TemplateName } from "../constants.js";
 import { TEMPLATE_NAMES } from "../constants.js";
 import type { TemplateContext } from "../types.js";
 import type { FileManager } from "./file-manager.js";
+import { currentDateString } from "../utils/runtime-context.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -100,7 +101,7 @@ export class TemplateEngine {
       ["title", context.title],
       ["feature_id", context.feature_id],
       ["version", context.version || "1.0.0"],
-      ["date", context.date || new Date().toISOString().split("T")[0]],
+      ["date", context.date || currentDateString()],
       ["author", context.author || "SDD Pipeline"],
       ["status", context.status || "Draft"],
     ];

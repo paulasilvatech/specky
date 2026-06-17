@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201914%201062%22%3E%3Cpath%20fill%3D%22%23F25022%22%20d%3D%22M532%20131%20L36%20462%20L13%20497%20L13%20560%20L23%20582%20L48%20604%20L521%20923%20L539%20926%20L539%20699%20L547%20680%20L314%20530%20L527%20395%20L551%20371%20L558%20347%20L558%20155%20L547%20135%20Z%22%2F%3E%3Cpath%20fill%3D%22%237FBA00%22%20d%3D%22M551%20681%20L542%20693%20L540%20700%20L540%20917%20L546%20930%20L558%20940%20L571%20943%20L778%20943%20L788%20941%20L798%20935%20L809%20910%20L809%20702%20L807%20694%20L799%20682%20L784%20674%20L566%20674%20Z%22%2F%3E%3Cpath%20fill%3D%22%23FFB900%22%20d%3D%22M1390%2016%20L1208%2013%20L1184%2023%20L1171%2038%20L768%201009%20L768%201026%20L778%201038%20L957%201042%20L975%201037%20L995%201017%20L1346%20179%20L1349%20145%20L1367%20129%20L1401%2047%20L1402%2031%20Z%22%2F%3E%3Cpath%20fill%3D%22%2300A4EF%22%20d%3D%22M1369%20131%20L1350%20149%20L1349%20355%20L1354%20369%20L1385%20399%20L1592%20528%20L1373%20667%20L1354%20688%20L1349%20703%20L1349%20907%20L1361%20924%20L1377%20926%20L1871%20595%20L1893%20563%20L1894%20501%20L1885%20477%20L1863%20456%20L1398%20142%20Z%22%2F%3E%3C%2Fsvg%3E" />
+<title>Chapter 01, Cloud and Infra Foundation, Playbook</title>
+<meta name="description" content="Network, identity, runtime substrate, observability. The contract every layer above depends on." />
+<meta name="author" content="Paula Silva, Software Global Black Belt" />
+<meta name="contact" content="paulasilva@microsoft.com" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/tokens.css">
+<link rel="stylesheet" href="shared/playbook.css">
+</head>
+<body data-page="chapter-01">
+
+<!-- Inject SVG sprite first so all <use href="#i-*"> resolve -->
+<script src="shared/icons-sprite.js"></script>
+
+<div class="progress" id="progress"></div>
+
+<!-- Top chrome bar -->
+<header class="chrome" role="banner">
+  <a href="index.html" class="chrome__brand" data-action="home" aria-label="Playbook home">
+    <svg class="chrome__logo" viewBox="0 0 1914 1062" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+      <path fill="#F25022" d="M532 131 L36 462 L13 497 L13 560 L23 582 L48 604 L521 923 L539 926 L539 699 L547 680 L314 530 L527 395 L551 371 L558 347 L558 155 L547 135 Z"/>
+      <path fill="#7FBA00" d="M551 681 L542 693 L540 700 L540 917 L546 930 L558 940 L571 943 L778 943 L788 941 L798 935 L809 910 L809 702 L807 694 L799 682 L784 674 L566 674 Z"/>
+      <path fill="#FFB900" d="M1390 16 L1208 13 L1184 23 L1171 38 L768 1009 L768 1026 L778 1038 L957 1042 L975 1037 L995 1017 L1346 179 L1349 145 L1367 129 L1401 47 L1402 31 Z"/>
+      <path fill="#00A4EF" d="M1369 131 L1350 149 L1349 355 L1354 369 L1385 399 L1592 528 L1373 667 L1354 688 L1349 703 L1349 907 L1361 924 L1377 926 L1871 595 L1893 563 L1894 501 L1885 477 L1863 456 L1398 142 Z"/>
+    </svg>
+    <span class="chrome__name">Paula Silva | Software Global Black Belt</span>
+  </a>
+  <div class="chrome__spacer"></div>
+  <span class="chrome__version">v1.0.0 · 2026-05-04</span>
+
+  <!-- Language switcher -->
+  <div class="lang-switch" role="group" data-i18n-attr="aria-label:ui.chrome.langAria">
+    <button class="lang-switch__btn" data-lang-switch="en"    aria-pressed="true">EN</button>
+    <button class="lang-switch__btn" data-lang-switch="pt-br" aria-pressed="false">PT</button>
+    <button class="lang-switch__btn" data-lang-switch="es"    aria-pressed="false">ES</button>
+  </div>
+
+  <button class="chrome__btn" data-action="open-search"
+          data-i18n-attr="aria-label:ui.chrome.searchAria; title:ui.chrome.searchTitle">
+    <svg><use href="#i-search"/></svg>
+  </button>
+  <button class="chrome__btn" data-action="toggle-theme" aria-pressed="false"
+          data-i18n-attr="aria-label:ui.chrome.themeAria; title:ui.chrome.themeTitle">
+    <svg><use href="#i-sun"/></svg>
+  </button>
+</header>
+
+<!-- Breadcrumb -->
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="index.html" data-i18n="ui.breadcrumb.home">Home</a>
+  <span class="breadcrumb__sep">›</span>
+  <span class="breadcrumb__current" data-i18n="chapter01.breadcrumbCurrent">Chapter 01, Cloud and Infra Foundation</span>
+</nav>
+
+<!-- Document hero -->
+<article class="chapter acc-blue" id="chapter-01">
+  <header class="doc-hero">
+    <div class="doc-hero__eyebrow">
+      <span class="doc-hero__num">01</span>
+      <span data-i18n="chapter01.eyebrow">Foundation Layer</span>
+    </div>
+    <h1 class="doc-hero__title" data-i18n="chapter01.title">Cloud and Infra Foundation.</h1>
+    <p class="doc-hero__lead" data-i18n="chapter01.lead">
+      Network, identity, runtime substrate, observability.
+    </p>
+  </header>
+
+  <div class="layout">
+
+    <!-- Left TOC, global -->
+    <nav class="toc" data-i18n-attr="aria-label:ui.toc.ariaLabel">
+      <p class="toc__label" data-i18n="ui.toc.label">Playbook</p>
+      <ul class="toc__list">
+        <li><a href="chapter-00-introduction.html" data-page="chapter-00"><span class="num">00</span><span>Introduction</span></a></li>
+        <li><a href="chapter-01-foundation.html"   data-page="chapter-01"><span class="num">01</span><span>Foundation</span></a></li>
+        <li><a href="chapter-02-platform.html"     data-page="chapter-02"><span class="num">02</span><span>Platform</span></a></li>
+        <li><a href="chapter-03-context.html"      data-page="chapter-03"><span class="num">03</span><span>Context</span></a></li>
+        <li><a href="chapter-04-intent.html"       data-page="chapter-04"><span class="num">04</span><span>Intent</span></a></li>
+        <li><a href="chapter-05-integration.html"  data-page="chapter-05"><span class="num">05</span><span>Integration</span></a></li>
+      </ul>
+    </nav>
+
+    <!-- Center content -->
+    <main class="content chapter-body">
+
+      <h2 id="why-foundation" data-i18n="chapter01.sections.whyFoundation.h2">Why foundation comes first</h2>
+      <p class="reveal" data-i18n="chapter01.sections.whyFoundation.p1">Every AI-native pilot eventually meets the same wall...</p>
+      <p data-i18n="chapter01.sections.whyFoundation.p2">This chapter is opinionated on purpose...</p>
+
+      <div class="callout">
+        <div class="callout__label" data-i18n="ui.callouts.definition">Definition</div>
+        <p data-i18n="chapter01.sections.whyFoundation.calloutText">The foundation layer is the set of cloud primitives...</p>
+      </div>
+
+      <h2 id="three-layers" data-i18n="chapter01.sections.threeLayers.h2">The three layers of foundation</h2>
+      <p data-i18n="chapter01.sections.threeLayers.p1">Foundation itself decomposes into three sub-layers...</p>
+
+      <!-- SVG diagram, labels stay EN (visual asset rule). Caption translates. -->
+      <div class="diagram reveal">
+        <svg viewBox="0 0 720 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="diag-title diag-desc">
+          <title id="diag-title">Three layers of cloud foundation</title>
+          <desc id="diag-desc">Identity and network at the bottom, runtime substrate in the middle, observability at the top.</desc>
+          <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="currentColor" stroke-width="0.5" opacity="0.06"/>
+            </pattern>
+            <marker id="arrow-up" viewBox="0 0 10 10" refX="5" refY="2" markerWidth="6" markerHeight="6" orient="auto">
+              <path d="M 0 8 L 5 0 L 10 8 Z" fill="currentColor"/>
+            </marker>
+          </defs>
+          <rect width="720" height="360" fill="url(#grid)" color="currentColor"/>
+
+          <g>
+            <rect x="80" y="40" width="560" height="76" rx="8" fill="var(--c-blue-50)" stroke="var(--c-blue-500)" stroke-width="1.5"/>
+            <text x="100" y="68" font-family="JetBrains Mono, monospace" font-size="11" font-weight="500" letter-spacing="2" fill="var(--c-blue-700)">LAYER 3</text>
+            <text x="100" y="92" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="var(--ink)">Observability</text>
+            <text x="100" y="108" font-family="Inter, sans-serif" font-size="13" fill="var(--ink-2)">
+              <tspan>Logs, metrics, traces, audit. Cardinality bounded. SLOs declared.</tspan>
+            </text>
+          </g>
+
+          <g>
+            <rect x="80" y="142" width="560" height="76" rx="8" fill="var(--c-green-50)" stroke="var(--c-green-500)" stroke-width="1.5"/>
+            <text x="100" y="170" font-family="JetBrains Mono, monospace" font-size="11" font-weight="500" letter-spacing="2" fill="var(--c-green-700)">LAYER 2</text>
+            <text x="100" y="194" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="var(--ink)">Runtime substrate</text>
+            <text x="100" y="210" font-family="Inter, sans-serif" font-size="13" fill="var(--ink-2)">
+              <tspan>Compute, container runtime, secrets, packaging contract.</tspan>
+            </text>
+          </g>
+
+          <g>
+            <rect x="80" y="244" width="560" height="76" rx="8" fill="var(--c-yellow-50)" stroke="var(--c-yellow-500)" stroke-width="1.5"/>
+            <text x="100" y="272" font-family="JetBrains Mono, monospace" font-size="11" font-weight="500" letter-spacing="2" fill="var(--c-yellow-700)">LAYER 1</text>
+            <text x="100" y="294" font-family="Inter, sans-serif" font-size="18" font-weight="600" fill="var(--ink)">Network and identity</text>
+            <text x="100" y="312" font-family="Inter, sans-serif" font-size="13" fill="var(--ink-2)">
+              <tspan>Private networking, IAM, DNS, secrets root of trust.</tspan>
+            </text>
+          </g>
+
+          <g color="var(--ink-3)" stroke="currentColor" stroke-width="1.5" fill="none">
+            <line x1="660" y1="240" x2="660" y2="120" marker-end="url(#arrow-up)"/>
+            <line x1="660" y1="340" x2="660" y2="222" marker-end="url(#arrow-up)"/>
+          </g>
+          <text x="668" y="180" font-family="JetBrains Mono, monospace" font-size="9" letter-spacing="1.5" fill="var(--ink-3)" data-i18n="ui.diagram.dependsOn">DEPENDS ON</text>
+        </svg>
+        <div class="diagram__caption" data-i18n="ui.diagram.caption01">Foundation in three sub-layers, dependency direction shown</div>
+      </div>
+
+      <h3 id="layer-1" data-i18n="chapter01.sections.threeLayers.layer1H3">Layer 1, network and identity</h3>
+      <p data-i18n="chapter01.sections.threeLayers.layer1P">Every workload terminates TLS at one of two ingress points...</p>
+
+      <h3 id="layer-2" data-i18n="chapter01.sections.threeLayers.layer2H3">Layer 2, runtime substrate</h3>
+      <p data-i18n="chapter01.sections.threeLayers.layer2P">The runtime substrate is the contract...</p>
+
+      <h3 id="layer-3" data-i18n="chapter01.sections.threeLayers.layer3H3">Layer 3, observability</h3>
+      <p data-i18n="chapter01.sections.threeLayers.layer3P">Logs are structured...</p>
+
+      <h2 id="bootstrap" data-i18n="chapter01.sections.bootstrap.h2">Bootstrapping the foundation</h2>
+      <p data-i18n="chapter01.sections.bootstrap.p1">The bootstrap is a single opinionated script...</p>
+
+      <!-- Terminal simulation. Output stays EN (visual asset rule). -->
+      <div class="sim sim-term reveal" id="term-bootstrap">
+        <div class="sim-term__bar">
+          <div class="sim-term__dots">
+            <span class="sim-term__dot" style="background:#FF5F57"></span>
+            <span class="sim-term__dot" style="background:#FEBC2E"></span>
+            <span class="sim-term__dot" style="background:#28C840"></span>
+          </div>
+          <span class="sim-term__title" data-i18n="chapter01.sections.bootstrap.termTitle">~/foundation, bash</span>
+        </div>
+        <div class="sim-term__body" id="term-body" aria-live="polite"></div>
+      </div>
+
+      <p data-i18n="chapter01.sections.bootstrap.p2">Notice three things...</p>
+
+      <h2 id="checklist" data-i18n="chapter01.sections.checklist.h2">Production checklist</h2>
+      <p data-i18n="chapter01.sections.checklist.p1">Twelve checks. If any is red, the workload does not enter production...</p>
+
+      <!-- Filled dynamically -->
+      <div class="checklist" id="prod-checklist" aria-label="Production foundation checklist"></div>
+
+      <h2 id="monday-morning" data-i18n="chapter01.sections.mondayMorning.h2">Monday morning</h2>
+      <p data-i18n="chapter01.sections.mondayMorning.p1">Five concrete actions to take this week...</p>
+      <ol data-monday-list></ol>
+
+      <h2 id="references" data-i18n="chapter01.sections.references.h2">References</h2>
+      <p data-i18n="chapter01.sections.references.p1">Selected reading on cloud foundation patterns...</p>
+      <ul data-references-list></ul>
+    </main>
+
+    <!-- Right scrollspy, filled dynamically -->
+    <nav class="onpage" data-i18n-attr="aria-label:ui.onpage.ariaLabel">
+      <p class="onpage__label" data-i18n="ui.onpage.label">On this page</p>
+      <ul class="onpage__list" data-onpage-list></ul>
+    </nav>
+
+  </div>
+</article>
+
+<!-- Prev/Next -->
+<nav class="pagenav" data-i18n-attr="aria-label:ui.pagenav.navAria">
+  <a href="chapter-00-introduction.html" class="pagenav__item pagenav__item--prev">
+    <div class="pagenav__dir">
+      <svg width="14" height="14"><use href="#i-arrow-left"/></svg>
+      <span data-i18n="ui.pagenav.previous">Previous</span>
+    </div>
+    <div class="pagenav__title">Chapter 00, Introduction</div>
+  </a>
+  <a href="chapter-02-platform.html" class="pagenav__item pagenav__item--next">
+    <div class="pagenav__dir">
+      <span data-i18n="ui.pagenav.next">Next</span>
+      <svg width="14" height="14"><use href="#i-arrow-right"/></svg>
+    </div>
+    <div class="pagenav__title">Chapter 02, Platform Engineering</div>
+  </a>
+</nav>
+
+<!-- Footer -->
+<footer class="doc-footer">
+  <div class="footer-card">
+    <div class="footer-card__name">Paula Silva</div>
+    <div class="footer-card__role">Software Global Black Belt</div>
+    <a href="mailto:paulasilva@microsoft.com">paulasilva@microsoft.com</a>
+  </div>
+  <div class="footer-meta">
+    <span>v1.0.0 · 2026-05-04</span>
+    <span>Building the future of software development with AI and Agentic DevOps</span>
+  </div>
+</footer>
+
+<!-- Search modal -->
+<div class="search-overlay" id="search-overlay" aria-hidden="true" role="dialog"
+     data-i18n-attr="aria-label:ui.search.modalAria">
+  <div class="search-modal">
+    <div class="search-modal__input-row">
+      <svg><use href="#i-search"/></svg>
+      <input class="search-modal__input" type="text"
+             data-i18n-attr="placeholder:ui.search.placeholder; aria-label:ui.search.ariaLabel" />
+      <span class="search-modal__esc" data-i18n="ui.search.esc">ESC</span>
+    </div>
+    <div class="search-modal__results"></div>
+    <div class="search-modal__footer">
+      <span><kbd>↑</kbd> <kbd>↓</kbd> <span data-i18n="ui.search.navigate">navigate</span></span>
+      <span><kbd>↵</kbd> <span data-i18n="ui.search.open">open</span></span>
+      <span><kbd>esc</kbd> <span data-i18n="ui.search.close">close</span></span>
+    </div>
+  </div>
+</div>
+
+<script src="shared/content/ui.js"></script>
+<script src="shared/content/chapter-01.js"></script>
+<script src="shared/search-index.js"></script>
+<script src="shared/playbook.js"></script>
+
+<!-- Page-specific inline JS: terminal-typing animation -->
+<script>
+(function () {
+  // Terminal output stays EN (visual asset rule, identity-locked)
+  var script = [
+    { type: 'cmd',  text: '$ ./bootstrap.sh --subscription prod-001' },
+    { type: 'out',  text: '[1/5] Validating subscription state...           ' },
+    { type: 'ok',   text: 'OK' },
+    { type: 'out',  text: '[2/5] Provisioning network and DNS...            ' },
+    { type: 'ok',   text: 'OK' },
+    { type: 'out',  text: '[3/5] Configuring identity and IAM bindings...   ' },
+    { type: 'ok',   text: 'OK' },
+    { type: 'out',  text: '[4/5] Installing observability backbone...       ' },
+    { type: 'ok',   text: 'OK' },
+    { type: 'out',  text: '[5/5] Sealing audit log and computing hash...    ' },
+    { type: 'ok',   text: 'OK' },
+    { type: 'out',  text: '' },
+    { type: 'out',  text: 'Foundation ready. Audit hash:' },
+    { type: 'ok',   text: '  sha256:7a3f8c19b4...e2d1' },
+    { type: 'out',  text: 'Commit this hash with your IaC change.' }
+  ];
+
+  var body = document.getElementById('term-body');
+  if (!body) return;
+  var termEl = document.getElementById('term-bootstrap');
+
+  function renderLine(line) {
+    var span = document.createElement('span');
+    span.className = 'sim-term__line';
+    if (line.type === 'cmd') {
+      span.innerHTML = '<span class="sim-term__cmd">' + line.text + '</span>';
+    } else if (line.type === 'ok') {
+      span.innerHTML = '<span class="sim-term__ok">' + line.text + '</span>';
+    } else {
+      span.innerHTML = '<span class="sim-term__out">' + line.text + '</span>';
+    }
+    body.appendChild(span);
+    body.appendChild(document.createTextNode('\n'));
+  }
+  function play() {
+    body.innerHTML = '';
+    var i = 0;
+    function next() {
+      if (i >= script.length) {
+        var cur = document.createElement('span');
+        cur.className = 'sim-term__cursor';
+        body.appendChild(cur);
+        return;
+      }
+      renderLine(script[i]);
+      i += 1;
+      var delay = script[i - 1].type === 'cmd' ? 350 : (script[i - 1].type === 'ok' ? 80 : 220);
+      setTimeout(next, delay);
+    }
+    next();
+  }
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          play();
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.4 });
+    io.observe(termEl);
+  } else {
+    play();
+  }
+})();
+</script>
+
+</body>
+</html>

@@ -4,6 +4,7 @@
  * .sdd-state.json to produce a self-contained local HTML report.
  */
 import type { FileManager } from "./file-manager.js";
+import { currentTimestamp, formatTimestampForDisplay } from "../utils/runtime-context.js";
 
 export interface PhaseMetric {
   phase: string;
@@ -65,7 +66,7 @@ export class MetricsGenerator {
     return {
       feature_dir: featureDir,
       feature_number: featureNumber,
-      generated_at: new Date().toISOString(),
+      generated_at: currentTimestamp(),
       requirements_count: requirementsCount,
       acceptance_criteria_count: acCount,
       compliance_score: complianceScore,
@@ -167,8 +168,8 @@ export class MetricsGenerator {
         <tr>
           <td>${p.phase}</td>
           <td><span class="badge badge-${p.status}">${p.status}</span></td>
-          <td>${p.started_at ? new Date(p.started_at).toLocaleString() : "—"}</td>
-          <td>${p.completed_at ? new Date(p.completed_at).toLocaleString() : "—"}</td>
+          <td>${p.started_at ? formatTimestampForDisplay(p.started_at) : "—"}</td>
+          <td>${p.completed_at ? formatTimestampForDisplay(p.completed_at) : "—"}</td>
           <td>${p.duration_minutes !== undefined ? `${p.duration_minutes}m` : "—"}</td>
         </tr>`).join("")
       : `<tr><td colspan="5" style="text-align:center;color:#888">No phase data available</td></tr>`;
@@ -207,7 +208,7 @@ export class MetricsGenerator {
 </head>
 <body>
 <h1>📊 Specky Metrics Dashboard</h1>
-<p class="subtitle">${data.featureNumber}-${data.featureName} · Generated ${new Date().toLocaleString()}</p>
+<p class="subtitle">${data.featureNumber}-${data.featureName} · Generated ${formatTimestampForDisplay()}</p>
 
 <div class="grid">
   <div class="card">

@@ -5,6 +5,7 @@
 import type { FileManager } from "./file-manager.js";
 import type { WorkItemExportResult, WorkItemPayload, GitHubIssuePayload, AzureBoardsPayload, JiraPayload, WorkItemPlatform, RoutingInstructions } from "../types.js";
 import { extractRequirementIds, TASK_LINE_PATTERN, normalizeTaskId } from "../utils/id-contracts.js";
+import { currentTimestamp } from "../utils/runtime-context.js";
 
 export class WorkItemExporter {
   constructor(private fileManager: FileManager) {}
@@ -31,7 +32,7 @@ export class WorkItemExporter {
     return {
       platform,
       items,
-      metadata: { feature_number: featureNumber, feature_name: featureName, total_items: items.length, generated_at: new Date().toISOString() },
+      metadata: { feature_number: featureNumber, feature_name: featureName, total_items: items.length, generated_at: currentTimestamp() },
       routing_instructions: routing,
     };
   }

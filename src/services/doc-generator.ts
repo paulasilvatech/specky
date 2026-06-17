@@ -6,6 +6,7 @@ import type { FileManager } from "./file-manager.js";
 import type { StateMachine } from "./state-machine.js";
 import type { DocumentationResult } from "../types.js";
 import { extractTaskIds } from "../utils/id-contracts.js";
+import { currentTimestamp } from "../utils/runtime-context.js";
 
 export class DocGenerator {
   constructor(private fileManager: FileManager, private stateMachine?: StateMachine) {}
@@ -19,7 +20,7 @@ export class DocGenerator {
     const featureName = featureDir.replace(/.*\d{3}-/, "");
 
     let content = `# ${featureName} — Complete Documentation\n\n`;
-    content += `**Feature**: ${featureNumber}-${featureName}\n**Generated**: ${new Date().toISOString()}\n\n---\n\n`;
+    content += `**Feature**: ${featureNumber}-${featureName}\n**Generated**: ${currentTimestamp()}\n\n---\n\n`;
 
     if (spec) { content += `## Specification\n\n${this.summarize(spec)}\n\n`; sections.push("Specification"); }
     if (design) { content += `## Architecture & Design\n\n${this.summarize(design)}\n\n`; sections.push("Architecture & Design"); }
@@ -54,7 +55,7 @@ export class DocGenerator {
     const featureName = featureDir.replace(/.*\d{3}-/, "");
     const content = [
       `# Operational Runbook: ${featureName}`,
-      `\n**Feature**: ${featureNumber}\n**Last Updated**: ${new Date().toISOString()}\n`,
+      `\n**Feature**: ${featureNumber}\n**Last Updated**: ${currentTimestamp()}\n`,
       `## Deployment`,
       `1. Build: \`npm run build\``,
       `2. Test: \`npm test\``,
@@ -143,7 +144,7 @@ export class DocGenerator {
 
     let content = `# ${featureName} — SDD Journey\n\n`;
     content += `> Complete documentation of the Spec-Driven Development process.\n\n`;
-    content += `**Feature**: ${featureNumber}-${featureName}\n**Generated**: ${new Date().toISOString()}\n\n---\n\n`;
+    content += `**Feature**: ${featureNumber}-${featureName}\n**Generated**: ${currentTimestamp()}\n\n---\n\n`;
 
     // 1. Methodology Overview
     content += `## 1. Methodology Overview\n\n`;

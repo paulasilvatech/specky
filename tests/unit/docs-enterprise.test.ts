@@ -55,4 +55,11 @@ describe("enterprise documentation baseline", () => {
     expect(installDoc).not.toContain("Requires Node.js ≥18");
     expect(installDoc).not.toContain("Node ≥18");
   });
+
+  it("keeps release container assets present", () => {
+    expect(existsSync(resolve(ROOT, "Dockerfile"))).toBe(true);
+    expect(existsSync(resolve(ROOT, ".dockerignore"))).toBe(true);
+    expect(read("Dockerfile")).toContain("serve\", \"--http");
+    expect(read("Dockerfile")).toContain("EXPOSE 3200");
+  });
 });

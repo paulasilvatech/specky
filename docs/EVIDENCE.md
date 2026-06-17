@@ -62,18 +62,19 @@ stash@{0}: On develop: specky-pre-branch-reset-develop-dirty-20260617T205947Z
 | Area | Evidence Required | Status |
 | --- | --- | --- |
 | Build | `npm run build` output | Passed on 2026-06-17 |
-| Unit and integration tests | `npm test` output | Passed on 2026-06-17: 8 files, 85 tests |
-| Coverage | `npm run test:coverage` and thresholds | Passed on 2026-06-17: statements 51.25%, branches 42.1%, functions 60.57%, lines 52.36% |
+| Unit and integration tests | `npm test` output | Passed on 2026-06-17: 14 files, 107 tests |
+| Coverage | `npm run test:coverage` and thresholds | Passed on 2026-06-17: statements 53.41%, branches 42.22%, functions 63.47%, lines 54.96% |
 | Dependency audit | `npm audit --audit-level=high` | Passed on 2026-06-17; 1 low severity advisory remains |
-| MCP handshake | JSON-RPC initialize response includes Specky server metadata | Pending |
-| Fresh install | `npm pack` plus fresh workspace `npx specky install`, `doctor`, `status` | Pending |
+| MCP handshake | JSON-RPC initialize response includes Specky server metadata | Passed on 2026-06-17 |
+| Fresh install | `npm pack` plus fresh workspace `npx specky install`, `doctor`, `status` | Passed on 2026-06-17 |
 | RBAC enforcement | Viewer/contributor/admin integration tests | In progress; viewer allow/deny verified through MCP |
 | Audit chain | Hash-chain generated and verification detects tampering | In progress; global tool execution writes audit entries and `sdd_verify_audit` verifies chain integrity |
-| Determinism | Same input and fixed clock generate identical artifacts | Pending |
-| Filesystem boundary | Path traversal and outside-workspace paths rejected | Pending |
+| Determinism | Same input and fixed clock generate identical artifacts | In progress; fixed clock tested for frontmatter, docs, and test stubs |
+| Filesystem boundary | Path traversal and outside-workspace paths rejected | Passed for document import |
 | ID contracts | Shared requirement/task ID helpers and parser tests | In progress; core parsers now accept canonical `T-001` and legacy `T001` |
 | Semantic gate | Orphaned requirements/tests/compliance failures block approval | In progress; EARS/design/task mapping gate tested |
 | Documentation | C4, controls, determinism, branch governance and evidence docs present | In progress |
+| Release container | Dockerfile and `.dockerignore` for GHCR publish workflow | In progress; Dockerfile present and configured for HTTP on port 3200; local Docker daemon validation was unavailable in this run |
 
 ## 2026-06-17 Validation Results
 
@@ -98,8 +99,8 @@ npm test
 Result:
 
 ```text
-Test Files  8 passed (8)
-Tests       85 passed (85)
+Test Files  14 passed (14)
+Tests       107 passed (107)
 ```
 
 ### Coverage
@@ -113,12 +114,12 @@ npm run test:coverage
 Result:
 
 ```text
-Test Files  11 passed (11)
-Tests       96 passed (96)
-Statements  51.25%
-Branches    42.1%
-Functions   60.57%
-Lines       52.36%
+Test Files  14 passed (14)
+Tests       107 passed (107)
+Statements  53.41%
+Branches    42.22%
+Functions   63.47%
+Lines       54.96%
 ```
 
 Configured thresholds in `vitest.config.ts`:
@@ -151,6 +152,34 @@ Coverage added:
 - Workspace-relative text conversion.
 - Absolute path rejection.
 - Path traversal rejection.
+
+### MCP Handshake
+
+Command: Node harness spawning `dist/index.js` and sending JSON-RPC `initialize`.
+
+Result: passed. The response included server metadata for `specky` version `3.4.0-rc.14`.
+
+### Fresh Install Smoke
+
+Commands:
+
+```bash
+npm pack
+npm install /path/to/specky-sdd-3.4.0-rc.14.tgz
+npx specky install --ide=copilot
+npx specky doctor
+npx specky status
+```
+
+Result: passed.
+
+Evidence summary:
+
+```text
+[specky doctor] ✅ Install is healthy.
+Install: v3.4.0-rc.14, ide=copilot
+.github/ agents=13, prompts=22, skills=8, hooks=16
+```
 
 ### Global Tool Enforcement
 
@@ -194,6 +223,28 @@ Coverage added:
 - Canonical task ID formatting as `T-001`.
 - Legacy `T001` compatibility in extractors/parsers.
 - Sorted unique requirement and task extraction.
+
+### Deterministic Runtime Context
+
+Command:
+
+```bash
+npx vitest run tests/unit/determinism.test.ts
+```
+
+Result:
+
+```text
+Test Files  1 passed (1)
+Tests       4 passed (4)
+```
+
+Coverage added:
+
+- `SDD_FIXED_NOW` controls runtime timestamp helpers.
+- Template frontmatter uses the fixed date.
+- Documentation generation is stable for fixed input and fixed clock.
+- Test stub generation is stable for fixed input and fixed clock.
 
 ### Semantic Analysis Gate
 
