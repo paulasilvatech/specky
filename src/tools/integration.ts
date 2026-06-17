@@ -19,6 +19,7 @@ import {
   researchInputSchema,
 } from "../schemas/integration.js";
 import { enrichResponse } from "./response-builder.js";
+import { extractRequirementIds, normalizeTaskId, TASK_ID_PATTERN, TASK_LINE_PATTERN } from "../utils/id-contracts.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -381,23 +382,17 @@ interface ParsedTask {
 
 function parseTasks(tasksContent: string): ParsedTask[] {
   const tasks: ParsedTask[] = [];
-  const taskRegex = /^-\s+\[[ x]\]\s+(T\d{3})\s+(?:\[P\]\s+)?(?:\[(US\d+)\]\s+)?(.+)/gm;
   let match;
-  while ((match = taskRegex.exec(tasksContent)) !== null) {
-    const id = match[1];
+  while ((match = TASK_LINE_PATTERN.exec(tasksContent)) !== null) {
+    const id = normalizeTaskId(match[1]);
     const title = match[3].trim();
 
-    // Extract dependency references like "depends: T001, T002"
-    const depMatch = title.match(/depends?:\s*(T\d{3}(?:\s*,\s*T\d{3})*)/i);
-    const dependencies = depMatch
-      ? depMatch[1].split(",").map((d) => d.trim())
-      : [];
+    // Extract dependency references like "depends: T-001, T002"
+    const dependencySection = /depends?:\s*([^;.)]+)/i.exec(title)?.[1] ?? "";
+    const dependencies = [...dependencySection.matchAll(TASK_ID_PATTERN)].map((dep) => normalizeTaskId(dep[0]));
 
     // Extract REQ references
-    const reqIds: string[] = [];
-    const reqRegex = /REQ-[A-Z]+-\d{3}/g;
-    let reqMatch;
-    while ((reqMatch = reqRegex.exec(title)) !== null) reqIds.push(reqMatch[0]);
+    const reqIds = extractRequirementIds(title);
 
     tasks.push({ id, title, dependencies, traces_to: reqIds });
   }

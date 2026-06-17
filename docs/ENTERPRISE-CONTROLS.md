@@ -19,8 +19,8 @@ Specky should provide these enterprise guarantees:
 | --- | --- | --- |
 | Zod input schemas | Implemented | Keep schemas aligned with shared ID contracts. |
 | State machine | Implemented | Enforce through a central wrapper for all tools. |
-| RBAC engine | Implemented | Currently diagnostic unless globally wired. |
-| Audit logger | Implemented | Currently not attached to all tool executions. |
+| RBAC engine | Implemented and globally enforced | Continue expanding role policy coverage as new tools are added. |
+| Audit logger | Implemented and globally attached | Add user-facing audit chain verification command/tool. |
 | Rate limiting | Implemented for HTTP mode | Add enterprise defaults and docs. |
 | HMAC state signature | Implemented | Add user-facing verification command/tool. |
 | Compliance checks | Implemented as keyword controls | Integrate into semantic gate. |

@@ -4,6 +4,7 @@
  */
 import type { FileManager } from "./file-manager.js";
 import type { WorkItemExportResult, WorkItemPayload, GitHubIssuePayload, AzureBoardsPayload, JiraPayload, WorkItemPlatform, RoutingInstructions } from "../types.js";
+import { extractRequirementIds, TASK_LINE_PATTERN, normalizeTaskId } from "../utils/id-contracts.js";
 
 export class WorkItemExporter {
   constructor(private fileManager: FileManager) {}
@@ -69,22 +70,18 @@ export class WorkItemExporter {
 
   private parseTasks(tasksContent: string, specContent: string): Array<{ id: string; title: string; description: string; traces_to: string[]; effort?: string; dependencies: string[]; acceptance_criteria: string[] }> {
     const tasks: Array<{ id: string; title: string; description: string; traces_to: string[]; effort?: string; dependencies: string[]; acceptance_criteria: string[] }> = [];
-    const taskRegex = /^-\s+\[[ x]\]\s+(T\d{3})\s+(?:\[P\]\s+)?(?:\[(US\d+)\]\s+)?(.+)/gm;
     let match;
-    while ((match = taskRegex.exec(tasksContent)) !== null) {
-      const id = match[1];
+    while ((match = TASK_LINE_PATTERN.exec(tasksContent)) !== null) {
+      const id = normalizeTaskId(match[1]);
       const story = match[2] || "";
       const title = match[3].trim();
       // Extract REQ IDs referenced in the task or linked story
-      const reqIds: string[] = [];
-      const reqRegex = /REQ-[A-Z]+-\d{3}/g;
-      let reqMatch;
-      while ((reqMatch = reqRegex.exec(title)) !== null) reqIds.push(reqMatch[0]);
+      const reqIds: string[] = extractRequirementIds(title);
       // If no direct REQ ref, look in spec for the story
       if (reqIds.length === 0 && story) {
         const storySection = specContent.match(new RegExp(`${story}[\\s\\S]*?(?=##|$)`));
         if (storySection) {
-          while ((reqMatch = reqRegex.exec(storySection[0])) !== null) reqIds.push(reqMatch[0]);
+          reqIds.push(...extractRequirementIds(storySection[0]));
         }
       }
       tasks.push({ id, title, description: title, traces_to: reqIds, dependencies: [], acceptance_criteria: [] });

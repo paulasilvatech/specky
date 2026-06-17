@@ -3,6 +3,7 @@
  * Reads acceptance criteria and produces framework-specific test files.
  */
 import type { FileManager } from "./file-manager.js";
+import { extractRequirementIds } from "../utils/id-contracts.js";
 
 export type TestFramework = "vitest" | "jest" | "playwright" | "pytest" | "junit" | "xunit";
 
@@ -90,8 +91,8 @@ export class TestGenerator {
     let currentReq = "REQ-000";
 
     for (const line of lines) {
-      const reqMatch = line.match(/(REQ-\d+)/);
-      if (reqMatch) currentReq = reqMatch[1];
+      const reqId = extractRequirementIds(line)[0];
+      if (reqId) currentReq = reqId;
 
       const acMatch = line.match(/[-*]\s*(?:AC[-_]?\d*[:.])?\s*(.+)/i);
       if (acMatch && (line.toLowerCase().includes("accept") || line.match(/^\s*[-*]\s+(Given|When|Then|Verify|Check|Ensure|Confirm)/i))) {

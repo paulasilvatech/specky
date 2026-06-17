@@ -28,8 +28,8 @@ jobs:
 
       - run: npm run build
 
-      - name: Run unit tests
-        run: npm test
+      - name: Run tests with coverage thresholds
+        run: npm run test:coverage
 
       - name: 'Check for : any usage in src/'
         run: |

@@ -63,14 +63,15 @@ stash@{0}: On develop: specky-pre-branch-reset-develop-dirty-20260617T205947Z
 | --- | --- | --- |
 | Build | `npm run build` output | Passed on 2026-06-17 |
 | Unit and integration tests | `npm test` output | Passed on 2026-06-17: 8 files, 85 tests |
-| Coverage | `npm run test:coverage` and thresholds | Pending |
+| Coverage | `npm run test:coverage` and thresholds | Passed on 2026-06-17: statements 51.25%, branches 42.1%, functions 60.57%, lines 52.36% |
 | Dependency audit | `npm audit --audit-level=high` | Passed on 2026-06-17; 1 low severity advisory remains |
 | MCP handshake | JSON-RPC initialize response includes Specky server metadata | Pending |
 | Fresh install | `npm pack` plus fresh workspace `npx specky install`, `doctor`, `status` | Pending |
-| RBAC enforcement | Viewer/contributor/admin integration tests | Pending |
-| Audit chain | Hash-chain generated and verification detects tampering | Pending |
+| RBAC enforcement | Viewer/contributor/admin integration tests | In progress; viewer allow/deny verified through MCP |
+| Audit chain | Hash-chain generated and verification detects tampering | In progress; global tool execution writes audit entries |
 | Determinism | Same input and fixed clock generate identical artifacts | Pending |
 | Filesystem boundary | Path traversal and outside-workspace paths rejected | Pending |
+| ID contracts | Shared requirement/task ID helpers and parser tests | In progress; core parsers now accept canonical `T-001` and legacy `T001` |
 | Semantic gate | Orphaned requirements/tests/compliance failures block approval | Pending |
 | Documentation | C4, controls, determinism, branch governance and evidence docs present | In progress |
 
@@ -101,6 +102,34 @@ Test Files  8 passed (8)
 Tests       85 passed (85)
 ```
 
+### Coverage
+
+Command:
+
+```bash
+npm run test:coverage
+```
+
+Result:
+
+```text
+Test Files  11 passed (11)
+Tests       96 passed (96)
+Statements  51.25%
+Branches    42.1%
+Functions   60.57%
+Lines       52.36%
+```
+
+Configured thresholds in `vitest.config.ts`:
+
+```text
+Statements  50%
+Branches    40%
+Functions   60%
+Lines       50%
+```
+
 ### Focused Document Import Boundary Test
 
 Command:
@@ -122,6 +151,49 @@ Coverage added:
 - Workspace-relative text conversion.
 - Absolute path rejection.
 - Path traversal rejection.
+
+### Global Tool Enforcement
+
+Commands:
+
+```bash
+npx vitest run tests/integration/tool-enforcement-mcp.test.ts tests/unit/tool-enforcement.test.ts
+```
+
+Result:
+
+```text
+Test Files  2 passed (2)
+Tests       5 passed (5)
+```
+
+Coverage added:
+
+- Viewer role can call read-only tools through MCP.
+- Viewer role is denied write tools before handler execution.
+- Global audit entries include role and input/output hashes.
+- The enforcement wrapper preserves MCP handler extra arguments.
+
+### ID Contract Normalization
+
+Command:
+
+```bash
+npx vitest run tests/unit/id-contracts.test.ts
+```
+
+Result:
+
+```text
+Test Files  1 passed (1)
+Tests       6 passed (6)
+```
+
+Coverage added:
+
+- Canonical task ID formatting as `T-001`.
+- Legacy `T001` compatibility in extractors/parsers.
+- Sorted unique requirement and task extraction.
 
 ### Dependency Audit
 

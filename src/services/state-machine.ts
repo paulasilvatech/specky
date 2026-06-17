@@ -327,6 +327,7 @@ export class StateMachine {
       sdd_restore: [],
       sdd_list_checkpoints: [],
       sdd_check_ecosystem: [],
+      sdd_verify_audit: [],
       sdd_metrics: [],
       sdd_research: [],
 

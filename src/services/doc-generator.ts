@@ -5,6 +5,7 @@
 import type { FileManager } from "./file-manager.js";
 import type { StateMachine } from "./state-machine.js";
 import type { DocumentationResult } from "../types.js";
+import { extractTaskIds } from "../utils/id-contracts.js";
 
 export class DocGenerator {
   constructor(private fileManager: FileManager, private stateMachine?: StateMachine) {}
@@ -247,7 +248,7 @@ export class DocGenerator {
     const spec = await this.safeRead(featureDir, "SPECIFICATION.md");
     const tasks = await this.safeRead(featureDir, "TASKS.md");
     const reqCount = spec ? (spec.match(/### REQ-/g) || []).length : 0;
-    const taskCount = tasks ? (tasks.match(/T-\d{3}/g) || []).length : 0;
+    const taskCount = tasks ? extractTaskIds(tasks).length : 0;
     content += `- **Requirements**: ${reqCount}\n`;
     content += `- **Tasks**: ${taskCount}\n`;
     content += `- **Traceability**: ${reqCount > 0 && taskCount > 0 ? "Linked" : "Incomplete"}\n\n`;

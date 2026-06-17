@@ -15,6 +15,7 @@ import type { EarsValidator } from "../services/ears-validator.js";
 import type { ChecklistDomain } from "../constants.js";
 import type { ChecklistItem, VerificationResult } from "../types.js";
 import { enrichResponse } from "./response-builder.js";
+import { normalizeTaskId, TASK_LINE_PATTERN } from "../utils/id-contracts.js";
 import {
   checklistInputSchema,
   verifyTasksInputSchema,
@@ -262,21 +263,20 @@ export function registerQualityTools(
           );
         }
 
-        // Parse task entries: match lines like "- [x] T001: Description" or "- [ ] T002: Description"
-        const taskRegex = /- \[(x| )\]\s*(T\d{3}):\s*(.+)/g;
+        // Parse task entries: accepts canonical T-001 and legacy T001 formats.
         let match;
         const tasks: Array<{ id: string; description: string; claimed_done: boolean }> = [];
-        while ((match = taskRegex.exec(tasksContent)) !== null) {
+        while ((match = TASK_LINE_PATTERN.exec(tasksContent)) !== null) {
           tasks.push({
-            id: match[2],
+            id: normalizeTaskId(match[1]),
             description: match[3].trim(),
-            claimed_done: match[1] === "x",
+            claimed_done: /^-\s+\[x\]/i.test(match[0]),
           });
         }
 
         if (tasks.length === 0) {
           throw new Error(
-            `No tasks found in TASKS.md. Expected format: "- [x] T001: Description".\n→ Fix: Ensure TASKS.md uses the standard task format.`
+            `No tasks found in TASKS.md. Expected format: "- [x] T-001: Description".\n→ Fix: Ensure TASKS.md uses the standard task format.`
           );
         }
 

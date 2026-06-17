@@ -66,7 +66,7 @@ These areas must be remediated before Specky can claim full deterministic artifa
 
 - Generated docs currently use direct `new Date()` calls in several services.
 - Some file listing paths rely on unsorted `readdir` results.
-- Task ID parsing is inconsistent across tools and hooks.
+- Task ID parsing has been normalized for core parsers; keep hooks, templates, and future tools aligned with the shared ID helpers.
 - `DocumentConverter` currently reads files directly instead of consistently using `FileManager`.
 
 ## Validation Plan
