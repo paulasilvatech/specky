@@ -7,7 +7,7 @@ description: "This skill should be used when the user asks 'help me with specky'
 
 ## Overview
 
-Specky SDD is a Spec-Driven Development CLI toolkit with 57 MCP tools, 13 agents, 22 prompts, 8 skills, and 16 hook scripts. It enforces a 10-phase pipeline from requirements through release.
+Specky SDD is a Spec-Driven Development CLI toolkit with 58 MCP tools, 13 agents, 22 prompts, 8 skills, and 16 hook scripts. It enforces a 10-phase pipeline from requirements through release.
 
 ## 5-Step Wizard Flow
 
@@ -104,7 +104,7 @@ Check for:
 | research-analyst | "research codebase", "scan tech stack", "import documents" |
 | sdd-markdown-standard | "artifact format", "spec formatting" |
 
-## 57 MCP Tools by Category
+## 58 MCP Tools by Category
 
 **Pipeline Core (8):** sdd_init, sdd_discover, sdd_write_spec, sdd_clarify, sdd_write_design, sdd_write_tasks, sdd_run_analysis, sdd_advance_phase
 

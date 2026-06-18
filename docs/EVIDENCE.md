@@ -75,7 +75,7 @@ stash@{0}: On develop: specky-pre-branch-reset-develop-dirty-20260617T205947Z
 | Semantic gate | Orphaned requirements/tests/compliance failures block approval | In progress; EARS/design/task mapping gate tested |
 | Spec package completeness | New specs generate companion docs, diagrams, TDD status, evidence, and manifest | In progress; `sdd_write_spec`, `sdd_turnkey_spec`, `sdd_auto_pipeline`, and `sdd_batch_transcripts` now create companion package artifacts; `sdd_write_spec` is verified through MCP and scaffold phase blocking is tested |
 | Agent portability and permissions | `.apm` agents avoid hardcoded model IDs and declare required `sdd_*` tools used in instructions | Passed on 2026-06-17 via `node scripts/audit-agent-frontmatter.mjs` and model-frontmatter grep audit |
-| Documentation | C4, controls, determinism, branch governance and evidence docs present | In progress |
+| Documentation | C4, controls, determinism, branch governance and evidence docs present | Present on 2026-06-17: `docs/SYSTEM-DESIGN.md`, `docs/ENTERPRISE-CONTROLS.md`, `docs/DETERMINISM.md`, `docs/BRANCH-GOVERNANCE.md`, and `docs/EVIDENCE.md` all present and linked from README |
 | Release container | Dockerfile and `.dockerignore` for GHCR publish workflow | In progress; Dockerfile present and configured for HTTP on port 3200; local Docker daemon validation was unavailable in this run |
 
 ## 2026-06-17 Validation Results

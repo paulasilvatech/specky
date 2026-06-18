@@ -986,6 +986,10 @@ Specky is built with enterprise adoption in mind.
 - **security-scan hook** blocks commits containing hardcoded secrets (exit code 2)
 - See [SECURITY.md](SECURITY.md) for full OWASP Top 10 coverage
 - See [docs/SYSTEM-DESIGN.md](docs/SYSTEM-DESIGN.md) for complete security architecture
+- See [docs/ENTERPRISE-CONTROLS.md](docs/ENTERPRISE-CONTROLS.md) for RBAC, audit trail, and tool-enforcement controls
+- See [docs/DETERMINISM.md](docs/DETERMINISM.md) for reproducible-output guarantees
+- See [docs/BRANCH-GOVERNANCE.md](docs/BRANCH-GOVERNANCE.md) for branch and release governance
+- See [docs/EVIDENCE.md](docs/EVIDENCE.md) for the validation evidence pack
 
 ### Security Best Practices
 

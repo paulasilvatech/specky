@@ -65,7 +65,7 @@ export function registerRbacTools(
             blocked_tools: [...RbacEngine.BLOCKED_FOR_CONTRIBUTOR],
           },
           admin: {
-            description: "All 57 tools — no restrictions",
+            description: "All 58 tools — no restrictions",
             blocked_tools: [],
           },
         },
