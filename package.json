@@ -22,7 +22,6 @@
   "files": [
     "dist/",
     ".apm/",
-    ".claude-plugin/",
     "templates/",
     "apm.yml",
     "config.yml",
