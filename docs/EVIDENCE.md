@@ -24,7 +24,7 @@ Repository: `paulasilvatech/specky`
 | Old `develop` divergence from `main` | 32 commits behind, 1 commit ahead |
 | `origin/main` SHA | `4225130af2780f44bc3a3825e5db275879f6b111` |
 | npm `latest` dist-tag | `3.4.0-rc.14` |
-| npm `next` dist-tag | `3.4.0-rc.14` |
+| npm `next` dist-tag | `3.4.0-rc.15` |
 | Open PRs before cleanup | 13 Dependabot PRs |
 | Open PRs after cleanup | 0 |
 | GitHub push security notice | 17 vulnerabilities on default branch, reported by GitHub during push |
@@ -159,7 +159,7 @@ Coverage added:
 
 Command: Node harness spawning `dist/index.js` and sending JSON-RPC `initialize`.
 
-Result: passed. The response included server metadata for `specky` version `3.4.0-rc.14`.
+Result: passed. The response included server metadata for `specky` version `3.4.0-rc.15`.
 
 ### Fresh Install Smoke
 
@@ -167,7 +167,7 @@ Commands:
 
 ```bash
 npm pack
-npm install /path/to/specky-sdd-3.4.0-rc.14.tgz
+npm install /path/to/specky-sdd-3.4.0-rc.15.tgz
 npx specky install --ide=copilot
 npx specky doctor
 npx specky status
@@ -179,7 +179,7 @@ Evidence summary:
 
 ```text
 [specky doctor] ✅ Install is healthy.
-Install: v3.4.0-rc.14, ide=copilot
+Install: v3.4.0-rc.15, ide=copilot
 .github/ agents=13, prompts=22, skills=8, hooks=16
 ```
 

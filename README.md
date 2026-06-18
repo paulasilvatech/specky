@@ -52,7 +52,7 @@
 | | [Input Methods](#input-methods-6-ways-to-start) | 6 ways to feed Specky |
 | | [Three Project Types](#three-project-types-one-pipeline) | Greenfield, Brownfield, Modernization |
 | **Pipeline** | [Pipeline and LGTM Gates](#pipeline-and-lgtm-gates) | 10 phases with human review gates |
-| | [All 57 Tools](#all-57-tools) | Complete tool reference by category |
+| | [All 58 Tools](#all-58-tools) | Complete tool reference by category |
 | | [EARS Notation](#ears-notation) | The 6 requirement patterns |
 | **Enterprise** | [Compliance Frameworks](#compliance-frameworks) | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 |
 | | [Enterprise Ready](#enterprise-ready) | Security, audit trail, quality gates |
@@ -158,10 +158,10 @@ Specky adds a **deterministic engine** between your intent and your code:
 
 | Capability | Specky |
 |---|---|
-| Complete CLI toolkit | 13 agents, 22 prompts, 8 skills, 16 hooks + 57 MCP tools |
+| Complete CLI toolkit | 13 agents, 22 prompts, 8 skills, 16 hooks + 58 MCP tools |
 | Pipeline orchestrator | @specky-orchestrator coordinates all 10 phases end-to-end |
 | Onboarding wizard | @specky-onboarding detects context and guides setup |
-| Any input (PDF, DOCX, PPTX, transcript, Figma) to spec | 57 MCP tools handle all input formats |
+| Any input (PDF, DOCX, PPTX, transcript, Figma) to spec | 58 MCP tools handle all input formats |
 | EARS validation (programmatic, not AI guessing) | 6 patterns enforced at schema level |
 | Enforced pipeline (not suggestions) | 10 phases with actual gates that block advancement |
 | Pre/post hooks on every phase | artifact-validator, branch-validator, phase-gate, lgtm-gate |
@@ -513,7 +513,7 @@ The AI calls:
 
 The AI calls `sdd_export_work_items` + `sdd_create_pr` → generates work item payloads and PR body with full spec traceability.
 
-> **Next:** **Next:** Learn about [EARS notation](#ears-notation) to understand the requirement patterns, or see [All 57 Tools](#all-57-tools) for a complete reference.
+> **Next:** Learn about [EARS notation](#ears-notation) to understand the requirement patterns, or see [All 58 Tools](#all-58-tools) for a complete reference.
 
 
 ## Brownfield Project: Add Features to Existing Code
@@ -706,7 +706,7 @@ The AI calls `sdd_advance_phase` → moves the pipeline forward if all prerequis
 All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). See [Input Methods](#input-methods-6-ways-to-start) for how to feed data into the pipeline.
 
 
-## All 57 Tools
+## All 58 Tools
 
 ### Input and Conversion (6)
 
@@ -846,11 +846,11 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 
 **[Spec-Kit](https://github.com/paulasilvatech/spec-kit)** is the open-source SDD methodology: EARS notation, gated pipeline phases, constitution model, 25+ specialized agents, and Markdown prompt templates. It defines **what** to do.
 
-**Specky** is the CLI toolkit that reimplements that methodology as 57 enforceable MCP tools with 13 agents, 22 prompts, 8 skills, and 16 hooks. It enforces **how** to do it.
+**Specky** is the CLI toolkit that reimplements that methodology as 58 enforceable MCP tools with 13 agents, 22 prompts, 8 skills, and 16 hooks. It enforces **how** to do it.
 
 | | Spec-Kit (Methodology) | Specky (Plugin) |
 |--|------------------------|-----------------|
-| **What it is** | Prompt templates + agent definitions | CLI toolkit: 13 agents + 57 MCP tools + 22 prompts + 8 skills + 16 hooks |
+| **What it is** | Prompt templates + agent definitions | CLI toolkit: 13 agents + 58 MCP tools + 22 prompts + 8 skills + 16 hooks |
 | **How it works** | AI reads `.md` templates and follows instructions | AI calls agents that orchestrate tools with hook validation |
 | **Validation** | AI tries to follow the prompts | State machine, EARS regex, Zod schemas, pre/post hooks |
 | **Install** | Copy `.github/agents/` and `.claude/commands/` | `npm install -g specky-sdd && specky install` |
@@ -1080,7 +1080,7 @@ curl http://localhost:3200/health
 
 | Capability | Status |
 |------------|--------|
-| 57 MCP tools across 10 enforced pipeline phases | Stable |
+| 58 MCP tools across 10 enforced pipeline phases | Stable |
 | Unified `specky` CLI: install, doctor, status, upgrade, hooks, serve | Stable |
 | IDE-specific install: `--ide=copilot` or `--ide=claude` | Stable |
 | Copilot-safe hook manifests (no lifecycle event cross-read) | Stable |

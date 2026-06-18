@@ -5,6 +5,41 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.0-rc.15] - 2026-06-17
+
+### Added
+
+- Added centralized MCP tool enforcement with RBAC, phase validation, and audit logging across all registered tools.
+- Added `sdd_verify_audit` for hash-chain audit trail verification.
+- Added complete feature package generation for new specifications. `sdd_write_spec`, `sdd_turnkey_spec`, `sdd_auto_pipeline`, and `sdd_batch_transcripts` now create companion artifacts including `README.md`, `DESIGN.md`, `TASKS.md`, `ADR.md`, `PLAYBOOK.md`, `DIAGRAMS.md`, `TDD_STATUS.md`, `EVIDENCE.md`, and `SPEC_PACKAGE.json`.
+- Added scaffold detection so generated `DESIGN.md` and `TASKS.md` placeholders cannot satisfy phase advancement until completed.
+- Added deterministic runtime helpers through `SDD_FIXED_NOW` for stable generated artifact timestamps.
+- Added enterprise documentation: branch governance, determinism, enterprise controls, system design, and evidence pack.
+- Added agent frontmatter audit script and CI gate to prevent hardcoded model metadata or missing `sdd_*` tool permissions.
+- Added Dockerfile and `.dockerignore` for the GHCR publish workflow.
+
+### Changed
+
+- Removed hardcoded `model` and `model_fallback` frontmatter from all Specky `.apm` agents. Agents now recommend model capability classes and let users choose any model available in GitHub Copilot.
+- Replaced vendor-specific model guidance in `.apm` instructions and skills with `fast`, `balanced`, and `reasoning-focused` recommendations.
+- Updated `specky doctor` to validate only the recorded IDE installation scope from `.specky/install.json`.
+- Updated package metadata and documentation for 58 MCP tools and 3 runtime dependencies.
+- Strengthened publish validation with coverage thresholds, npm provenance, package dry-run, and CLI smoke checks.
+
+### Fixed
+
+- Fixed document import path handling so document conversion reads workspace files through `FileManager` and rejects absolute paths and path traversal.
+- Fixed `pipeline-guard.sh` so prompt JSON on stdin still triggers advisory or strict enforcement while accidental interactive invocations skip safely.
+- Fixed stale release smoke expectations for the current template count and removed the obsolete `.claude-plugin` package assertion.
+
+### Validation
+
+- `npm run build` passed.
+- `npm test` passed with 16 test files and 111 tests.
+- `npm run test:coverage` passed with statements 56.14%, branches 43.82%, functions 67.91%, and lines 57.89%.
+- `npm audit --audit-level=high` passed. One low severity `esbuild` advisory remains in the development toolchain.
+- `npm pack --dry-run`, MCP initialize smoke, fresh install smoke, and CLI smoke passed.
+
 ## [3.4.0-rc.14] - 2026-04-20
 
 ### Fixed — CRITICAL: Copilot still blocks after rc.13 (hook lifecycle mismatch)

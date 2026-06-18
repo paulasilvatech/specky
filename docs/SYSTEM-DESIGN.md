@@ -38,7 +38,7 @@ C4Container
   System_Boundary(specky, "Specky") {
     Container(cli, "CLI", "Node.js TypeScript", "install, doctor, status, hooks, serve")
     Container(mcp, "MCP Server", "Node.js TypeScript", "Registers and executes SDD tools")
-    Container(registry, "Tool Registry", "TypeScript", "Registers 57 MCP tools")
+    Container(registry, "Tool Registry", "TypeScript", "Registers 58 MCP tools")
     Container(enforcement, "Tool Enforcement", "TypeScript", "RBAC, phase validation, audit, deterministic runtime")
     Container(services, "Service Layer", "TypeScript", "File, state, templates, analysis, docs, diagrams, testing")
     ContainerDb(workspace, "Workspace Files", "Markdown, JSON, source files", "Specs, docs, state, audit, generated artifacts")
