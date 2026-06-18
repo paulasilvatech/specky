@@ -22,7 +22,7 @@ Thank you for your interest in contributing to Specky. This guide covers the v3.
 
 ## Architecture Overview
 
-Specky v3.4.0 is an MCP server that exposes **57 tools** organized into a 10-phase Spec-Driven Development pipeline. The codebase comprises **69 source files**, **23 templates**, and is structured as follows:
+Specky v3.4.0 is an MCP server that exposes **58 tools** organized into a 10-phase Spec-Driven Development pipeline. The codebase comprises **88 source files**, **22 templates**, and is structured as follows:
 
 ```
 src/

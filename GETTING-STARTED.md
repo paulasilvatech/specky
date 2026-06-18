@@ -14,13 +14,13 @@ Specky is a CLI toolkit that installs specialized agents, prompts, skills, hooks
 | **22 Prompts** | Slash commands — `/specky-greenfield`, `/specky-specify`, `/specky-release`. One command activates the right agent. |
 | **8 Skills** | Domain knowledge loaded into agents — EARS patterns, implementation rules, test criteria, release gate protocol. |
 | **16 Hooks** | Pre/post validation scripts + `pipeline-guard` (UserPromptSubmit) + `session-banner` (SessionStart) — check artifacts, validate branch, enforce gates, block out-of-flow prompts. |
-| **57 MCP Tools** | The engine underneath — validates, generates, and enforces. Agents call it; hooks guard it. |
+| **58 MCP Tools** | The engine underneath — validates, generates, and enforces. Agents call it; hooks guard it. |
 
 **Why does this matter?** Instead of calling raw MCP tools and hoping you're in the right phase with the right prerequisites, you call an agent and it does everything correctly — validates, routes, enforces hooks, and pauses for review.
 
 ## Installation
 
-The `specky` CLI bundles everything: 13 agents, 22 prompts, 8 skills, 16 hooks, and the MCP server (57 tools) — installed into your project for your chosen IDE.
+The `specky` CLI bundles everything: 13 agents, 22 prompts, 8 skills, 16 hooks, and the MCP server (58 tools) — installed into your project for your chosen IDE.
 
 ### One-time CLI install (recommended)
 

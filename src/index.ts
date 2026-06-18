@@ -79,7 +79,7 @@ const server = new McpServer(
     name: SERVER_NAME,
     version: VERSION,
     title: "Specky",
-    description: "Agentic Spec-Driven Development plugin — 13 agents, 57 MCP tools, 10-phase enforced pipeline, EARS notation, 22 prompts, 8 skills, 16 hooks.",
+    description: "Agentic Spec-Driven Development plugin — 13 agents, 58 MCP tools, 10-phase enforced pipeline, EARS notation, 22 prompts, 8 skills, 16 hooks.",
     websiteUrl: "https://getspecky.ai",
     icons: [
       {
@@ -141,7 +141,7 @@ installToolEnforcement(server, {
   stateMachine,
 });
 
-// Register all tools (57 total)
+// Register all tools (58 total)
 // v1 tools
 registerPipelineTools(server, fileManager, stateMachine, templateEngine, earsValidator);
 registerAnalysisTools(server, fileManager, stateMachine, templateEngine, intentDriftEngine);

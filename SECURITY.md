@@ -27,7 +27,7 @@ If you discover a security vulnerability in Specky, please report it responsibly
 
 ### Input Validation
 
-All 57 MCP tool inputs are validated using [Zod](https://zod.dev/) schemas with `.strict()` mode. No unknown fields are accepted. This prevents injection of unexpected parameters through the MCP JSON-RPC interface.
+All 58 MCP tool inputs are validated using [Zod](https://zod.dev/) schemas with `.strict()` mode. No unknown fields are accepted. This prevents injection of unexpected parameters through the MCP JSON-RPC interface.
 
 ```
 AI Client → JSON-RPC → Zod .strict() validation → Service layer
@@ -229,7 +229,7 @@ Specky addresses the 12 threat categories from the CoSAI MCP Security White Pape
 
 | ID | Threat Category | Specky Mitigation |
 | --- | --- | --- |
-| T-01 | Tool Poisoning | Zod `.strict()` on all 57 tool inputs — no unknown fields accepted |
+| T-01 | Tool Poisoning | Zod `.strict()` on all 58 tool inputs — no unknown fields accepted |
 | T-02 | Prompt Injection via Tool Results | No user-controlled data interpolated into tool responses |
 | T-03 | Excessive Tool Permissions | Thin Tools pattern — each tool does exactly one operation |
 | T-04 | Insecure Data Storage | FileManager enforces workspace boundary; no secrets in files |
