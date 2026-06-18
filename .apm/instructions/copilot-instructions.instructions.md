@@ -6,7 +6,7 @@ This project uses Spec-Driven Development (SDD) via the Specky pipeline.
 
 1. **EARS notation is mandatory.** Every requirement must follow one of the 6 EARS patterns.
 2. **REQ-ID traceability is non-negotiable.** Every test, task, and design decision traces to a REQ-ID.
-3. **Model routing matters.** Use Haiku for scaffolding (Phase 0, 9), Sonnet for iteration (Phase 1, 5-7), Opus for reasoning (Phase 2-4, 8).
+3. **Model routing matters.** Use a fast model class for lightweight scaffolding (Phase 0, 9), a balanced model class for iterative delivery (Phase 1, 5-7), and a reasoning-focused model class for complex analysis and design (Phase 2-4, 8). The user chooses any available model.
 4. **Never skip hooks.** Blocking hooks (security-scan, release-gate) must pass before release.
 5. **Artifacts live in `.specs/NNN-feature/`.** CONSTITUTION.md, RESEARCH.md, SPECIFICATION.md, DESIGN.md, TASKS.md, VERIFICATION.md, ANALYSIS.md.
 6. **One branch per spec.** Create `spec/NNN-feature-name` from `develop` for all pipeline work (Phases 0-7). All `.specs/` artifacts are created on this branch. Merge to `develop` after verification, then `stage` for QA and release gates, then `main` for production. Never commit spec work directly to develop, stage, or main.
@@ -61,7 +61,7 @@ Hooks fire automatically on MCP tool calls:
 
 ## MCP Server
 
-The specky-sdd MCP server (57 tools) is configured in .vscode/mcp.json and runs via npx.
+The specky-sdd MCP server (58 tools) is configured in .vscode/mcp.json and runs via npx.
 
 ## EARS Patterns
 

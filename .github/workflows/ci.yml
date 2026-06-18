@@ -28,6 +28,9 @@ jobs:
 
       - run: npm run build
 
+      - name: Audit agent frontmatter portability
+        run: node scripts/audit-agent-frontmatter.mjs
+
       - name: Run tests with coverage thresholds
         run: npm run test:coverage
 

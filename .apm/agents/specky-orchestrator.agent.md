@@ -2,8 +2,6 @@
 name: specky-orchestrator
 description: Master agent that coordinates the full SDD 10-phase pipeline end-to-end, routing to phase agents, validating artifacts between phases, and enforcing hooks and LGTM gates.
 
-model: claude-sonnet-4-6
-model_fallback: ["claude-opus-4-6", "gpt-5", "gpt-4.5"]
 color: purple
 tools: ["Read", "Glob", "Grep", "Bash", "Task", "sdd_get_status", "sdd_advance_phase", "sdd_checkpoint", "sdd_validate_ears", "sdd_model_routing", "sdd_context_status"]
 ---
@@ -60,4 +58,4 @@ You are the Specky SDD pipeline orchestrator. You coordinate the full 10-phase p
 - Always pause at LGTM gates (Phases 2, 4, 5) for human review
 - Always checkpoint before advancing to next phase
 - Never modify artifacts — you coordinate, not author
-- Report model routing hint per phase (Haiku/Sonnet/Opus)
+- Report model routing hint per phase using capability classes (fast, balanced, reasoning-focused). Let the user pick any available model.

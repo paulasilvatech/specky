@@ -51,28 +51,28 @@ EARS (Easy Approach to Requirements Syntax) provides five core patterns plus a c
 6. **Complex** — Combination patterns for intricate business logic.
    - Example: "If user role is editor, when publish button is clicked, then system shall validate content and if valid shall queue for approval."
 
-## Model Routing Table
+## Model Recommendation Table
 
-Route specification and implementation tasks to models based on phase complexity:
+Recommend a model capability class per phase. Do not hardcode a vendor-specific model ID. Let the user choose any available model.
 
-| Phase | Model | Reasoning |
-|-------|-------|-----------|
-| 0 (Init) | Haiku | Basic scope definition, lightweight |
-| 1 (Discover) | Sonnet | Multi-source synthesis, ecosystem analysis |
-| 2 (Specify) | Opus | Complex requirement formalization, EARS patterns |
-| 3 (Clarify) | Opus | Interactive refinement, stakeholder context |
-| 4 (Design) | Opus | Architecture decisions, multi-component systems |
-| 5 (Tasks) | Sonnet | Work breakdown, dependency mapping |
-| 6 (Analyze) | Sonnet | Cross-artifact analysis, compliance checks |
-| 7 (Implement) | Sonnet | Code scaffolding, quality checklists |
-| 8 (Verify) | Opus | Coverage analysis, drift detection |
-| 9 (Release) | Haiku | Final gates, documentation assembly |
+| Phase | Recommended Class | Reasoning |
+|-------|-------------------|-----------|
+| 0 (Init) | Fast | Basic scope definition and scaffolding |
+| 1 (Discover) | Balanced | Multi-source synthesis and ecosystem analysis |
+| 2 (Specify) | Reasoning-focused | Complex requirement formalization and EARS patterns |
+| 3 (Clarify) | Reasoning-focused | Ambiguity detection and refinement |
+| 4 (Design) | Reasoning-focused | Architecture decisions and trade-off analysis |
+| 5 (Tasks) | Balanced | Work breakdown and dependency mapping |
+| 6 (Analyze) | Balanced | Cross-artifact analysis and compliance checks |
+| 7 (Implement) | Balanced | Iterative implementation with executable feedback |
+| 8 (Verify) | Reasoning-focused | Coverage analysis and drift detection |
+| 9 (Release) | Fast | Deterministic final gates and documentation assembly |
 
-## Extended Thinking Impact
+## Extended Reasoning Guidance
 
 Reference: **arXiv:2502.08235** — "Extended Thinking and Specification Quality in Large Language Models"
 
-Key finding for Phase 7 (Implementation): Enabling extended thinking (chain-of-thought) reduces quality by 30% while increasing cost by 43% in code generation tasks. Recommendation: Use standard inference for Phase 7 scaffolding; reserve extended thinking for Phase 8 verification.
+For Phase 7 (Implementation), prioritize fast feedback loops over long reasoning traces. Reserve deeper reasoning for ambiguous design and verification tasks.
 
 ## Hook System
 
@@ -224,17 +224,17 @@ git push origin main --tags
 
 ## Agent Routing
 
-| Phase | Agent | Model |
-|-------|-------|-------|
-| Pre | @specky-onboarding | Haiku |
-| All | @specky-orchestrator | Sonnet |
-| 0 | @sdd-init | Haiku |
-| 1 | @research-analyst | Sonnet |
-| 2 | @spec-engineer | Opus |
-| 3 | @sdd-clarify | Opus |
-| 4 | @design-architect | Opus |
-| 5 | @task-planner | Sonnet |
-| 6 | @quality-reviewer | Sonnet |
-| 7 | @implementer | Sonnet |
-| 8 | @test-verifier | Opus |
-| 9 | @release-engineer | Haiku |
+| Phase | Agent | Recommended Class |
+|-------|-------|-------------------|
+| Pre | @specky-onboarding | Fast |
+| All | @specky-orchestrator | Balanced |
+| 0 | @sdd-init | Fast |
+| 1 | @research-analyst | Balanced |
+| 2 | @spec-engineer | Reasoning-focused |
+| 3 | @sdd-clarify | Reasoning-focused |
+| 4 | @design-architect | Reasoning-focused |
+| 5 | @task-planner | Balanced |
+| 6 | @quality-reviewer | Balanced |
+| 7 | @implementer | Balanced |
+| 8 | @test-verifier | Reasoning-focused |
+| 9 | @release-engineer | Fast |

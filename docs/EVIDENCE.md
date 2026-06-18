@@ -74,6 +74,7 @@ stash@{0}: On develop: specky-pre-branch-reset-develop-dirty-20260617T205947Z
 | ID contracts | Shared requirement/task ID helpers and parser tests | In progress; core parsers now accept canonical `T-001` and legacy `T001` |
 | Semantic gate | Orphaned requirements/tests/compliance failures block approval | In progress; EARS/design/task mapping gate tested |
 | Spec package completeness | New specs generate companion docs, diagrams, TDD status, evidence, and manifest | In progress; `sdd_write_spec`, `sdd_turnkey_spec`, `sdd_auto_pipeline`, and `sdd_batch_transcripts` now create companion package artifacts; `sdd_write_spec` is verified through MCP and scaffold phase blocking is tested |
+| Agent portability and permissions | `.apm` agents avoid hardcoded model IDs and declare required `sdd_*` tools used in instructions | Passed on 2026-06-17 via `node scripts/audit-agent-frontmatter.mjs` and model-frontmatter grep audit |
 | Documentation | C4, controls, determinism, branch governance and evidence docs present | In progress |
 | Release container | Dockerfile and `.dockerignore` for GHCR publish workflow | In progress; Dockerfile present and configured for HTTP on port 3200; local Docker daemon validation was unavailable in this run |
 
@@ -289,6 +290,28 @@ Coverage added:
 - Companion artifacts include README, DESIGN scaffold, TASKS scaffold, ADR, PLAYBOOK, DIAGRAMS, TDD_STATUS, EVIDENCE, and SPEC_PACKAGE manifest.
 - DESIGN and TASKS scaffolds carry `specky_scaffold: true` so they cannot be treated as final artifacts.
 
+### Agent Frontmatter and Model Neutrality
+
+Commands:
+
+```bash
+node scripts/audit-agent-frontmatter.mjs
+grep -RInE '^model:|^model_fallback:' .apm/agents
+```
+
+Result:
+
+```text
+Agent frontmatter audit passed for 13 agent files.
+```
+
+Coverage added:
+
+- Removed hardcoded `model` and `model_fallback` fields from all `.apm/agents/*.agent.md` files.
+- Added missing `sdd_*` tools in agent frontmatter where instructions referenced tools not previously declared.
+- Added CI gate `Audit agent frontmatter portability` in `.github/workflows/ci.yml`.
+- Replaced hardcoded model-family guidance in `.apm` instructions and skills with capability-class recommendations (fast, balanced, reasoning-focused).
+
 ### Dependency Audit
 
 Command:
@@ -331,6 +354,7 @@ Release-blocking high/critical vulnerabilities were remediated. One low severity
 ## Required Evidence Commands
 
 ```bash
+node scripts/audit-agent-frontmatter.mjs
 npm run build
 npm test
 npm run test:coverage
@@ -367,10 +391,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":
 
 - Explicitly triage the remaining low severity `esbuild` advisory.
 - Enforce publish preflight in GitHub Actions.
-- Add coverage thresholds.
-- Implement centralized tool enforcement.
-- Add audit verification command/tool.
-- Add deterministic snapshot tests.
+- Add an install-smoke assertion that generated `.github/agents` files contain no `model`/`model_fallback` keys.
 
 ## References
 

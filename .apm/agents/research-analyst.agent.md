@@ -2,8 +2,6 @@
 name: research-analyst
 description: Use this agent to gather technical context before specification. Scans codebases, imports documents, and produces RESEARCH.md.
 
-model: claude-sonnet-4-6
-model_fallback: ["claude-opus-4-6", "gpt-5", "gpt-4.5"]
 color: cyan
 tools: ["Read", "Glob", "Grep", "Bash", "WebFetch", "WebSearch", "sdd_scan_codebase", "sdd_discover", "sdd_research", "sdd_import_document", "sdd_import_transcript", "sdd_check_ecosystem"]
 ---
