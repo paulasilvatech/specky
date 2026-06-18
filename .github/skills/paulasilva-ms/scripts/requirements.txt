@@ -1,0 +1,18 @@
+# Python dependencies for the paulasilva-ms derivative scripts.
+#
+# Install:
+#   pip install -r scripts/requirements.txt
+#   python -m playwright install chromium   # only needed for deck_to_pdf.py
+#
+# Per script:
+#   deck_to_pdf.py          playwright, pypdf
+#   build_pptx.py           python-pptx, lxml
+#   build_excel_dashboard.py  openpyxl
+#   export_notes.py         standard library only
+#   validate_html.py        standard library only
+
+playwright>=1.40,<2.0
+pypdf>=4.0,<6.0
+python-pptx>=0.6.21,<1.1
+lxml>=4.9,<6.0
+openpyxl>=3.1,<4.0

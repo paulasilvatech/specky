@@ -1,63 +1,46 @@
-# Model Routing Reference
+# Model Recommendation Reference
 
-## Cost-Optimized Model Selection
+## Purpose
 
-The SDD pipeline routes each phase to the most cost-effective model based on task complexity. This routing is research-backed (arXiv:2502.08235).
+This reference defines how to recommend model capability classes per SDD phase without hardcoding provider-specific model IDs.
 
-## Routing Table
+Use this guidance to keep Specky portable across GitHub Copilot environments where model availability and policy differ by tenant.
 
-| Phase | Name | Model | Cost | Thinking | Rationale |
-|-------|------|-------|------|----------|-----------|
-| 0 | Init | claude-haiku-4-5 | 0.33x | No | Pure scaffolding — directory creation, template population |
-| 1 | Discover | claude-sonnet-4-6 | 1x | No | Information synthesis, not deep reasoning |
-| 2 | Specify | claude-opus-4-6 | 3x | Yes | EARS pattern formulation requires precise reasoning |
-| 3 | Clarify | claude-opus-4-6 | 3x | Yes | Deep language understanding for ambiguity detection |
-| 4 | Design | claude-opus-4-6 | 3x | Yes | Architecture decisions, trade-off analysis |
-| 5 | Tasks | claude-sonnet-4-6 | 1x | No | Dependency sequencing is algorithmic |
-| 6 | Analyze | claude-sonnet-4-6 | 1x | No | Cross-artifact analysis, compliance checks |
-| 7 | Implement | claude-sonnet-4-6 | 1x | No | Iterative with executable feedback |
-| 8 | Verify | claude-opus-4-6 | 3x | Yes | Coverage analysis, drift detection |
-| 9 | Release | claude-haiku-4-5 | 0.33x | No | Deterministic, template-based outputs |
+## Recommendation Table
 
-## Key Research Finding
+| Phase | Name | Recommended Class | Deep Reasoning | Rationale |
+| --- | --- | --- | --- | --- |
+| 0 | Init | Fast | No | Scaffolding and deterministic setup tasks |
+| 1 | Discover | Balanced | No | Multi-source synthesis with moderate complexity |
+| 2 | Specify | Reasoning-focused | Yes | Requirement formalization and EARS precision |
+| 3 | Clarify | Reasoning-focused | Yes | Ambiguity reduction and requirement refinement |
+| 4 | Design | Reasoning-focused | Yes | Architecture decisions and trade-off analysis |
+| 5 | Tasks | Balanced | No | Structured task decomposition and dependency mapping |
+| 6 | Analyze | Balanced | No | Cross-artifact analysis and compliance checks |
+| 7 | Implement | Balanced | No | Iterative execution with test and lint feedback |
+| 8 | Verify | Reasoning-focused | Yes | Coverage reasoning and drift interpretation |
+| 9 | Release | Fast | No | Final validation and deterministic release tasks |
 
-**arXiv:2502.08235** found that enabling extended thinking on Phase 7 (implementation):
-- Increases cost by +43%
-- Degrades output quality by -30%
+## Selection Rules
 
-This is because implementation is iterative with executable feedback (tests, linters, type checkers). The model doesn't need to reason deeply — it needs to generate, test, and iterate quickly.
-
-**Rule:** Only enable thinking for phases that involve ambiguity resolution without executable feedback (Phases 2, 3, 4, 8).
+1. Always let the user choose the concrete model available in their GitHub Copilot environment.
+2. Prefer fast models for deterministic, low-ambiguity tasks.
+3. Prefer balanced models for iterative coding and medium-complexity workflows.
+4. Prefer reasoning-focused models for ambiguity, architecture, and verification reasoning.
+5. If the selected model underperforms, escalate one class up for that subtask and return to the phase default afterward.
 
 ## Escalation Rules
 
-Within a phase, individual subtasks may warrant a different model:
+| Condition | Recommended Action |
+| --- | --- |
+| Task touches more than 10 files | Use a reasoning-focused model for planning, then return to balanced for execution |
+| More than 3 service boundaries | Use reasoning-focused model for interface and contract design |
+| Architecture trade-offs are unresolved | Use reasoning-focused model with explicit decision criteria |
+| Security-critical findings need investigation | Use reasoning-focused model for threat and mitigation analysis |
 
-| Condition | Escalation |
-|-----------|-----------|
-| Task touches >10 files | Escalate to Opus for planning, return to Sonnet for execution |
-| >3 service boundaries | Escalate to Opus for interface design |
-| Complex architecture decision | Escalate to Opus with thinking enabled |
-| Security review finding | Escalate to Opus for threat analysis |
+## Practical Notes
 
-Always return to the phase's default model after the escalated subtask completes.
-
-## Cost Projection
-
-For a typical medium feature (30 requirements, 50 tasks):
-
-| Phase | Calls | Model | Est. Cost |
-|-------|-------|-------|-----------|
-| 0 Init | 2-3 | Haiku | $0.02 |
-| 1 Discover | 5-8 | Sonnet | $0.15 |
-| 2 Specify | 3-5 | Opus | $0.45 |
-| 3 Clarify | 5-10 | Opus | $0.90 |
-| 4 Design | 3-5 | Opus | $0.45 |
-| 5 Tasks | 3-5 | Sonnet | $0.10 |
-| 6 Analyze | 10-20 | Sonnet | $0.40 |
-| 7 Implement | 5-8 | Sonnet | $0.15 |
-| 8 Verify | 3-5 | Opus | $0.45 |
-| 9 Release | 3-5 | Haiku | $0.02 |
-| **Total** | **42-74** | — | **~$3.09** |
-
-Without model routing (all Opus): ~$9.50. Savings: ~67%.
+- Do not encode concrete model IDs in agent frontmatter.
+- Do not assume a specific provider model is available.
+- Do not hardcode pricing values in prompts or skills unless sourced and versioned.
+- Report recommendations as classes: fast, balanced, reasoning-focused.

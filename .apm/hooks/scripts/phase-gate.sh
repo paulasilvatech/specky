@@ -56,7 +56,7 @@ case "$TOOL" in
   sdd_write_tasks)
     check_created "TASKS.md" "TASKS.md"
     check_has_content "TASKS.md" "REQ-[A-Z]+-[0-9]+" "REQ-ID traceability" 1
-    check_has_content "TASKS.md" "TASK-[0-9]+" "Task IDs" 3
+    check_has_content "TASKS.md" "T-?[0-9]{3}" "Task IDs" 3
     ;;
   sdd_verify_tests|sdd_verify_tasks)
     check_created "VERIFICATION.md" "VERIFICATION.md"

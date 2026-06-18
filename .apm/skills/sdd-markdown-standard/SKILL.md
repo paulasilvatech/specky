@@ -193,7 +193,7 @@ version: "1.2.3"
 revision_history:
   - version: "1.2.3"
     date: "2026-04-15"
-    author: "Claude Opus"
+    author: "GitHub Copilot"
     changes: "Added security requirements REQ-SEC-001 to REQ-SEC-005"
   - version: "1.2.2"
     date: "2026-04-14"
@@ -201,7 +201,7 @@ revision_history:
     changes: "Clarified API response format in REQ-API-003"
   - version: "1.2.1"
     date: "2026-04-13"
-    author: "Claude Opus"
+    author: "GitHub Copilot"
     changes: "Fixed typo in REQ-AUTH-002"
 ```
 

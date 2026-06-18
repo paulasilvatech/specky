@@ -1,7 +1,7 @@
 {
   "name": "specky-sdd",
-  "version": "3.4.0-rc.14",
-  "description": "Specky — Spec-Driven Development CLI toolkit. 57 MCP tools, 13 agents, 22 prompts, 8 skills, 16 hooks. Unified `specky` CLI installs to Claude Code or GitHub Copilot on macOS, Linux, and Windows.",
+  "version": "3.4.0-rc.15",
+  "description": "Specky — Spec-Driven Development CLI toolkit. 58 MCP tools, 13 agents, 22 prompts, 8 skills, 16 hooks. Unified `specky` CLI installs to Claude Code or GitHub Copilot on macOS, Linux, and Windows.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -22,7 +22,6 @@
   "files": [
     "dist/",
     ".apm/",
-    ".claude-plugin/",
     "templates/",
     "apm.yml",
     "config.yml",
@@ -56,6 +55,7 @@
   "homepage": "https://github.com/paulasilvatech/specky#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.6.1",
+    "yaml": "^2.9.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {

@@ -25,6 +25,7 @@ const VIEWER_TOOLS: readonly string[] = [
   "sdd_check_ecosystem",
   "sdd_list_checkpoints",
   "sdd_check_access",
+  "sdd_verify_audit",
 ] as const;
 
 /**

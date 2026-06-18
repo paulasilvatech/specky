@@ -29,7 +29,7 @@ const EXPECTED = {
   prompts: 22,
   skills: 8,
   hooks: 16,
-  templates: 23,
+  templates: 22,
 };
 
 let failed = 0;
@@ -131,7 +131,6 @@ step("npm pack includes all assets", () => {
 
   if (!out.includes("dist/cli/index.js")) throw new Error("CLI missing from tarball");
   if (!out.includes("dist/claude-hooks.json")) throw new Error("claude-hooks.json missing");
-  if (!out.includes(".claude-plugin/plugin.json")) throw new Error(".claude-plugin/plugin.json missing");
 });
 
 // ── 4. Fresh install smoke test ──────────────────────────

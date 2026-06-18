@@ -12,6 +12,7 @@ import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
 import type { EarsValidator } from "../services/ears-validator.js";
 import { enrichResponse } from "./response-builder.js";
+import { FeaturePackageGenerator } from "../services/feature-package-generator.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -64,6 +65,8 @@ export function registerTurnkeyTools(
   templateEngine: TemplateEngine,
   earsValidator: EarsValidator,
 ): void {
+  const featurePackageGenerator = new FeaturePackageGenerator(fileManager);
+
   server.registerTool(
     "sdd_turnkey_spec",
     {
@@ -174,6 +177,13 @@ export function registerTurnkeyTools(
         // Ensure directory and write file
         await fileManager.ensureSpecDir(spec_dir);
         const filePath = await fileManager.writeSpecFile(featureDir, "SPECIFICATION.md", content, force);
+        const featurePackage = await featurePackageGenerator.ensureFeaturePackage({
+          featureDir,
+          featureNumber: feature_number,
+          featureName: featureSlug,
+          specContent: content,
+          sourceTool: "sdd_turnkey_spec",
+        });
 
         // Initialize pipeline state properly using advancePhase
         const state = await stateMachine.loadState(spec_dir);
@@ -219,10 +229,11 @@ export function registerTurnkeyTools(
           ears_valid: validCount,
           ears_invalid: allRequirements.length - validCount,
           pattern_distribution: countPatterns(allRequirements),
+          feature_package: featurePackage,
           clarification_questions: clarifications,
           files_created: state.features.length === 0
-            ? ["CONSTITUTION.md", "SPECIFICATION.md", ".sdd-state.json"]
-            : ["SPECIFICATION.md"],
+            ? ["CONSTITUTION.md", "SPECIFICATION.md", ".sdd-state.json", ...featurePackage.created]
+            : ["SPECIFICATION.md", ...featurePackage.created],
           next_steps:
             clarifications.length > 0
               ? `Review ${clarifications.length} clarification questions below. You can: (1) call sdd_turnkey_spec again with clarification_responses to auto-refine, or (2) call sdd_clarify for interactive disambiguation. When satisfied, proceed to sdd_write_design.`
@@ -237,7 +248,7 @@ export function registerTurnkeyTools(
         const enriched = await enrichResponse("sdd_turnkey_spec", result, stateMachine, spec_dir, {
           completedPhase: Phase.Specify,
           nextPhase: Phase.Clarify,
-          artifactsProduced: ["SPECIFICATION.md"],
+          artifactsProduced: ["SPECIFICATION.md", ...featurePackage.created],
         });
         return {
           content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],

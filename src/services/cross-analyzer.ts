@@ -4,6 +4,7 @@
  */
 import type { FileManager } from "./file-manager.js";
 import type { CrossAnalysisResult, AlignmentCheck } from "../types.js";
+import { extractRequirementIds, extractTaskIds } from "../utils/id-contracts.js";
 
 export class CrossAnalyzer {
   constructor(private fileManager: FileManager) {}
@@ -13,7 +14,7 @@ export class CrossAnalyzer {
     const designContent = await this.safeRead(featureDir, "DESIGN.md");
     const tasksContent = await this.safeRead(featureDir, "TASKS.md");
 
-    const reqIds = this.extractIds(specContent, /### (REQ-[A-Z]+-\d{3})/g);
+    const reqIds = extractRequirementIds(specContent);
     const designRefs = designContent ? this.extractAllRefs(designContent) : [];
     const taskRefs = tasksContent ? this.extractAllRefs(tasksContent) : [];
 
@@ -57,11 +58,11 @@ export class CrossAnalyzer {
   }
 
   private extractAllRefs(content: string): string[] {
-    return this.extractIds(content, /REQ-[A-Z]+-\d{3}/g);
+    return extractRequirementIds(content);
   }
 
   private extractTaskIds(content: string): string[] {
-    return this.extractIds(content, /T\d{3}/g);
+    return extractTaskIds(content);
   }
 
   private generateTraceabilityDiagram(reqIds: string[], specDesign: AlignmentCheck[], designTasks: AlignmentCheck[]): string {

@@ -28,8 +28,11 @@ jobs:
 
       - run: npm run build
 
-      - name: Run unit tests
-        run: npm test
+      - name: Audit agent frontmatter portability
+        run: node scripts/audit-agent-frontmatter.mjs
+
+      - name: Run tests with coverage thresholds
+        run: npm run test:coverage
 
       - name: 'Check for : any usage in src/'
         run: |

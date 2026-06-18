@@ -8,7 +8,7 @@
  *   - Export formats: jsonl (default), syslog (RFC 5424), otlp (stub)
  */
 
-import { appendFile, mkdir, stat, rename, unlink } from "node:fs/promises";
+import { appendFile, mkdir, stat, rename, unlink, readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { createHash } from "node:crypto";
 
@@ -18,9 +18,20 @@ export interface AuditEntry {
   spec_dir: string;
   feature_number?: string;
   phase?: string;
+  role?: string;
   result: "success" | "error";
   summary?: string;
+  input_hash?: string;
+  output_hash?: string;
   previous_hash: string;
+}
+
+export interface AuditVerificationResult {
+  valid: boolean;
+  audit_file_exists: boolean;
+  total_entries: number;
+  current_hash: string;
+  errors: string[];
 }
 
 /** Seed value for the first entry's previous_hash field */
@@ -52,6 +63,8 @@ export class AuditLogger {
 
       // Rotate if needed before appending
       await this.rotateIfNeeded(auditFile);
+
+      entry.previous_hash = await this.readCurrentChainHash(auditFile);
 
       const line = JSON.stringify(entry) + "\n";
 
@@ -119,8 +132,71 @@ export class AuditLogger {
     this.lastHash = CHAIN_SEED;
   }
 
+  /** Verify hash-chain integrity for an audit file. */
+  async verifyChain(specDir: string): Promise<AuditVerificationResult> {
+    const auditFile = this.resolveAuditFile(specDir);
+    try {
+      const raw = await readFile(auditFile, "utf-8");
+      const lines = raw.split("\n").filter((line) => line.trim().length > 0);
+      const errors: string[] = [];
+      let expectedPreviousHash = CHAIN_SEED;
+      let currentHash = CHAIN_SEED;
+
+      for (let index = 0; index < lines.length; index++) {
+        const line = lines[index];
+        let entry: Partial<AuditEntry>;
+        try {
+          entry = JSON.parse(line) as Partial<AuditEntry>;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          errors.push(`Line ${index + 1}: invalid JSON (${message})`);
+          continue;
+        }
+
+        if (entry.previous_hash !== expectedPreviousHash) {
+          errors.push(`Line ${index + 1}: previous_hash mismatch`);
+        }
+
+        currentHash = createHash("sha256").update(line).digest("hex");
+        expectedPreviousHash = currentHash;
+      }
+
+      return {
+        valid: errors.length === 0,
+        audit_file_exists: true,
+        total_entries: lines.length,
+        current_hash: currentHash,
+        errors,
+      };
+    } catch {
+      return {
+        valid: true,
+        audit_file_exists: false,
+        total_entries: 0,
+        current_hash: CHAIN_SEED,
+        errors: [],
+      };
+    }
+  }
+
   private resolveAuditFile(specDir: string, _featureNumber?: string): string {
     return join(this.workspaceRoot, specDir, ".audit.jsonl");
+  }
+
+  /** Read the hash of the current last audit entry from disk. */
+  private async readCurrentChainHash(auditFile: string): Promise<string> {
+    try {
+      const raw = await readFile(auditFile, "utf-8");
+      const lines = raw.split("\n").filter((line) => line.trim().length > 0);
+      const lastLine = lines.at(-1);
+      if (!lastLine) return CHAIN_SEED;
+      const hash = createHash("sha256").update(lastLine).digest("hex");
+      this.lastHash = hash;
+      return hash;
+    } catch {
+      this.lastHash = CHAIN_SEED;
+      return CHAIN_SEED;
+    }
   }
 
   /** Rotate log files when size exceeds threshold */

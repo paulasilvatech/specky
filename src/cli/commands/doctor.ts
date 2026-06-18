@@ -10,6 +10,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { hashFile } from "../lib/asset-copier.js";
+import { detectIde } from "../lib/ide-detect.js";
 import { targetPaths, type Targets } from "../lib/paths.js";
 import { SPECKY_REQUIRED_ALLOWS } from "../lib/settings-merger.js";
 import { SPECKY_VSCODE_SETTINGS } from "../lib/vscode-settings-writer.js";
@@ -30,6 +31,20 @@ interface Check {
   name: string;
   pass: boolean;
   detail?: string;
+}
+
+type InstalledIde = "claude" | "copilot" | "both" | "auto";
+
+interface InstallMeta {
+  version: string;
+  ide: InstalledIde;
+  installed_at: string;
+}
+
+interface IdeResolution {
+  ide: InstalledIde;
+  source: "install.json" | "workspace-signals" | "default";
+  detail: string;
 }
 
 interface IntegrityReport {
@@ -134,13 +149,56 @@ function checkMcpRegistration(path: string, label: string): Check {
   };
 }
 
-function runConfigChecks(targets: Targets, workspace: string): Check[] {
-  return [
-    checkClaudePermissions(targets),
-    checkMcpRegistration(targets.shared.claudeMcp, ".mcp.json"),
-    checkMcpRegistration(targets.shared.vscodeMcp, ".vscode/mcp.json"),
-    checkVscodeSettings(workspace),
-  ];
+function loadInstallMeta(path: string): InstallMeta | null {
+  return readJsonSafe<InstallMeta>(path);
+}
+
+function resolveInstalledIde(
+  installMeta: InstallMeta | null,
+  workspace: string,
+): IdeResolution {
+  if (installMeta?.ide) {
+    return {
+      ide: installMeta.ide,
+      source: "install.json",
+      detail: "recorded in .specky/install.json",
+    };
+  }
+
+  const detected = detectIde(workspace);
+  if (detected.signals.length > 0) {
+    return {
+      ide: detected.recommendation,
+      source: "workspace-signals",
+      detail: `inferred from workspace signals: ${detected.signals.join(", ")}`,
+    };
+  }
+
+  return {
+    ide: "auto",
+    source: "default",
+    detail: "no install metadata or IDE signals found; validating shared defaults only",
+  };
+}
+
+function runConfigChecks(
+  targets: Targets,
+  workspace: string,
+  ide: InstalledIde,
+): Check[] {
+  const checks: Check[] = [];
+
+  if (ide === "claude" || ide === "both" || ide === "auto") {
+    checks.push(checkClaudePermissions(targets));
+    checks.push(checkMcpRegistration(targets.shared.claudeMcp, ".mcp.json"));
+  }
+
+  if (ide === "copilot" || ide === "both" || ide === "auto") {
+    checks.push(checkMcpRegistration(targets.shared.vscodeMcp, ".vscode/mcp.json"));
+    checks.push(checkVscodeSettings(workspace));
+  }
+
+  return checks;
 }
 
 function printIntegrity(report: IntegrityReport, verbose: boolean): void {
@@ -177,6 +235,7 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
   const workspace = opts.workspace ?? process.cwd();
   const targets = targetPaths(workspace);
   const lockPath = resolve(targets.shared.specky, "install.lock");
+  const installJsonPath = resolve(targets.shared.specky, "install.json");
 
   console.log(`[specky doctor] Workspace: ${workspace}`);
 
@@ -187,15 +246,20 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
   }
 
   const lock = JSON.parse(readFileSync(lockPath, "utf8")) as InstallLock;
+  const installMeta = loadInstallMeta(installJsonPath);
+  const resolvedIde = resolveInstalledIde(installMeta, workspace);
   console.log(
     `[specky doctor] Lock version: ${lock.version} (generated ${lock.generated_at})`,
   );
   console.log(`[specky doctor] Files tracked: ${Object.keys(lock.files).length}`);
+  console.log(
+    `[specky doctor] IDE scope: ${resolvedIde.ide} (${resolvedIde.detail})`,
+  );
 
   const integrity = verifyIntegrity(lock, targets.shared.specky);
   printIntegrity(integrity, opts.verbose);
 
-  const checks = runConfigChecks(targets, workspace);
+  const checks = runConfigChecks(targets, workspace, resolvedIde.ide);
   printChecks(checks);
 
   const integrityOk =
@@ -217,7 +281,7 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
     return init.runInit({
       force: true,
       dryRun: false,
-      ide: "auto",
+      ide: resolvedIde.ide,
       workspace,
     });
   }

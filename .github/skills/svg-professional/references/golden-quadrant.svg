@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1800" width="1200" height="1800" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: white;">
+
+  <!-- Title -->
+  <text x="80" y="50" font-size="28" font-weight="700" fill="#2C2C2A">Quadrante de impacto da IA por perfil</text>
+  <text x="80" y="80" font-size="16" fill="#888780">15 perfis SERPRO — média de redução de tempo por perfil (seções 1–15)</text>
+
+  <!-- Chart area: x=100..1100, y=130..1430 -->
+  <!-- Quadrant backgrounds (divider at y=873 = 75%) -->
+  <rect x="100" y="130" width="500" height="743" fill="#1D9E75" opacity="0.04"/>
+  <rect x="600" y="130" width="500" height="743" fill="#378ADD" opacity="0.04"/>
+  <rect x="100" y="873" width="500" height="557" fill="#BA7517" opacity="0.04"/>
+  <rect x="600" y="873" width="500" height="557" fill="#888780" opacity="0.02"/>
+
+  <!-- Quadrant dividers -->
+  <line x1="600" y1="130" x2="600" y2="1430" stroke="#D3D1C7" stroke-width="1" stroke-dasharray="6 4"/>
+  <line x1="100" y1="873" x2="1100" y2="873" stroke="#D3D1C7" stroke-width="1" stroke-dasharray="6 4"/>
+
+  <!-- Outer axes -->
+  <line x1="100" y1="1430" x2="1100" y2="1430" stroke="#B4B2A9" stroke-width="1"/>
+  <line x1="100" y1="130" x2="100" y2="1430" stroke="#B4B2A9" stroke-width="1"/>
+
+  <!-- Y-axis gridlines -->
+  <line x1="100" y1="316" x2="1100" y2="316" stroke="#D3D1C7" stroke-width="0.4" stroke-dasharray="3 5"/>
+  <line x1="100" y1="501" x2="1100" y2="501" stroke="#D3D1C7" stroke-width="0.4" stroke-dasharray="3 5"/>
+  <line x1="100" y1="687" x2="1100" y2="687" stroke="#D3D1C7" stroke-width="0.4" stroke-dasharray="3 5"/>
+  <line x1="100" y1="1059" x2="1100" y2="1059" stroke="#D3D1C7" stroke-width="0.4" stroke-dasharray="3 5"/>
+  <line x1="100" y1="1244" x2="1100" y2="1244" stroke="#D3D1C7" stroke-width="0.4" stroke-dasharray="3 5"/>
+
+  <!-- Y-axis labels -->
+  <text x="88" y="135" font-size="14" fill="#888780" text-anchor="end">95%</text>
+  <text x="88" y="321" font-size="14" fill="#888780" text-anchor="end">90%</text>
+  <text x="88" y="506" font-size="14" fill="#888780" text-anchor="end">85%</text>
+  <text x="88" y="692" font-size="14" fill="#888780" text-anchor="end">80%</text>
+  <text x="88" y="878" font-size="14" fill="#B4B2A9" text-anchor="end" font-weight="500">75%</text>
+  <text x="88" y="1064" font-size="14" fill="#888780" text-anchor="end">70%</text>
+  <text x="88" y="1249" font-size="14" fill="#888780" text-anchor="end">65%</text>
+  <text x="88" y="1435" font-size="14" fill="#888780" text-anchor="end">60%</text>
+
+  <!-- Y-axis title -->
+  <text x="28" y="780" font-size="15" fill="#5F5E5A" text-anchor="middle" transform="rotate(-90 28 780)">Impacto da IA (redução média de tempo)</text>
+
+  <!-- X-axis labels -->
+  <text x="100" y="1460" font-size="14" fill="#888780" text-anchor="start">Baixa</text>
+  <text x="600" y="1460" font-size="14" fill="#888780" text-anchor="middle">Média</text>
+  <text x="1100" y="1460" font-size="14" fill="#888780" text-anchor="end">Alta</text>
+  <text x="600" y="1485" font-size="15" fill="#5F5E5A" text-anchor="middle">Complexidade de implantação (stack de soluções recomendado)</text>
+
+  <!-- Quadrant labels -->
+  <text x="350" y="155" font-size="20" font-weight="600" fill="#1D9E75" opacity="0.35" text-anchor="middle">Ganho imediato</text>
+  <text x="850" y="155" font-size="20" font-weight="600" fill="#378ADD" opacity="0.35" text-anchor="middle">Investimento estratégico</text>
+  <text x="350" y="903" font-size="20" font-weight="600" fill="#BA7517" opacity="0.35" text-anchor="middle">Adoção orgânica</text>
+  <text x="850" y="903" font-size="20" font-weight="600" fill="#888780" opacity="0.35" text-anchor="middle">Avaliação sob demanda</text>
+
+  <!-- ============================================ -->
+  <!-- PROFILE DOTS AND LABELS                      -->
+  <!-- ============================================ -->
+  <!-- Arquiteto (92%) -->
+  <circle cx="680" cy="241" r="11" fill="#378ADD" stroke="white" stroke-width="3"/>
+  <line x1="668" y1="238" x2="652" y2="234" stroke="#B4B2A9" stroke-width="0.7" opacity="0.4"/>
+  <text x="648" y="228" font-size="15" font-weight="500" fill="#2C2C2A" text-anchor="end">Arquiteto</text>
+  <text x="648" y="246" font-size="13" fill="#378ADD" opacity="0.75" text-anchor="end">~92%</text>
+  <!-- Segurança (90%) -->
+  <circle cx="1000" cy="316" r="11" fill="#378ADD" stroke="white" stroke-width="3"/>
+  <line x1="988" y1="316" x2="972" y2="316" stroke="#B4B2A9" stroke-width="0.7" opacity="0.4"/>
+  <text x="968" y="313" font-size="15" font-weight="500" fill="#2C2C2A" text-anchor="end">Segurança</text>
+  <text x="968" y="331" font-size="13" fill="#378ADD" opacity="0.75" text-anchor="end">~90%</text>
+  <!-- Gestor de Negócio (89%) -->
+  <circle cx="520" cy="353" r="11" fill="#1D9E75" stroke="white" stroke-width="3"/>
+  <line x1="532" y1="348" x2="548" y2="343" stroke="#B4B2A9" stroke-width="0.7" opacity="0.4"/>
+  <text x="552" y="335" font-size="15" font-weight="500" fill="#2C2C2A" text-anchor="start">Gestor de Negócio</text>
+  <text x="552" y="353" font-size="13" fill="#1D9E75" opacity="0.75" text-anchor="start">~89%</text>
+  <!-- SRE / Operações (87%) -->
+  <circle cx="940" cy="427" r="11" fill="#378ADD" stroke="white" stroke-width="3"/>
+  <line x1="928" y1="427" x2="912" y2="427" stroke="#B4B2A9" stroke-width="0.7" opacity="0.4"/>
+  <text x="908" y="424" font-size="15" font-weight="500" fill="#2C2C2A" text-anchor="end">SRE / Operações</text>
+  <text x="908" y="442" font-size="13" fill="#378ADD" opacity="0.75" text-anchor="end">~87%</text>
+  <!-- Homologador (86%) -->
+  <circle cx="280" cy="464" r="11" fill="#1D9E75" stroke="white" stroke-width="3"/>
+  <line x1="292" y1="464" x2="308" y2="464" stroke="#B4B2A9" stroke-width="0.7" opacity="0.4"/>
+  <text x="312" y="461" font-size="15" font-weight="500" fill="#2C2C2A" text-anchor="start">Homologador</text>
+  <text x="312" y="479" font-size="13" fill="#1D9E75" opacity="0.75" text-anchor="start">~86%</text>
+  <!-- DevOps / Plataforma (85%) -->
+  <circle cx="780" cy="501" r="11" fill="#378ADD" stroke="white" stroke-width="3"/>
+  <line x1="768" y1="498" x2="752" y2="494" stroke="#B4B2A9" stroke-width="0.7" opacity="0.4"/>
+  <text x="748" y="488" font-size="15" font-weight="500" fill="#2C2C2A" text-anchor="end">DevOps / Plataforma</text>
+  <text x="748" y="506" font-size="13" fill="#378ADD" opacity="0.75" text-anchor="end">~85%</text>
+  <!-- Analista de Requisitos (84%) -->
+  <circle cx="490" cy="539" r="11" fill="#1D9E75" stroke="white" stroke-width="3"/>
+  <line x1="502" y1="534" x2="518" y2="529" stroke="#B4B2A9" stroke-width="0.7" opacity="0.4"/>
+  <text x="522" y="521" font-size="15" font-weight="500" fill="#2C2C2A" text-anchor="start">Analista de Requisitos</text>
+  <text x="522" y="539" font-size="13" fill="#1D9E75" opacity="0.75" text-anchor="start">~84%</text>
+  <!-- AppSec (84%) -->
+  <circle cx="820" cy="539" r="11" fill="#378ADD" stroke="white" stroke-width="3"/>
+  <line x1="808" y1="544" x2="792" y2="549" stroke="#B4B2A9" stroke-width="0.7" opacity="0.4"/>
+  <text x="788" y="551" font-size="15" font-weight="500" fill="#2C2C2A" text-anchor="end">AppSec</text>
+  <text x="788" y="569" font-size="13" fill="#378ADD" opacity="0.75" text-anchor="end">~84%</text>
+  <!-- Product Owner (83%) -->
+  <circle cx="460" cy="576" r="11" fill="#1D9E75" stroke="white" stroke-width="3"/>
+  <line x1="472" y1="581" x2="488" y2="586" stroke="#B4B2A9" stroke-width="0.7" opacity="0.4"/>
+  <text x="492" y="588" font-size="15" font-weight="500" fill="#2C2C2A" text-anchor="start">Product Owner</text>
+  <text x="492" y="606" font-size="13" fill="#1D9E75" opacity="0.75" text-anchor="start">~83%</text>
+  <!-- DBA (82%) -->
+  <circle cx="340" cy="613" r="11" fill="#1D9E75" stroke="white" stroke-width="3"/>
+  <line x1="352" y1="613" x2="368" y2="613" stroke="#B4B2A9" stroke-width="0.7" opacity="0.4"/>
+  <text x="372" y="610" font-size="15" font-weight="500" fill="#2C2C2A" text-anchor="start">DBA</text>
+  <text x="372" y="628" font-size="13" fill="#1D9E75" opacity="0.75" text-anchor="start">~82%</text>
+  <!-- QA / Qualidade (80%) -->
+  <circle cx="260" cy="687" r="11" fill="#1D9E75" stroke="white" stroke-width="3"/>
+  <line x1="272" y1="683" x2="288" y2="679" stroke="#B4B2A9" stroke-width="0.7" opacity="0.4"/>
+  <text x="292" y="672" font-size="15" font-weight="500" fill="#2C2C2A" text-anchor="start">QA / Qualidade</text>
+  <text x="292" y="690" font-size="13" fill="#1D9E75" opacity="0.75" text-anchor="start">~80%</text>
+  <!-- Líder Técnico (79%) -->
+  <circle cx="300" cy="724" r="11" fill="#1D9E75" stroke="white" stroke-width="3"/>
+  <line x1="312" y1="729" x2="328" y2="734" stroke="#B4B2A9" stroke-width="0.7" opacity="0.4"/>
+  <text x="332" y="736" font-size="15" font-weight="500" fill="#2C2C2A" text-anchor="start">Líder Técnico</text>
+  <text x="332" y="754" font-size="13" fill="#1D9E75" opacity="0.75" text-anchor="start">~79%</text>
+  <!-- Gestor de Projeto (77%) -->
+  <circle cx="700" cy="799" r="11" fill="#378ADD" stroke="white" stroke-width="3"/>
+  <line x1="688" y1="799" x2="672" y2="799" stroke="#B4B2A9" stroke-width="0.7" opacity="0.4"/>
+  <text x="668" y="796" font-size="15" font-weight="500" fill="#2C2C2A" text-anchor="end">Gestor de Projeto</text>
+  <text x="668" y="814" font-size="13" fill="#378ADD" opacity="0.75" text-anchor="end">~77%</text>
+  <!-- Desenvolvedor (70%) -->
+  <circle cx="200" cy="1059" r="11" fill="#BA7517" stroke="white" stroke-width="3"/>
+  <line x1="212" y1="1059" x2="228" y2="1059" stroke="#B4B2A9" stroke-width="0.7" opacity="0.4"/>
+  <text x="232" y="1056" font-size="15" font-weight="500" fill="#2C2C2A" text-anchor="start">Desenvolvedor</text>
+  <text x="232" y="1074" font-size="13" fill="#BA7517" opacity="0.75" text-anchor="start">~70%</text>
+  <!-- Scrum Master (65%) -->
+  <circle cx="380" cy="1244" r="11" fill="#BA7517" stroke="white" stroke-width="3"/>
+  <line x1="392" y1="1244" x2="408" y2="1244" stroke="#B4B2A9" stroke-width="0.7" opacity="0.4"/>
+  <text x="412" y="1241" font-size="15" font-weight="500" fill="#2C2C2A" text-anchor="start">Scrum Master</text>
+  <text x="412" y="1259" font-size="13" fill="#BA7517" opacity="0.75" text-anchor="start">~65%</text>
+
+  <!-- ============================================ -->
+  <!-- LEGEND                                        -->
+  <!-- ============================================ -->
+  <circle cx="115" cy="1530" r="9" fill="#1D9E75"/>
+  <text x="138" y="1534" font-size="16" font-weight="600" fill="#1D9E75">Ganho imediato</text>
+  <text x="138" y="1554" font-size="13" fill="#888780">Alto impacto (≥75%), baixa complexidade — retorno rápido, ROI em semanas</text>
+
+  <circle cx="650" cy="1530" r="9" fill="#378ADD"/>
+  <text x="673" y="1534" font-size="16" font-weight="600" fill="#378ADD">Investimento estratégico</text>
+  <text x="673" y="1554" font-size="13" fill="#888780">Alto impacto (≥75%), alta complexidade — requer planejamento por fases</text>
+
+  <circle cx="115" cy="1600" r="9" fill="#BA7517"/>
+  <text x="138" y="1604" font-size="16" font-weight="600" fill="#BA7517">Adoção orgânica</text>
+  <text x="138" y="1624" font-size="13" fill="#888780">Impacto moderado (&lt;75%), baixa complexidade — entrada natural via IDE/M365</text>
+
+  <circle cx="650" cy="1600" r="9" fill="#888780"/>
+  <text x="673" y="1604" font-size="16" font-weight="600" fill="#888780">Avaliação sob demanda</text>
+  <text x="673" y="1624" font-size="13" fill="#888780">Impacto moderado (&lt;75%), complexidade alta — avaliar caso a caso</text>
+
+</svg>

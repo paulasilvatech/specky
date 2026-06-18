@@ -1,0 +1,223 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 720" width="1120" height="720"
+     style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; background: white;">
+
+  <!-- ============================================ -->
+  <!-- DEFS                                          -->
+  <!-- ============================================ -->
+  <defs>
+    <marker id="arr" markerWidth="9" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M1,1.2 L8,4 L1,6.8" fill="#B4B2A9" stroke="none"/>
+    </marker>
+  </defs>
+
+  <!-- ============================================ -->
+  <!-- TITLE BLOCK                                   -->
+  <!-- ============================================ -->
+  <text x="60" y="38" font-size="24" font-weight="700" fill="#2C2C2A">DevOps / Platform Engineer — AI-Augmented Workflows</text>
+  <text x="60" y="62" font-size="14" fill="#888780">4 core flows · GitHub Copilot + Azure stack · ~85 % average time reduction</text>
+  <rect x="60"  y="74" width="60" height="3" rx="1.5" fill="#0078D4"/>
+  <rect x="124" y="74" width="60" height="3" rx="1.5" fill="#7FBA00"/>
+  <rect x="188" y="74" width="60" height="3" rx="1.5" fill="#FFB900"/>
+  <rect x="252" y="74" width="60" height="3" rx="1.5" fill="#F25022"/>
+
+  <!-- ============================================ -->
+  <!-- SECTION BACKGROUNDS                           -->
+  <!-- y-centers: 157 · 297 · 437 · 577             -->
+  <!-- ============================================ -->
+  <rect x="40" y="92"  width="1040" height="130" rx="8" fill="#0078D4" opacity="0.03"/>
+  <rect x="40" y="232" width="1040" height="130" rx="8" fill="#7FBA00" opacity="0.04"/>
+  <rect x="40" y="372" width="1040" height="130" rx="8" fill="#FFB900" opacity="0.04"/>
+  <rect x="40" y="512" width="1040" height="130" rx="8" fill="#F25022" opacity="0.04"/>
+
+  <!-- Section labels — rotated -90°, centered on each flow -->
+  <text x="55" y="157" font-size="10" font-weight="700" fill="#0078D4" opacity="0.40"
+        letter-spacing="1.5" text-anchor="middle"
+        transform="rotate(-90 55 157)">GOLDEN PATHS</text>
+
+  <text x="55" y="297" font-size="10" font-weight="700" fill="#7FBA00" opacity="0.45"
+        letter-spacing="1.5" text-anchor="middle"
+        transform="rotate(-90 55 297)">PROVISIONING</text>
+
+  <text x="55" y="437" font-size="10" font-weight="700" fill="#BA7517" opacity="0.45"
+        letter-spacing="1.5" text-anchor="middle"
+        transform="rotate(-90 55 437)">CONTAINERS</text>
+
+  <text x="55" y="577" font-size="10" font-weight="700" fill="#F25022" opacity="0.40"
+        letter-spacing="1.5" text-anchor="middle"
+        transform="rotate(-90 55 577)">SECRET MGMT</text>
+
+  <!-- ============================================ -->
+  <!-- METRIC BADGES — aligned column at x=920      -->
+  <!-- All vertically centered on their flow         -->
+  <!-- ============================================ -->
+  <rect x="920" y="143" width="110" height="28" rx="14" fill="#0078D4" opacity="0.07"/>
+  <text x="975" y="162" text-anchor="middle" font-size="12" font-weight="600" fill="#0078D4">~85 % faster</text>
+
+  <rect x="920" y="283" width="110" height="28" rx="14" fill="#7FBA00" opacity="0.07"/>
+  <text x="975" y="302" text-anchor="middle" font-size="12" font-weight="600" fill="#7FBA00">~90 % faster</text>
+
+  <rect x="920" y="423" width="110" height="28" rx="14" fill="#FFB900" opacity="0.07"/>
+  <text x="975" y="442" text-anchor="middle" font-size="12" font-weight="600" fill="#BA7517">~80 % faster</text>
+
+  <rect x="920" y="563" width="110" height="28" rx="14" fill="#F25022" opacity="0.07"/>
+  <text x="975" y="582" text-anchor="middle" font-size="12" font-weight="600" fill="#F25022">~88 % faster</text>
+
+  <!-- ============================================ -->
+  <!-- FLOW 1: GOLDEN PATHS  center_y=157            -->
+  <!-- A(155) → B(375) → fork [C, D] (660)          -->
+  <!-- ============================================ -->
+
+  <!-- A: DevOps / Plataforma  155,134 170×46  right=(325,157) -->
+  <rect x="155" y="134" width="170" height="46" rx="10" fill="white" stroke="#0078D4" stroke-width="1.5"/>
+  <text x="240" y="154" text-anchor="middle" font-size="13" font-weight="600" fill="#2C2C2A">DevOps / Platform</text>
+  <text x="240" y="170" text-anchor="middle" font-size="11" fill="#888780">defines standards</text>
+
+  <!-- Arrow A→B  horizontal  (325,157)→(375,157) -->
+  <path d="M325,157 H374" stroke="#B4B2A9" stroke-width="1.3" fill="none" marker-end="url(#arr)"/>
+
+  <!-- B: Golden Paths  375,134 178×46  left=(375,157) right=(553,157) -->
+  <rect x="375" y="134" width="178" height="46" rx="10" fill="white" stroke="#0078D4" stroke-width="2"/>
+  <circle cx="393" cy="157" r="8" fill="#0078D4" opacity="0.15"/>
+  <text x="393" y="161" font-size="9" fill="#0078D4" text-anchor="middle" font-weight="700">✦</text>
+  <text x="474" y="154" text-anchor="middle" font-size="13" font-weight="600" fill="#0078D4">Golden Paths</text>
+  <text x="474" y="170" text-anchor="middle" font-size="11" fill="#888780">IaC Modules</text>
+
+  <!-- Fork B→C  orthogonal with Q corners  (553,157) → (660,131) -->
+  <path d="M553,157 H598 Q608,157 608,147 V141 Q608,131 618,131 H659"
+        stroke="#B4B2A9" stroke-width="1.3" fill="none" marker-end="url(#arr)"/>
+
+  <!-- Fork B→D  orthogonal with Q corners  (553,157) → (660,183) -->
+  <path d="M553,157 H598 Q608,157 608,167 V173 Q608,183 618,183 H659"
+        stroke="#B4B2A9" stroke-width="1.3" fill="none" marker-end="url(#arr)"/>
+
+  <!-- C: Azure Key Vault  660,112 155×38  left=(660,131) -->
+  <rect x="660" y="112" width="155" height="38" rx="8" fill="white" stroke="#0078D4" stroke-width="1.2"/>
+  <text x="737" y="136" text-anchor="middle" font-size="13" font-weight="500" fill="#2C2C2A">Azure Key Vault</text>
+
+  <!-- D: GHAS  660,164 155×38  left=(660,183) -->
+  <rect x="660" y="164" width="155" height="38" rx="8" fill="white" stroke="#F25022" stroke-width="1.2"/>
+  <text x="737" y="188" text-anchor="middle" font-size="13" font-weight="500" fill="#2C2C2A">GHAS</text>
+
+  <!-- ============================================ -->
+  <!-- FLOW 2: PROVISIONING  center_y=297            -->
+  <!-- A(155) → B(330) → C(530) → D(730)            -->
+  <!-- ============================================ -->
+
+  <!-- A: Novo Projeto  155,274 128×46  right=(283,297) -->
+  <rect x="155" y="274" width="128" height="46" rx="10" fill="white" stroke="#7FBA00" stroke-width="1.5"/>
+  <text x="219" y="294" text-anchor="middle" font-size="13" font-weight="600" fill="#2C2C2A">New Project</text>
+  <text x="219" y="310" text-anchor="middle" font-size="11" fill="#888780">request</text>
+
+  <!-- Arrow A→B  (283,297)→(330,297) -->
+  <path d="M283,297 H329" stroke="#B4B2A9" stroke-width="1.3" fill="none" marker-end="url(#arr)"/>
+
+  <!-- B: Copilot Agent  330,274 152×46  left=(330,297) right=(482,297) -->
+  <rect x="330" y="274" width="152" height="46" rx="10" fill="white" stroke="#7FBA00" stroke-width="2"/>
+  <circle cx="348" cy="297" r="8" fill="#7FBA00" opacity="0.15"/>
+  <text x="348" y="301" font-size="9" fill="#7FBA00" text-anchor="middle" font-weight="700">✦</text>
+  <text x="416" y="294" text-anchor="middle" font-size="13" font-weight="600" fill="#7FBA00">Copilot Agent</text>
+  <text x="416" y="310" text-anchor="middle" font-size="11" fill="#888780">scaffolding</text>
+
+  <!-- Arrow B→C  (482,297)→(530,297) -->
+  <path d="M482,297 H529" stroke="#B4B2A9" stroke-width="1.3" fill="none" marker-end="url(#arr)"/>
+
+  <!-- C: Terraform / Bicep  530,274 152×46  left=(530,297) right=(682,297) -->
+  <rect x="530" y="274" width="152" height="46" rx="10" fill="white" stroke="#FFB900" stroke-width="1.5"/>
+  <text x="606" y="294" text-anchor="middle" font-size="13" font-weight="600" fill="#2C2C2A">Terraform / Bicep</text>
+  <text x="606" y="310" text-anchor="middle" font-size="11" fill="#888780">generated modules</text>
+
+  <!-- Arrow C→D  (682,297)→(730,297) -->
+  <path d="M682,297 H729" stroke="#B4B2A9" stroke-width="1.3" fill="none" marker-end="url(#arr)"/>
+
+  <!-- D: Azure / AWS  730,274 140×46  left=(730,297) -->
+  <rect x="730" y="274" width="140" height="46" rx="10" fill="white" stroke="#0078D4" stroke-width="1.5"/>
+  <text x="800" y="294" text-anchor="middle" font-size="13" font-weight="600" fill="#2C2C2A">Azure / AWS</text>
+  <text x="800" y="310" text-anchor="middle" font-size="11" fill="#888780">portal deploy</text>
+
+  <!-- ============================================ -->
+  <!-- FLOW 3: CONTAINERIZATION  center_y=437        -->
+  <!-- A(155) → B(330) → C(530) → D(730)            -->
+  <!-- ============================================ -->
+
+  <!-- A: App Pronta  155,414 128×46  right=(283,437) -->
+  <rect x="155" y="414" width="128" height="46" rx="10" fill="white" stroke="#FFB900" stroke-width="1.5"/>
+  <text x="219" y="434" text-anchor="middle" font-size="13" font-weight="600" fill="#2C2C2A">App Ready</text>
+  <text x="219" y="450" text-anchor="middle" font-size="11" fill="#888780">stable code</text>
+
+  <!-- Arrow A→B  (283,437)→(330,437) -->
+  <path d="M283,437 H329" stroke="#B4B2A9" stroke-width="1.3" fill="none" marker-end="url(#arr)"/>
+
+  <!-- B: Dockerfile Copilot  330,414 152×46  left=(330,437) right=(482,437) -->
+  <rect x="330" y="414" width="152" height="46" rx="10" fill="white" stroke="#FFB900" stroke-width="2"/>
+  <circle cx="348" cy="437" r="8" fill="#FFB900" opacity="0.15"/>
+  <text x="348" y="441" font-size="9" fill="#BA7517" text-anchor="middle" font-weight="700">✦</text>
+  <text x="416" y="434" text-anchor="middle" font-size="13" font-weight="600" fill="#BA7517">Dockerfile Copilot</text>
+  <text x="416" y="450" text-anchor="middle" font-size="11" fill="#888780">optimized</text>
+
+  <!-- Arrow B→C  (482,437)→(530,437) -->
+  <path d="M482,437 H529" stroke="#B4B2A9" stroke-width="1.3" fill="none" marker-end="url(#arr)"/>
+
+  <!-- C: k8s Manifests  530,414 152×46  left=(530,437) right=(682,437) -->
+  <rect x="530" y="414" width="152" height="46" rx="10" fill="white" stroke="#0078D4" stroke-width="1.5"/>
+  <text x="606" y="434" text-anchor="middle" font-size="13" font-weight="600" fill="#2C2C2A">k8s Manifests</text>
+  <text x="606" y="450" text-anchor="middle" font-size="11" fill="#888780">deploy specs</text>
+
+  <!-- Arrow C→D  (682,437)→(730,437) -->
+  <path d="M682,437 H729" stroke="#B4B2A9" stroke-width="1.3" fill="none" marker-end="url(#arr)"/>
+
+  <!-- D: Cluster Production  730,414 140×46  left=(730,437) -->
+  <rect x="730" y="414" width="140" height="46" rx="10" fill="white" stroke="#7FBA00" stroke-width="2"/>
+  <text x="800" y="434" text-anchor="middle" font-size="13" font-weight="600" fill="#2C2C2A">Cluster</text>
+  <text x="800" y="450" text-anchor="middle" font-size="11" fill="#7FBA00" font-weight="500">Production</text>
+
+  <!-- ============================================ -->
+  <!-- FLOW 4: SECRET MGMT  center_y=577             -->
+  <!-- A(155) → B(378) → C(613)                     -->
+  <!-- ============================================ -->
+
+  <!-- A: Secret Encontrado  155,554 168×46  right=(323,577) -->
+  <rect x="155" y="554" width="168" height="46" rx="10" fill="white" stroke="#F25022" stroke-width="1.5"/>
+  <text x="239" y="574" text-anchor="middle" font-size="13" font-weight="600" fill="#2C2C2A">Secret Detected</text>
+  <text x="239" y="590" text-anchor="middle" font-size="11" fill="#F25022" font-weight="500">GHAS alert</text>
+
+  <!-- Arrow A→B  (323,577)→(378,577) -->
+  <path d="M323,577 H377" stroke="#B4B2A9" stroke-width="1.3" fill="none" marker-end="url(#arr)"/>
+
+  <!-- B: Copilot Remediation  378,554 180×46  left=(378,577) right=(558,577) -->
+  <rect x="378" y="554" width="180" height="46" rx="10" fill="white" stroke="#F25022" stroke-width="2"/>
+  <circle cx="396" cy="577" r="8" fill="#F25022" opacity="0.15"/>
+  <text x="396" y="581" font-size="9" fill="#F25022" text-anchor="middle" font-weight="700">✦</text>
+  <text x="478" y="574" text-anchor="middle" font-size="13" font-weight="600" fill="#F25022">Copilot Remediation</text>
+  <text x="478" y="590" text-anchor="middle" font-size="11" fill="#888780">auto-rotation</text>
+
+  <!-- Arrow B→C  (558,577)→(613,577) -->
+  <path d="M558,577 H612" stroke="#B4B2A9" stroke-width="1.3" fill="none" marker-end="url(#arr)"/>
+
+  <!-- C: Azure Key Vault  613,554 168×46  left=(613,577) -->
+  <rect x="613" y="554" width="168" height="46" rx="10" fill="white" stroke="#0078D4" stroke-width="1.5"/>
+  <text x="697" y="574" text-anchor="middle" font-size="13" font-weight="600" fill="#2C2C2A">Azure Key Vault</text>
+  <text x="697" y="590" text-anchor="middle" font-size="11" fill="#888780">secure migration</text>
+
+  <!-- ============================================ -->
+  <!-- LEGEND                                        -->
+  <!-- ============================================ -->
+  <line x1="40" y1="660" x2="1080" y2="660" stroke="#E8E6DF" stroke-width="1"/>
+
+  <circle cx="80" cy="690" r="7" fill="#0078D4" opacity="0.15" stroke="#0078D4" stroke-width="1.5"/>
+  <text x="80" y="694" font-size="9" fill="#0078D4" text-anchor="middle" font-weight="700">✦</text>
+  <text x="100" y="694" font-size="12" font-weight="500" fill="#2C2C2A">AI-assisted step</text>
+
+  <rect x="240" y="682" width="26" height="16" rx="4" fill="white" stroke="#7FBA00" stroke-width="1.5"/>
+  <text x="276" y="694" font-size="12" font-weight="500" fill="#2C2C2A">Output artifact</text>
+
+  <rect x="410" y="682" width="26" height="16" rx="4" fill="white" stroke="#0078D4" stroke-width="1.5"/>
+  <text x="446" y="694" font-size="12" font-weight="500" fill="#2C2C2A">Azure service</text>
+
+  <rect x="570" y="682" width="26" height="16" rx="4" fill="white" stroke="#F25022" stroke-width="1.5"/>
+  <text x="606" y="694" font-size="12" font-weight="500" fill="#2C2C2A">Security layer</text>
+
+  <rect x="730" y="682" width="70" height="18" rx="9" fill="#0078D4" opacity="0.07"/>
+  <text x="765" y="695" text-anchor="middle" font-size="10" font-weight="600" fill="#0078D4">~N %</text>
+  <text x="812" y="694" font-size="12" font-weight="500" fill="#2C2C2A">Time reduction</text>
+
+</svg>

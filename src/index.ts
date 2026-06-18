@@ -61,6 +61,8 @@ import { TestTraceabilityMapper } from "./services/test-traceability-mapper.js";
 import { RateLimiter } from "./services/rate-limiter.js";
 import { RbacEngine } from "./services/rbac-engine.js";
 import { registerRbacTools } from "./tools/rbac.js";
+import { installToolEnforcement } from "./tools/tool-enforcement.js";
+import { registerAuditTools } from "./tools/audit.js";
 
 // Resolve workspace root
 const workspaceRoot = process.env["SDD_WORKSPACE"] || process.cwd();
@@ -115,7 +117,7 @@ const docGenerator = new DocGenerator(fileManager, stateMachine);
 const gitManager = new GitManager(fileManager);
 const testGenerator = new TestGenerator(fileManager);
 const pbtGenerator = new PbtGenerator(fileManager);
-new AuditLogger(
+const auditLogger = new AuditLogger(
   workspaceRoot,
   config.audit_enabled,
   config.audit.export_format,
@@ -132,6 +134,12 @@ const cognitiveDebtEngine = new CognitiveDebtEngine();
 const intentDriftEngine = new IntentDriftEngine();
 const testResultParser = new TestResultParser();
 const testTraceabilityMapper = new TestTraceabilityMapper();
+
+installToolEnforcement(server, {
+  auditLogger,
+  rbacEngine,
+  stateMachine,
+});
 
 // Register all tools (57 total)
 // v1 tools
@@ -156,6 +164,7 @@ registerMetricsTools(server, fileManager, stateMachine, metricsGenerator, cognit
 registerRoutingTools(server, modelRoutingEngine);
 registerContextTools(server, fileManager, stateMachine, contextTieringEngine);
 registerRbacTools(server, rbacEngine);
+registerAuditTools(server, auditLogger);
 
 // Graceful shutdown
 let isShuttingDown = false;

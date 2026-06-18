@@ -36,8 +36,9 @@ if [ -z "${CLAUDE_PROJECT_DIR:-}" ] && [ -n "${SDD_TOOL_NAME:-}" ]; then
   exit 0
 fi
 # Fallback: if no stdin is available and no CLAUDE_USER_PROMPT, skip gracefully.
-# This catches Copilot calling us as a lifecycle hook where stdin has tool data.
-if [ -z "${CLAUDE_USER_PROMPT:-}" ] && [ -z "${CLAUDE_PROJECT_DIR:-}" ]; then
+# Non-interactive stdin may contain a real prompt JSON payload in Claude Code
+# or in the test harness, so only skip when stdin is interactive.
+if [ -z "${CLAUDE_USER_PROMPT:-}" ] && [ -z "${CLAUDE_PROJECT_DIR:-}" ] && [ -t 0 ]; then
   exit 0
 fi
 

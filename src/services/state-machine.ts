@@ -9,6 +9,7 @@ import type { FileManager } from "./file-manager.js";
 import { join } from "node:path";
 import { stat } from "node:fs/promises";
 import { createHmac, createHash } from "node:crypto";
+import { SPECKY_SCAFFOLD_MARKER } from "./feature-package-generator.js";
 
 const SIG_FILE = ".sdd-state.json.sig";
 
@@ -119,19 +120,7 @@ export class StateMachine {
       };
     }
 
-    // Check required files for current phase
-    const requiredFiles = PHASE_REQUIRED_FILES[state.current_phase];
-    const missingFiles: string[] = [];
-
-    for (const fileName of requiredFiles) {
-      const featureDir = state.features[0];
-      if (featureDir) {
-        const exists = await this.fileManager.fileExists(join(featureDir, fileName));
-        if (!exists) {
-          missingFiles.push(fileName);
-        }
-      }
-    }
+    const { missingFiles, scaffoldFiles } = await this.checkRequiredArtifacts(state);
 
     if (missingFiles.length > 0) {
       return {
@@ -143,11 +132,55 @@ export class StateMachine {
       };
     }
 
+    if (scaffoldFiles.length > 0) {
+      return {
+        allowed: false,
+        from_phase: state.current_phase,
+        to_phase: targetPhase,
+        missing_files: scaffoldFiles,
+        error_message: `Cannot advance: scaffold artifacts must be completed first: ${scaffoldFiles.join(", ")}`,
+      };
+    }
+
     return {
       allowed: true,
       from_phase: state.current_phase,
       to_phase: targetPhase,
     };
+  }
+
+  private async checkRequiredArtifacts(state: SddState): Promise<{
+    missingFiles: string[];
+    scaffoldFiles: string[];
+  }> {
+    const requiredFiles = PHASE_REQUIRED_FILES[state.current_phase];
+    const featureDir = state.features[0];
+    if (!featureDir) return { missingFiles: [], scaffoldFiles: [] };
+
+    const missingFiles: string[] = [];
+    const scaffoldFiles: string[] = [];
+
+    for (const fileName of requiredFiles) {
+      const exists = await this.fileManager.fileExists(join(featureDir, fileName));
+      if (!exists) {
+        missingFiles.push(fileName);
+        continue;
+      }
+      const isScaffold = await this.isScaffoldArtifact(featureDir, fileName);
+      if (isScaffold) scaffoldFiles.push(fileName);
+    }
+
+    return { missingFiles, scaffoldFiles };
+  }
+
+  private async isScaffoldArtifact(featureDir: string, fileName: string): Promise<boolean> {
+    if (fileName !== "DESIGN.md" && fileName !== "TASKS.md") return false;
+    try {
+      const content = await this.fileManager.readSpecFile(featureDir, fileName);
+      return content.includes(SPECKY_SCAFFOLD_MARKER);
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -327,6 +360,7 @@ export class StateMachine {
       sdd_restore: [],
       sdd_list_checkpoints: [],
       sdd_check_ecosystem: [],
+      sdd_verify_audit: [],
       sdd_metrics: [],
       sdd_research: [],
 
