@@ -62,8 +62,8 @@ stash@{0}: On develop: specky-pre-branch-reset-develop-dirty-20260617T205947Z
 | Area | Evidence Required | Status |
 | --- | --- | --- |
 | Build | `npm run build` output | Passed on 2026-06-17 |
-| Unit and integration tests | `npm test` output | Passed on 2026-06-17: 14 files, 107 tests |
-| Coverage | `npm run test:coverage` and thresholds | Passed on 2026-06-17: statements 53.41%, branches 42.22%, functions 63.47%, lines 54.96% |
+| Unit and integration tests | `npm test` output | Passed on 2026-06-17: 16 files, 111 tests |
+| Coverage | `npm run test:coverage` and thresholds | Passed on 2026-06-17: statements 56.14%, branches 43.82%, functions 67.91%, lines 57.89% |
 | Dependency audit | `npm audit --audit-level=high` | Passed on 2026-06-17; 1 low severity advisory remains |
 | MCP handshake | JSON-RPC initialize response includes Specky server metadata | Passed on 2026-06-17 |
 | Fresh install | `npm pack` plus fresh workspace `npx specky install`, `doctor`, `status` | Passed on 2026-06-17 |
@@ -73,6 +73,7 @@ stash@{0}: On develop: specky-pre-branch-reset-develop-dirty-20260617T205947Z
 | Filesystem boundary | Path traversal and outside-workspace paths rejected | Passed for document import |
 | ID contracts | Shared requirement/task ID helpers and parser tests | In progress; core parsers now accept canonical `T-001` and legacy `T001` |
 | Semantic gate | Orphaned requirements/tests/compliance failures block approval | In progress; EARS/design/task mapping gate tested |
+| Spec package completeness | New specs generate companion docs, diagrams, TDD status, evidence, and manifest | In progress; `sdd_write_spec`, `sdd_turnkey_spec`, `sdd_auto_pipeline`, and `sdd_batch_transcripts` now create companion package artifacts; `sdd_write_spec` is verified through MCP and scaffold phase blocking is tested |
 | Documentation | C4, controls, determinism, branch governance and evidence docs present | In progress |
 | Release container | Dockerfile and `.dockerignore` for GHCR publish workflow | In progress; Dockerfile present and configured for HTTP on port 3200; local Docker daemon validation was unavailable in this run |
 
@@ -99,8 +100,8 @@ npm test
 Result:
 
 ```text
-Test Files  14 passed (14)
-Tests       107 passed (107)
+Test Files  16 passed (16)
+Tests       111 passed (111)
 ```
 
 ### Coverage
@@ -114,12 +115,12 @@ npm run test:coverage
 Result:
 
 ```text
-Test Files  14 passed (14)
-Tests       107 passed (107)
-Statements  53.41%
-Branches    42.22%
-Functions   63.47%
-Lines       54.96%
+Test Files  16 passed (16)
+Tests       111 passed (111)
+Statements  56.14%
+Branches    43.82%
+Functions   67.91%
+Lines       57.89%
 ```
 
 Configured thresholds in `vitest.config.ts`:
@@ -265,6 +266,28 @@ Coverage added:
 
 - `sdd_run_analysis` approves when requirements are valid EARS and mapped through design and tasks.
 - `sdd_run_analysis` does not approve when design/task mappings are missing.
+
+### Spec Package Completeness
+
+Command:
+
+```bash
+npx vitest run tests/integration/spec-package-mcp.test.ts
+```
+
+Result:
+
+```text
+Test Files  1 passed (1)
+Tests       1 passed (1)
+```
+
+Coverage added:
+
+- `sdd_write_spec` creates the complete feature package through MCP.
+- `sdd_turnkey_spec`, `sdd_auto_pipeline`, and `sdd_batch_transcripts` call the same feature package generator.
+- Companion artifacts include README, DESIGN scaffold, TASKS scaffold, ADR, PLAYBOOK, DIAGRAMS, TDD_STATUS, EVIDENCE, and SPEC_PACKAGE manifest.
+- DESIGN and TASKS scaffolds carry `specky_scaffold: true` so they cannot be treated as final artifacts.
 
 ### Dependency Audit
 

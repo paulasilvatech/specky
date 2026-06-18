@@ -3,6 +3,8 @@ import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync, mkdirSync
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createHmac, createHash } from "node:crypto";
+import { Phase } from "../../src/constants.js";
+import { SPECKY_SCAFFOLD_MARKER } from "../../src/services/feature-package-generator.js";
 import { StateMachine } from "../../src/services/state-machine.js";
 import { FileManager } from "../../src/services/file-manager.js";
 
@@ -117,5 +119,22 @@ describe("StateMachine — state file integrity (HMAC-SHA256)", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const loaded = await stateMachine.loadState(specDir);
     expect(loaded.project_name).toBe("degrade-test");
+  });
+
+  it("does not allow phase advancement with scaffold design artifacts", async () => {
+    const featureDir = `${specDir}/001-scaffolded`;
+    mkdirSync(join(tempDir, featureDir), { recursive: true });
+    writeFileSync(join(tempDir, featureDir, "DESIGN.md"), `---\n${SPECKY_SCAFFOLD_MARKER}\n---\n# Scaffold\n`);
+
+    const state = stateMachine.createDefaultState("scaffolded");
+    state.features = [featureDir];
+    state.current_phase = Phase.Design;
+    state.phases[Phase.Design] = { status: "in_progress" };
+    await stateMachine.saveState(specDir, state);
+
+    const result = await stateMachine.canTransition(specDir, Phase.Tasks);
+
+    expect(result.allowed).toBe(false);
+    expect(result.error_message).toContain("scaffold artifacts must be completed");
   });
 });

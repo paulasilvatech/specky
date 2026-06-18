@@ -128,7 +128,8 @@ export class FileManager {
 
     try {
       const entries = await readdir(absPath, { withFileTypes: true });
-      for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+      const sortedEntries = [...entries].sort((a, b) => a.name.localeCompare(b.name));
+      for (const entry of sortedEntries) {
         if (entry.isDirectory() && /^\d{3}-/.test(entry.name)) {
           const featureDir = join(specDir, entry.name);
           const match = entry.name.match(/^(\d{3})-(.+)$/);
@@ -189,8 +190,9 @@ export class FileManager {
     const absPath = this.sanitizePath(dir);
     try {
       const entries = await readdir(absPath, { withFileTypes: true });
+      const sortedEntries = [...entries].sort((a, b) => a.name.localeCompare(b.name));
       const matched: string[] = [];
-      for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+      for (const entry of sortedEntries) {
         if (entry.isFile()) {
           const lower = entry.name.toLowerCase();
           if (extensions.some((ext) => lower.endsWith(ext))) {

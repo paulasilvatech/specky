@@ -21,6 +21,7 @@ import {
   batchTranscriptsInputSchema,
 } from "../schemas/transcript.js";
 import { enrichResponse } from "./response-builder.js";
+import { FeaturePackageGenerator } from "../services/feature-package-generator.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -42,6 +43,8 @@ export function registerTranscriptTools(
   earsValidator: EarsValidator,
   transcriptParser: TranscriptParser
 ): void {
+  const featurePackageGenerator = new FeaturePackageGenerator(fileManager);
+
   // ─── sdd_import_transcript ───
   server.registerTool(
     "sdd_import_transcript",
@@ -368,6 +371,15 @@ export function registerTranscriptTools(
         await fileManager.writeSpecFile(featureDir, "TRANSCRIPT.md", transcriptMd, force);
         filesCreated.push("TRANSCRIPT.md");
 
+        const featurePackage = await featurePackageGenerator.ensureFeaturePackage({
+          featureDir,
+          featureNumber: "001",
+          featureName: project_name,
+          specContent,
+          sourceTool: "sdd_auto_pipeline",
+        });
+        filesCreated.push(...featurePackage.created);
+
         // ── Step 9: Finalize state — advance Tasks → Analyze and set gate decision ──
         await stateMachine.advancePhase(spec_dir, "001");  // Tasks → Analyze
         await stateMachine.recordPhaseComplete(spec_dir, Phase.Analyze);
@@ -396,6 +408,7 @@ export function registerTranscriptTools(
           feature_dir: featureDir,
           transcript_source: file_path || "inline-paste",
           files_created: filesCreated,
+          feature_package: featurePackage,
           summary: {
             participants: analysis.participants,
             topics_extracted: analysis.topics.length,
@@ -481,6 +494,7 @@ export function registerTranscriptTools(
           feature_number: string;
           status: string;
           requirements: number;
+          package_artifacts?: number;
           error?: string;
         }> = [];
 
@@ -638,6 +652,14 @@ export function registerTranscriptTools(
             const transcriptMd = transcriptParser.toMarkdown(analysis);
             await fileManager.writeSpecFile(featureDir, "TRANSCRIPT.md", transcriptMd, force);
 
+            const featurePackage = await featurePackageGenerator.ensureFeaturePackage({
+              featureDir,
+              featureNumber: featureNum,
+              featureName: projectName,
+              specContent,
+              sourceTool: "sdd_batch_transcripts",
+            });
+
             // State for this feature
             const state = stateMachine.createDefaultState(projectName);
             state.features = [featureDir];
@@ -665,6 +687,7 @@ export function registerTranscriptTools(
               feature_number: featureNum,
               status: "completed",
               requirements: earsRequirements.length,
+              package_artifacts: featurePackage.created.length,
             });
 
             featureSeq++;

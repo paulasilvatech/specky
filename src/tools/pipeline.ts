@@ -10,6 +10,7 @@ import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
 import type { EarsValidator } from "../services/ears-validator.js";
+import { FeaturePackageGenerator, SPECKY_SCAFFOLD_MARKER } from "../services/feature-package-generator.js";
 import { enrichResponse } from "./response-builder.js";
 import { routingEngine } from "../utils/routing-helper.js";
 import { extractRequirementIds } from "../utils/id-contracts.js";
@@ -33,6 +34,21 @@ function truncate(text: string): string {
   return text.slice(0, CHARACTER_LIMIT) + "\n\n[TRUNCATED] Response exceeded 25,000 characters. Use sdd_get_status to see current state.";
 }
 
+async function shouldOverwriteScaffold(
+  fileManager: FileManager,
+  featureDir: string,
+  fileName: string,
+  force: boolean,
+): Promise<boolean> {
+  if (force) return true;
+  try {
+    const content = await fileManager.readSpecFile(featureDir, fileName);
+    return content.includes(SPECKY_SCAFFOLD_MARKER);
+  } catch {
+    return false;
+  }
+}
+
 export function registerPipelineTools(
   server: McpServer,
   fileManager: FileManager,
@@ -40,6 +56,8 @@ export function registerPipelineTools(
   templateEngine: TemplateEngine,
   earsValidator: EarsValidator
 ): void {
+  const featurePackageGenerator = new FeaturePackageGenerator(fileManager);
+
   // ─── sdd_init ───
   server.registerTool(
     "sdd_init",
@@ -301,6 +319,13 @@ export function registerPipelineTools(
         });
 
         const filePath = await fileManager.writeSpecFile(featureDir, "SPECIFICATION.md", content, force);
+        const featurePackage = await featurePackageGenerator.ensureFeaturePackage({
+          featureDir,
+          featureNumber: feature_number,
+          featureName: feature_name.toLowerCase().replace(/\s+/g, "-"),
+          specContent: content,
+          sourceTool: "sdd_write_spec",
+        });
 
         // Update state
         await stateMachine.recordPhaseStart(spec_dir, Phase.Specify);
@@ -310,6 +335,7 @@ export function registerPipelineTools(
           status: "specification_written",
           file: filePath,
           requirement_count: requirements.length,
+          feature_package: featurePackage,
           validation_issues: validationIssues.length > 0 ? validationIssues : undefined,
           next_action: "Review the specification. Call sdd_advance_phase when ready, then sdd_clarify for disambiguation.",
         };
@@ -317,7 +343,7 @@ export function registerPipelineTools(
         const enriched = await enrichResponse("sdd_write_spec", result, stateMachine, spec_dir, {
           completedPhase: Phase.Specify,
           nextPhase: Phase.Clarify,
-          artifactsProduced: ["SPECIFICATION.md"],
+          artifactsProduced: ["SPECIFICATION.md", ...featurePackage.created],
           summaryOfWork: `Generated ${requirements.length} EARS requirements`,
         });
         return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
@@ -553,7 +579,8 @@ export function registerPipelineTools(
           `## 10. Architecture Decision Records\n\n${adrsContent}`
         );
 
-        const filePath = await fileManager.writeSpecFile(feature.directory, "DESIGN.md", finalContent, force);
+        const overwriteDesign = await shouldOverwriteScaffold(fileManager, feature.directory, "DESIGN.md", force);
+        const filePath = await fileManager.writeSpecFile(feature.directory, "DESIGN.md", finalContent, overwriteDesign);
 
         await stateMachine.recordPhaseStart(spec_dir, Phase.Design);
         await stateMachine.recordPhaseComplete(spec_dir, Phase.Design);
@@ -649,7 +676,8 @@ export function registerPipelineTools(
           total_effort: `${tasks.length} tasks`,
         });
 
-        const filePath = await fileManager.writeSpecFile(feature.directory, "TASKS.md", content, force);
+        const overwriteTasks = await shouldOverwriteScaffold(fileManager, feature.directory, "TASKS.md", force);
+        const filePath = await fileManager.writeSpecFile(feature.directory, "TASKS.md", content, overwriteTasks);
 
         await stateMachine.recordPhaseStart(spec_dir, Phase.Tasks);
         await stateMachine.recordPhaseComplete(spec_dir, Phase.Tasks);
