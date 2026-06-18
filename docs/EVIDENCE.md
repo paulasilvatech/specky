@@ -351,6 +351,42 @@ npm audit --audit-level=high
 
 Release-blocking high/critical vulnerabilities were remediated. One low severity `esbuild` advisory remains in the development toolchain.
 
+## rc.15 Release & Consistency Hardening (2026-06-17)
+
+Following the initial `v3.4.0-rc.15` publication, a consistency audit found that the advertised MCP tool count had not been fully propagated after `sdd_verify_audit` was added (the count moved from 57 to 58). The drift was corrected and anchored with an automated guard so it cannot recur.
+
+### Release facts
+
+| Item | Value |
+| --- | --- |
+| Branch merge | `develop` -> `main` (merge commit `123c130`) |
+| Tag | `v3.4.0-rc.15` (pushed) |
+| GitHub release | Published as pre-release |
+| npm dist-tags | `next` = `3.4.0-rc.15`, `latest` = `3.4.0-rc.14` |
+
+### Consistency corrections
+
+| Area | Change |
+| --- | --- |
+| Tool count | Corrected `57` -> `58` across the MCP server description, plugin manifest, RBAC admin role, README, GETTING-STARTED, CONTRIBUTING, SECURITY, and the onboarding agent/skill |
+| Source counts | CONTRIBUTING corrected to 88 source files and 22 templates |
+| Version metadata | `apm.yml` and `config.yml` synced `3.3.2` -> `3.4.0-rc.15` |
+| Regression guard | Added `tests/unit/tool-count.test.ts` asserting registered tools == `TOTAL_TOOLS` == 58 |
+| Publish workflow | `.github/workflows/publish.yml` deduplicated to a single `release: published` trigger |
+| Documentation | README now links all five enterprise docs (System Design, Enterprise Controls, Determinism, Branch Governance, Evidence) |
+
+### Validation gates (2026-06-17)
+
+| Gate | Result |
+| --- | --- |
+| `npm run build` | Passed |
+| `npm test` | Passed — 17 files, 113 tests |
+| `node scripts/audit-agent-frontmatter.mjs` | Passed — 13 agents, no `model`/`model_fallback` keys |
+| `npm audit --audit-level=high` | Passed — one low-severity `esbuild` dev advisory remains |
+| `npm pack --dry-run` | Passed — 468 files, 397.6 kB |
+
+> Note: `src/index.ts` and `src/tools/rbac.ts` carry runtime-visible strings (the MCP server description and the RBAC admin role description). Because `3.4.0-rc.15` was already published to npm, these corrected strings ship in the next published build (`rc.16` or the stable `3.4.0`).
+
 ## Required Evidence Commands
 
 ```bash

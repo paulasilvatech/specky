@@ -5,6 +5,23 @@ All notable changes to Specky are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- Corrected the advertised MCP tool count from `57` to `58` across the MCP server description, the `apm.yml` plugin manifest, the RBAC admin role description, `README.md`, `GETTING-STARTED.md`, `CONTRIBUTING.md`, `SECURITY.md`, and the onboarding agent and skill. The runtime already registered 58 tools; this aligns all user-facing copy with `TOTAL_TOOLS`.
+- Corrected `CONTRIBUTING.md` to report 88 source files and 22 templates.
+- Synced the stale `version` metadata in `apm.yml` and `config.yml` to match the package version.
+
+### Added
+
+- Added `tests/unit/tool-count.test.ts`, a regression guard asserting that the number of registered tools equals `TOTAL_TOOLS` (58) so the advertised count cannot drift again.
+
+### Changed
+
+- Deduplicated the `publish.yml` workflow to a single `release: published` trigger, preventing duplicate npm publish attempts per release.
+- Linked all five enterprise documents (System Design, Enterprise Controls, Determinism, Branch Governance, Evidence) from the README.
+
 ## [3.4.0-rc.15] - 2026-06-17
 
 ### Added
