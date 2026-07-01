@@ -22,6 +22,7 @@ import {
 } from "../schemas/transcript.js";
 import { enrichResponse } from "./response-builder.js";
 import { FeaturePackageGenerator } from "../services/feature-package-generator.js";
+import { AnalysisEngine } from "../services/analysis-engine.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -44,6 +45,7 @@ export function registerTranscriptTools(
   transcriptParser: TranscriptParser
 ): void {
   const featurePackageGenerator = new FeaturePackageGenerator(fileManager);
+  const analysisEngine = new AnalysisEngine(earsValidator);
 
   // ─── sdd_import_transcript ───
   server.registerTool(
@@ -622,29 +624,42 @@ export function registerTranscriptTools(
             });
             await fileManager.writeSpecFile(featureDir, "TASKS.md", tasksContent, force);
 
-            // ANALYSIS.md
+            // ANALYSIS.md — real quality gate over the artifacts we just wrote
+            // (shared engine, no hard-coded APPROVE/100%). Auto-generated
+            // packages typically land at CHANGES_NEEDED until traceability is
+            // completed, which is the honest signal.
+            const gate = analysisEngine.analyze({
+              hasConstitution: true,
+              hasSpec: true,
+              hasDesign: true,
+              hasTasks: true,
+              specContent,
+              designContent,
+              tasksContent,
+            });
             const analysisContent = await templateEngine.renderWithFrontmatter("analysis", {
               title: `${projectName} — Analysis`,
               feature_id: `${featureNum}-${projectName}`,
               project_name: projectName,
-              gate_decision: "APPROVE",
-              coverage_percent: "100",
-              traceability_matrix: "| All docs | Present | — | — | ✅ |",
-              design_coverage: "100%",
-              task_coverage: "100%",
+              gate_decision: gate.decision,
+              coverage_percent: String(gate.coveragePercent),
+              traceability_matrix: gate.traceMatrix,
+              design_coverage: `${gate.designCoverage}%`,
+              task_coverage: `${gate.taskCoverage}%`,
               test_coverage: "Pending",
-              gaps: analysis.open_questions.length > 0
-                ? analysis.open_questions.map((q) => `Open: ${q}`)
-                : ["No gaps"],
+              gaps: gate.gaps.length > 0
+                ? gate.gaps
+                : analysis.open_questions.map((q) => `Open: ${q}`),
               recommendations: [
                 "Review auto-generated EARS requirements",
+                ...gate.gaps.map((g) => `Remediate: ${g}`),
                 ...analysis.action_items.slice(0, 3).map((a) => `Action: ${a}`),
               ],
-              ears_compliance: "Pass",
-              ears_status: "✅",
-              coverage_status: "✅",
-              orphan_count: "0",
-              orphan_status: "✅",
+              ears_compliance: `${gate.earsCoverage}%`,
+              ears_status: gate.earsCoverage === 100 ? "✅" : "❌",
+              coverage_status: gate.coveragePercent >= 90 ? "✅" : "❌",
+              orphan_count: String(gate.orphanCount),
+              orphan_status: gate.orphanCount === 0 ? "✅" : "❌",
             });
             await fileManager.writeSpecFile(featureDir, "ANALYSIS.md", analysisContent, force);
 

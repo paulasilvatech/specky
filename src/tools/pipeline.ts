@@ -11,9 +11,10 @@ import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
 import type { EarsValidator } from "../services/ears-validator.js";
 import { FeaturePackageGenerator, SPECKY_SCAFFOLD_MARKER } from "../services/feature-package-generator.js";
+import { AnalysisEngine } from "../services/analysis-engine.js";
 import { enrichResponse } from "./response-builder.js";
 import { routingEngine } from "../utils/routing-helper.js";
-import { extractRequirementIds } from "../utils/id-contracts.js";
+import { slugify } from "../utils/slug.js";
 import {
   initInputSchema,
   discoverInputSchema,
@@ -57,6 +58,7 @@ export function registerPipelineTools(
   earsValidator: EarsValidator
 ): void {
   const featurePackageGenerator = new FeaturePackageGenerator(fileManager);
+  const analysisEngine = new AnalysisEngine(earsValidator);
 
   // ─── sdd_init ───
   server.registerTool(
@@ -96,15 +98,18 @@ export function registerPipelineTools(
 
         await fileManager.writeSpecFile(featureDir, "CONSTITUTION.md", content);
 
-        // Initialize state machine
-        const state = stateMachine.createDefaultState(project_name);
-        state.features = [featureDir];
-        state.phases[Phase.Init] = {
-          status: "completed",
-          started_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-        };
-        await stateMachine.saveState(spec_dir, state);
+        // Initialize state machine (under the state lock so a pipelined
+        // sdd_discover cannot load a half-written state and drop the feature).
+        await stateMachine.withStateLock(spec_dir, async () => {
+          const state = stateMachine.createDefaultState(project_name);
+          state.features = [featureDir];
+          state.phases[Phase.Init] = {
+            status: "completed",
+            started_at: new Date().toISOString(),
+            completed_at: new Date().toISOString(),
+          };
+          await stateMachine.saveState(spec_dir, state);
+        });
 
         const result = {
           status: "initialized",
@@ -272,7 +277,18 @@ export function registerPipelineTools(
           };
         }
 
-        const featureDir = join(spec_dir, `${feature_number}-${feature_name.toLowerCase().replace(/\s+/g, "-")}`);
+        // Resolve the feature package from disk so the spec lands in the same
+        // directory sdd_init created. Feature identity comes from the pipeline
+        // state, never re-derived from the display name — otherwise the package
+        // forks (e.g. 001-user-auth vs 001-user-authentication) and phase
+        // advancement stalls on a "missing SPECIFICATION.md" that was written
+        // into the wrong directory.
+        const existingFeature = (await fileManager.listFeatures(spec_dir)).find(
+          (f) => f.number === feature_number,
+        );
+        const featureSlug = existingFeature?.name ?? slugify(feature_name);
+        const featureDir = existingFeature?.directory ?? join(spec_dir, `${feature_number}-${featureSlug}`);
+        const featureId = `${feature_number}-${featureSlug}`;
 
         // Validate EARS patterns
         const validationIssues: string[] = [];
@@ -306,7 +322,7 @@ export function registerPipelineTools(
 
         const content = await templateEngine.renderWithFrontmatter("specification", {
           title: `${feature_name} — Specification`,
-          feature_id: `${feature_number}-${feature_name.toLowerCase().replace(/\s+/g, "-")}`,
+          feature_id: featureId,
           project_name: feature_name,
           requirements_core: reqSections.join("\n"),
           requirements_functional: "",
@@ -322,10 +338,18 @@ export function registerPipelineTools(
         const featurePackage = await featurePackageGenerator.ensureFeaturePackage({
           featureDir,
           featureNumber: feature_number,
-          featureName: feature_name.toLowerCase().replace(/\s+/g, "-"),
+          featureName: featureSlug,
           specContent: content,
           sourceTool: "sdd_write_spec",
         });
+
+        // Register a newly created feature so state-driven resolution and phase
+        // gating (which read state.features) can find it on the next call.
+        if (!existingFeature) {
+          await stateMachine.mutateState(spec_dir, (state) => {
+            if (!state.features.includes(featureDir)) state.features.push(featureDir);
+          });
+        }
 
         // Update state
         await stateMachine.recordPhaseStart(spec_dir, Phase.Specify);
@@ -752,81 +776,18 @@ export function registerPipelineTools(
         const hasDesign = files.includes("DESIGN.md");
         const hasTasks = files.includes("TASKS.md");
 
-        const gaps: string[] = [];
-        if (!hasConstitution) gaps.push("CONSTITUTION.md missing");
-        if (!hasSpec) gaps.push("SPECIFICATION.md missing");
-        if (!hasDesign) gaps.push("DESIGN.md missing");
-        if (!hasTasks) gaps.push("TASKS.md missing");
-
         const specContent = hasSpec ? await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md") : "";
         const designContent = hasDesign ? await fileManager.readSpecFile(feature.directory, "DESIGN.md") : "";
         const tasksContent = hasTasks ? await fileManager.readSpecFile(feature.directory, "TASKS.md") : "";
 
-        const reqIds = extractRequirementIds(specContent);
-        const requirementRows = reqIds.map((reqId) => {
-          const reqSectionPattern = new RegExp(String.raw`###\s+${reqId}[^\n]*\n+([\s\S]*?)(?=\n###\s+REQ-|\n---|$)`, "m");
-          const reqSection = reqSectionPattern.exec(specContent)?.[1] ?? "";
-          const requirementText = reqSection
-            .split("\n")
-            .map((line) => line.trim())
-            .find((line) => /\bshall\b/i.test(line)) ?? "";
-          const earsValidation = requirementText
-            ? earsValidator.validate(requirementText)
-            : { valid: false, pattern: "unknown" as const, issues: ["No EARS statement found"] };
-          const designMapped = designContent.includes(reqId);
-          const taskMapped = tasksContent.includes(reqId);
-
-          return {
-            reqId,
-            earsValid: earsValidation.valid,
-            designMapped,
-            taskMapped,
-            status: earsValidation.valid && designMapped && taskMapped ? "Pass" : "Gap",
-          };
+        const analysis = analysisEngine.analyze({
+          hasConstitution, hasSpec, hasDesign, hasTasks,
+          specContent, designContent, tasksContent,
         });
-
-        if (hasSpec && reqIds.length === 0) gaps.push("No requirement IDs found in SPECIFICATION.md");
-
-        const invalidEars = requirementRows.filter((row) => !row.earsValid).map((row) => row.reqId);
-        const missingDesignRefs = requirementRows.filter((row) => !row.designMapped).map((row) => row.reqId);
-        const missingTaskRefs = requirementRows.filter((row) => !row.taskMapped).map((row) => row.reqId);
-        if (invalidEars.length > 0) gaps.push(`EARS invalid or missing for: ${invalidEars.join(", ")}`);
-        if (missingDesignRefs.length > 0) gaps.push(`Design mapping missing for: ${missingDesignRefs.join(", ")}`);
-        if (missingTaskRefs.length > 0) gaps.push(`Task mapping missing for: ${missingTaskRefs.join(", ")}`);
-
-        const documentCoverage = Math.round(([hasConstitution, hasSpec, hasDesign, hasTasks].filter(Boolean).length / 4) * 100);
-        const earsCoverage = reqIds.length > 0
-          ? Math.round(((reqIds.length - invalidEars.length) / reqIds.length) * 100)
-          : 0;
-        const designCoverage = reqIds.length > 0
-          ? Math.round(((reqIds.length - missingDesignRefs.length) / reqIds.length) * 100)
-          : 0;
-        const taskCoverage = reqIds.length > 0
-          ? Math.round(((reqIds.length - missingTaskRefs.length) / reqIds.length) * 100)
-          : 0;
-        const coveragePercent = Math.round((documentCoverage + earsCoverage + designCoverage + taskCoverage) / 4);
-
-        let decision: "APPROVE" | "CHANGES_NEEDED" | "BLOCK";
-        const reasons: string[] = [];
-
-        if (gaps.length === 0 && coveragePercent >= 90) {
-          decision = "APPROVE";
-          reasons.push("All core documents are present and requirements are mapped through design and tasks.");
-        } else if (coveragePercent >= 70) {
-          decision = "CHANGES_NEEDED";
-          reasons.push(`Evidence coverage at ${coveragePercent}% — gaps require remediation.`);
-        } else {
-          decision = "BLOCK";
-          reasons.push(`Evidence coverage at ${coveragePercent}% — critical specification evidence is missing.`);
-        }
-
-        // Build traceability matrix
-        const fallbackDesignStatus = hasDesign ? "Present" : "Missing";
-        const fallbackTaskStatus = hasTasks ? "Present" : "Missing";
-        const fallbackStatus = hasSpec ? "No requirements found" : "Missing spec";
-        const traceMatrix = requirementRows.length > 0
-          ? requirementRows.map((row) => `| ${row.reqId} | ${row.designMapped ? "Mapped" : "Missing"} | ${row.taskMapped ? "Mapped" : "Missing"} | Pending | ${row.status} |`).join("\n")
-          : `| Documents | ${fallbackDesignStatus} | ${fallbackTaskStatus} | Pending | ${fallbackStatus} |`;
+        const {
+          decision, reasons, coveragePercent, earsCoverage, designCoverage, taskCoverage,
+          gaps, orphanCount, traceMatrix,
+        } = analysis;
 
         const gateDecision = {
           decision,
@@ -853,16 +814,16 @@ export function registerPipelineTools(
           ears_compliance: `${earsCoverage}%`,
           ears_status: earsCoverage === 100 ? "✅" : "❌",
           coverage_status: coveragePercent >= 90 ? "✅" : "❌",
-          orphan_count: String(missingDesignRefs.length + missingTaskRefs.length),
-          orphan_status: missingDesignRefs.length + missingTaskRefs.length === 0 ? "✅" : "❌",
+          orphan_count: String(orphanCount),
+          orphan_status: orphanCount === 0 ? "✅" : "❌",
         });
 
         const filePath = await fileManager.writeSpecFile(feature.directory, "ANALYSIS.md", content, force);
 
         // Update state with gate decision
-        const state = await stateMachine.loadState(spec_dir);
-        state.gate_decision = gateDecision;
-        await stateMachine.saveState(spec_dir, state);
+        await stateMachine.mutateState(spec_dir, (state) => {
+          state.gate_decision = gateDecision;
+        });
         await stateMachine.recordPhaseStart(spec_dir, Phase.Analyze);
         await stateMachine.recordPhaseComplete(spec_dir, Phase.Analyze);
 

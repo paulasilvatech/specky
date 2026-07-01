@@ -13,6 +13,7 @@ import type { TemplateEngine } from "../services/template-engine.js";
 import type { EarsValidator } from "../services/ears-validator.js";
 import { enrichResponse } from "./response-builder.js";
 import { FeaturePackageGenerator } from "../services/feature-package-generator.js";
+import { slugify } from "../utils/slug.js";
 
 function formatError(toolName: string, error: Error): string {
   return `[${toolName}] Error: ${error.message}`;
@@ -86,8 +87,14 @@ export function registerTurnkeyTools(
     },
     async ({ feature_name, description, feature_number, spec_dir, force, clarification_responses }) => {
       try {
-        const featureSlug = feature_name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-        const featureDir = join(spec_dir, `${feature_number}-${featureSlug}`);
+        // Reuse the existing feature package when one is already on disk;
+        // otherwise derive a canonical slug. Identity is resolved from state,
+        // never forked from the display name.
+        const existingFeature = (await fileManager.listFeatures(spec_dir)).find(
+          (f) => f.number === feature_number,
+        );
+        const featureSlug = existingFeature?.name ?? slugify(feature_name);
+        const featureDir = existingFeature?.directory ?? join(spec_dir, `${feature_number}-${featureSlug}`);
 
         // If clarification_responses provided, enrich the description with the answers
         let enrichedDescription = description;
