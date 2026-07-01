@@ -10,7 +10,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
-import { PHASE_ORDER, TOTAL_TOOLS } from "../../src/constants.js";
+import { PHASE_ORDER, TOTAL_TOOLS, TEMPLATE_NAMES } from "../../src/constants.js";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const read = (p: string): string => readFileSync(resolve(ROOT, p), "utf8");
@@ -45,6 +45,16 @@ describe("config.yml is consistent with the shipped assets", () => {
       .sort((a, b) => a - b)
       .map((i) => config.pipeline.phase_names[String(i)]);
     expect(names).toEqual([...PHASE_ORDER]);
+  });
+});
+
+describe("every TEMPLATE_NAMES entry maps to a real templates/ file", () => {
+  it("has no dangling template name (regression: onboarding had no file)", () => {
+    const files = new Set(readdirSync(resolve(ROOT, "templates")).filter((n) => n.endsWith(".md")));
+    for (const name of TEMPLATE_NAMES) {
+      const fileName = `${name.replace(/_/g, "-")}.md`;
+      expect(files.has(fileName), `template "${name}" -> ${fileName} must exist`).toBe(true);
+    }
   });
 });
 

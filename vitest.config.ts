@@ -15,10 +15,10 @@ export default defineConfig({
       // was measured only over imported files and did not reflect the codebase).
       // Ratchet these up as service/tool coverage lands.
       thresholds: {
-        statements: 15,
-        branches: 12,
-        functions: 20,
-        lines: 15,
+        statements: 22,
+        branches: 16,
+        functions: 26,
+        lines: 22,
       },
     },
   },
