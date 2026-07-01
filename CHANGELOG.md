@@ -9,12 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Feature-identity split (broke the happy path).** `sdd_write_spec` and `sdd_turnkey_spec` now resolve the feature directory from the pipeline state / disk instead of re-deriving it from the free-text display name. Previously `sdd_init` with `project_name: user-auth` followed by `sdd_write_spec` with `feature_name: "User Authentication"` wrote the spec into `001-user-authentication` while the state still pointed at `001-user-auth`, so `sdd_advance_phase` failed with "missing SPECIFICATION.md". A single canonical slug helper (`src/utils/slug.ts`) replaces the divergent inline variants.
+- **Fabricated quality gate.** `sdd_auto_pipeline` and `sdd_batch_transcripts` previously wrote `ANALYSIS.md` with a hard-coded `APPROVE` decision, 100% coverage, and 0 orphans. The real gate math now runs through a shared `AnalysisEngine` (also used by `sdd_run_analysis`), so auto-generated packages report their true decision (typically `CHANGES_NEEDED` until traceability is completed).
+- **EARS validator.** The `complex` compound pattern is now reachable (it was shadowed by the greedy state-driven rule); `suggestImprovement` no longer doubles the boilerplate ("The system shall The system shall …"); vague-term detection uses word boundaries (so "breakfast" no longer trips "fast"); multiple `shall` clauses are flagged; match input is bounded to avoid ReDoS.
+- **State races.** A per-spec-dir async mutex in `StateMachine` serializes concurrent load→mutate→save cycles, preventing lost updates and torn `state`/`.sig` writes (which surfaced as false "tamper detected" warnings under pipelined requests).
 - Corrected the advertised MCP tool count from `57` to `58` across the MCP server description, the `apm.yml` plugin manifest, the RBAC admin role description, `README.md`, `GETTING-STARTED.md`, `CONTRIBUTING.md`, `SECURITY.md`, and the onboarding agent and skill. The runtime already registered 58 tools; this aligns all user-facing copy with `TOTAL_TOOLS`.
 - Corrected `CONTRIBUTING.md` to report 88 source files and 22 templates.
 - Synced the stale `version` metadata in `apm.yml` and `config.yml` to match the package version.
+- **Documentation accuracy.** Removed the inflated "507 tests" claim; added the missing `sdd_verify_audit` tool to the README catalog (57 → 58 listed); corrected the pipeline phase names in the README and `GETTING-STARTED.md` (the non-existent "Research"/"Review" phases → the real Discover/Analyze); corrected the `sdd_turnkey_spec` description ("5 EARS patterns" → 6); corrected the OWASP A02 note (Specky does use HMAC/hash-chain for local integrity); fixed `config.yml` hook paths (`.github/plugin/` → `.apm/`) and enumerated all 16 hooks (was 12); clarified the Spec-Kit lineage (upstream `github/spec-kit`; EARS is a Kiro-style addition).
 
 ### Added
 
+- Added the real Dockerfile and `.dockerignore` (multi-stage build, non-root, `EXPOSE 3200`, `/health` HEALTHCHECK, `serve --http` entrypoint) and un-ignored them in `.gitignore` — the release-container test and the `docker-publish` workflow require a tracked Dockerfile that had never been committable.
+- Added `src/services/analysis-engine.ts`, `src/utils/slug.ts`, and regression tests: `ears-validator`, `analysis-engine`, `doc-consistency` (config-vs-disk hook/phase/count guard), and a `happy-path-mcp` end-to-end suite.
 - Added `tests/unit/tool-count.test.ts`, a regression guard asserting that the number of registered tools equals `TOTAL_TOOLS` (58) so the advertised count cannot drift again.
 
 ### Changed

@@ -237,7 +237,7 @@ The onboarding wizard detects your project context (greenfield/brownfield/modern
 @specky-orchestrator run the pipeline for a todo API
 ```
 
-The orchestrator coordinates all 10 phases: Init → Research → Specify → Design → Tasks → Implement → Verify → Review → Release, with LGTM gates at Specify, Design, and Tasks.
+The orchestrator coordinates all 10 phases: Init → Discover → Specify → Clarify → Design → Tasks → Analyze → Implement → Verify → Release, with LGTM gates at Specify, Design, and Tasks.
 
 | Your situation | Guide |
 |---------------|-------|
@@ -811,7 +811,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 
 | Tool | Description |
 |------|-------------|
-| `sdd_turnkey_spec` | Generate a complete EARS specification from a natural language description. Auto-extracts requirements, classifies all 5 EARS patterns, generates acceptance criteria, infers non-functional requirements, and identifies clarification questions |
+| `sdd_turnkey_spec` | Generate a complete EARS specification from a natural language description. Auto-extracts requirements, classifies all 6 EARS patterns, generates acceptance criteria, infers non-functional requirements, and identifies clarification questions |
 
 ### Checkpointing (3)
 
@@ -835,6 +835,12 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_context_status` | Context tier assignment (Hot/Domain/Cold) for spec artifacts with token savings |
 | `sdd_check_access` | RBAC access check for current role with per-tool permissions summary |
 
+### Security and Audit (1)
+
+| Tool | Description |
+|------|-------------|
+| `sdd_verify_audit` | Verify the hash-chained audit trail (`.audit.jsonl`) for tamper evidence and report chain integrity |
+
 
 ## The Spec-Driven Development Platform
 
@@ -844,7 +850,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 
 ### How Spec-Kit and Specky Complement Each Other
 
-**[Spec-Kit](https://github.com/paulasilvatech/spec-kit)** is the open-source SDD methodology: EARS notation, gated pipeline phases, constitution model, 25+ specialized agents, and Markdown prompt templates. It defines **what** to do.
+**Spec-Kit** — the open-source SDD methodology from [github/spec-kit](https://github.com/github/spec-kit), extended in [paulasilvatech/spec-kit](https://github.com/paulasilvatech/spec-kit) — provides a constitution model, gated workflow phases expressed as prompt templates, and broad coding-assistant support. It defines **what** to do. (Upstream Spec-Kit's phases are advisory prompts; the **EARS** requirements notation and programmatic enforcement below are Specky's additions — EARS was popularized for AI specs by AWS Kiro and originates in the Mavin/Rolls-Royce EARS approach.)
 
 **Specky** is the CLI toolkit that reimplements that methodology as 58 enforceable MCP tools with 13 agents, 22 prompts, 8 skills, and 16 hooks. It enforces **how** to do it.
 
@@ -1059,7 +1065,7 @@ npm install
 # Build
 npm run build
 
-# Run tests (507 tests)
+# Run the full test suite
 npm test
 
 # Run tests with coverage report

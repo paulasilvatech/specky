@@ -73,7 +73,7 @@ Runtime dependencies are kept intentionally small and are audited in CI.
 | OWASP Category | Mitigation |
 | --- | --- |
 | A01 Broken Access Control | Path sanitization in FileManager; workspace-scoped operations |
-| A02 Cryptographic Failures | No cryptographic operations; no secrets handling |
+| A02 Cryptographic Failures | No secrets handling. HMAC-SHA256 and a SHA-256 hash chain are used only for local integrity checks (state signature, audit trail), not for confidentiality — see the audit-trail notes below for the trust model |
 | A03 Injection | Zod `.strict()` validation on all inputs; no SQL/eval/shell execution |
 | A04 Insecure Design | State machine enforces phase ordering; thin tools / fat services separation |
 | A05 Security Misconfiguration | Minimal config surface; no default credentials; no admin endpoints |

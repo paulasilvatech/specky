@@ -456,7 +456,7 @@ You don't need to call these hooks — they fire automatically on the right even
 ## FAQ
 
 **Q: Do I need to use all 10 phases?**
-A: No. For small features, you can go Init → Specify → Tasks → Implement → Release. The Clarify, Design, and Review phases are highly recommended but not blocking. The Research phase is mandatory for brownfield projects.
+A: No. For small features, you can move quickly through the core phases (Init → Specify → Design → Tasks → Implement → Release). The Clarify and Analyze phases are highly recommended but lighter-weight for small changes. The Discover phase is especially valuable for brownfield projects, where scanning the existing codebase informs the specification.
 
 **Q: What is EARS notation?**
 A: Easy Approach to Requirements Syntax — 6 patterns for writing requirements that eliminate ambiguity:
