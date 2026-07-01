@@ -4,8 +4,20 @@
 
 import { z } from "zod";
 
+/** Reject absolute paths and any parent-directory traversal. */
+const isSafeRelativePath = (p: string): boolean =>
+  p.length > 0 &&
+  !p.startsWith("/") &&
+  !p.startsWith("\\") &&
+  !/^[a-zA-Z]:/.test(p) && // Windows drive-absolute (C:...)
+  !p.split(/[/\\]/).includes("..") &&
+  !p.includes("\0");
+
 export const specDirSchema = z
   .string()
+  .refine(isSafeRelativePath, {
+    message: "spec_dir must be a workspace-relative path (no absolute paths, no '..').",
+  })
   .default(".specs")
   .describe("Spec directory path (relative to workspace root)");
 

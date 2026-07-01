@@ -1,165 +1,88 @@
 /**
  * SpeckyConfig — Optional `.specky/config.yml` support.
  * Reads project-local configuration and merges with defaults.
+ *
+ * Parsing uses the `yaml` library (safe by default — no code execution) and a
+ * Zod schema for validation, replacing a hand-rolled line parser that could not
+ * handle nested lists/quoting and did no validation.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { parse } from "yaml";
+import { z } from "zod";
 
-export interface SpeckyConfig {
-  templates_path?: string;
-  default_framework?: string;
-  compliance_frameworks?: string[];
-  audit_enabled?: boolean;
-  rate_limit?: {
-    enabled?: boolean;
-    max_requests_per_minute?: number;
-    burst?: number;
-  };
-  audit?: {
-    export_format?: "jsonl" | "syslog" | "otlp";
-    max_file_size_mb?: number;
-  };
-  rbac?: {
-    enabled?: boolean;
-    default_role?: "viewer" | "contributor" | "admin";
-  };
-}
+/** Reject absolute paths and parent-directory traversal in path-valued config. */
+const safeRelativePath = z.string().refine(
+  (p) =>
+    p === "" ||
+    (!p.startsWith("/") &&
+      !p.startsWith("\\") &&
+      !/^[a-zA-Z]:/.test(p) &&
+      !p.split(/[/\\]/).includes("..") &&
+      !p.includes("\0")),
+  { message: "templates_path must be a workspace-relative path (no absolute paths, no '..')." },
+);
 
-const DEFAULTS: Required<SpeckyConfig> = {
-  templates_path: "",
-  default_framework: "vitest",
-  compliance_frameworks: ["general"],
-  audit_enabled: false,
-  rate_limit: { enabled: false, max_requests_per_minute: 60, burst: 10 },
-  audit: { export_format: "jsonl", max_file_size_mb: 10 },
-  rbac: { enabled: false, default_role: "contributor" },
-};
+const configSchema = z
+  .object({
+    templates_path: safeRelativePath.default(""),
+    default_framework: z.string().default("vitest"),
+    compliance_frameworks: z.array(z.string()).default(["general"]),
+    audit_enabled: z.boolean().default(false),
+    rate_limit: z
+      .object({
+        enabled: z.boolean().default(false),
+        max_requests_per_minute: z.number().int().positive().default(60),
+        burst: z.number().int().positive().default(10),
+      })
+      .default({ enabled: false, max_requests_per_minute: 60, burst: 10 }),
+    audit: z
+      .object({
+        export_format: z.enum(["jsonl", "syslog", "otlp"]).default("jsonl"),
+        max_file_size_mb: z.number().positive().default(10),
+      })
+      .default({ export_format: "jsonl", max_file_size_mb: 10 }),
+    rbac: z
+      .object({
+        enabled: z.boolean().default(false),
+        default_role: z.enum(["viewer", "contributor", "admin"]).default("contributor"),
+      })
+      .default({ enabled: false, default_role: "contributor" }),
+  })
+  .strip();
+
+export type SpeckyConfig = z.infer<typeof configSchema>;
+
+const DEFAULT_CONFIG: SpeckyConfig = configSchema.parse({});
 
 /**
- * Load `.specky/config.yml` from workspace root. Returns defaults if not found.
- * Handles both flat keys (key: value) and nested blocks (key:\n  sub: value).
+ * Load `.specky/config.yml` from workspace root. Returns defaults if the file
+ * is absent, unparseable, or fails validation (a bad value never crashes the
+ * server — it falls back to the safe defaults, with a stderr warning).
  */
-export function loadConfig(workspaceRoot: string): Required<SpeckyConfig> {
+export function loadConfig(workspaceRoot: string): SpeckyConfig {
   const configPath = join(workspaceRoot, ".specky", "config.yml");
+  let raw: string;
   try {
-    const raw = readFileSync(configPath, "utf-8");
-    const flat = parseSimpleYaml(raw);
-    return {
-      templates_path:
-        typeof flat["templates_path"] === "string"
-          ? flat["templates_path"]
-          : DEFAULTS.templates_path,
-      default_framework:
-        typeof flat["default_framework"] === "string"
-          ? flat["default_framework"]
-          : DEFAULTS.default_framework,
-      compliance_frameworks:
-        parseArrayValue(flat["compliance_frameworks"]) ||
-        DEFAULTS.compliance_frameworks,
-      audit_enabled:
-        flat["audit_enabled"] === "true" || flat["audit_enabled"] === true
-          ? true
-          : DEFAULTS.audit_enabled,
-      rate_limit: {
-        enabled:
-          flat["rate_limit.enabled"] === "true" ||
-          flat["rate_limit.enabled"] === true
-            ? true
-            : DEFAULTS.rate_limit.enabled,
-        max_requests_per_minute:
-          typeof flat["rate_limit.max_requests_per_minute"] === "string"
-            ? parseInt(flat["rate_limit.max_requests_per_minute"] as string, 10) ||
-              DEFAULTS.rate_limit.max_requests_per_minute!
-            : DEFAULTS.rate_limit.max_requests_per_minute,
-        burst:
-          typeof flat["rate_limit.burst"] === "string"
-            ? parseInt(flat["rate_limit.burst"] as string, 10) ||
-              DEFAULTS.rate_limit.burst!
-            : DEFAULTS.rate_limit.burst,
-      },
-      audit: {
-        export_format: isValidExportFormat(flat["audit.export_format"])
-          ? (flat["audit.export_format"] as "jsonl" | "syslog" | "otlp")
-          : DEFAULTS.audit.export_format,
-        max_file_size_mb:
-          typeof flat["audit.max_file_size_mb"] === "string"
-            ? parseInt(flat["audit.max_file_size_mb"] as string, 10) ||
-              DEFAULTS.audit.max_file_size_mb!
-            : DEFAULTS.audit.max_file_size_mb,
-      },
-      rbac: {
-        enabled:
-          flat["rbac.enabled"] === "true" || flat["rbac.enabled"] === true
-            ? true
-            : DEFAULTS.rbac.enabled,
-        default_role: isValidRole(flat["rbac.default_role"])
-          ? (flat["rbac.default_role"] as "viewer" | "contributor" | "admin")
-          : DEFAULTS.rbac.default_role,
-      },
-    };
+    raw = readFileSync(configPath, "utf-8");
   } catch {
-    return { ...DEFAULTS };
+    return { ...DEFAULT_CONFIG };
   }
-}
 
-/**
- * Parse simple YAML — flat key:value pairs plus indented blocks.
- * Indented child keys are flattened as "parent.child" dot-notation keys.
- */
-function parseSimpleYaml(raw: string): Record<string, string | boolean> {
-  const result: Record<string, string | boolean> = {};
-  let currentParent = "";
-
-  for (const line of raw.split("\n")) {
-    if (!line.trim() || line.trim().startsWith("#")) continue;
-
-    const indent = line.length - line.trimStart().length;
-    const trimmed = line.trim();
-    const colonIdx = trimmed.indexOf(":");
-    if (colonIdx === -1) continue;
-
-    const key = trimmed.slice(0, colonIdx).trim();
-    const value = trimmed.slice(colonIdx + 1).trim();
-
-    if (indent === 0) {
-      currentParent = key;
-      if (value) {
-        // Top-level key with value
-        if (value === "true") result[key] = true;
-        else if (value === "false") result[key] = false;
-        else result[key] = value;
-      }
-      // else: this is a parent block key with no value — children follow
-    } else {
-      // Child key — store as "parent.child"
-      const flatKey = `${currentParent}.${key}`;
-      if (value === "true") result[flatKey] = true;
-      else if (value === "false") result[flatKey] = false;
-      else result[flatKey] = value;
-    }
+  let parsed: unknown;
+  try {
+    parsed = parse(raw) ?? {};
+  } catch (err) {
+    console.error(`[specky] Ignoring malformed .specky/config.yml: ${(err as Error).message}`);
+    return { ...DEFAULT_CONFIG };
   }
-  return result;
-}
 
-function isValidExportFormat(v: unknown): boolean {
-  return v === "jsonl" || v === "syslog" || v === "otlp";
-}
-
-function isValidRole(v: unknown): boolean {
-  return v === "viewer" || v === "contributor" || v === "admin";
-}
-
-function parseArrayValue(value: unknown): string[] | null {
-  if (typeof value !== "string" || !value) return null;
-  if (value.startsWith("[") && value.endsWith("]")) {
-    return value
-      .slice(1, -1)
-      .split(",")
-      .map((s) => s.trim().replace(/"/g, ""))
-      .filter(Boolean);
+  const result = configSchema.safeParse(parsed);
+  if (!result.success) {
+    console.error(
+      `[specky] Ignoring invalid .specky/config.yml: ${result.error.issues.map((i) => i.message).join("; ")}`,
+    );
+    return { ...DEFAULT_CONFIG };
   }
-  if (value.includes(",")) {
-    return value.split(",").map((s) => s.trim()).filter(Boolean);
-  }
-  return [value];
+  return result.data;
 }

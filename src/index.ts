@@ -192,6 +192,20 @@ async function main(): Promise<void> {
 
   if (useHttp) {
     const port = parseInt(process.env["PORT"] || String(DEFAULT_HTTP_PORT), 10);
+
+    // Bind to loopback by default. The HTTP transport has no authentication,
+    // so exposing it on all interfaces is opt-in and must be explicit.
+    const hostArg = args.find((a) => a.startsWith("--host="))?.slice("--host=".length);
+    const host = hostArg || process.env["SDD_HTTP_HOST"] || "127.0.0.1";
+    const isLoopback = host === "127.0.0.1" || host === "::1" || host === "localhost";
+    if (!isLoopback) {
+      console.error(
+        `[specky] WARNING: HTTP transport bound to non-loopback host "${host}". ` +
+        "This transport has no authentication — only do this behind a TLS-terminating, " +
+        "authenticating reverse proxy on a trusted network.",
+      );
+    }
+
     const { StreamableHTTPServerTransport } = await import(
       "@modelcontextprotocol/sdk/server/streamableHttp.js"
     );
@@ -199,6 +213,10 @@ async function main(): Promise<void> {
 
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),
+      // Reject cross-origin / rebinding requests: a browser page cannot POST to
+      // the local server unless its Host header matches an allowed value.
+      enableDnsRebindingProtection: true,
+      allowedHosts: [`${host}:${port}`, `localhost:${port}`, `127.0.0.1:${port}`],
     });
     await server.connect(transport);
 
@@ -247,8 +265,8 @@ async function main(): Promise<void> {
       }
     });
 
-    httpServer.listen(port, () => {
-      console.error(`[specky] HTTP server listening on port ${port}`);
+    httpServer.listen(port, host, () => {
+      console.error(`[specky] HTTP server listening on ${host}:${port}`);
     });
   } else {
     const transport = new StdioServerTransport();
