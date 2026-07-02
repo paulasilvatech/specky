@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-07-02
+
+First stable `3.4.0` (supersedes the `3.4.0-rc.*` prereleases). Consolidates the
+audit-remediation work — see `docs/AUDIT-2026-07.md` for the full report.
+
 ### Fixed
 
 - **Feature-identity split (broke the happy path).** `sdd_write_spec` and `sdd_turnkey_spec` now resolve the feature directory from the pipeline state / disk instead of re-deriving it from the free-text display name. Previously `sdd_init` with `project_name: user-auth` followed by `sdd_write_spec` with `feature_name: "User Authentication"` wrote the spec into `001-user-authentication` while the state still pointed at `001-user-auth`, so `sdd_advance_phase` failed with "missing SPECIFICATION.md". A single canonical slug helper (`src/utils/slug.ts`) replaces the divergent inline variants.
