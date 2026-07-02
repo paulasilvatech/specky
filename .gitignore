@@ -41,6 +41,10 @@ apm.lock.yaml
 .specs/
 .specky/
 
+# ── Local workspace assets / sibling checkouts ───────────
+images/
+specky-site/
+
 # ── Build config (internal) ──────────────────────────────
 # NOTE: scripts/, .apm/hooks/scripts/, and .npmignore are tracked —
 # they control packaging and ship-time behavior.
