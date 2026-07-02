@@ -52,6 +52,11 @@ jobs:
   docker-publish:
     runs-on: ubuntu-latest
     needs: npm-publish
+    # Opt-in. Publishing to GHCR requires the package to be writable by the
+    # Actions GITHUB_TOKEN (org "packages: write" + package linked to the repo);
+    # without it the push returns `permission_denied: write_package` and reddens
+    # the release. Enable by setting the repo variable PUBLISH_DOCKER=true.
+    if: ${{ vars.PUBLISH_DOCKER == 'true' }}
     # Only sign when cosign secrets are configured, so a release without them
     # still succeeds (build + push run regardless).
     env:
