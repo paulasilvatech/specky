@@ -2,10 +2,11 @@
 
 > Copy-paste body for the GitHub Release `v3.5.0`.
 
-**Enterprise mode is a profile, not a product tier.** One MIT package, no paid
-features: `3.5.0` adds an opt-in `enterprise` profile plus identity-based RBAC
-and a tamper-evident audit trail. Everything is **default OFF** — the standard
-profile behaves exactly like 3.4.0.
+**Specky is 100% open source (MIT) — enterprise mode is just an opt-in profile
+of the same package.** `3.5.0` adds the `enterprise` configuration profile plus
+identity-based RBAC and a tamper-evident audit trail, all shipped in
+`specky-sdd` for everyone. Everything is **default OFF** — the standard profile
+behaves exactly like 3.4.0.
 
 ## Highlights
 

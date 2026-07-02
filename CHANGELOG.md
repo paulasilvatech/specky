@@ -9,9 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [3.5.0] - 2026-07-02
 
-Enterprise mode — an **opt-in profile**, not a paid tier. One MIT package; every
-control below is free, default-OFF, and the standard profile is byte-for-byte
-the same experience as 3.4.0. See `docs/ENTERPRISE-DEPLOYMENT.md`.
+Enterprise mode — an **opt-in configuration profile** of the same 100%
+open-source (MIT) package. Every control below ships in `specky-sdd` for
+everyone, default-OFF, and the standard profile is byte-for-byte the same
+experience as 3.4.0. See `docs/ENTERPRISE-DEPLOYMENT.md`.
 
 ### Added
 
