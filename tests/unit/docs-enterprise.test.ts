@@ -13,6 +13,7 @@ describe("enterprise documentation baseline", () => {
     "docs/BRANCH-GOVERNANCE.md",
     "docs/DETERMINISM.md",
     "docs/ENTERPRISE-CONTROLS.md",
+    "docs/ENTERPRISE-DEPLOYMENT.md",
     "docs/EVIDENCE.md",
     "docs/SYSTEM-DESIGN.md",
   ];

@@ -78,7 +78,7 @@ Runtime dependencies are kept intentionally small and are audited in CI.
 | A04 Insecure Design | State machine enforces phase ordering; thin tools / fat services separation |
 | A05 Security Misconfiguration | Minimal config surface; no default credentials; no admin endpoints |
 | A06 Vulnerable Components | 3 runtime deps only; Dependabot enabled; regular audits |
-| A07 Authentication Failures | stdio mode is process-isolated (no network). HTTP mode binds to `127.0.0.1` by default and supports optional bearer-token auth (`SDD_HTTP_TOKEN`, constant-time compared) plus DNS-rebinding protection |
+| A07 Authentication Failures | stdio mode is process-isolated (no network). HTTP mode binds to `127.0.0.1` by default and supports optional bearer-token auth — a shared token (`SDD_HTTP_TOKEN`) or a named token table (`SDD_HTTP_TOKENS_FILE`, principal + RBAC role per token, sha256 storage supported) — all constant-time compared, plus DNS-rebinding protection |
 | A08 Data Integrity Failures | Atomic file writes via FileManager; Zod schema enforcement |
 | A09 Logging Failures | Structured stderr logging; no stdout pollution |
 | A10 SSRF | Zero outbound network requests |
@@ -101,8 +101,15 @@ We run `npm audit` in CI on every pull request. Any `high` or `critical` vulnera
 | --- | --- | --- |
 | `SDD_WORKSPACE` | Restricts file operations to this directory | Current working directory |
 | `PORT` | HTTP transport port (when using `--http` mode) | 3200 |
+| `SPECKY_PROFILE` | `enterprise` flips audit/RBAC/rate-limit defaults to ON (explicit config wins) | `standard` |
+| `SDD_HTTP_TOKEN` | Shared bearer token for `--http` (no identity) | unset (auth off) |
+| `SDD_HTTP_TOKENS_FILE` | Named token table → principal + RBAC role (identity-based auth) | unset |
+| `SDD_AUDIT_HMAC_KEY` / `SDD_AUDIT_HMAC_KEY_FILE` | Sign audit entries (tamper evidence); keep the key outside the workspace | unset (chain only) |
+| `SDD_ROLE` | Local RBAC role for stdio use — ignored on authenticated HTTP requests | `rbac.default_role` |
 
-HTTP transport (`--http`) binds to `127.0.0.1` by default. Binding to a non-loopback address requires an explicit `--host` and prints a warning. Set `SDD_HTTP_TOKEN` to require an `Authorization: Bearer <token>` header on every `/mcp` request (the `/health` probe stays open). Even so, do not expose Specky to public networks without a TLS-terminating reverse proxy.
+HTTP transport (`--http`) binds to `127.0.0.1` by default. Binding to a non-loopback address requires an explicit `--host` and prints a warning. Set `SDD_HTTP_TOKEN` (shared token) or `SDD_HTTP_TOKENS_FILE` (named tokens mapping to principal + role) to require an `Authorization: Bearer <token>` header on every `/mcp` request (the `/health` probe stays open). Even so, do not expose Specky to public networks without a TLS-terminating reverse proxy. Hosted, air-gapped, and container deployment patterns: [docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md).
+
+The audit trail's plain hash chain detects corruption but not deliberate rewriting by a workspace writer; configure an HMAC key (held outside the workspace) to make entries tamper-evident, and anchor the `current_hash` from `sdd_verify_audit` externally to detect tail truncation.
 
 ## Secure Development Practices
 
@@ -119,7 +126,7 @@ HTTP transport (`--http`) binds to `127.0.0.1` by default. Binding to a non-loop
 | Practice | Details |
 | --- | --- |
 | **Use stdio mode by default** | `specky-sdd` (global install) — no network exposure, process-level isolation |
-| **Never expose HTTP mode publicly without TLS** | `--http` supports bearer-token auth (`SDD_HTTP_TOKEN`) and binds to `127.0.0.1` by default, but has no TLS. For remote access, set a token AND place it behind a reverse proxy (nginx, Caddy, Traefik) terminating TLS |
+| **Never expose HTTP mode publicly without TLS** | `--http` supports bearer-token auth (`SDD_HTTP_TOKEN`, or `SDD_HTTP_TOKENS_FILE` for per-user identity + role) and binds to `127.0.0.1` by default, but has no TLS. For remote access, set tokens AND place it behind a reverse proxy (nginx, Caddy, Traefik) terminating TLS |
 | **Protect `.specs/` directory** | Contains architecture details, API contracts, security models. Add to `.gitignore` for sensitive projects, or use a private repository |
 | **Protect `.checkpoints/`** | Contains full copies of all spec artifacts. Treat like source code |
 | **Keep security-scan hook active** | `.claude/hooks/security-scan.sh` scans for hardcoded secrets and blocks commits (exit 2). Do not disable |

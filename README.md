@@ -887,13 +887,19 @@ Create `.specky/config.yml` in your project root to customize Specky:
 
 ```yaml
 # .specky/config.yml
+profile: standard                    # standard | enterprise (flips security defaults ON)
 templates_path: ./my-templates       # Override built-in templates
 default_framework: vitest            # Default test framework
 compliance_frameworks: [hipaa, soc2] # Frameworks to check
 audit_enabled: true                  # Enable audit trail
+rbac:
+  enabled: false                     # Role checks (viewer/contributor/admin)
+  default_role: contributor
+rate_limit:
+  enabled: false                     # HTTP token bucket (60 rpm, burst 10)
 ```
 
-When `templates_path` is set, Specky uses your custom templates instead of the built-in ones. When `audit_enabled` is true, tool invocations are logged locally.
+When `templates_path` is set, Specky uses your custom templates instead of the built-in ones. When `audit_enabled` is true, tool invocations are logged locally. `profile: enterprise` turns audit, RBAC, rate limiting, and fail-closed auditing on by default (explicit values win) — see [docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md).
 
 
 ## MCP Integration Architecture
@@ -982,6 +988,12 @@ From any [input](#input-methods-6-ways-to-start) to production -- fully automate
 
 Specky is built with enterprise adoption in mind.
 
+### Enterprise profile (opt-in)
+
+One package, no paid tier: `profile: enterprise` (or `SPECKY_PROFILE=enterprise`, or `specky serve --profile=enterprise`) flips the governance defaults ON — hash-chained **audit trail** (fail-closed), **RBAC**, and HTTP **rate limiting** — while explicit config values still win. Add `SDD_HTTP_TOKENS_FILE` for **identity-based roles** (each bearer token maps to a named principal + role; audit entries record who did what) and `SDD_AUDIT_HMAC_KEY[_FILE]` for a **tamper-evident audit log** signed with a key the workspace never sees. The standard profile is untouched — all of this stays off unless you opt in.
+
+→ Full guide: [docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md) (hosted HTTP, tokens, HMAC audit, air-gapped installs, containers, CI gates)
+
 ### Security Posture
 
 - **3 runtime dependencies** — minimal attack surface (`@modelcontextprotocol/sdk`, `zod`, `yaml`)
@@ -993,6 +1005,7 @@ Specky is built with enterprise adoption in mind.
 - See [SECURITY.md](SECURITY.md) for full OWASP Top 10 coverage
 - See [docs/SYSTEM-DESIGN.md](docs/SYSTEM-DESIGN.md) for complete security architecture
 - See [docs/ENTERPRISE-CONTROLS.md](docs/ENTERPRISE-CONTROLS.md) for RBAC, audit trail, and tool-enforcement controls
+- See [docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md) for the enterprise profile, identity tokens, HMAC audit, and hosted/air-gapped deployment
 - See [docs/DETERMINISM.md](docs/DETERMINISM.md) for reproducible-output guarantees
 - See [docs/BRANCH-GOVERNANCE.md](docs/BRANCH-GOVERNANCE.md) for branch and release governance
 - See [docs/EVIDENCE.md](docs/EVIDENCE.md) for the validation evidence pack
@@ -1004,7 +1017,7 @@ When using Specky, follow these practices to protect your data:
 | Practice | Why | How |
 |----------|-----|-----|
 | **Use stdio mode for local development** | No network exposure | `npx specky-sdd` (default) |
-| **Never expose HTTP mode to public networks without TLS** | HTTP has optional bearer-token auth but no TLS | `--http` binds to `127.0.0.1` by default; set `SDD_HTTP_TOKEN` for bearer auth. For remote access, add a reverse proxy (nginx, Caddy) terminating TLS |
+| **Never expose HTTP mode to public networks without TLS** | HTTP has optional bearer-token auth but no TLS | `--http` binds to `127.0.0.1` by default; set `SDD_HTTP_TOKEN` (shared) or `SDD_HTTP_TOKENS_FILE` (per-user identity + role) for bearer auth. For remote access, add a reverse proxy (nginx, Caddy) terminating TLS |
 | **Protect the `.specs/` directory** | Contains your specification artifacts (architecture, API contracts, business logic) | Add `.specs/` to `.gitignore` if specs contain sensitive IP, or use a private repo |
 | **Protect checkpoints** | `.specs/{feature}/.checkpoints/` stores full artifact snapshots | Same as above — treat checkpoints like source code |
 | **Review auto-generated specs before committing** | Turnkey and auto-pipeline generate from natural language — may capture sensitive details | Review SPECIFICATION.md and DESIGN.md before `git add` |
@@ -1086,7 +1099,7 @@ curl http://localhost:3200/health
 
 ## Roadmap
 
-### v3.4 (current)
+### v3.5 (current)
 
 | Capability | Status |
 |------------|--------|
@@ -1118,17 +1131,20 @@ curl http://localhost:3200/health
 | RBAC foundation (opt-in role-based access control) | Stable |
 | Rate limiting for HTTP transport (opt-in) | Stable |
 | HTTP transport: loopback bind by default, bearer-token auth (`SDD_HTTP_TOKEN`), DNS-rebinding protection | Stable |
+| Enterprise profile (`profile: enterprise` — audit/RBAC/rate-limit defaults ON, opt-in) | Stable |
+| Identity-based RBAC over HTTP (`SDD_HTTP_TOKENS_FILE`: token → principal + role) | Stable |
+| Tamper-evident audit trail (HMAC-signed entries, fail-closed mode, `sdd_verify_audit`) | Stable |
 
-### v3.5+ (planned)
+### v3.6+ (planned)
 
 | Feature | Description |
 |---------|-------------|
 | Observability | OpenTelemetry metrics and structured logging |
 | Internationalization | Spec templates in PT-BR, ES, FR, DE, JA |
 | Automated shrinking | fast-check/Hypothesis shrinking feedback into spec refinement |
-| Centralized audit log | SIEM-integrated tamper-evident audit trail |
+| Centralized audit log | SIEM export (syslog shipping, OTLP) of the tamper-evident audit trail |
 | Multi-tenant | Isolated workspaces for multiple teams |
-| SSO / SAML | Federated identity for enterprise auth |
+| SSO / SAML | Federated identity for enterprise auth (beyond the static token table) |
 
 Have a feature request? [Open an issue](https://github.com/paulasilvatech/specky/issues).
 
