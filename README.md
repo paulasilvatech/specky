@@ -1004,7 +1004,7 @@ When using Specky, follow these practices to protect your data:
 | Practice | Why | How |
 |----------|-----|-----|
 | **Use stdio mode for local development** | No network exposure | `npx specky-sdd` (default) |
-| **Never expose HTTP mode to public networks** | HTTP is unencrypted, no auth | If using `--http`, bind to localhost only. Use a reverse proxy (nginx, Caddy) with TLS and authentication for remote access |
+| **Never expose HTTP mode to public networks without TLS** | HTTP has optional bearer-token auth but no TLS | `--http` binds to `127.0.0.1` by default; set `SDD_HTTP_TOKEN` for bearer auth. For remote access, add a reverse proxy (nginx, Caddy) terminating TLS |
 | **Protect the `.specs/` directory** | Contains your specification artifacts (architecture, API contracts, business logic) | Add `.specs/` to `.gitignore` if specs contain sensitive IP, or use a private repo |
 | **Protect checkpoints** | `.specs/{feature}/.checkpoints/` stores full artifact snapshots | Same as above — treat checkpoints like source code |
 | **Review auto-generated specs before committing** | Turnkey and auto-pipeline generate from natural language — may capture sensitive details | Review SPECIFICATION.md and DESIGN.md before `git add` |
@@ -1117,12 +1117,12 @@ curl http://localhost:3200/health
 | JSONL audit logger (optional) | Stable |
 | RBAC foundation (opt-in role-based access control) | Stable |
 | Rate limiting for HTTP transport (opt-in) | Stable |
+| HTTP transport: loopback bind by default, bearer-token auth (`SDD_HTTP_TOKEN`), DNS-rebinding protection | Stable |
 
 ### v3.5+ (planned)
 
 | Feature | Description |
 |---------|-------------|
-| HTTP authentication | Token-based auth for the HTTP transport |
 | Observability | OpenTelemetry metrics and structured logging |
 | Internationalization | Spec templates in PT-BR, ES, FR, DE, JA |
 | Automated shrinking | fast-check/Hypothesis shrinking feedback into spec refinement |
