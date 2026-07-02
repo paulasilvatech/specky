@@ -53,7 +53,7 @@ specky serve --http --profile=enterprise
 On startup the server prints the resolved posture, so a misconfigured
 deployment is visible in the first log line:
 
-```
+```text
 [specky] Profile: enterprise — audit=on (fail_closed=on, hmac=on), rbac=on (default_role=contributor), rate_limit=on
 ```
 
@@ -238,8 +238,40 @@ User=specky
 
 ### Container
 
-The repo ships a hardened `Dockerfile` (multi-stage, non-root, healthcheck on
-`/health`, `CMD serve --http`):
+Two supported paths: run the pre-built, multi-arch image from GHCR, or build
+the hardened `Dockerfile` from source (multi-stage, non-root, healthcheck on
+`/health`, `CMD serve --http`).
+
+#### Run the published GHCR image
+
+The image is published multi-arch (`linux/amd64` + `linux/arm64`) and binds
+`0.0.0.0:3200` inside the container so Docker port publishing works out of the
+box. `GET /health` stays unauthenticated for liveness probes.
+
+```bash
+# Public package: no login needed. Pin a release tag for reproducible deploys.
+docker pull ghcr.io/paulasilvatech/specky:3.5.0            # or :latest
+
+# Hardened run: enterprise profile + token auth behind your TLS proxy
+docker run --rm -p 127.0.0.1:3200:3200 \
+  -e SPECKY_PROFILE=enterprise \
+  -e SDD_HTTP_TOKENS_FILE=/run/secrets/tokens.yml \
+  -e SDD_AUDIT_HMAC_KEY_FILE=/run/secrets/audit.key \
+  -v "$PWD/workspace:/workspace" \
+  -v /etc/specky:/run/secrets:ro \
+  ghcr.io/paulasilvatech/specky:3.5.0
+
+curl -s http://127.0.0.1:3200/health     # -> {"status":"ok","version":"3.5.0"}
+```
+
+If the package is **private**, authenticate first with a token that has
+`read:packages`:
+
+```bash
+echo "$GHCR_TOKEN" | docker login ghcr.io -u <github-user> --password-stdin
+```
+
+#### Build from source
 
 ```bash
 docker build -t specky-sdd .
@@ -252,9 +284,15 @@ docker run --rm -p 127.0.0.1:3200:3200 \
   specky-sdd
 ```
 
-Publishing to GHCR (with cosign signature + CycloneDX SBOM) is wired in
-`.github/workflows/publish.yml` behind the `PUBLISH_DOCKER` repository
-variable.
+> **Security:** even though the image binds `0.0.0.0` internally, never expose
+> the port directly. Terminate TLS at a reverse proxy and require
+> `SDD_HTTP_TOKEN`/`SDD_HTTP_TOKENS_FILE`. A non-loopback bind without a token
+> prints a loud warning.
+
+Publishing to GHCR (multi-arch build with cosign signature + CycloneDX SBOM) is
+wired in `.github/workflows/publish.yml` behind the `PUBLISH_DOCKER` repository
+variable. See [PUBLISH.md](../PUBLISH.md) for the maintainer publish + manual
+fallback workflow.
 
 ---
 

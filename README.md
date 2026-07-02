@@ -1090,11 +1090,21 @@ npm run dev
 # Verify MCP handshake (quick smoke test)
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | node dist/index.js 2>/dev/null
 
-# Build and run with Docker locally
+# Run the published image from GHCR (multi-arch: linux/amd64 + linux/arm64)
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.5.0
+docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
+curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.5.0"}
+
+# Or build and run locally from source
 docker build -t specky-sdd:dev .
 docker run -p 3200:3200 -v $(pwd):/workspace specky-sdd:dev
 curl http://localhost:3200/health
 ```
+
+The published image binds `0.0.0.0:3200` inside the container (so `-p` works)
+and serves an unauthenticated `GET /health`. For hardened/authenticated
+deployments (enterprise profile, token auth, TLS proxy, private packages) see
+[docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md).
 
 
 ## Roadmap

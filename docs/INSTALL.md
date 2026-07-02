@@ -46,6 +46,22 @@ That's it. The `--ide` flag determines whether assets go to `.github/` (Copilot)
 
 **Next:** open VS Code and invoke `@specky-onboarding` (Copilot) or open Claude Code and use `/specky-onboarding` to start the pipeline.
 
+### Container runtime (hosted deployments)
+
+Use npm for developer workstations and project bootstrapping. For hosted HTTP
+deployments, use the published GHCR image instead of installing Node/npm on the
+host:
+
+```bash
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin: :3.5.0
+docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
+curl -s http://localhost:3200/health                    # -> {"status":"ok","version":"3.5.0"}
+```
+
+Production deployments should pin an explicit version tag and enable token auth
+behind TLS. See [ENTERPRISE-DEPLOYMENT.md](ENTERPRISE-DEPLOYMENT.md) for the
+full container model, secrets layout, and private-package login guidance.
+
 ---
 
 ## Install modes — which one should I use?

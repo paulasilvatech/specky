@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Container publishing docs
+
+- Expanded GHCR/container documentation across README, install, enterprise deployment, and publishing guidance.
+- Updated GHCR publish automation to preserve multi-arch `linux/amd64` + `linux/arm64` images.
+
 ## [3.5.0] - 2026-07-02
 
 Enterprise mode — an **opt-in configuration profile** of the same 100%

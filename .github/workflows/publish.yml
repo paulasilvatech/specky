@@ -91,17 +91,22 @@ jobs:
           username: ${{ vars.GHCR_USER || github.actor }}
           password: ${{ secrets.GHCR_TOKEN || secrets.GITHUB_TOKEN }}
 
-      - name: Build Docker image
+      - name: Set up QEMU for multi-arch builds
         run: |
-          docker build \
+          docker run --privileged --rm tonistiigi/binfmt --install amd64,arm64
+
+      - name: Set up Docker Buildx
+        run: |
+          docker buildx create --use --name specky
+          docker buildx inspect --bootstrap specky
+
+      - name: Build and push multi-arch Docker image
+        run: |
+          docker buildx build \
+            --platform linux/amd64,linux/arm64 \
             -t ghcr.io/paulasilvatech/specky:latest \
             -t ghcr.io/paulasilvatech/specky:${{ steps.pkg.outputs.version }} \
-            .
-
-      - name: Push Docker image
-        run: |
-          docker push ghcr.io/paulasilvatech/specky:latest
-          docker push ghcr.io/paulasilvatech/specky:${{ steps.pkg.outputs.version }}
+            --push .
 
       # T-082: Sign Docker image with cosign (requires COSIGN_PRIVATE_KEY + COSIGN_PASSWORD secrets)
       - name: Install cosign
