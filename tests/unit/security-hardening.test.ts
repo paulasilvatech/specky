@@ -11,6 +11,7 @@ import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { specDirSchema } from "../../src/schemas/common.js";
 import { loadConfig } from "../../src/config.js";
+import { FileManager } from "../../src/services/file-manager.js";
 import { SPECKY_REQUIRED_ALLOWS } from "../../src/cli/lib/settings-merger.js";
 
 describe("specDirSchema traversal guard", () => {
@@ -26,6 +27,30 @@ describe("specDirSchema traversal guard", () => {
     expect(specDirSchema.safeParse("a/../../b").success).toBe(false);
     expect(specDirSchema.safeParse("C:/Windows").success).toBe(false);
     expect(specDirSchema.safeParse("bad\0byte").success).toBe(false);
+  });
+});
+
+describe("FileManager.sanitizePath is absolute-path-safe on every OS", () => {
+  const fm = new FileManager(mkdtempSync(resolve(tmpdir(), "specky-fm-guard-")));
+
+  it("accepts workspace-relative paths", () => {
+    expect(() => fm.sanitizePath("docs/input.md")).not.toThrow();
+    expect(() => fm.sanitizePath(".specs")).not.toThrow();
+  });
+
+  it("rejects Windows drive-absolute paths regardless of runtime OS", () => {
+    // Regression: the guard only checked "/" and "\\" prefixes, so "C:\\…"
+    // slipped through on Windows (and would on POSIX too). This asserts the
+    // fix on every platform, not just Windows CI.
+    expect(() => fm.sanitizePath("C:\\Windows\\System32")).toThrow("Absolute paths are not allowed");
+    expect(() => fm.sanitizePath("C:/Windows/System32")).toThrow("Absolute paths are not allowed");
+    expect(() => fm.sanitizePath("d:relative")).toThrow("Absolute paths are not allowed");
+  });
+
+  it("rejects POSIX-absolute, UNC, and traversal paths", () => {
+    expect(() => fm.sanitizePath("/etc/passwd")).toThrow("Absolute paths are not allowed");
+    expect(() => fm.sanitizePath("\\\\server\\share")).toThrow("Absolute paths are not allowed");
+    expect(() => fm.sanitizePath("../outside.md")).toThrow("Path traversal is not allowed");
   });
 });
 
