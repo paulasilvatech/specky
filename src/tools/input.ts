@@ -3,8 +3,9 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { formatError, truncate } from "./tool-result.js";
 import { join } from "node:path";
-import { CHARACTER_LIMIT } from "../constants.js";
+import {} from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { DocumentConverter } from "../services/document-converter.js";
 import type { StateMachine } from "../services/state-machine.js";
@@ -14,15 +15,6 @@ import {
   batchImportInputSchema,
 } from "../schemas/input.js";
 import { enrichResponse } from "./response-builder.js";
-
-function formatError(toolName: string, error: Error): string {
-  return `[${toolName}] Error: ${error.message}`;
-}
-
-function truncate(text: string): string {
-  if (text.length <= CHARACTER_LIMIT) return text;
-  return text.slice(0, CHARACTER_LIMIT) + "\n\n[TRUNCATED] Response exceeded 25,000 characters.";
-}
 
 export function registerInputTools(
   server: McpServer,

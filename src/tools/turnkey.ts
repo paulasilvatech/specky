@@ -4,9 +4,10 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { formatError, truncate } from "./tool-result.js";
 import { join } from "node:path";
 import { z } from "zod";
-import { CHARACTER_LIMIT, Phase } from "../constants.js";
+import { Phase } from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
@@ -14,15 +15,6 @@ import type { EarsValidator } from "../services/ears-validator.js";
 import { enrichResponse } from "./response-builder.js";
 import { FeaturePackageGenerator } from "../services/feature-package-generator.js";
 import { slugify } from "../utils/slug.js";
-
-function formatError(toolName: string, error: Error): string {
-  return `[${toolName}] Error: ${error.message}`;
-}
-
-function truncate(text: string): string {
-  if (text.length <= CHARACTER_LIMIT) return text;
-  return text.slice(0, CHARACTER_LIMIT) + "\n\n[TRUNCATED]";
-}
 
 // Inline schema
 const turnkeySpecInputSchema = z.object({

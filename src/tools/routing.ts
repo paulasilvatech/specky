@@ -3,14 +3,10 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { CHARACTER_LIMIT } from "../constants.js";
+import { truncate } from "./tool-result.js";
+import {} from "../constants.js";
 import type { ModelRoutingEngine } from "../services/model-routing-engine.js";
 import { modelRoutingInputSchema } from "../schemas/routing.js";
-
-function truncate(text: string): string {
-  if (text.length <= CHARACTER_LIMIT) return text;
-  return text.slice(0, CHARACTER_LIMIT) + "\n\n[TRUNCATED] Response exceeded 25,000 characters.";
-}
 
 function buildMermaidDiagram(table: Array<{ phase: string; model: string; mode: string; thinking: boolean; premium_multiplier: string }>): string {
   const lines = [

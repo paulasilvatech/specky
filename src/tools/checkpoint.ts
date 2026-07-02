@@ -4,15 +4,12 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { formatError } from "./tool-result.js";
 import { join } from "node:path";
 import { z } from "zod";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import { enrichResponse } from "./response-builder.js";
-
-function formatError(toolName: string, error: Error): string {
-  return `[${toolName}] Error: ${error.message}`;
-}
 
 const checkpointInputSchema = z.object({
   feature_number: z
