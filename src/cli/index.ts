@@ -8,7 +8,7 @@
  *   specky status
  *   specky upgrade
  *   specky hooks  <list|test|run NAME>
- *   specky serve  [--http] [--port=N]
+ *   specky serve  [--http] [--port=N] [--profile=enterprise]
  *   specky --version | -v
  *   specky --help  | -h
  *
@@ -71,6 +71,8 @@ Commands:
     --port=<N>                          HTTP port (default 3200)
     --host=<addr>                       HTTP bind address (default 127.0.0.1;
                                         set 0.0.0.0 only behind an auth proxy)
+    --profile=<standard|enterprise>     Config profile (enterprise defaults
+                                        audit/RBAC/rate-limit to ON)
 
   --version, -v          Print version
   --help, -h             Print this help

@@ -295,6 +295,6 @@ If you vendor Specky into a monorepo, point `files` at the published tarball —
 - **No network access at install time** beyond npm itself.
 - Hook scripts are shell scripts — review `.apm/hooks/scripts/` before enabling hooks in security-sensitive environments.
 - `specky doctor` verifies SHA256 of every installed file against the package manifest.
-- For enterprise pilots, set `SPECKY_ENTERPRISE=1` (available in v3.5.0+) to force `audit_enabled`, `rbac`, and `rate_limit` on by default.
+- For enterprise deployments, enable the opt-in enterprise profile (v3.5.0+): `profile: enterprise` in `.specky/config.yml`, or `SPECKY_PROFILE=enterprise` / `SPECKY_ENTERPRISE=1` in the environment. It defaults `audit_enabled`, `rbac`, `rate_limit`, and `audit.fail_closed` to ON (explicit config values still win). Identity-based HTTP tokens and the tamper-evident audit trail are covered in [ENTERPRISE-DEPLOYMENT.md](ENTERPRISE-DEPLOYMENT.md).
 
 See `SECURITY.md` for the full threat model and reporting process.

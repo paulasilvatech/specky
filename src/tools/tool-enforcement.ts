@@ -28,7 +28,17 @@ interface ToolExecutionContext {
   specDir: string;
   featureNumber?: string;
   activeRole: RbacRole;
+  principal?: string;
   inputHash: string;
+}
+
+/**
+ * The slice of the MCP request context we consume. The HTTP transport fills
+ * `authInfo` from `req.auth` (set after bearer validation); stdio has none.
+ */
+export interface CallerIdentity {
+  principal?: string;
+  role?: RbacRole;
 }
 
 const ENFORCEMENT_INSTALLED = Symbol.for("specky.toolEnforcementInstalled");
@@ -76,11 +86,40 @@ function getToolInput(args: unknown[]): ToolInput {
   return isRecord(firstArg) ? firstArg : {};
 }
 
-function getActiveRole(rbacEngine: RbacEngine): RbacRole {
+function isRbacRole(value: unknown): value is RbacRole {
+  return value === "viewer" || value === "contributor" || value === "admin";
+}
+
+/**
+ * Extract the authenticated identity from the MCP request extra (second
+ * handler argument). The HTTP transport propagates `req.auth` as
+ * `extra.authInfo`; the principal/role live in `authInfo.extra`.
+ */
+export function getCallerIdentity(args: unknown[]): CallerIdentity {
+  const extra = args[1];
+  if (!isRecord(extra) || !isRecord(extra["authInfo"])) return {};
+  const authInfo = extra["authInfo"];
+  const authExtra = isRecord(authInfo["extra"]) ? authInfo["extra"] : {};
+  const principal =
+    typeof authExtra["principal"] === "string" && authExtra["principal"]
+      ? authExtra["principal"]
+      : typeof authInfo["clientId"] === "string" && authInfo["clientId"]
+        ? authInfo["clientId"]
+        : undefined;
+  const role = isRbacRole(authExtra["role"]) ? authExtra["role"] : undefined;
+  return { principal, role };
+}
+
+/**
+ * Role precedence: authenticated identity (token table) > SDD_ROLE env
+ * (local/stdio convenience — the launcher owns the process anyway) > config
+ * default_role. When a request carries an authenticated identity, the env var
+ * is deliberately ignored: a remote caller must not out-vote its token.
+ */
+function getActiveRole(rbacEngine: RbacEngine, identity: CallerIdentity): RbacRole {
+  if (identity.role) return identity.role;
   const envRole = process.env["SDD_ROLE"];
-  if (envRole === "viewer" || envRole === "contributor" || envRole === "admin") {
-    return envRole;
-  }
+  if (isRbacRole(envRole)) return envRole;
   return rbacEngine.roleDefault;
 }
 
@@ -103,6 +142,7 @@ async function auditStart(
     feature_number: context.featureNumber,
     phase,
     role: context.activeRole,
+    principal: context.principal,
     result: "success",
     summary: "Execution started",
     input_hash: context.inputHash,
@@ -123,6 +163,7 @@ async function auditSuccess(
     feature_number: context.featureNumber,
     phase,
     role: context.activeRole,
+    principal: context.principal,
     result: "success",
     summary: "Execution completed",
     input_hash: context.inputHash,
@@ -144,11 +185,26 @@ async function auditError(
     feature_number: context.featureNumber,
     phase,
     role: context.activeRole,
+    principal: context.principal,
     result: "error",
     summary,
     input_hash: context.inputHash,
     previous_hash: auditLogger.currentHash,
   });
+}
+
+/**
+ * Post-execution audit failures cannot un-run the tool; even in fail-closed
+ * mode the result is returned and the failure is surfaced on stderr. Only the
+ * pre-execution entry gates execution.
+ */
+async function auditBestEffort(write: Promise<void>, toolName: string): Promise<void> {
+  try {
+    await write;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error(`[specky] Post-execution audit write failed for ${toolName}: ${message}`);
+  }
 }
 
 function wrapToolHandler(
@@ -159,22 +215,28 @@ function wrapToolHandler(
   return async (...args: unknown[]) => {
     const input = getToolInput(args);
     const specDir = getSpecDir(input);
-    const activeRole = getActiveRole(options.rbacEngine);
+    const identity = getCallerIdentity(args);
+    const activeRole = getActiveRole(options.rbacEngine, identity);
     const context: ToolExecutionContext = {
       toolName,
       specDir,
       featureNumber: getFeatureNumber(input),
       activeRole,
+      principal: identity.principal,
       inputHash: hashValue(input),
     };
 
     const rbac = options.rbacEngine.checkAccess(activeRole, toolName);
     if (!rbac.allowed) {
-      await auditError(options.auditLogger, context, rbac.reason ?? "RBAC access denied");
+      await auditBestEffort(
+        auditError(options.auditLogger, context, rbac.reason ?? "RBAC access denied"),
+        toolName,
+      );
       return buildDeniedResponse({
         error: "access_denied",
         tool: toolName,
         active_role: activeRole,
+        ...(identity.principal ? { principal: identity.principal } : {}),
         message: rbac.reason ?? `Role ${activeRole} cannot invoke ${toolName}.`,
       });
     }
@@ -182,7 +244,10 @@ function wrapToolHandler(
     const phaseCheck = await options.stateMachine.validatePhaseForTool(specDir, toolName);
     if (!phaseCheck.allowed) {
       const message = phaseCheck.error_message ?? `Tool ${toolName} is not allowed in phase ${phaseCheck.current_phase}.`;
-      await auditError(options.auditLogger, context, message, phaseCheck.current_phase);
+      await auditBestEffort(
+        auditError(options.auditLogger, context, message, phaseCheck.current_phase),
+        toolName,
+      );
       return buildDeniedResponse({
         error: "phase_validation_failed",
         tool: toolName,
@@ -192,14 +257,33 @@ function wrapToolHandler(
       });
     }
 
-    await auditStart(options.auditLogger, context, phaseCheck.current_phase);
+    // Fail-closed gate: if the pre-execution audit entry cannot be written,
+    // the tool does not run (no unaudited actions in enterprise mode).
+    try {
+      await auditStart(options.auditLogger, context, phaseCheck.current_phase);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return buildDeniedResponse({
+        error: "audit_unavailable",
+        tool: toolName,
+        message:
+          `Refusing to execute: the audit trail could not be written and audit.fail_closed is on. (${message})`,
+      });
+    }
+
     try {
       const result = await handler(...args);
-      await auditSuccess(options.auditLogger, context, result, phaseCheck.current_phase);
+      await auditBestEffort(
+        auditSuccess(options.auditLogger, context, result, phaseCheck.current_phase),
+        toolName,
+      );
       return result;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      await auditError(options.auditLogger, context, message, phaseCheck.current_phase);
+      await auditBestEffort(
+        auditError(options.auditLogger, context, message, phaseCheck.current_phase),
+        toolName,
+      );
       throw error;
     }
   };

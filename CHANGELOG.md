@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-07-02
+
+Enterprise mode — an **opt-in profile**, not a paid tier. One MIT package; every
+control below is free, default-OFF, and the standard profile is byte-for-byte
+the same experience as 3.4.0. See `docs/ENTERPRISE-DEPLOYMENT.md`.
+
+### Added
+
+- **Enterprise profile.** `profile: enterprise` in `.specky/config.yml` — or `SPECKY_PROFILE=enterprise`, the `SPECKY_ENTERPRISE=1` shorthand, or `specky serve --profile=enterprise` (flag > env > file) — flips the *defaults* of `audit_enabled`, `rbac.enabled`, `rate_limit.enabled`, and the new `audit.fail_closed` to ON. Explicit config values always win, so any control can still be switched off individually. The server logs the resolved posture at startup.
+- **Identity-based RBAC over HTTP.** `SDD_HTTP_TOKENS_FILE` points at a YAML token table (kept outside the workspace) mapping bearer tokens — plaintext or `token_sha256` — to a named `principal` and RBAC `role`. Tokens are constant-time compared; loading is fail-closed (a malformed table aborts startup instead of accepting everyone). Role precedence is now **authenticated token role > `SDD_ROLE` > `rbac.default_role`** — an authenticated request ignores `SDD_ROLE`, so a remote caller cannot out-vote its token. `sdd_check_access` and `access_denied` responses report the principal and role source. The legacy shared `SDD_HTTP_TOKEN` continues to work unchanged when no table is configured.
+- **Tamper-evident audit trail.** With `SDD_AUDIT_HMAC_KEY` (or `SDD_AUDIT_HMAC_KEY_FILE`, key held outside the workspace) every audit entry is signed with HMAC-SHA256 over its serialized form — `previous_hash` included, so signatures chain. `sdd_verify_audit` now verifies both the hash chain and the signatures and reports `hmac_checked` / `signed_entries`; a workspace writer who rewrites the log and recomputes the plain chain is detected. Audit entries also record the authenticated `principal`. (Documented limit: tail truncation needs external anchoring of `current_hash`.)
+- **Fail-closed auditing.** `audit.fail_closed: true` (enterprise default) refuses tool execution with `audit_unavailable` when the pre-execution audit entry cannot be written — no unaudited actions. Post-execution audit failures are surfaced on stderr without masking the tool result. Standard profile keeps the historical fail-open behavior.
+- **`docs/ENTERPRISE-DEPLOYMENT.md`** — profiles, token table setup (with token/hash generation commands), HMAC audit + verification, hosted `serve --http` behind TLS (systemd/container examples), air-gapped tarball + private-registry installs, CI enforcement, the full enterprise env-var/config reference, and an honest out-of-scope list (no in-process TLS, no SSO yet, stdio has no auth layer).
+- Tests: `config-profile` (profile precedence + explicit-wins), `audit-hmac` (signing, forged-rewrite detection, fail-closed, key resolution), `token-table` (load validation + identity resolution), and identity/fail-closed cases in `tool-enforcement`.
+
+### Changed
+
+- `AuditLogger` accepts an options object (`{ exportFormat, maxFileSizeMb, hmacKey, failClosed }`); the old positional signature still works.
+- RBAC denial responses and audit entries include the caller's `principal` when authenticated.
+- README, SECURITY.md, CLI.md, INSTALL.md, and ENTERPRISE-CONTROLS.md updated for the profile, token table, and HMAC audit; API reference regenerated.
+
 ## [3.4.0] - 2026-07-02
 
 First stable `3.4.0` (supersedes the `3.4.0-rc.*` prereleases). Consolidates the

@@ -13,8 +13,9 @@ export interface ServeOptions {
 
 export async function runServe(opts: ServeOptions): Promise<number> {
   // We simply import the existing entry point which starts the MCP server.
-  // Flags like --http are read from process.argv by the server module itself,
-  // so we just set them back into argv for compatibility.
+  // Flags like --http, --host= and --profile= are read from process.argv by
+  // the server module itself, so we just set them back into argv for
+  // compatibility.
   const extra: string[] = [];
   if (opts.http) extra.push("--http");
   if (opts.port) process.env["PORT"] = String(opts.port);

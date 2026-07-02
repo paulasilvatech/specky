@@ -125,7 +125,7 @@ Useful for debugging why a hook did or did not fire.
 Start the MCP server.
 
 ```
-specky serve [--http] [--port=<N>] [--host=<addr>]
+specky serve [--http] [--port=<N>] [--host=<addr>] [--profile=<standard|enterprise>]
 ```
 
 | Flag | Description |
@@ -133,8 +133,9 @@ specky serve [--http] [--port=<N>] [--host=<addr>]
 | `--http` | Use HTTP streaming transport instead of stdio |
 | `--port` | HTTP port (default: 3200) |
 | `--host` | HTTP bind address (default: `127.0.0.1`; set `0.0.0.0` only behind an auth proxy) |
+| `--profile` | Config profile; `enterprise` defaults audit/RBAC/rate-limit to ON (explicit config.yml values win) |
 
-Set `SDD_HTTP_TOKEN` to require an `Authorization: Bearer <token>` header on `/mcp` requests. HTTP binds to loopback by default and rejects cross-origin (DNS-rebinding) requests.
+Set `SDD_HTTP_TOKEN` (shared token) or `SDD_HTTP_TOKENS_FILE` (named tokens → principal + RBAC role) to require an `Authorization: Bearer <token>` header on `/mcp` requests. HTTP binds to loopback by default and rejects cross-origin (DNS-rebinding) requests. Full enterprise setup: [ENTERPRISE-DEPLOYMENT.md](ENTERPRISE-DEPLOYMENT.md).
 
 This is the canonical replacement for `npx specky-sdd`. The legacy `specky-sdd` bin still works (it delegates to `specky serve`).
 
@@ -181,8 +182,12 @@ Existing MCP configs using `npx -y specky-sdd` (no subcommand) still work — th
 | `SDD_WORKSPACE` | Override the workspace root (default: `process.cwd()`) |
 | `SPECKY_DEBUG=1` | Print full error stacks |
 | `PORT` | HTTP port for `specky serve --http` (default: 3200) |
-| `SDD_HTTP_TOKEN` | Require `Authorization: Bearer <token>` on `/mcp` (HTTP mode) |
+| `SDD_HTTP_TOKEN` | Require `Authorization: Bearer <token>` on `/mcp` (HTTP mode, shared token) |
+| `SDD_HTTP_TOKENS_FILE` | Token table (YAML) mapping bearer tokens to principal + RBAC role |
 | `SDD_HTTP_HOST` | HTTP bind address (default: `127.0.0.1`) |
+| `SPECKY_PROFILE` | `standard` or `enterprise` (beats `.specky/config.yml`; `SPECKY_ENTERPRISE=1` is shorthand) |
+| `SDD_ROLE` | Local RBAC role for stdio mode (ignored on authenticated HTTP requests) |
+| `SDD_AUDIT_HMAC_KEY` / `SDD_AUDIT_HMAC_KEY_FILE` | Sign audit entries with HMAC-SHA256 (tamper evidence) |
 
 ---
 

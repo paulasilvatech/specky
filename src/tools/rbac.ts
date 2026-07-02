@@ -7,13 +7,14 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { RbacEngine, type RbacRole } from "../services/rbac-engine.js";
 import { TOOL_NAMES } from "../constants.js";
+import { getCallerIdentity } from "./tool-enforcement.js";
 
 const checkAccessInputSchema = z.object({
   role_override: z
     .enum(["viewer", "contributor", "admin"])
     .optional()
     .describe(
-      "Override the active role for this check (for testing access). Defaults to SDD_ROLE env var or the configured default_role.",
+      "Override the active role for this check (for testing access). Defaults to the authenticated token role, then SDD_ROLE env var, then the configured default_role.",
     ),
   tool_name: z
     .string()
@@ -31,12 +32,14 @@ export function registerRbacTools(
     TOOL_NAMES.CHECK_ACCESS,
     {
       description:
-        "Check RBAC access for the current role. Returns the active role, whether a specific tool is accessible, and a summary of what each role can do. Useful for diagnosing permission issues in enterprise deployments.",
+        "Check RBAC access for the current caller. Returns the active role (authenticated token role > SDD_ROLE > default_role), whether a specific tool is accessible, and a summary of what each role can do. Useful for diagnosing permission issues in enterprise deployments.",
       inputSchema: checkAccessInputSchema,
     },
-    async (input) => {
+    async (input, extra) => {
+      const identity = getCallerIdentity([input, extra]);
       const activeRole: RbacRole =
         (input.role_override as RbacRole | undefined) ??
+        identity.role ??
         ((process.env["SDD_ROLE"] as RbacRole | undefined) ?? rbacEngine.roleDefault);
 
       let toolCheck: { tool: string; allowed: boolean; reason?: string } | undefined;
@@ -45,15 +48,20 @@ export function registerRbacTools(
         toolCheck = { tool: input.tool_name, ...result };
       }
 
+      const roleSource = input.role_override
+        ? "role_override parameter"
+        : identity.role
+        ? "authenticated token (SDD_HTTP_TOKENS_FILE)"
+        : process.env["SDD_ROLE"]
+        ? "SDD_ROLE environment variable"
+        : "config default_role";
+
       const response = {
         rbac_enabled: rbacEngine.isEnabled,
         active_role: activeRole,
+        ...(identity.principal ? { principal: identity.principal } : {}),
         default_role: rbacEngine.roleDefault,
-        role_source: input.role_override
-          ? "role_override parameter"
-          : process.env["SDD_ROLE"]
-          ? "SDD_ROLE environment variable"
-          : "config default_role",
+        role_source: roleSource,
         ...(toolCheck ? { tool_check: toolCheck } : {}),
         role_summary: {
           viewer: {
@@ -70,10 +78,10 @@ export function registerRbacTools(
           },
         },
         next_steps: rbacEngine.isEnabled
-          ? "Set SDD_ROLE=viewer|contributor|admin to control access. Configure rbac.default_role in .specky/config.yml."
-          : "RBAC is disabled. Enable with rbac.enabled: true in .specky/config.yml.",
+          ? "For identity-based roles over HTTP, configure SDD_HTTP_TOKENS_FILE (principal + role per token). Locally, set SDD_ROLE=viewer|contributor|admin per process; configure rbac.default_role in .specky/config.yml."
+          : "RBAC is disabled. Enable with rbac.enabled: true in .specky/config.yml, or switch to profile: enterprise.",
         learning_note:
-          "RBAC is opt-in and defaults to disabled. When enabled, use SDD_ROLE env var to set the active role per process. Admin role is required for sdd_create_pr (release gate).",
+          "RBAC is opt-in and defaults to disabled (the enterprise profile turns it on). Authenticated token roles always win over SDD_ROLE — a remote caller cannot out-vote its token. Admin role is required for sdd_create_pr (release gate).",
       };
 
       return {

@@ -20,10 +20,11 @@ Specky should provide these enterprise guarantees:
 | Zod input schemas | Implemented | Keep schemas aligned with shared ID contracts. |
 | State machine | Implemented and enforced via a central `registerTool` wrapper | Move to per-feature state files for true multi-feature isolation. |
 | State write serialization | Implemented (per-spec-dir async mutex; atomic state + signature) | — |
-| RBAC engine | Implemented and globally enforced | Continue expanding role policy coverage as new tools are added. |
-| Audit logger | Implemented and globally attached | Add user-facing audit chain verification command/tool. |
-| Rate limiting | Implemented for HTTP mode (opt-in) | Add enterprise defaults; bound the bucket map. |
-| HTTP transport security | Loopback bind by default, opt-in bearer-token auth (`SDD_HTTP_TOKEN`), DNS-rebinding protection | Add TLS termination guidance for remote deployments. |
+| RBAC engine | Implemented and globally enforced; identity-based roles via HTTP token table (`SDD_HTTP_TOKENS_FILE`), token role beats `SDD_ROLE` | Continue expanding role policy coverage as new tools are added. |
+| Audit logger | Implemented and globally attached; entries carry the authenticated principal; opt-in HMAC signing (`SDD_AUDIT_HMAC_KEY[_FILE]`) and fail-closed mode | Tail truncation needs external `current_hash` anchoring (documented). |
+| Rate limiting | Implemented for HTTP mode; on by default under the enterprise profile | Bound the bucket map. |
+| HTTP transport security | Loopback bind by default, bearer-token auth (shared token or named token table), DNS-rebinding protection | TLS termination via reverse proxy — see [ENTERPRISE-DEPLOYMENT.md](ENTERPRISE-DEPLOYMENT.md). |
+| Enterprise profile | Implemented (`profile: enterprise` / `SPECKY_PROFILE` / `--profile=`) — flips audit/RBAC/rate-limit/fail-closed defaults to ON; explicit config wins | — |
 | Installer least-privilege | Minimal pre-authorized allow-list; no arbitrary shell/`rm`/network | Document opt-in for broader grants. |
 | HMAC state signature | Implemented | Add user-facing state signature verification command/tool. |
 | Audit chain verification | Implemented | Extend verification reporting into release evidence automation. |
@@ -68,6 +69,8 @@ sequenceDiagram
 
 RBAC may remain opt-in for local use, but when enabled it must be enforced by the wrapper before any handler executes.
 
+Role resolution precedence: **authenticated token role** (HTTP token table) > `SDD_ROLE` env (local stdio convenience) > `rbac.default_role`. An authenticated request ignores `SDD_ROLE` — a remote caller cannot out-vote its token. Deployment steps: [ENTERPRISE-DEPLOYMENT.md](ENTERPRISE-DEPLOYMENT.md).
+
 ## Audit Policy
 
 When `audit_enabled=true`, every tool execution should produce a hash-chained record containing:
@@ -75,6 +78,7 @@ When `audit_enabled=true`, every tool execution should produce a hash-chained re
 - Timestamp
 - Tool name
 - Role
+- Principal (authenticated identity, when available)
 - Phase
 - Spec directory
 - Feature number when available
@@ -82,8 +86,11 @@ When `audit_enabled=true`, every tool execution should produce a hash-chained re
 - Input hash
 - Output hash or error hash
 - Previous hash
+- HMAC-SHA256 signature (when an audit HMAC key is configured)
 
 Sensitive file content and secrets must not be logged.
+
+Tamper evidence: the plain hash chain detects corruption but can be recomputed by a workspace writer. With `SDD_AUDIT_HMAC_KEY[_FILE]` (key held outside the workspace) every entry is signed and `sdd_verify_audit` verifies both layers. With `audit.fail_closed=true` (enterprise default) a tool call is refused if its pre-execution audit entry cannot be written.
 
 ## Semantic Gate Policy
 

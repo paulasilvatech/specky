@@ -17,7 +17,7 @@ export function registerAuditTools(
     {
       title: "Verify Audit Trail",
       description:
-        "Verifies the hash-chain integrity of the Specky audit log for a spec directory. Returns whether the chain is valid, entry count, current hash, and any mismatch errors.",
+        "Verifies the hash-chain integrity of the Specky audit log for a spec directory. When an HMAC key is configured (SDD_AUDIT_HMAC_KEY / SDD_AUDIT_HMAC_KEY_FILE), also verifies each entry's HMAC-SHA256 signature (tamper evidence). Returns whether the chain is valid, entry count, current hash, hmac_checked/signed_entries, and any mismatch errors.",
       inputSchema: verifyAuditInputSchema,
       annotations: {
         readOnlyHint: true,

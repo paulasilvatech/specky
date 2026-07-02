@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -134,5 +134,111 @@ describe("installToolEnforcement", () => {
     expect(entries[0].input_hash).toEqual(entries[1].input_hash);
     expect(entries[1].output_hash).toEqual(expect.any(String));
     expect(entries[1].previous_hash).toEqual(expect.any(String));
+  });
+});
+
+describe("identity-based RBAC (authInfo from the HTTP token table)", () => {
+  let workspace: string;
+  let savedRole: string | undefined;
+
+  beforeEach(() => {
+    workspace = mkdtempSync(join(tmpdir(), "specky-tool-identity-"));
+    savedRole = process.env["SDD_ROLE"];
+  });
+
+  afterEach(() => {
+    rmSync(workspace, { recursive: true, force: true });
+    if (savedRole === undefined) delete process.env["SDD_ROLE"];
+    else process.env["SDD_ROLE"] = savedRole;
+  });
+
+  function installedServer(auditLogger?: AuditLogger): FakeServer {
+    const server = new FakeServer();
+    installToolEnforcement(server as unknown as McpServer, {
+      auditLogger: auditLogger ?? new AuditLogger(workspace, true),
+      rbacEngine: new RbacEngine(true, "contributor"),
+      stateMachine: new StateMachine(new FileManager(workspace), workspace),
+    });
+    return server;
+  }
+
+  function viewerExtra(principal: string): Record<string, unknown> {
+    return { authInfo: { token: "fp", clientId: principal, scopes: ["role:viewer"], extra: { principal, role: "viewer" } } };
+  }
+
+  it("authenticated token role wins over SDD_ROLE env", async () => {
+    process.env["SDD_ROLE"] = "admin"; // a remote caller must not out-vote its token
+    const server = installedServer();
+    let executed = false;
+    server.registerTool("sdd_write_spec", {}, async () => {
+      executed = true;
+      return { content: [{ type: "text", text: "ran" }] };
+    });
+
+    const result = await getHandler(server, "sdd_write_spec")(
+      { spec_dir: ".specs" },
+      viewerExtra("alice"),
+    );
+    const payload = JSON.parse(result.content[0].text) as {
+      error: string;
+      active_role: string;
+      principal: string;
+    };
+
+    expect(executed).toBe(false);
+    expect(payload.error).toBe("access_denied");
+    expect(payload.active_role).toBe("viewer");
+    expect(payload.principal).toBe("alice");
+  });
+
+  it("records the authenticated principal in audit entries", async () => {
+    const server = installedServer();
+    server.registerTool("sdd_get_status", {}, async () => ({
+      content: [{ type: "text", text: "ok" }],
+    }));
+
+    await getHandler(server, "sdd_get_status")({ spec_dir: ".specs" }, viewerExtra("alice"));
+
+    const entries = readAuditEntries(workspace);
+    expect(entries).toHaveLength(2);
+    expect(entries[0].principal).toBe("alice");
+    expect(entries[0].role).toBe("viewer");
+    expect(entries[1].principal).toBe("alice");
+  });
+
+  it("falls back to SDD_ROLE, then default_role, when unauthenticated (stdio)", async () => {
+    process.env["SDD_ROLE"] = "viewer";
+    const server = installedServer();
+    let executed = false;
+    server.registerTool("sdd_write_spec", {}, async () => {
+      executed = true;
+      return { content: [{ type: "text", text: "ran" }] };
+    });
+
+    const denied = await getHandler(server, "sdd_write_spec")({ spec_dir: ".specs" });
+    expect(executed).toBe(false);
+    expect((JSON.parse(denied.content[0].text) as { active_role: string }).active_role).toBe(
+      "viewer",
+    );
+  });
+
+  it("fail-closed audit refuses to execute when the start entry cannot be written", async () => {
+    // Make `.specs` a regular FILE so the audit write fails.
+    writeFileSync(join(workspace, ".specs"), "not a directory", "utf8");
+    const server = installedServer(
+      new AuditLogger(workspace, true, { failClosed: true }),
+    );
+    let executed = false;
+    server.registerTool("sdd_get_status", {}, async () => {
+      executed = true;
+      return { content: [{ type: "text", text: "ok" }] };
+    });
+
+    const result = await getHandler(server, "sdd_get_status")({ spec_dir: ".specs" });
+    const payload = JSON.parse(result.content[0].text) as { error: string };
+
+    expect(executed).toBe(false);
+    expect(result.isError).toBe(true);
+    expect(payload.error).toBe("audit_unavailable");
   });
 });
