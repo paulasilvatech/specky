@@ -125,13 +125,16 @@ Useful for debugging why a hook did or did not fire.
 Start the MCP server.
 
 ```
-specky serve [--http] [--port=<N>]
+specky serve [--http] [--port=<N>] [--host=<addr>]
 ```
 
 | Flag | Description |
 |---|---|
 | `--http` | Use HTTP streaming transport instead of stdio |
-| `--port` | HTTP port (default: 3001) |
+| `--port` | HTTP port (default: 3200) |
+| `--host` | HTTP bind address (default: `127.0.0.1`; set `0.0.0.0` only behind an auth proxy) |
+
+Set `SDD_HTTP_TOKEN` to require an `Authorization: Bearer <token>` header on `/mcp` requests. HTTP binds to loopback by default and rejects cross-origin (DNS-rebinding) requests.
 
 This is the canonical replacement for `npx specky-sdd`. The legacy `specky-sdd` bin still works (it delegates to `specky serve`).
 
@@ -177,7 +180,9 @@ Existing MCP configs using `npx -y specky-sdd` (no subcommand) still work — th
 |---|---|
 | `SDD_WORKSPACE` | Override the workspace root (default: `process.cwd()`) |
 | `SPECKY_DEBUG=1` | Print full error stacks |
-| `PORT` | HTTP port for `specky serve --http` (default: 3001) |
+| `PORT` | HTTP port for `specky serve --http` (default: 3200) |
+| `SDD_HTTP_TOKEN` | Require `Authorization: Bearer <token>` on `/mcp` (HTTP mode) |
+| `SDD_HTTP_HOST` | HTTP bind address (default: `127.0.0.1`) |
 
 ---
 

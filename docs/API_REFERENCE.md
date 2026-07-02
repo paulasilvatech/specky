@@ -1,167 +1,67 @@
 # Specky MCP Server — API Reference
 
-> Manually maintained — last updated 2026-04-14.
-> Align with `src/constants.ts` TOOL_NAMES when adding or removing tools.
+> Generated from the live MCP server by `scripts/generate-api-reference.mjs`.
+> Do not edit by hand — run `node scripts/generate-api-reference.mjs` after changing tools.
 
 **Total tools: 58**
 
-## Categories
-
-- [Checkpointing](#checkpointing) (3 tools)
-- [Dev Environment](#dev-environment) (3 tools)
-- [Documentation](#documentation) (5 tools)
-- [Infrastructure as Code](#infrastructure-as-code) (3 tools)
-- [Input & Conversion](#input-conversion) (3 tools)
-- [Integration & Export](#integration-export) (5 tools)
-- [Metrics](#metrics) (1 tools)
-- [Other](#other) (2 tools)
-- [Pipeline](#pipeline) (9 tools)
-- [Property-Based Testing](#property-based-testing) (1 tools)
-- [Quality & Validation](#quality-validation) (5 tools)
-- [Security](#security) (2 tools)
-- [Testing](#testing) (2 tools)
-- [Transcript](#transcript) (3 tools)
-- [Turnkey](#turnkey) (1 tools)
-- [Utility](#utility) (6 tools)
-- [Visualization](#visualization) (4 tools)
-
-## Checkpointing {#checkpointing}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_checkpoint` | Create Checkpoint | Creates a named snapshot of all spec artifacts (CONSTITUTION.md, SPECIFICATION.md, DESIGN.md, TASKS.md, etc.) | `feature_number` |
-| `sdd_list_checkpoints` | List Checkpoints | Lists all available checkpoints for a feature with their labels, dates, and phases. | `feature_number` |
-| `sdd_restore` | Restore from Checkpoint | Restores all spec artifacts to a previous checkpoint snapshot. | `feature_number` |
-
-## Dev Environment {#dev-environment}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_generate_devcontainer` | Generate Devcontainer Config | Generates .devcontainer/devcontainer.json from the detected tech stack and DESIGN.md. Writes the file to disk for local … | — |
-| `sdd_setup_codespaces` | Setup GitHub Codespaces | Detects the project tech stack and generates a devcontainer configuration suitable for GitHub Codespaces. Returns a payl… | — |
-| `sdd_setup_local_env` | Setup Local Dev Environment | Detects the project tech stack and generates a Docker-based local development environment (Dockerfile + docker-compose.y… | — |
-
-## Documentation {#documentation}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_generate_all_docs` | Generate All Documentation | Generates ALL documentation types in parallel: full docs, API docs, runbook, onboarding guide, and SDD journey. | `feature_number` |
-| `sdd_generate_api_docs` | Generate API Documentation |  | — |
-| `sdd_generate_docs` | Generate Full Documentation | Generates comprehensive feature documentation from SPECIFICATION.md, DESIGN.md, TASKS.md, and ANALYSIS.md. Writes a comb… | `feature_number` |
-| `sdd_generate_onboarding` | Generate Onboarding Guide |  | — |
-| `sdd_generate_runbook` | Generate Operational Runbook |  | — |
-
-## Infrastructure as Code {#infrastructure-as-code}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_generate_dockerfile` | Generate Dockerfile | Reads DESIGN.md or uses sdd_scan_codebase results to detect the tech stack, then generates a Dockerfile and optionally a… | — |
-| `sdd_generate_iac` | Generate Infrastructure as Code | Reads DESIGN.md to detect infrastructure needs and generates Terraform or Bicep files. Returns generated file contents, … | — |
-| `sdd_validate_iac` | Validate Infrastructure as Code | Generates a validation payload for Terraform MCP (plan/validate) or Azure MCP (template validation). The AI client route… | — |
-
-## Input & Conversion {#input-conversion}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_batch_import` | Batch Import Documents | Scans a directory for supported documents (PDF, DOCX, PPTX, TXT, MD) and converts each to Markdown. Returns an array of … | — |
-| `sdd_figma_to_spec` | Figma to Spec | Prepares a structured payload for extracting design context from a Figma file. The AI client should use the returned rou… | — |
-| `sdd_import_document` | Import Document | Imports a document (PDF, DOCX, PPTX, TXT, MD, VTT, SRT) or raw text and converts it to Markdown for SDD processing. Retu… | — |
-
-## Integration & Export {#integration-export}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_create_branch` | Create Feature Branch | Generates a branch name following SDD conventions and returns a command_hint for creating the branch. Does not execute g… | — |
-| `sdd_create_pr` | Create Pull Request Payload | Generates a pull request payload from SPECIFICATION.md and TASKS.md with spec summary, requirements covered, and task pr… | — |
-| `sdd_export_work_items` | Export Work Items | Transforms TASKS.md into platform-specific work item payloads (GitHub Issues, Azure Boards, or Jira). Returns routing_in… | — |
-| `sdd_implement` | Generate Implementation Plan | Reads TASKS.md and produces an ordered implementation roadmap with phases, parallel groups, dependency resolution, and c… | — |
-| `sdd_research` | Research Questions | Takes an array of research questions, generates RESEARCH.md with structured entries (question, findings placeholder, sou… | — |
-
-## Metrics {#metrics}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_metrics` | Generate Metrics Dashboard | Generate a self-contained HTML metrics dashboard for a feature. | — |
-
-## Other {#other}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_context_status` | Context Tier Status | Return the context tier assignment (Hot/Domain/Cold) for all spec artifacts in the active feature. | — |
-| `sdd_model_routing` | Model Routing Decision Table | Return the full model routing decision table for all 10 SDD pipeline phases. | — |
-
-## Pipeline {#pipeline}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_advance_phase` | Advance Pipeline Phase | Validates that the current phase | — |
-| `sdd_check_sync` | Check Spec-Code Sync | Compares specification requirements against implementation files and returns a drift report showing which requirements a… | — |
+| Tool | Title | Description | Required inputs |
+|------|-------|-------------|-----------------|
+| `sdd_advance_phase` | Advance Pipeline Phase | Validates that the current phase's required files exist, then transitions the state machine to the next phase. | — |
+| `sdd_amend` | Amend Constitution | Appends an amendment entry to CONSTITUTION.md's changelog and updates the amendment_count in frontmatter. | `rationale`, `articles_affected`, `changes_description` |
+| `sdd_auto_pipeline` | Auto Pipeline from Transcript | FULLY AUTOMATED: Reads a meeting transcript, extracts requirements, and runs the complete SDD pipeline in one call. Creates CONSTITUTION.md, SPECIFICATION.md, DESIGN.md, TASKS.md, and ANALYSIS.md from a single transcript file. Supports VTT (Teams), SRT (Zoom), TXT, and MD formats. | `project_name` |
+| `sdd_batch_import` | Batch Import Documents | Scans a directory for supported documents (PDF, DOCX, PPTX, TXT, MD) and converts each to Markdown. Returns an array of conversion results with total count and per-file metadata. | `documents_dir` |
+| `sdd_batch_transcripts` | Batch Process Transcript Folder | Scans a folder for transcript files (.vtt, .srt, .txt, .md) and runs the full SDD auto-pipeline for each one. Designed for Power Automate + OneDrive workflows where meeting transcripts are saved automatically to a shared folder. Each transcript becomes its own feature spec package. | `transcripts_dir` |
+| `sdd_check_access` |  | Check RBAC access for the current role. Returns the active role, whether a specific tool is accessible, and a summary of what each role can do. Useful for diagnosing permission issues in enterprise deployments. | — |
+| `sdd_check_ecosystem` | Check MCP Ecosystem | Reports which external MCP servers are recommended for the full Specky experience. Shows what each server does, which Specky tools it enhances, and how to install it. Run this first to understand what integrations are available. | — |
+| `sdd_check_sync` | Check Spec-Code Sync | Compares specification requirements against implementation files and returns a drift report showing which requirements are implemented and which are missing. | — |
+| `sdd_checklist` | Generate Quality Checklist | Generates a domain-specific quality checklist (security, accessibility, performance, etc.) by analyzing SPECIFICATION.md and DESIGN.md. Writes CHECKLIST.md. | `domain` |
+| `sdd_checkpoint` | Create Checkpoint | Creates a named snapshot of all spec artifacts (CONSTITUTION.md, SPECIFICATION.md, DESIGN.md, TASKS.md, etc.) and the current pipeline state. Use before making major changes so you can rollback if needed. | — |
 | `sdd_clarify` | Clarify Requirements | Reads SPECIFICATION.md and returns up to 5 disambiguation questions targeting ambiguous or incomplete requirements. | — |
-| `sdd_discover` | Discover Project Requirements | Returns 7 structured discovery questions tailored to your project idea. Covers: scope, users, constraints, integrations,… | — |
-| `sdd_init` | Initialize SDD Pipeline | Creates .specs/ directory, writes CONSTITUTION.md skeleton, and initializes the state machine. Call this first before an… | — |
-| `sdd_run_analysis` | Run Specification Analysis | Reads all spec files, generates ANALYSIS.md with traceability matrix and coverage report, and returns a gate decision (A… | — |
-| `sdd_write_design` | Write Design Document | Generates and writes DESIGN.md with architecture overview, Mermaid diagrams, ADRs, and API contracts. | — |
-| `sdd_write_spec` | Write Specification | Generates and writes SPECIFICATION.md with all requirements in EARS notation. Validates each requirement against EARS pa… | — |
-| `sdd_write_tasks` | Write Task Breakdown | Generates and writes TASKS.md with pre-implementation gates, sequenced tasks with [P] parallel markers, effort estimates… | — |
-
-## Property-Based Testing {#property-based-testing}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_generate_pbt` | Generate Property-Based Tests | Extracts universal properties (invariants, round-trips, idempotence) from EARS requirements | — |
-
-## Quality & Validation {#quality-validation}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_checklist` | Generate Quality Checklist | Generates a domain-specific quality checklist (security, accessibility, performance, etc.) by analyzing SPECIFICATION.md… | — |
-| `sdd_compliance_check` | Run Compliance Check | Validates specification and design against a compliance framework (HIPAA, SOC2, GDPR, PCI-DSS, ISO27001, or general). Wr… | — |
-| `sdd_cross_analyze` | Cross-Artifact Analysis | Cross-artifact consistency analysis: checks alignment between SPECIFICATION.md, DESIGN.md, and TASKS.md. Finds orphaned … | — |
-| `sdd_validate_ears` | Validate EARS Requirements | Validates requirement statements against EARS notation patterns (ubiquitous, event-driven, state-driven, optional, unwan… | — |
-| `sdd_verify_tasks` | Verify Task Completions | Reads TASKS.md and checks code_paths for implementation evidence. Detects phantom completions — tasks marked [x] but wit… | — |
-
-## Testing {#testing}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_generate_tests` | Generate Test Stubs | Generate test stubs from acceptance criteria in SPECIFICATION.md and TASKS.md. | — |
-| `sdd_verify_tests` | Verify Test Coverage Against Requirements | Reads test results JSON and cross-references with requirement IDs from SPECIFICATION.md. | — |
-
-## Transcript {#transcript}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_auto_pipeline` | Auto Pipeline from Transcript | FULLY AUTOMATED: Reads a meeting transcript, extracts requirements, and runs the complete SDD pipeline in one call. Crea… | — |
-| `sdd_batch_transcripts` | Batch Process Transcript Folder | Scans a folder for transcript files (.vtt, .srt, .txt, .md) and runs the full SDD auto-pipeline for each one. Designed f… | — |
-| `sdd_import_transcript` | Import Meeting Transcript | Parses a meeting transcript (VTT, SRT, TXT, or MD) and extracts structured data: participants, topics, decisions, action… | — |
-
-## Turnkey {#turnkey}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_turnkey_spec` | Turnkey Specification from Description | Generates a complete EARS specification from a natural language feature description. | `feature_name`, `description`, `feature_number` |
-
-## Utility {#utility}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_amend` | Amend Constitution | Appends an amendment entry to CONSTITUTION.md | — |
-| `sdd_check_ecosystem` | Check MCP Ecosystem | Reports which external MCP servers are recommended for the full Specky experience. Shows what each server does, which Sp… | — |
-| `sdd_get_status` | Get Pipeline Status | Returns the current pipeline status including: current phase, completed phases, files on disk, completion percentage, an… | — |
-| `sdd_get_template` | Get Raw Template |  | — |
-| `sdd_scan_codebase` | Scan Codebase | Scans the workspace project structure and returns auto-steering context: detected language, framework, package manager, … | — |
-| `sdd_write_bugfix` | Write Bugfix Specification | Generates and writes BUGFIX_SPEC.md with current behavior, expected behavior, unchanged behavior, root cause analysis, a… | — |
-
-## Visualization {#visualization}
-
-| Tool | Title | Description | Inputs |
-|------|-------|-------------|--------|
-| `sdd_figma_diagram` | Generate Figma Diagram Payload | Generates a FigJam-ready diagram payload from DESIGN.md. Returns structured data with routing_instructions for the AI cl… | — |
-| `sdd_generate_all_diagrams` | Generate All Diagrams | Generates ALL diagram types for a feature in one call. Produces architecture, sequence, ERD, flow, dependency, and trace… | — |
-| `sdd_generate_diagram` | Generate Mermaid Diagram | Generates a single Mermaid diagram from a specification artifact. Supports 17 diagram types: flowchart, sequence, class,… | — |
-| `sdd_generate_user_stories` | Generate User Stories | Generates user stories with acceptance criteria and flow diagrams from SPECIFICATION.md. Each story includes a Mermaid f… | — |
-
-## Security {#security}
-
-- `sdd_check_access` — Check RBAC Access. Inputs: `role_override`, `tool_name`.
-- `sdd_verify_audit` — Verify Audit Trail. Inputs: `spec_dir`.
+| `sdd_compliance_check` | Run Compliance Check | Validates specification and design against a compliance framework (HIPAA, SOC2, GDPR, PCI-DSS, ISO27001, or general). Writes COMPLIANCE.md. | `framework` |
+| `sdd_context_status` | Context Tier Status | Return the context tier assignment (Hot/Domain/Cold) for all spec artifacts in the active feature. Includes estimated token load for current session vs universal loading, and savings percentage. | — |
+| `sdd_create_branch` | Create Feature Branch | Generates a branch name following SDD conventions and returns a command_hint for creating the branch. Does not execute git commands — the AI client or user runs the command. | — |
+| `sdd_create_pr` | Create Pull Request Payload | Generates a pull request payload from SPECIFICATION.md and TASKS.md with spec summary, requirements covered, and task progress. Returns routing_instructions for GitHub MCP's create_pull_request tool. | — |
+| `sdd_cross_analyze` | Cross-Artifact Analysis | Cross-artifact consistency analysis: checks alignment between SPECIFICATION.md, DESIGN.md, and TASKS.md. Finds orphaned requirements, missing designs, and untraced tasks. Writes CROSS_ANALYSIS.md. | — |
+| `sdd_discover` | Discover Project Requirements | Returns 7 structured discovery questions tailored to your project idea. Covers: scope, users, constraints, integrations, performance, security, and deployment. | `project_idea` |
+| `sdd_export_work_items` | Export Work Items | Transforms TASKS.md into platform-specific work item payloads (GitHub Issues, Azure Boards, or Jira). Returns routing_instructions for the AI client to create items via the appropriate MCP server. | `platform` |
+| `sdd_figma_diagram` | Generate Figma Diagram Payload | Generates a FigJam-ready diagram payload from DESIGN.md. Returns structured data with routing_instructions for the AI client to call Figma MCP's generate_diagram tool. | `diagram_type` |
+| `sdd_figma_to_spec` | Figma to Spec | Prepares a structured payload for extracting design context from a Figma file. The AI client should use the returned routing_instructions to call Figma MCP's get_design_context tool with the provided file key and node ID. | `figma_file_key`, `project_name` |
+| `sdd_generate_all_diagrams` | Generate All Diagrams | Generates ALL diagram types for a feature in one call. Produces architecture, sequence, ERD, flow, dependency, and traceability diagrams from all available artifacts. | — |
+| `sdd_generate_all_docs` | Generate All Documentation | Generates ALL documentation types in parallel: full docs, API docs, runbook, onboarding guide, and SDD journey. All documents are written to docs/ directory. This is the fastest way to generate complete project documentation. | `feature_number` |
+| `sdd_generate_api_docs` | Generate API Documentation | Extracts API endpoints from DESIGN.md and generates structured API documentation with request/response examples. Writes to docs/api-{feature}.md. | `feature_number` |
+| `sdd_generate_devcontainer` | Generate Devcontainer Config | Generates .devcontainer/devcontainer.json from the detected tech stack and DESIGN.md. Writes the file to disk for local use with VS Code Dev Containers or GitHub Codespaces. | — |
+| `sdd_generate_diagram` | Generate Mermaid Diagram | Generates a single Mermaid diagram from a specification artifact. Supports 17 diagram types: flowchart, sequence, class, ER, state machine, C4 context, C4 container, C4 component, C4 code, activity, use case, DFD (data flow), deployment, network topology, Gantt, pie chart, and mind map. | `diagram_type`, `source` |
+| `sdd_generate_dockerfile` | Generate Dockerfile | Reads DESIGN.md or uses sdd_scan_codebase results to detect the tech stack, then generates a Dockerfile and optionally a docker-compose.yml. Supports multi-stage builds for smaller production images. | — |
+| `sdd_generate_docs` | Generate Full Documentation | Generates comprehensive feature documentation from SPECIFICATION.md, DESIGN.md, TASKS.md, and ANALYSIS.md. Writes a combined Markdown file to docs/ with all sections. | `feature_number` |
+| `sdd_generate_iac` | Generate Infrastructure as Code | Reads DESIGN.md to detect infrastructure needs and generates Terraform or Bicep files. Returns generated file contents, variables, and a Mermaid diagram of the infrastructure topology. | — |
+| `sdd_generate_onboarding` | Generate Onboarding Guide | Generates a developer onboarding guide with feature overview, architecture summary, getting started steps, key concepts, and file locations. Writes to docs/onboarding-{feature}.md. | `feature_number` |
+| `sdd_generate_pbt` | Generate Property-Based Tests | Extracts universal properties (invariants, round-trips, idempotence) from EARS requirements and generates property-based tests using fast-check (TypeScript) or hypothesis (Python). Unlike example-based tests, PBT uses random input generation to discover edge cases that manual tests miss. | `framework` |
+| `sdd_generate_runbook` | Generate Operational Runbook | Generates an operational runbook with deployment, monitoring, troubleshooting, and rollback procedures. Writes to docs/runbook-{feature}.md. | `feature_number` |
+| `sdd_generate_tests` | Generate Test Stubs | Generate test stubs from acceptance criteria in SPECIFICATION.md and TASKS.md. Supports 6 frameworks: vitest, jest, playwright, pytest, junit, xunit. Each test stub traces to a requirement ID for full traceability. | `framework` |
+| `sdd_generate_user_stories` | Generate User Stories | Generates user stories with acceptance criteria and flow diagrams from SPECIFICATION.md. Each story includes a Mermaid flowchart of the user journey. | — |
+| `sdd_get_status` | Get Pipeline Status | Returns the current pipeline status including: current phase, completed phases, files on disk, completion percentage, and recommended next action. | — |
+| `sdd_get_template` | Get Raw Template | Returns the raw Markdown template for a given artifact type with {{placeholder}} variables intact. Does not write any files. | `template_name` |
+| `sdd_implement` | Generate Implementation Plan | Reads TASKS.md and produces an ordered implementation roadmap with phases, parallel groups, dependency resolution, and checkpoints. Does NOT write code — it generates the plan the developer or AI agent follows. | — |
+| `sdd_import_document` | Import Document | Imports a document (PDF, DOCX, PPTX, TXT, MD, VTT, SRT) or raw text and converts it to Markdown for SDD processing. Returns the converted content, metadata, and word count. | — |
+| `sdd_import_transcript` | Import Meeting Transcript | Parses a meeting transcript (VTT, SRT, TXT, or MD) and extracts structured data: participants, topics, decisions, action items, raw requirements, constraints, and open questions. Supports Teams, Zoom, Google Meet, and Otter.ai transcripts. | `file_path` |
+| `sdd_init` | Initialize SDD Pipeline | Creates .specs/ directory, writes CONSTITUTION.md skeleton, and initializes the state machine. Call this first before any other SDD tool. | `project_name` |
+| `sdd_list_checkpoints` | List Checkpoints | Lists all available checkpoints for a feature with their labels, dates, and phases. | — |
+| `sdd_metrics` | Generate Metrics Dashboard | Generate a self-contained HTML metrics dashboard for a feature. Reads SPECIFICATION.md, ANALYSIS.md, VERIFICATION.md, CHECKLIST.md and .sdd-state.json. Produces metrics-dashboard.html with: requirement count, task coverage, compliance score, checklist pass rate, and a phase timeline with durations. | — |
+| `sdd_model_routing` | Model Routing Decision Table | Return the full model routing decision table for all 10 SDD pipeline phases. Includes the optimal model, chat mode, extended thinking setting, rationale, evidence arXiv ID, and cost savings vs Opus-for-everything for your team size. | — |
+| `sdd_research` | Research Questions | Takes an array of research questions, generates RESEARCH.md with structured entries (question, findings placeholder, sources, recommendation, status), and writes it to the feature directory. | `questions` |
+| `sdd_restore` | Restore from Checkpoint | Restores all spec artifacts to a previous checkpoint snapshot. Overwrites current files with the checkpoint versions. Creates an automatic backup checkpoint of current state before restoring. | `checkpoint_id` |
+| `sdd_run_analysis` | Run Specification Analysis | Reads all spec files, generates ANALYSIS.md with traceability matrix and coverage report, and returns a gate decision (APPROVE, CHANGES_NEEDED, or BLOCK). | — |
+| `sdd_scan_codebase` | Scan Codebase | Scans the workspace project structure and returns auto-steering context: detected language, framework, package manager, folder structure, and key files. | — |
+| `sdd_setup_codespaces` | Setup GitHub Codespaces | Detects the project tech stack and generates a devcontainer configuration suitable for GitHub Codespaces. Returns a payload with routing_instructions for GitHub MCP's create_codespace tool. | — |
+| `sdd_setup_local_env` | Setup Local Dev Environment | Detects the project tech stack and generates a Docker-based local development environment (Dockerfile + docker-compose.yml). Returns a payload with routing_instructions for Docker MCP to create and manage containers. | — |
+| `sdd_turnkey_spec` | Turnkey Specification from Description | Generates a complete EARS specification from a natural language feature description. Automatically extracts requirements, classifies into EARS patterns (ubiquitous, event-driven, state-driven, optional, unwanted), generates acceptance criteria, and identifies areas needing clarification. This is the fastest way to go from idea to spec. | `feature_name`, `description` |
+| `sdd_validate_ears` | Validate EARS Requirements | Validates requirement statements against EARS notation patterns (ubiquitous, event-driven, state-driven, optional, unwanted, complex). Accepts a direct list of requirements OR reads from SPECIFICATION.md. Returns per-requirement compliance results with actionable suggestions. | — |
+| `sdd_validate_iac` | Validate Infrastructure as Code | Generates a validation payload for Terraform MCP (plan/validate) or Azure MCP (template validation). The AI client routes this payload to the appropriate MCP server for execution. | — |
+| `sdd_verify_audit` | Verify Audit Trail | Verifies the hash-chain integrity of the Specky audit log for a spec directory. Returns whether the chain is valid, entry count, current hash, and any mismatch errors. | — |
+| `sdd_verify_tasks` | Verify Task Completions | Reads TASKS.md and checks code_paths for implementation evidence. Detects phantom completions — tasks marked [x] but with no corresponding code. Writes VERIFICATION.md. | `code_paths` |
+| `sdd_verify_tests` | Verify Test Coverage Against Requirements | Reads test results JSON and cross-references with requirement IDs from SPECIFICATION.md. Reports requirement coverage percentage, uncovered requirements, and a traceability matrix. | `test_results_json` |
+| `sdd_write_bugfix` | Write Bugfix Specification | Generates and writes BUGFIX_SPEC.md with current behavior, expected behavior, unchanged behavior, root cause analysis, and test plan. Not gated by the state machine. | `bug_title`, `current_behavior`, `expected_behavior` |
+| `sdd_write_design` | Write Design Document | Generates and writes DESIGN.md with architecture overview, Mermaid diagrams, ADRs, and API contracts. | `architecture_overview`, `mermaid_diagrams` |
+| `sdd_write_spec` | Write Specification | Generates and writes SPECIFICATION.md with all requirements in EARS notation. Validates each requirement against EARS patterns. | `feature_name`, `discovery_answers`, `requirements` |
+| `sdd_write_tasks` | Write Task Breakdown | Generates and writes TASKS.md with pre-implementation gates, sequenced tasks with [P] parallel markers, effort estimates, and requirement traceability. | `tasks` |

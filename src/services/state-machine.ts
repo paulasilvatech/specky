@@ -6,7 +6,7 @@
 import { Phase, PHASE_ORDER, PHASE_REQUIRED_FILES, STATE_FILE, DEFAULT_SPEC_DIR } from "../constants.js";
 import type { SddState, PhaseStatus, TransitionResult, GateHistoryEntry } from "../types.js";
 import type { FileManager } from "./file-manager.js";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { stat } from "node:fs/promises";
 import { createHmac, createHash } from "node:crypto";
 import { SPECKY_SCAFFOLD_MARKER } from "./feature-package-generator.js";
@@ -18,6 +18,46 @@ export class StateMachine {
     private fileManager: FileManager,
     private workspaceRoot: string = process.cwd(),
   ) {}
+
+  /**
+   * Per-workspace-and-spec-dir serialization queue. Tool handlers can run
+   * concurrently (a client pipelines requests, or HTTP mode fields parallel
+   * callers); without this, two load→mutate→save cycles interleave and the
+   * last writer silently drops the other's change — and the state + signature
+   * pair can be written torn, producing a false "tamper detected". Every
+   * read-modify-write below runs inside withLock so those cycles are atomic.
+   */
+  private static locks = new Map<string, Promise<unknown>>();
+
+  private withLock<T>(specDir: string, fn: () => Promise<T>): Promise<T> {
+    const key = resolve(this.workspaceRoot, specDir);
+    const prev = StateMachine.locks.get(key) ?? Promise.resolve();
+    const run = prev.then(fn, fn);
+    // Keep the chain alive regardless of individual success/failure.
+    StateMachine.locks.set(key, run.then(() => undefined, () => undefined));
+    return run;
+  }
+
+  /**
+   * Run a state operation exclusively for this spec dir. Use when creating a
+   * fresh state (sdd_init) where load-then-mutate is not the right shape.
+   */
+  async withStateLock<T>(specDir: string, fn: () => Promise<T>): Promise<T> {
+    return this.withLock(specDir, fn);
+  }
+
+  /**
+   * Atomically load state, apply a mutation, and persist it — the safe path
+   * for tool handlers that need to touch state outside the phase helpers.
+   */
+  async mutateState(specDir: string, mutator: (state: SddState) => void | Promise<void>): Promise<SddState> {
+    return this.withLock(specDir, async () => {
+      const state = await this.loadState(specDir);
+      await mutator(state);
+      await this.saveState(specDir, state);
+      return state;
+    });
+  }
 
   /** Derive a workspace-specific HMAC key when SDD_STATE_KEY is not set */
   private deriveKey(): string {
@@ -187,6 +227,10 @@ export class StateMachine {
    * Advance to the next phase. Validates prerequisites first.
    */
   async advancePhase(specDir: string, _featureNumber: string): Promise<SddState> {
+    return this.withLock(specDir, () => this._advancePhase(specDir));
+  }
+
+  private async _advancePhase(specDir: string): Promise<SddState> {
     const state = await this.loadState(specDir);
     const currentIndex = PHASE_ORDER.indexOf(state.current_phase);
 
@@ -242,27 +286,31 @@ export class StateMachine {
    * Record that a phase has started.
    */
   async recordPhaseStart(specDir: string, phase: Phase): Promise<void> {
-    const state = await this.loadState(specDir);
-    state.phases[phase] = {
-      ...state.phases[phase],
-      status: "in_progress",
-      started_at: new Date().toISOString(),
-    };
-    state.current_phase = phase;
-    await this.saveState(specDir, state);
+    await this.withLock(specDir, async () => {
+      const state = await this.loadState(specDir);
+      state.phases[phase] = {
+        ...state.phases[phase],
+        status: "in_progress",
+        started_at: new Date().toISOString(),
+      };
+      state.current_phase = phase;
+      await this.saveState(specDir, state);
+    });
   }
 
   /**
    * Record that a phase has completed.
    */
   async recordPhaseComplete(specDir: string, phase: Phase): Promise<void> {
-    const state = await this.loadState(specDir);
-    state.phases[phase] = {
-      ...state.phases[phase],
-      status: "completed",
-      completed_at: new Date().toISOString(),
-    };
-    await this.saveState(specDir, state);
+    await this.withLock(specDir, async () => {
+      const state = await this.loadState(specDir);
+      state.phases[phase] = {
+        ...state.phases[phase],
+        status: "completed",
+        completed_at: new Date().toISOString(),
+      };
+      await this.saveState(specDir, state);
+    });
   }
 
   /**
@@ -275,35 +323,37 @@ export class StateMachine {
     artifactPath: string,
     reqCount?: number,
   ): Promise<GateHistoryEntry> {
-    const state = await this.loadState(specDir);
-    const phaseStatus = state.phases[phase];
-    const phaseStarted = phaseStatus?.started_at;
+    return this.withLock(specDir, async () => {
+      const state = await this.loadState(specDir);
+      const phaseStatus = state.phases[phase];
+      const phaseStarted = phaseStatus?.started_at;
 
-    let wasModified = true;
-    try {
-      const fileStat = await stat(artifactPath);
-      if (phaseStarted) {
-        wasModified = fileStat.mtimeMs > new Date(phaseStarted).getTime();
+      let wasModified = true;
+      try {
+        const fileStat = await stat(artifactPath);
+        if (phaseStarted) {
+          wasModified = fileStat.mtimeMs > new Date(phaseStarted).getTime();
+        }
+      } catch {
+        // file not found — treat as modified (first write)
       }
-    } catch {
-      // file not found — treat as modified (first write)
-    }
 
-    const entry: GateHistoryEntry = {
-      phase,
-      timestamp: new Date().toISOString(),
-      artifact: artifactPath,
-      was_modified: wasModified,
-      ...(reqCount !== undefined ? { req_count: reqCount } : {}),
-    };
+      const entry: GateHistoryEntry = {
+        phase,
+        timestamp: new Date().toISOString(),
+        artifact: artifactPath,
+        was_modified: wasModified,
+        ...(reqCount !== undefined ? { req_count: reqCount } : {}),
+      };
 
-    const history = state.gate_history ?? [];
-    const MAX_ENTRIES = 1000;
-    const updated = [...history, entry].slice(-MAX_ENTRIES);
-    state.gate_history = updated;
-    await this.saveState(specDir, state);
+      const history = state.gate_history ?? [];
+      const MAX_ENTRIES = 1000;
+      const updated = [...history, entry].slice(-MAX_ENTRIES);
+      state.gate_history = updated;
+      await this.saveState(specDir, state);
 
-    return entry;
+      return entry;
+    });
   }
 
   /** Get required files for a given phase */

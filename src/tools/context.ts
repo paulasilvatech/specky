@@ -3,17 +3,13 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { CHARACTER_LIMIT } from "../constants.js";
+import { truncate } from "./tool-result.js";
+import {} from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { ContextTieringEngine } from "../services/context-tiering-engine.js";
 import { contextStatusInputSchema } from "../schemas/context.js";
 import { enrichResponse } from "./response-builder.js";
-
-function truncate(text: string): string {
-  if (text.length <= CHARACTER_LIMIT) return text;
-  return text.slice(0, CHARACTER_LIMIT) + "\n\n[TRUNCATED] Response exceeded 25,000 characters.";
-}
 
 export function registerContextTools(
   server: McpServer,

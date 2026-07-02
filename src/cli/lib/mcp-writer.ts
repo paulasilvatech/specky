@@ -6,6 +6,7 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { VERSION } from "../../constants.js";
 
 interface McpServerEntry {
   command: string;
@@ -18,9 +19,12 @@ interface McpConfig {
   [k: string]: unknown;
 }
 
+// Pin to the version that produced this install rather than `@latest`, so the
+// running server matches the assets on disk and a future npm release cannot be
+// auto-executed on the next session without an explicit `specky upgrade`.
 const DEFAULT_SERVER: McpServerEntry = {
   command: "npx",
-  args: ["-y", "specky-sdd@latest", "serve"],
+  args: ["-y", `specky-sdd@${VERSION}`, "serve"],
 };
 
 function readJson(path: string): McpConfig {

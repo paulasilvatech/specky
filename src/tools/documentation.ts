@@ -3,21 +3,13 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { formatError, truncate } from "./tool-result.js";
 import { z } from "zod";
-import { CHARACTER_LIMIT } from "../constants.js";
+import {} from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { DocGenerator } from "../services/doc-generator.js";
 import { enrichResponse } from "./response-builder.js";
-
-function formatError(toolName: string, error: Error): string {
-  return `[${toolName}] Error: ${error.message}`;
-}
-
-function truncate(text: string): string {
-  if (text.length <= CHARACTER_LIMIT) return text;
-  return text.slice(0, CHARACTER_LIMIT) + "\n\n[TRUNCATED] Response exceeded 25,000 characters.";
-}
 
 const docsInputSchema = z.object({
   feature_number: z.string().regex(/^\d{3}$/).describe("Zero-padded feature number."),

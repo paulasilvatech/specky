@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
 
 permissions:
@@ -30,6 +30,9 @@ jobs:
 
       - name: Audit agent frontmatter portability
         run: node scripts/audit-agent-frontmatter.mjs
+
+      - name: API reference is in sync with the tool registry
+        run: node scripts/generate-api-reference.mjs --check
 
       - name: Run tests with coverage thresholds
         run: npm run test:coverage

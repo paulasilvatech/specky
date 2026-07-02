@@ -44,7 +44,9 @@ apm.lock.yaml
 # ── Build config (internal) ──────────────────────────────
 # NOTE: scripts/, .apm/hooks/scripts/, and .npmignore are tracked —
 # they control packaging and ship-time behavior.
-Dockerfile
+# Dockerfile + .dockerignore are tracked release artifacts (the GHCR image
+# published by publish.yml and asserted by docs-enterprise.test.ts).
+# docker-compose.yml stays ignored: it is generated per user-project by
+# sdd_generate_dockerfile, never a repo artifact.
 docker-compose.yml
-.dockerignore
 ONBOARDING.md

@@ -281,50 +281,6 @@ export const TOOL_NAMES = {
   VERIFY_AUDIT: "sdd_verify_audit",
 } as const;
 
-// Input & Conversion
-export const TOOL_IMPORT_DOCUMENT = "sdd_import_document";
-export const TOOL_BATCH_IMPORT = "sdd_batch_import";
-export const TOOL_FIGMA_TO_SPEC = "sdd_figma_to_spec";
-
-// Quality & Validation
-export const TOOL_CHECKLIST = "sdd_checklist";
-export const TOOL_VERIFY_TASKS = "sdd_verify_tasks";
-export const TOOL_COMPLIANCE_CHECK = "sdd_compliance_check";
-export const TOOL_CROSS_ANALYZE = "sdd_cross_analyze";
-export const TOOL_VALIDATE_EARS = "sdd_validate_ears";
-
-// Diagrams & Visualization
-export const TOOL_GENERATE_DIAGRAM = "sdd_generate_diagram";
-export const TOOL_GENERATE_ALL_DIAGRAMS = "sdd_generate_all_diagrams";
-export const TOOL_GENERATE_USER_STORIES = "sdd_generate_user_stories";
-export const TOOL_FIGMA_DIAGRAM = "sdd_figma_diagram";
-
-// Infrastructure as Code
-export const TOOL_GENERATE_IAC = "sdd_generate_iac";
-export const TOOL_VALIDATE_IAC = "sdd_validate_iac";
-export const TOOL_GENERATE_DOCKERFILE = "sdd_generate_dockerfile";
-
-// Dev Environment
-export const TOOL_SETUP_LOCAL_ENV = "sdd_setup_local_env";
-export const TOOL_SETUP_CODESPACES = "sdd_setup_codespaces";
-export const TOOL_GENERATE_DEVCONTAINER = "sdd_generate_devcontainer";
-
-// Integration & Export
-export const TOOL_CREATE_BRANCH = "sdd_create_branch";
-export const TOOL_EXPORT_WORK_ITEMS = "sdd_export_work_items";
-export const TOOL_CREATE_PR = "sdd_create_pr";
-export const TOOL_IMPLEMENT = "sdd_implement";
-export const TOOL_RESEARCH = "sdd_research";
-
-// Documentation
-export const TOOL_GENERATE_DOCS = "sdd_generate_docs";
-export const TOOL_GENERATE_API_DOCS = "sdd_generate_api_docs";
-export const TOOL_GENERATE_RUNBOOK = "sdd_generate_runbook";
-export const TOOL_GENERATE_ONBOARDING = "sdd_generate_onboarding";
-
-// Metrics
-export const TOOL_METRICS = "sdd_metrics";
-
 /** Template names matching files in templates/ directory */
 export const TEMPLATE_NAMES = [
   "constitution",
@@ -344,7 +300,7 @@ export const TEMPLATE_NAMES = [
   "user_stories",
   "api_docs",
   "runbook",
-  "onboarding",
+  "test_stub",
   "terraform",
   "dockerfile",
   "devcontainer",

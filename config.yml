@@ -28,13 +28,19 @@ pipeline:
     9: "release-engineer"
   lgtm_gates: [2, 4, 5]
 hooks:
-  shared_path: ".github/plugin/specky/hooks/scripts"
+  # Source scripts ship at .apm/hooks/scripts and are installed per IDE to
+  # .claude/hooks/scripts (Claude Code) or .github/hooks/specky/scripts (Copilot).
+  shared_path: ".apm/hooks/scripts"
   blocking:
     - "artifact-validator"
     - "phase-gate"
     - "security-scan"
     - "release-gate"
   advisory:
+    - "branch-validator"
+    - "pipeline-guard"
+    - "lgtm-gate"
+    - "session-banner"
     - "spec-sync"
     - "auto-checkpoint"
     - "spec-quality"
@@ -44,7 +50,7 @@ hooks:
     - "cognitive-debt-alert"
     - "metrics-dashboard"
 specs_dir: ".specs"
-skills_dir: ".github/plugin/specky/skills"
+skills_dir: ".apm/skills"
 branching:
   strategy: "gitflow-sdd"
   branches:

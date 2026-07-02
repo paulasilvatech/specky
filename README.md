@@ -112,7 +112,7 @@ npm install --save-dev specky-sdd@latest
 npx specky install --ide=copilot
 ```
 
-The CLI installs 13 agents, 22 prompts, 8 skills, 16 hooks, the MCP server registration (`.mcp.json` + `.vscode/mcp.json`), and **pre-authorizes all required tools**. Run `specky doctor` anytime to validate integrity and config.
+The CLI installs 13 agents, 22 prompts, 8 skills, 16 hooks, the MCP server registration (`.mcp.json` + `.vscode/mcp.json`, pinned to the installed version), and pre-authorizes a **least-privilege** set of tools — the Specky MCP tools plus scoped `git`/`npm`/`npx` and file editing. It does **not** pre-authorize arbitrary shell, `rm`, or network access; those still prompt. Run `specky doctor` anytime to validate integrity and config.
 
 Full walkthroughs per OS, offline install, and CLI reference: [docs/INSTALL.md](docs/INSTALL.md) · [docs/CLI.md](docs/CLI.md).
 
@@ -237,7 +237,7 @@ The onboarding wizard detects your project context (greenfield/brownfield/modern
 @specky-orchestrator run the pipeline for a todo API
 ```
 
-The orchestrator coordinates all 10 phases: Init → Research → Specify → Design → Tasks → Implement → Verify → Review → Release, with LGTM gates at Specify, Design, and Tasks.
+The orchestrator coordinates all 10 phases: Init → Discover → Specify → Clarify → Design → Tasks → Analyze → Implement → Verify → Release, with LGTM gates at Specify, Design, and Tasks.
 
 | Your situation | Guide |
 |---------------|-------|
@@ -811,7 +811,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 
 | Tool | Description |
 |------|-------------|
-| `sdd_turnkey_spec` | Generate a complete EARS specification from a natural language description. Auto-extracts requirements, classifies all 5 EARS patterns, generates acceptance criteria, infers non-functional requirements, and identifies clarification questions |
+| `sdd_turnkey_spec` | Generate a complete EARS specification from a natural language description. Auto-extracts requirements, classifies all 6 EARS patterns, generates acceptance criteria, infers non-functional requirements, and identifies clarification questions |
 
 ### Checkpointing (3)
 
@@ -835,6 +835,12 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_context_status` | Context tier assignment (Hot/Domain/Cold) for spec artifacts with token savings |
 | `sdd_check_access` | RBAC access check for current role with per-tool permissions summary |
 
+### Security and Audit (1)
+
+| Tool | Description |
+|------|-------------|
+| `sdd_verify_audit` | Verify the hash-chained audit trail (`.audit.jsonl`) for tamper evidence and report chain integrity |
+
 
 ## The Spec-Driven Development Platform
 
@@ -844,7 +850,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 
 ### How Spec-Kit and Specky Complement Each Other
 
-**[Spec-Kit](https://github.com/paulasilvatech/spec-kit)** is the open-source SDD methodology: EARS notation, gated pipeline phases, constitution model, 25+ specialized agents, and Markdown prompt templates. It defines **what** to do.
+**Spec-Kit** — the open-source SDD methodology from [github/spec-kit](https://github.com/github/spec-kit), extended in [paulasilvatech/spec-kit](https://github.com/paulasilvatech/spec-kit) — provides a constitution model, gated workflow phases expressed as prompt templates, and broad coding-assistant support. It defines **what** to do. (Upstream Spec-Kit's phases are advisory prompts; the **EARS** requirements notation and programmatic enforcement below are Specky's additions — EARS was popularized for AI specs by AWS Kiro and originates in the Mavin/Rolls-Royce EARS approach.)
 
 **Specky** is the CLI toolkit that reimplements that methodology as 58 enforceable MCP tools with 13 agents, 22 prompts, 8 skills, and 16 hooks. It enforces **how** to do it.
 
@@ -998,7 +1004,7 @@ When using Specky, follow these practices to protect your data:
 | Practice | Why | How |
 |----------|-----|-----|
 | **Use stdio mode for local development** | No network exposure | `npx specky-sdd` (default) |
-| **Never expose HTTP mode to public networks** | HTTP is unencrypted, no auth | If using `--http`, bind to localhost only. Use a reverse proxy (nginx, Caddy) with TLS and authentication for remote access |
+| **Never expose HTTP mode to public networks without TLS** | HTTP has optional bearer-token auth but no TLS | `--http` binds to `127.0.0.1` by default; set `SDD_HTTP_TOKEN` for bearer auth. For remote access, add a reverse proxy (nginx, Caddy) terminating TLS |
 | **Protect the `.specs/` directory** | Contains your specification artifacts (architecture, API contracts, business logic) | Add `.specs/` to `.gitignore` if specs contain sensitive IP, or use a private repo |
 | **Protect checkpoints** | `.specs/{feature}/.checkpoints/` stores full artifact snapshots | Same as above — treat checkpoints like source code |
 | **Review auto-generated specs before committing** | Turnkey and auto-pipeline generate from natural language — may capture sensitive details | Review SPECIFICATION.md and DESIGN.md before `git add` |
@@ -1059,7 +1065,7 @@ npm install
 # Build
 npm run build
 
-# Run tests (507 tests)
+# Run the full test suite
 npm test
 
 # Run tests with coverage report
@@ -1111,12 +1117,12 @@ curl http://localhost:3200/health
 | JSONL audit logger (optional) | Stable |
 | RBAC foundation (opt-in role-based access control) | Stable |
 | Rate limiting for HTTP transport (opt-in) | Stable |
+| HTTP transport: loopback bind by default, bearer-token auth (`SDD_HTTP_TOKEN`), DNS-rebinding protection | Stable |
 
 ### v3.5+ (planned)
 
 | Feature | Description |
 |---------|-------------|
-| HTTP authentication | Token-based auth for the HTTP transport |
 | Observability | OpenTelemetry metrics and structured logging |
 | Internationalization | Spec templates in PT-BR, ES, FR, DE, JA |
 | Automated shrinking | fast-check/Hypothesis shrinking feedback into spec refinement |
@@ -1125,6 +1131,15 @@ curl http://localhost:3200/health
 | SSO / SAML | Federated identity for enterprise auth |
 
 Have a feature request? [Open an issue](https://github.com/paulasilvatech/specky/issues).
+
+
+## Examples
+
+See [`examples/`](examples/) for a complete, real spec package generated by
+running the pipeline end-to-end — [`examples/todo-api/`](examples/todo-api/)
+is a greenfield REST API taken from `sdd_init` all the way to an `APPROVE`
+quality gate at 100% traceability. `examples/specky-verify.example.yml` is a
+drop-in GitHub Action that verifies EARS + the quality gate on every PR.
 
 
 ## Contributing

@@ -68,7 +68,9 @@ Commands:
 
   serve                  Start the MCP server (stdio by default)
     --http                              HTTP streaming transport
-    --port=<N>                          HTTP port (default 3001)
+    --port=<N>                          HTTP port (default 3200)
+    --host=<addr>                       HTTP bind address (default 127.0.0.1;
+                                        set 0.0.0.0 only behind an auth proxy)
 
   --version, -v          Print version
   --help, -h             Print this help

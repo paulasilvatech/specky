@@ -37,46 +37,38 @@ interface ClaudeSettings {
   [k: string]: unknown;
 }
 
-/** Tools that Specky agents need pre-authorized (avoids per-invocation prompts). */
+/**
+ * Tools Specky pre-authorizes so the SDD workflow does not prompt on every
+ * step. This list is deliberately MINIMAL and least-privilege:
+ *
+ *   - It does NOT pre-authorize arbitrary code execution — no `Bash(bash:*)`,
+ *     `Bash(sh:*)`, `Bash(node:*)`, `Bash(python:*)`, no `Bash(rm:*)`/`chmod`,
+ *     and no `WebFetch`/`WebSearch`. Those each amount to unattended RCE or
+ *     network egress after a one-time install, and pre-approving them would
+ *     silently disable Claude Code's human-in-the-loop safety and contradict
+ *     Specky's "no outbound network" posture. They still work — they just
+ *     prompt for confirmation, as they should.
+ *   - Hooks are NOT gated by this list (they run from the settings `hooks`
+ *     section), so removing shell wildcards does not affect them.
+ *
+ * If a team genuinely wants the broader grant, they can add it to their own
+ * `.claude/settings.json` explicitly.
+ */
 export const SPECKY_REQUIRED_ALLOWS: string[] = [
-  // Native Claude tools used by agents
+  // Read-only inspection
   "Read",
   "Glob",
   "Grep",
+  // File authoring for the implement phase (workspace edits, not shell)
   "Edit",
   "Write",
   "MultiEdit",
-  "WebFetch",
-  "WebSearch",
+  // Subagent orchestration
   "Task",
-  // Shell — Specky agents and hooks need these utilities
-  "Bash(bash:*)",
-  "Bash(sh:*)",
+  // The specific, scoped commands the SDD flow runs (not arbitrary shell)
   "Bash(git:*)",
   "Bash(npm:*)",
   "Bash(npx:*)",
-  "Bash(node:*)",
-  "Bash(ls:*)",
-  "Bash(mkdir:*)",
-  "Bash(rm:*)",
-  "Bash(cp:*)",
-  "Bash(mv:*)",
-  "Bash(touch:*)",
-  "Bash(chmod:*)",
-  "Bash(cat:*)",
-  "Bash(head:*)",
-  "Bash(tail:*)",
-  "Bash(wc:*)",
-  "Bash(find:*)",
-  "Bash(grep:*)",
-  "Bash(sed:*)",
-  "Bash(awk:*)",
-  "Bash(jq:*)",
-  "Bash(bc:*)",
-  "Bash(pip:*)",
-  "Bash(pip3:*)",
-  "Bash(python:*)",
-  "Bash(python3:*)",
   // All Specky MCP tools
   "mcp__specky__*",
 ];

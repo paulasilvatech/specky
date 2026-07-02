@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "feature_number": "001",
+  "feature_name": "todo-api",
+  "feature_dir": ".specs/001-todo-api",
+  "source_tool": "sdd_write_spec",
+  "generated_at": "2026-07-01T12:00:00.000Z",
+  "requirements": [
+    "REQ-TODO-001",
+    "REQ-TODO-002",
+    "REQ-TODO-003",
+    "REQ-TODO-004"
+  ],
+  "required_artifacts": [
+    "CONSTITUTION.md",
+    "SPECIFICATION.md",
+    "DESIGN.md",
+    "TASKS.md",
+    "ADR.md",
+    "PLAYBOOK.md",
+    "DIAGRAMS.md",
+    "TDD_STATUS.md",
+    "EVIDENCE.md",
+    "SPEC_PACKAGE.json"
+  ],
+  "completion": {
+    "design_final": false,
+    "tasks_final": false,
+    "diagrams_reviewed": false,
+    "tdd_status_updated": false,
+    "evidence_updated": false,
+    "audit_verified": false
+  }
+}

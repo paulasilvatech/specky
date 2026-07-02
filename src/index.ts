@@ -10,6 +10,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { randomUUID } from "node:crypto";
+import { isBearerAuthorized } from "./utils/http-auth.js";
 import { VERSION, SERVER_NAME, DEFAULT_HTTP_PORT } from "./constants.js";
 import { FileManager } from "./services/file-manager.js";
 import { StateMachine } from "./services/state-machine.js";
@@ -192,6 +193,30 @@ async function main(): Promise<void> {
 
   if (useHttp) {
     const port = parseInt(process.env["PORT"] || String(DEFAULT_HTTP_PORT), 10);
+
+    // Bind to loopback by default. The HTTP transport has no authentication,
+    // so exposing it on all interfaces is opt-in and must be explicit.
+    const hostArg = args.find((a) => a.startsWith("--host="))?.slice("--host=".length);
+    const host = hostArg || process.env["SDD_HTTP_HOST"] || "127.0.0.1";
+    const isLoopback = host === "127.0.0.1" || host === "::1" || host === "localhost";
+
+    // Optional bearer-token auth. When SDD_HTTP_TOKEN is set, every /mcp request
+    // must present `Authorization: Bearer <token>`. Compared in constant time.
+    const authToken = process.env["SDD_HTTP_TOKEN"] || "";
+    const requireAuth = authToken.length > 0;
+    if (requireAuth) {
+      console.error("[specky] HTTP bearer-token authentication enabled.");
+    }
+    if (!isLoopback && !requireAuth) {
+      console.error(
+        `[specky] WARNING: HTTP transport bound to non-loopback host "${host}" WITHOUT authentication. ` +
+        "Set SDD_HTTP_TOKEN and put it behind a TLS-terminating reverse proxy, or bind to 127.0.0.1.",
+      );
+    }
+
+    const isAuthorized = (header: string | undefined): boolean =>
+      isBearerAuthorized(header, authToken);
+
     const { StreamableHTTPServerTransport } = await import(
       "@modelcontextprotocol/sdk/server/streamableHttp.js"
     );
@@ -199,6 +224,10 @@ async function main(): Promise<void> {
 
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: () => randomUUID(),
+      // Reject cross-origin / rebinding requests: a browser page cannot POST to
+      // the local server unless its Host header matches an allowed value.
+      enableDnsRebindingProtection: true,
+      allowedHosts: [`${host}:${port}`, `localhost:${port}`, `127.0.0.1:${port}`],
     });
     await server.connect(transport);
 
@@ -218,6 +247,15 @@ async function main(): Promise<void> {
 
     const httpServer = http.createServer(async (req, res) => {
       if (req.url === "/mcp") {
+        // Authenticate before doing any work.
+        if (!isAuthorized(req.headers["authorization"])) {
+          res.writeHead(401, {
+            "Content-Type": "application/json",
+            "WWW-Authenticate": "Bearer",
+          });
+          res.end(JSON.stringify({ error: "Unauthorized" }));
+          return;
+        }
         // Apply rate limiting before forwarding to MCP handler
         if (rateLimiter) {
           const clientId = req.socket.remoteAddress ?? "unknown";
@@ -247,8 +285,8 @@ async function main(): Promise<void> {
       }
     });
 
-    httpServer.listen(port, () => {
-      console.error(`[specky] HTTP server listening on port ${port}`);
+    httpServer.listen(port, host, () => {
+      console.error(`[specky] HTTP server listening on ${host}:${port}`);
     });
   } else {
     const transport = new StdioServerTransport();
