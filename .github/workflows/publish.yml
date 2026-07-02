@@ -85,7 +85,7 @@ jobs:
       # T-082: Sign Docker image with cosign (requires COSIGN_PRIVATE_KEY + COSIGN_PASSWORD secrets)
       - name: Install cosign
         if: env.HAS_COSIGN == 'true'
-        uses: sigstore/cosign-installer@c56c2d3e59e4281cc41dea2217323ba5694b171e # v3.8.0
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
 
       - name: Sign Docker image
         if: env.HAS_COSIGN == 'true'
