@@ -10,7 +10,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { randomUUID } from "node:crypto";
-import { isBearerAuthorized } from "./utils/http-auth.js";
 import { VERSION, SERVER_NAME, DEFAULT_HTTP_PORT } from "./constants.js";
 import { FileManager } from "./services/file-manager.js";
 import { StateMachine } from "./services/state-machine.js";
@@ -48,7 +47,8 @@ import { registerTurnkeyTools } from "./tools/turnkey.js";
 import { PbtGenerator } from "./services/pbt-generator.js";
 import { registerPbtTools } from "./tools/pbt.js";
 import { loadConfig } from "./config.js";
-import { AuditLogger } from "./services/audit-logger.js";
+import { AuditLogger, resolveAuditHmacKey } from "./services/audit-logger.js";
+import { loadTokenTable, resolveBearerIdentity, sha256Hex, type TokenTableEntry } from "./utils/token-table.js";
 import { MetricsGenerator } from "./services/metrics-generator.js";
 import { registerMetricsTools } from "./tools/metrics.js";
 import { ModelRoutingEngine } from "./services/model-routing-engine.js";
@@ -69,10 +69,28 @@ import { registerAuditTools } from "./tools/audit.js";
 const workspaceRoot = process.env["SDD_WORKSPACE"] || process.cwd();
 console.error(`[specky] Workspace root: ${workspaceRoot}`);
 
-// Load optional project config (.specky/config.yml)
+// Load optional project config (.specky/config.yml). The profile may be
+// forced from outside the workspace: --profile=enterprise flag, SPECKY_PROFILE
+// env, or SPECKY_ENTERPRISE=1 shorthand.
 const config = loadConfig(workspaceRoot);
+const auditHmacKey = resolveAuditHmacKey();
 if (config.templates_path) console.error(`[specky] Custom templates: ${config.templates_path}`);
-if (config.audit_enabled) console.error(`[specky] Audit trail: enabled`);
+if (config.profile === "enterprise") {
+  console.error(
+    `[specky] Profile: enterprise — audit=${config.audit_enabled ? "on" : "off"}` +
+    ` (fail_closed=${config.audit.fail_closed ? "on" : "off"}, hmac=${auditHmacKey ? "on" : "off"})` +
+    `, rbac=${config.rbac.enabled ? "on" : "off"} (default_role=${config.rbac.default_role})` +
+    `, rate_limit=${config.rate_limit.enabled ? "on" : "off"}`,
+  );
+  if (config.audit_enabled && !auditHmacKey) {
+    console.error(
+      "[specky] WARNING: enterprise audit is hash-chained but NOT tamper-evident — " +
+      "set SDD_AUDIT_HMAC_KEY or SDD_AUDIT_HMAC_KEY_FILE (key stored outside the workspace) to sign entries.",
+    );
+  }
+} else if (config.audit_enabled) {
+  console.error(`[specky] Audit trail: enabled${auditHmacKey ? " (HMAC-signed)" : ""}`);
+}
 
 // Initialize MCP server
 const server = new McpServer(
@@ -118,12 +136,12 @@ const docGenerator = new DocGenerator(fileManager, stateMachine);
 const gitManager = new GitManager(fileManager);
 const testGenerator = new TestGenerator(fileManager);
 const pbtGenerator = new PbtGenerator(fileManager);
-const auditLogger = new AuditLogger(
-  workspaceRoot,
-  config.audit_enabled,
-  config.audit.export_format,
-  config.audit.max_file_size_mb,
-);
+const auditLogger = new AuditLogger(workspaceRoot, config.audit_enabled, {
+  exportFormat: config.audit.export_format,
+  maxFileSizeMb: config.audit.max_file_size_mb,
+  hmacKey: auditHmacKey,
+  failClosed: config.audit.fail_closed,
+});
 const rbacEngine = new RbacEngine(
   config.rbac.enabled ?? false,
   config.rbac.default_role ?? "contributor",
@@ -200,22 +218,40 @@ async function main(): Promise<void> {
     const host = hostArg || process.env["SDD_HTTP_HOST"] || "127.0.0.1";
     const isLoopback = host === "127.0.0.1" || host === "::1" || host === "localhost";
 
-    // Optional bearer-token auth. When SDD_HTTP_TOKEN is set, every /mcp request
-    // must present `Authorization: Bearer <token>`. Compared in constant time.
+    // Optional bearer-token auth, two flavors:
+    //   - SDD_HTTP_TOKEN: one shared token (no identity — RBAC falls back to
+    //     SDD_ROLE / default_role).
+    //   - SDD_HTTP_TOKENS_FILE: named tokens mapping to principal + role
+    //     (identity-based RBAC). Fail-closed: a broken tokens file aborts startup.
     const authToken = process.env["SDD_HTTP_TOKEN"] || "";
-    const requireAuth = authToken.length > 0;
-    if (requireAuth) {
-      console.error("[specky] HTTP bearer-token authentication enabled.");
+    const tokensFile = process.env["SDD_HTTP_TOKENS_FILE"] || "";
+    let tokenTable: TokenTableEntry[] = [];
+    if (tokensFile) {
+      try {
+        tokenTable = loadTokenTable(tokensFile);
+        console.error(
+          `[specky] HTTP token table loaded: ${tokenTable.length} principal(s) from ${tokensFile}`,
+        );
+      } catch (err) {
+        console.error(`[specky] FATAL: ${(err as Error).message}`);
+        process.exit(1);
+      }
+    } else if (authToken) {
+      console.error("[specky] HTTP bearer-token authentication enabled (shared token).");
     }
+    const requireAuth = tokenTable.length > 0 || authToken.length > 0;
     if (!isLoopback && !requireAuth) {
       console.error(
         `[specky] WARNING: HTTP transport bound to non-loopback host "${host}" WITHOUT authentication. ` +
-        "Set SDD_HTTP_TOKEN and put it behind a TLS-terminating reverse proxy, or bind to 127.0.0.1.",
+        "Set SDD_HTTP_TOKEN or SDD_HTTP_TOKENS_FILE and put it behind a TLS-terminating reverse proxy, or bind to 127.0.0.1.",
       );
     }
-
-    const isAuthorized = (header: string | undefined): boolean =>
-      isBearerAuthorized(header, authToken);
+    if (config.profile === "enterprise" && config.rbac.enabled && tokenTable.length === 0) {
+      console.error(
+        "[specky] NOTE: RBAC is on but no SDD_HTTP_TOKENS_FILE is configured — roles come from " +
+        "SDD_ROLE/default_role (self-asserted). Configure a token table for identity-based roles.",
+      );
+    }
 
     const { StreamableHTTPServerTransport } = await import(
       "@modelcontextprotocol/sdk/server/streamableHttp.js"
@@ -248,13 +284,29 @@ async function main(): Promise<void> {
     const httpServer = http.createServer(async (req, res) => {
       if (req.url === "/mcp") {
         // Authenticate before doing any work.
-        if (!isAuthorized(req.headers["authorization"])) {
+        const identity = resolveBearerIdentity(
+          req.headers["authorization"],
+          tokenTable,
+          authToken,
+        );
+        if (!identity.authorized) {
           res.writeHead(401, {
             "Content-Type": "application/json",
             "WWW-Authenticate": "Bearer",
           });
           res.end(JSON.stringify({ error: "Unauthorized" }));
           return;
+        }
+        // Attach the authenticated identity so the transport propagates it to
+        // tool handlers as extra.authInfo (consumed by the RBAC enforcement
+        // wrapper). `token` carries a fingerprint, never the secret itself.
+        if (identity.principal) {
+          (req as typeof req & { auth?: unknown }).auth = {
+            token: sha256Hex(req.headers["authorization"] ?? ""),
+            clientId: identity.principal,
+            scopes: identity.role ? [`role:${identity.role}`] : [],
+            extra: { principal: identity.principal, role: identity.role },
+          };
         }
         // Apply rate limiting before forwarding to MCP handler
         if (rateLimiter) {

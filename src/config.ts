@@ -5,6 +5,15 @@
  * Parsing uses the `yaml` library (safe by default — no code execution) and a
  * Zod schema for validation, replacing a hand-rolled line parser that could not
  * handle nested lists/quoting and did no validation.
+ *
+ * Profiles: `standard` (default) keeps every enterprise control opt-in and
+ * off. `enterprise` flips the *defaults* of audit_enabled, rbac.enabled,
+ * rate_limit.enabled, and audit.fail_closed to true — an explicit value in
+ * config.yml always wins over the profile default, so an enterprise deployment
+ * can still switch an individual control off. The profile itself can come from
+ * config.yml (`profile: enterprise`), the `SPECKY_PROFILE` env var, the
+ * `SPECKY_ENTERPRISE=1` shorthand, or the server's `--profile=enterprise` flag
+ * (flag > env > config file).
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -25,6 +34,7 @@ const safeRelativePath = z.string().refine(
 
 const configSchema = z
   .object({
+    profile: z.enum(["standard", "enterprise"]).default("standard"),
     templates_path: safeRelativePath.default(""),
     default_framework: z.string().default("vitest"),
     compliance_frameworks: z.array(z.string()).default(["general"]),
@@ -40,8 +50,9 @@ const configSchema = z
       .object({
         export_format: z.enum(["jsonl", "syslog", "otlp"]).default("jsonl"),
         max_file_size_mb: z.number().positive().default(10),
+        fail_closed: z.boolean().default(false),
       })
-      .default({ export_format: "jsonl", max_file_size_mb: 10 }),
+      .default({ export_format: "jsonl", max_file_size_mb: 10, fail_closed: false }),
     rbac: z
       .object({
         enabled: z.boolean().default(false),
@@ -52,21 +63,97 @@ const configSchema = z
   .strip();
 
 export type SpeckyConfig = z.infer<typeof configSchema>;
+export type SpeckyProfile = SpeckyConfig["profile"];
 
 const DEFAULT_CONFIG: SpeckyConfig = configSchema.parse({});
+
+/** Inputs that can force the profile from outside config.yml (flag > env). */
+export interface ProfileOverrides {
+  argv?: readonly string[];
+  env?: Record<string, string | undefined>;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Resolve the active profile. Precedence: `--profile=` flag > `SPECKY_PROFILE`
+ * env > `SPECKY_ENTERPRISE=1` shorthand > config.yml `profile:` > standard.
+ * Unknown values are ignored with a stderr warning (never crash the server).
+ */
+export function resolveProfile(
+  configProfile: SpeckyProfile,
+  overrides: ProfileOverrides = {},
+): SpeckyProfile {
+  const argv = overrides.argv ?? process.argv;
+  const env = overrides.env ?? process.env;
+
+  const flagValue = argv
+    .filter((a) => a.startsWith("--profile="))
+    .at(-1)
+    ?.slice("--profile=".length);
+  const candidates: Array<string | undefined> = [
+    flagValue,
+    env["SPECKY_PROFILE"],
+    env["SPECKY_ENTERPRISE"] === "1" ? "enterprise" : undefined,
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate === undefined) continue;
+    if (candidate === "standard" || candidate === "enterprise") return candidate;
+    console.error(
+      `[specky] Ignoring unknown profile "${candidate}" (valid: standard, enterprise).`,
+    );
+  }
+  return configProfile;
+}
+
+/**
+ * Enterprise profile flips the *defaults* of the security controls to ON.
+ * A value explicitly present in config.yml always wins, so `rawConfig` (the
+ * parsed YAML before Zod defaults) is consulted to tell "user said false"
+ * apart from "user said nothing".
+ */
+function applyEnterpriseDefaults(config: SpeckyConfig, rawConfig: unknown): SpeckyConfig {
+  const raw = isRecord(rawConfig) ? rawConfig : {};
+  const rawRbac = isRecord(raw["rbac"]) ? raw["rbac"] : {};
+  const rawRateLimit = isRecord(raw["rate_limit"]) ? raw["rate_limit"] : {};
+  const rawAudit = isRecord(raw["audit"]) ? raw["audit"] : {};
+
+  return {
+    ...config,
+    audit_enabled: "audit_enabled" in raw ? config.audit_enabled : true,
+    rbac: {
+      ...config.rbac,
+      enabled: "enabled" in rawRbac ? config.rbac.enabled : true,
+    },
+    rate_limit: {
+      ...config.rate_limit,
+      enabled: "enabled" in rawRateLimit ? config.rate_limit.enabled : true,
+    },
+    audit: {
+      ...config.audit,
+      fail_closed: "fail_closed" in rawAudit ? config.audit.fail_closed : true,
+    },
+  };
+}
 
 /**
  * Load `.specky/config.yml` from workspace root. Returns defaults if the file
  * is absent, unparseable, or fails validation (a bad value never crashes the
  * server — it falls back to the safe defaults, with a stderr warning).
+ *
+ * `overrides` lets the server entry point (and tests) inject argv/env for
+ * profile resolution instead of reading globals.
  */
-export function loadConfig(workspaceRoot: string): SpeckyConfig {
+export function loadConfig(workspaceRoot: string, overrides: ProfileOverrides = {}): SpeckyConfig {
   const configPath = join(workspaceRoot, ".specky", "config.yml");
   let raw: string;
   try {
     raw = readFileSync(configPath, "utf-8");
   } catch {
-    return { ...DEFAULT_CONFIG };
+    return finalizeConfig({ ...DEFAULT_CONFIG }, {}, overrides);
   }
 
   let parsed: unknown;
@@ -74,7 +161,7 @@ export function loadConfig(workspaceRoot: string): SpeckyConfig {
     parsed = parse(raw) ?? {};
   } catch (err) {
     console.error(`[specky] Ignoring malformed .specky/config.yml: ${(err as Error).message}`);
-    return { ...DEFAULT_CONFIG };
+    return finalizeConfig({ ...DEFAULT_CONFIG }, {}, overrides);
   }
 
   const result = configSchema.safeParse(parsed);
@@ -82,7 +169,17 @@ export function loadConfig(workspaceRoot: string): SpeckyConfig {
     console.error(
       `[specky] Ignoring invalid .specky/config.yml: ${result.error.issues.map((i) => i.message).join("; ")}`,
     );
-    return { ...DEFAULT_CONFIG };
+    return finalizeConfig({ ...DEFAULT_CONFIG }, {}, overrides);
   }
-  return result.data;
+  return finalizeConfig(result.data, parsed, overrides);
+}
+
+function finalizeConfig(
+  config: SpeckyConfig,
+  rawConfig: unknown,
+  overrides: ProfileOverrides,
+): SpeckyConfig {
+  const profile = resolveProfile(config.profile, overrides);
+  const resolved = { ...config, profile };
+  return profile === "enterprise" ? applyEnterpriseDefaults(resolved, rawConfig) : resolved;
 }
