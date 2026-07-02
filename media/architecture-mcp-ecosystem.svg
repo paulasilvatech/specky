@@ -1,6 +1,6 @@
 <!-- Specky v3.2 — MCP Ecosystem Architecture
      @paulasilvatech visual identity: purple/blue/gray palette
-     Plugin-first · 57 tools · 10-phase pipeline · MCP-to-MCP orchestration
+     Plugin-first · 58 tools · 10-phase pipeline · MCP-to-MCP orchestration
      Canvas: 1200x780
 -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 780" width="1200" height="780"
@@ -17,7 +17,7 @@
 
 <!-- ============= TITLE BLOCK ============= -->
 <text x="600" y="34" text-anchor="middle" font-size="22" font-weight="700" fill="#2C2C2A">Specky v3.2 — MCP Ecosystem Architecture</text>
-<text x="600" y="56" text-anchor="middle" font-size="13" fill="#888780">57 tools · 10-phase pipeline · Plugin-first · MCP-to-MCP orchestration</text>
+<text x="600" y="56" text-anchor="middle" font-size="13" fill="#888780">58 tools · 10-phase pipeline · Plugin-first · MCP-to-MCP orchestration</text>
 <rect x="430" y="66" width="48" height="3" rx="1.5" fill="#3D1A6E"/>
 <rect x="482" y="66" width="48" height="3" rx="1.5" fill="#5B2D8E"/>
 <rect x="534" y="66" width="48" height="3" rx="1.5" fill="#8661C5"/>
@@ -59,7 +59,7 @@
 
 <rect x="260" y="288" width="680" height="100" rx="8" fill="#FFF" stroke="#5B2D8E" stroke-width="2"/>
 <text x="600" y="318" text-anchor="middle" font-size="16" font-weight="700" fill="#2C2C2A">Specky — Plugin + MCP Server</text>
-<text x="600" y="342" text-anchor="middle" font-size="12" fill="#5F5E5A">57 Tools · 7 Agents · 19 Prompts · 6 Skills · 10 Hooks · State Machine · EARS Validator</text>
+<text x="600" y="342" text-anchor="middle" font-size="12" fill="#5F5E5A">58 Tools · 13 Agents · 22 Prompts · 8 Skills · 16 Hooks · State Machine · EARS Validator</text>
 
 <rect x="310" y="354" width="90" height="20" rx="10" fill="#5B2D8E" opacity="0.08"/>
 <text x="355" y="367" text-anchor="middle" font-size="10" font-weight="600" fill="#5B2D8E">10 Phases</text>
@@ -132,7 +132,7 @@
 <circle cx="94" cy="658" r="8" fill="#5B2D8E" opacity="0.15"/>
 <text x="94" y="662" font-size="9" fill="#5B2D8E" text-anchor="middle" font-weight="700">&#10022;</text>
 <text x="114" y="652" font-size="13" font-weight="700" fill="#5B2D8E">Via APM (Agent Package Manager)</text>
-<text x="114" y="670" font-size="10" fill="#888780">apm install paulasilvatech/specky — 13 agents, 22 prompts, 8 skills, 14 hooks + MCP server (57 tools)</text>
+<text x="114" y="670" font-size="10" fill="#888780">apm install paulasilvatech/specky — 13 agents, 22 prompts, 8 skills, 16 hooks + MCP server (58 tools)</text>
 
 <!-- ============= LEGEND ============= -->
 <line x1="40" y1="720" x2="1160" y2="720" stroke="#E8E6DF" stroke-width="1"/>
