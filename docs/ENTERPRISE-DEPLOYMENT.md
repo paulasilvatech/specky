@@ -4,12 +4,13 @@
 > identity-based RBAC over HTTP, a tamper-evident audit trail, hosted and
 > air-gapped deployment patterns, and CI enforcement.
 
-**Enterprise mode is a profile, not a product tier.** There is one npm package
-(`specky-sdd`), one license (MIT), and every security feature on this page is
-free and available to everyone. The profile only changes *defaults*: standard
-keeps Specky lightweight for individual use (all controls off); enterprise
-turns the governance controls on by default. Nothing here is required to use
-Specky the way you use it today.
+**Specky is 100% open source (MIT), and enterprise mode is simply an opt-in
+configuration profile of that same open-source package.** There is one npm
+package (`specky-sdd`) and every security feature on this page ships in it for
+everyone. The profile only changes *defaults*: standard keeps Specky
+lightweight for individual use (all controls off); enterprise turns the
+governance controls on by default. Nothing here is required to use Specky the
+way you use it today.
 
 ---
 

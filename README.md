@@ -990,7 +990,7 @@ Specky is built with enterprise adoption in mind.
 
 ### Enterprise profile (opt-in)
 
-One package, no paid tier: `profile: enterprise` (or `SPECKY_PROFILE=enterprise`, or `specky serve --profile=enterprise`) flips the governance defaults ON — hash-chained **audit trail** (fail-closed), **RBAC**, and HTTP **rate limiting** — while explicit config values still win. Add `SDD_HTTP_TOKENS_FILE` for **identity-based roles** (each bearer token maps to a named principal + role; audit entries record who did what) and `SDD_AUDIT_HMAC_KEY[_FILE]` for a **tamper-evident audit log** signed with a key the workspace never sees. The standard profile is untouched — all of this stays off unless you opt in.
+Specky is 100% open source (MIT) — enterprise mode is just an opt-in configuration profile of the same package: `profile: enterprise` (or `SPECKY_PROFILE=enterprise`, or `specky serve --profile=enterprise`) flips the governance defaults ON — hash-chained **audit trail** (fail-closed), **RBAC**, and HTTP **rate limiting** — while explicit config values still win. Add `SDD_HTTP_TOKENS_FILE` for **identity-based roles** (each bearer token maps to a named principal + role; audit entries record who did what) and `SDD_AUDIT_HMAC_KEY[_FILE]` for a **tamper-evident audit log** signed with a key the workspace never sees. The standard profile is untouched — all of this stays off unless you opt in.
 
 → Full guide: [docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md) (hosted HTTP, tokens, HMAC audit, air-gapped installs, containers, CI gates)
 
