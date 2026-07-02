@@ -387,6 +387,35 @@ Following the initial `v3.4.0-rc.15` publication, a consistency audit found that
 
 > Note: `src/index.ts` and `src/tools/rbac.ts` carry runtime-visible strings (the MCP server description and the RBAC admin role description). Because `3.4.0-rc.15` was already published to npm, these corrected strings ship in the next published build (`rc.16` or the stable `3.4.0`).
 
+## Audit remediation (2026-07)
+
+Remediation of `docs/AUDIT-2026-07.md` on `develop`. See that report's
+remediation-status table and the `CHANGELOG` for detail.
+
+| Area | Change |
+| --- | --- |
+| Happy path | Feature identity resolved from state (not the display name); `sdd_advance_phase` no longer stalls on a mis-located `SPECIFICATION.md`. E2E MCP regression test added |
+| Quality gate | `sdd_auto_pipeline` no longer writes a hard-coded `APPROVE`; a shared `AnalysisEngine` computes the real gate (verified: the `examples/todo-api` package was `CHANGES_NEEDED` at 75% until design referenced the requirement IDs, then `APPROVE`) |
+| EARS | `complex` pattern reachable; suggestion de-duplicated; word-boundary vague terms; ReDoS bound; dedicated tests |
+| State | Per-spec-dir async mutex; atomic state + signature writes |
+| HTTP | Binds `127.0.0.1` by default; opt-in bearer-token auth (`SDD_HTTP_TOKEN`); DNS-rebinding protection |
+| Installer | Pre-authorized allow-list reduced 37 → 11 (no arbitrary shell/`rm`/network); `.mcp.json` pinned to the installed version |
+| Config | `.specky/config.yml` parsed with the `yaml` library + Zod schema; `spec_dir`/`templates_path` reject traversal |
+| Coverage | Measured over the whole `src/**` tree (`all:true`); honest baseline ~24% (was 56% over imported files only) |
+| Docs | Public counts/phases/lineage corrected; `docs/API_REFERENCE.md` generated from `tools/list` with a CI `--check`; source count 88 → 92 |
+| Dedup | Single `tool-result` helper replaces 16× `formatError` + 18× `truncate` copies |
+
+### Validation gates (2026-07)
+
+| Gate | Result |
+| --- | --- |
+| `npm run build` | Passed |
+| `npm test` | Passed — 25 files, 160 tests |
+| `node scripts/generate-api-reference.mjs --check` | Passed — 58 tools in sync |
+| `node scripts/audit-agent-frontmatter.mjs` | Passed |
+| Fresh install + `specky doctor` | Passed — 11 allow rules, `.mcp.json` pinned |
+| HTTP auth smoke | `/mcp` 401 without/with-wrong token, 200 with token; `/health` open |
+
 ## Required Evidence Commands
 
 ```bash

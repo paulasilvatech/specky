@@ -18,10 +18,13 @@ Specky should provide these enterprise guarantees:
 | Control | Current Status | Gap |
 | --- | --- | --- |
 | Zod input schemas | Implemented | Keep schemas aligned with shared ID contracts. |
-| State machine | Implemented | Enforce through a central wrapper for all tools. |
+| State machine | Implemented and enforced via a central `registerTool` wrapper | Move to per-feature state files for true multi-feature isolation. |
+| State write serialization | Implemented (per-spec-dir async mutex; atomic state + signature) | — |
 | RBAC engine | Implemented and globally enforced | Continue expanding role policy coverage as new tools are added. |
 | Audit logger | Implemented and globally attached | Add user-facing audit chain verification command/tool. |
-| Rate limiting | Implemented for HTTP mode | Add enterprise defaults and docs. |
+| Rate limiting | Implemented for HTTP mode (opt-in) | Add enterprise defaults; bound the bucket map. |
+| HTTP transport security | Loopback bind by default, opt-in bearer-token auth (`SDD_HTTP_TOKEN`), DNS-rebinding protection | Add TLS termination guidance for remote deployments. |
+| Installer least-privilege | Minimal pre-authorized allow-list; no arbitrary shell/`rm`/network | Document opt-in for broader grants. |
 | HMAC state signature | Implemented | Add user-facing state signature verification command/tool. |
 | Audit chain verification | Implemented | Extend verification reporting into release evidence automation. |
 | Compliance checks | Implemented as keyword controls | Integrate into semantic gate. |

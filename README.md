@@ -112,7 +112,7 @@ npm install --save-dev specky-sdd@latest
 npx specky install --ide=copilot
 ```
 
-The CLI installs 13 agents, 22 prompts, 8 skills, 16 hooks, the MCP server registration (`.mcp.json` + `.vscode/mcp.json`), and **pre-authorizes all required tools**. Run `specky doctor` anytime to validate integrity and config.
+The CLI installs 13 agents, 22 prompts, 8 skills, 16 hooks, the MCP server registration (`.mcp.json` + `.vscode/mcp.json`, pinned to the installed version), and pre-authorizes a **least-privilege** set of tools — the Specky MCP tools plus scoped `git`/`npm`/`npx` and file editing. It does **not** pre-authorize arbitrary shell, `rm`, or network access; those still prompt. Run `specky doctor` anytime to validate integrity and config.
 
 Full walkthroughs per OS, offline install, and CLI reference: [docs/INSTALL.md](docs/INSTALL.md) · [docs/CLI.md](docs/CLI.md).
 

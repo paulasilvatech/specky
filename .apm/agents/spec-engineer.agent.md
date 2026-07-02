@@ -7,11 +7,11 @@ tools: ["Read", "Glob", "Grep", "Edit", "Write", "sdd_write_spec", "sdd_turnkey_
 ---
 
 <example>
-Context: Research phase is complete, ready to specify
+Context: Discovery is complete, ready to specify
 user: "Write the specification for feature 001"
 assistant: "I'll create SPECIFICATION.md with EARS requirements and validate all patterns."
 <commentary>
-Post-research specification writing is Phase 2.
+Post-discovery specification writing is the Specify phase.
 </commentary>
 </example>
 
