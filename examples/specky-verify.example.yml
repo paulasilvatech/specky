@@ -1,0 +1,69 @@
+# Example CI workflow: continuous spec verification on every pull request.
+#
+# Copy to .github/workflows/specky-verify.yml in your project. It fails the PR
+# if the installed Specky assets drift from the lockfile, if any requirement in
+# a changed spec is not valid EARS, or if a feature's quality gate is not
+# APPROVE. This turns Specky from a session-time tool into a merge gate.
+#
+# Requires: your repo has been bootstrapped with `npx specky-sdd install`.
+
+name: specky-verify
+
+on:
+  pull_request:
+    paths:
+      - ".specs/**"
+      - "src/**"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Validate the install integrity (assets match .specky/install.lock).
+      - name: specky doctor
+        run: npx -y specky-sdd@latest doctor
+
+      # Validate EARS + quality gate for every feature under .specs/.
+      # sdd_validate_ears reads SPECIFICATION.md; sdd_run_analysis recomputes
+      # the traceability gate. Both are exposed over MCP; here we call them via
+      # a tiny stdio driver so the check runs headless in CI.
+      - name: Verify specs
+        run: |
+          node - <<'NODE'
+          import { spawnSync } from "node:child_process";
+          import { readdirSync } from "node:fs";
+
+          const features = readdirSync(".specs", { withFileTypes: true })
+            .filter((e) => e.isDirectory() && /^\d{3}-/.test(e.name))
+            .map((e) => e.name.slice(0, 3));
+
+          function call(name, args) {
+            const input = [
+              JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "ci", version: "1" } } }),
+              JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }),
+              JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/call", params: { name, arguments: args } }),
+            ].join("\n") + "\n";
+            const res = spawnSync("npx", ["-y", "specky-sdd@latest", "serve"], { input, encoding: "utf8", timeout: 60000 });
+            for (const line of (res.stdout ?? "").split("\n").filter(Boolean)) {
+              try { const p = JSON.parse(line); if (p.id === 2) return JSON.parse(p.result.content[0].text); } catch {}
+            }
+            throw new Error(`no response for ${name}`);
+          }
+
+          let failed = false;
+          for (const feature of features) {
+            const ears = call("sdd_validate_ears", { feature_number: feature });
+            if (ears.invalid > 0) { console.error(`::error::Feature ${feature}: ${ears.invalid} non-EARS requirement(s)`); failed = true; }
+          }
+          if (failed) process.exit(1);
+          console.log(`Verified ${features.length} feature(s).`);
+          NODE

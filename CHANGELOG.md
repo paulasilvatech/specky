@@ -20,7 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **`examples/todo-api/`** — a complete spec package produced by running the pipeline end-to-end (`sdd_init` → `sdd_run_analysis`), reaching an `APPROVE` quality gate at 100% traceability. Demonstrates the real flow and proves the gate is computed, not asserted (it returned `CHANGES_NEEDED` until the design referenced the requirement IDs).
+- **`examples/specky-verify.example.yml`** — a drop-in GitHub Action that verifies EARS compliance and the quality gate on every PR.
+- **`scripts/generate-api-reference.mjs`** — regenerates `docs/API_REFERENCE.md` from the live MCP `tools/list`; wired into CI with `--check` so the reference can never drift from the tool registry.
 - Added the real Dockerfile and `.dockerignore` (multi-stage build, non-root, `EXPOSE 3200`, `/health` HEALTHCHECK, `serve --http` entrypoint) and un-ignored them in `.gitignore` — the release-container test and the `docker-publish` workflow require a tracked Dockerfile that had never been committable.
+- Added the `--host` flag to `serve` and defensive tests (`security-hardening`, `generators`, `engines`) — coverage over the whole `src/**` tree rose from ~17% to ~24%.
 - Added `src/services/analysis-engine.ts`, `src/utils/slug.ts`, and regression tests: `ears-validator`, `analysis-engine`, `doc-consistency` (config-vs-disk hook/phase/count guard), and a `happy-path-mcp` end-to-end suite.
 - Added `tests/unit/tool-count.test.ts`, a regression guard asserting that the number of registered tools equals `TOTAL_TOOLS` (58) so the advertised count cannot drift again.
 
