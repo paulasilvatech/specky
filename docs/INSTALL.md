@@ -276,7 +276,7 @@ specky doctor                       # verify
 This occurs when Copilot reads hooks from `.claude/settings.json`. Fix:
 
 ```bash
-npm install -g specky-sdd@latest   # pulls rc.14+ with Copilot fix
+npm install -g specky-sdd@latest   # pulls the latest (3.4.0+) with the Copilot fix
 cd affected-project
 specky install --force --ide=copilot  # strips hooks from .claude/settings.json
 # Reload VS Code: Cmd+Shift+P → "Developer: Reload Window"

@@ -199,7 +199,7 @@ cd your-project
 specky install
 ```
 
-That's it. The CLI auto-detects Claude Code and/or GitHub Copilot and installs the 13 agents, 22 prompts, 8 skills, 16 hooks, the MCP server registration, and pre-authorizes all required tools.
+That's it. The CLI auto-detects Claude Code and/or GitHub Copilot and installs the 13 agents, 22 prompts, 8 skills, 16 hooks, the MCP server registration, and pre-authorizes a least-privilege set of tools (the Specky MCP tools plus scoped `git`/`npm`/`npx` and file editing — not arbitrary shell or network).
 
 **Other install modes:**
 
