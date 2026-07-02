@@ -45,6 +45,13 @@ WORKDIR /workspace
 # HTTP streaming transport listens on 3200 by default (DEFAULT_HTTP_PORT).
 EXPOSE 3200
 
+# The container is the isolation boundary, so bind all interfaces by default —
+# otherwise `docker run -p 3200:3200` cannot reach the server (the CLI/npm
+# default stays loopback). Real exposure is governed by the port mapping /
+# orchestrator; set SDD_HTTP_TOKEN (and a TLS-terminating proxy) for
+# authenticated deployments — the server warns when bound non-loopback without it.
+ENV SDD_HTTP_HOST=0.0.0.0
+
 # Liveness probe against the transport's /health endpoint (Node 22 global fetch).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
   CMD ["node", "-e", "fetch('http://127.0.0.1:3200/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
