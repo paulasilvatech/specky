@@ -214,10 +214,10 @@ Generate dependency graph and assess risk of each integration.
 Structure the research artifact as:
 
 ```markdown
-# Research Phase Report
+# Discovery Phase Report
 **Project:** [name]
 **Date:** [YYYY-MM-DD]
-**Phase:** 1 - Research
+**Phase:** 1 - Discover
 **Status:** Complete
 
 ## Executive Summary

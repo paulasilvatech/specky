@@ -3,18 +3,18 @@
 > Audience: maintainer (Paula Silva).
 > This doc is intentionally short and prescriptive. Follow it step by step.
 
+There are two ways to publish. **Prefer the CI route** — it publishes with npm
+provenance and runs the full test matrix; the manual route is a fallback.
+
 ---
 
 ## Prerequisites (one-time)
 
-1. **npm account** with publish rights to `specky-sdd`
-   ```bash
-   npm whoami
-   # must print your npm username
-   ```
-2. **2FA enabled** on npm (required for publishing — enforce with `--access public --otp=<code>`)
-3. **gh CLI authenticated** (`gh auth status`) — used to verify CI status
-4. **Clean working tree**, on `main` or a release branch
+1. **npm account** with publish rights to `specky-sdd` (`npm whoami` prints your username)
+2. **`NPM_TOKEN` repo secret** (an npm *automation* token) — used by CI so the
+   GitHub Release can publish without a browser/2FA prompt
+3. **gh CLI authenticated** (`gh auth status`) — to create the Release / check CI
+4. **Clean working tree**, changes merged to `main`
 
 ---
 
@@ -24,149 +24,136 @@
 
 | Release type | package.json version | npm dist-tag |
 |---|---|---|
-| Prerelease (beta) | `3.4.0-rc.6` (or `3.4.0-beta.1`) | `next` |
-| Stable | `3.4.0` | `latest` |
+| Prerelease (rc/beta) | `X.Y.Z-rc.N` (e.g. `3.6.0-rc.1`) | `next` |
+| Stable | `X.Y.Z` (e.g. `3.6.0`) | `latest` |
 
-**Recommendation for the v3.4 series:** publish as `@next` first, let at least one pilot customer (e.g., SIFAP) install and run for 48 hours, then promote to `@latest`.
+Optional soak: publish as `@next` first, let a pilot run for ~48h, then promote
+to `@latest` (Step 5). Stable releases can go straight to `@latest`.
 
-### Step 1 — Verify CI green
+### Step 1 — Bump version + changelog on `main`
 
 ```bash
-# On the branch being released, require ALL of these green:
-gh run list --branch main --limit 5
-#  ✓ Hooks Compatibility
-#  ✓ Install Smoke Test  (matrix: ubuntu + macos + windows × node 20/22)
-#  ✓ CI
+# on a branch off develop:
+#   - package.json / package-lock.json version -> X.Y.Z
+#   - apm.yml / config.yml version -> X.Y.Z
+#   - CHANGELOG.md: add the [X.Y.Z] section
+#   - regenerate docs/API_REFERENCE.md if tools changed
+node scripts/generate-api-reference.mjs
+# open a PR, get CI green, merge to main
 ```
 
-Do NOT proceed if any required workflow is red.
+`src/constants.ts` reads `VERSION` from `package.json`, so bumping
+`package.json` is what drives the CLI/server version.
 
-### Step 2 — Local pre-flight
+### Step 2 — Local pre-flight (optional but recommended)
 
 ```bash
 node scripts/release.mjs
 ```
 
-This runs:
-- `git` working tree clean + in sync with remote
-- Clean build
-- All tests (unit + integration)
-- `npm pack --dry-run` verifies all assets ship
-- Fresh install from packed tarball into `/tmp/` + `specky init` + `specky doctor`
-- Version sanity check (semver + dist-tag match)
+Runs: clean tree check, clean build, all tests, `npm pack --dry-run`, a fresh
+install from the packed tarball + `specky init` + `specky doctor`, and a
+version/dist-tag sanity check. Must exit `0`.
 
-Must exit `0`. Do NOT proceed otherwise.
+### Step 3 — Publish (CANONICAL: GitHub Release triggers CI)
 
-### Step 3 — Tag the release
+Creating a **published** GitHub Release is the trigger. `.github/workflows/publish.yml`
+runs on `release: published`, builds, audits, tests, and then runs an
+**idempotent** `npm publish --provenance --access public` (it skips if that
+version is already on npm).
 
 ```bash
 VERSION=$(node -p "require('./package.json').version")
-git tag "v$VERSION" -m "release $VERSION"
-git push origin "v$VERSION"
-```
-
-### Step 4 — Publish
-
-**Prerelease:**
-
-```bash
-npm publish --tag next --access public
-# npm will prompt for 2FA OTP
-```
-
-Users install with:
-```bash
-npm install -g specky-sdd@next
-```
-
-**Stable:**
-
-```bash
-# First: bump package.json version to strip -rc suffix
-# e.g., 3.4.0-rc.6 → 3.4.0
-# Commit the version bump, push, rerun release.mjs, then:
-
-npm publish --tag latest --access public
-```
-
-Users install with:
-```bash
-npm install -g specky-sdd           # gets @latest by default
-```
-
-### Step 5 — Promote a prerelease to stable
-
-```bash
-# After soak time, without republishing:
-npm dist-tag add specky-sdd@3.4.0-rc.6 latest
-```
-
-(Users already on `@next` don't get auto-upgraded; they upgrade on their next `npm install`.)
-
-### Step 6 — Post-publish verification
-
-```bash
-# Wait ~60s for npm CDN propagation, then:
-mkdir /tmp/verify && cd /tmp/verify && npm init -y
-npm install specky-sdd@<version> --silent
-npx specky --version
-npx specky init --dry-run
-```
-
-If the install fails, you have ~72 hours to unpublish (`npm unpublish specky-sdd@<version>`). After 72h, unpublish is blocked by npm policy — the only fix is a new version bump.
-
-### Step 7 — GitHub Release
-
-```bash
 gh release create "v$VERSION" \
+  --target main \
   --title "v$VERSION" \
-  --notes-file CHANGELOG.md \
-  --target main
+  --notes-file docs/RELEASE-NOTES-$VERSION.md   # or CHANGELOG.md
 ```
 
-Or use the GitHub UI: Releases → Draft new release.
+Or via the UI: **Releases → Draft a new release** → tag `vX.Y.Z` (create on
+publish) → target `main` → paste the release notes → **Publish** (must be
+*Publish*, not *Draft* — a draft does not fire the workflow).
+
+> The Release also creates the `vX.Y.Z` git tag, so there is no separate
+> `git tag` step. CI provenance requires this route (a laptop cannot mint
+> provenance).
+
+### Step 3b — Manual publish (fallback only)
+
+Use only if CI is unavailable. This publishes **without** provenance.
+
+```bash
+git checkout main && git pull origin main
+node -p "require('./package.json').version"     # confirm it is X.Y.Z
+npm login --auth-type=web                        # browser + passkey/Touch ID
+npm ci && npm run build
+npm publish --tag latest --access public         # or --tag next for a prerelease
+```
+
+If you publish manually, still create the GitHub Release (Step 3) for the tag +
+notes — the workflow will detect the version is already on npm and skip the
+publish (idempotent), so there is no double-publish.
+
+### Step 4 — Post-publish verification
+
+```bash
+# ~60s for npm CDN propagation, then (bypass local cache):
+npm view specky-sdd version --prefer-online       # -> X.Y.Z
+npm view specky-sdd dist-tags --json
+```
+
+Deeper check:
+
+```bash
+mkdir /tmp/verify && cd /tmp/verify && npm init -y
+npm install specky-sdd@X.Y.Z --silent
+npx specky --version && npx specky init --dry-run
+```
+
+If the install is broken you have ~72h to `npm unpublish specky-sdd@X.Y.Z`;
+after 72h npm blocks unpublish and the only fix is a new patch version.
+
+### Step 5 — Promote a prerelease to stable (if you soaked on `@next`)
+
+```bash
+npm dist-tag add specky-sdd@X.Y.Z-rc.N latest
+```
+
+(Users already on `@next` upgrade on their next `npm install`.)
+
+### Step 6 — Container image (optional, GHCR)
+
+The container is opt-in. The `docker-publish` job in `publish.yml` runs only
+when the repo variable `PUBLISH_DOCKER=true` and pushes
+`ghcr.io/paulasilvatech/specky:{latest,X.Y.Z}` (cosign-signed + CycloneDX SBOM).
+See [docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md) for the
+container deployment model.
 
 ---
 
 ## Rollback
 
-If a bad version shipped and customers are affected:
-
-1. **Within 72h** of publish:
-   ```bash
-   npm unpublish specky-sdd@<bad-version>
-   ```
-2. **After 72h**: cannot unpublish. Ship a patch release:
-   ```bash
-   # Fix the bug, bump to x.y.z+1, republish
-   npm version patch
-   node scripts/release.mjs
-   npm publish --tag latest
-   # Move @latest back to a known-good version if needed:
-   npm dist-tag add specky-sdd@<good-version> latest
-   ```
-3. **Deprecate** the bad version with a notice:
-   ```bash
-   npm deprecate specky-sdd@<bad-version> "Critical bug; upgrade to <good-version>"
-   ```
+1. **Within 72h** of publish: `npm unpublish specky-sdd@<bad-version>`
+2. **After 72h**: ship a patch (`npm version patch`, re-flight, publish), then
+   `npm dist-tag add specky-sdd@<good-version> latest` to move `@latest` back.
+3. **Deprecate** the bad version: `npm deprecate specky-sdd@<bad-version> "Critical bug; upgrade to <good-version>"`
 
 ---
 
-## Release checklist (copy into PR description)
+## Release checklist (copy into the release PR description)
 
 ```
-- [ ] CI green on all required workflows
-- [ ] `node scripts/release.mjs` exits 0
+- [ ] Version bumped in package.json / package-lock.json / apm.yml / config.yml
 - [ ] CHANGELOG.md entry for this version
+- [ ] docs/API_REFERENCE.md regenerated (if tools changed)
+- [ ] CI green on main (all platforms + node 20/22)
+- [ ] `node scripts/release.mjs` exits 0
 - [ ] README install section still accurate
-- [ ] Version is correct semver (no typos)
 - [ ] dist-tag decision made (next vs latest)
-- [ ] 2FA device ready
-- [ ] Git tag pushed (v<version>)
-- [ ] npm publish ran successfully
-- [ ] Post-publish smoke test from npm registry passed
-- [ ] GitHub Release created
-- [ ] (If stable) pilot customer notified
+- [ ] GitHub Release published on main (fires the publish workflow)
+- [ ] npm shows the new version as latest (npm view --prefer-online)
+- [ ] Post-publish smoke test from the npm registry passed
+- [ ] (If enabling GHCR) PUBLISH_DOCKER=true + container pushed
 ```
 
 ---
@@ -175,9 +162,10 @@ If a bad version shipped and customers are affected:
 
 | ❌ Mistake | ✅ Instead |
 |---|---|
-| Publish without `node scripts/release.mjs` | Always run pre-flight |
-| Forget `--access public` on first publish | Specky is MIT; always public |
-| Use `@latest` for a prerelease | Use `@next` and promote later |
-| Strip `-rc` suffix AFTER publishing | Bump version BEFORE `npm publish` |
-| Forget to push the git tag | `git push origin v<version>` after `npm publish` |
+| `npm publish` from a laptop as the default | Create a GitHub Release; CI publishes with provenance |
+| Publish while local is on the previous version | `git pull origin main` first; confirm `package.json` version |
+| Create the Release as a **Draft** | Must be **Published** — a draft does not fire the workflow |
+| Forget `--access public` on a manual publish | Specky is MIT; always public |
+| Use `@latest` for a prerelease | Use `@next` and promote later (Step 5) |
+| Skip the version bump before releasing | Bump package.json first — it drives the CLI/server version |
 | Ignore a failing smoke test because "works locally" | Fix the test; don't bypass |

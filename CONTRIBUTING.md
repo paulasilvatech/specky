@@ -100,7 +100,7 @@ src/
     ├── testing.ts            2 testing tools (generate_tests, verify_tests)
     └── response-builder.ts   Response enrichment helpers (enrichResponse, buildPhaseError)
 
-templates/                    23 Markdown templates with {{variable}} placeholders
+templates/                    22 Markdown templates with {{variable}} placeholders
 ```
 
 ### Key Principles

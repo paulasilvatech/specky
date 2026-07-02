@@ -25,12 +25,12 @@ Before writing any code, the following gates must pass:
 
 | ID | Task | [P] | Effort | Depends On | Traces To |
 |----|------|-----|--------|------------|-----------|
-| | T-001 | Scaffold Express + TypeScript and /health |  | S | — | REQ-TODO-001 |
+| T-001 | Scaffold Express + TypeScript and /health |  | S | — | REQ-TODO-001 |
 | T-002 | Todo model + validation | [P] | S | T-001 | REQ-TODO-004 |
 | T-003 | FileStore with atomic write | [P] | M | T-001 | REQ-TODO-002 |
 | T-004 | TodoService CRUD + toggle |  | M | T-002, T-003 | REQ-TODO-001, REQ-TODO-003 |
 | T-005 | REST routes + error mapping |  | M | T-004 | REQ-TODO-001, REQ-TODO-004 |
-| T-006 | Tests for acceptance criteria + p95 latency |  | M | T-005 | REQ-TODO-001, REQ-TODO-002, REQ-TODO-003, REQ-TODO-004 | | | | | | |
+| T-006 | Tests for acceptance criteria + p95 latency |  | M | T-005 | REQ-TODO-001, REQ-TODO-002, REQ-TODO-003, REQ-TODO-004 |
 
 ---
 
