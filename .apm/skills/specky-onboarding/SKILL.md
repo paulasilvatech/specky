@@ -130,9 +130,9 @@ Check for:
 
 **Utility (8):** sdd_get_status, sdd_get_template, sdd_write_bugfix, sdd_scan_codebase, sdd_amend, sdd_check_ecosystem, sdd_check_sync, sdd_metrics
 
-**Governance (3):** sdd_model_routing, sdd_context_status, sdd_check_access
+**Governance (4):** sdd_model_routing, sdd_context_status, sdd_check_access, sdd_verify_audit
 
-## 14 Hook Scripts
+## 16 Hook Scripts
 
 **Blocking (exit 2 = halt):**
 - artifact-validator.sh — Prerequisite .md files exist
@@ -142,9 +142,11 @@ Check for:
 
 **Advisory (exit 0 = warn):**
 - branch-validator.sh — Branch matches phase expectations
-- lgtm-gate.sh — Human review reminder at Phases 3/4/5
-- auto-checkpoint.sh — Suggest checkpoint after writes
+- pipeline-guard.sh — Pipeline ordering / phase-skip guard
+- lgtm-gate.sh — Human review reminder at Phases 2/4/5
+- session-banner.sh — Session start pipeline-status banner
 - spec-sync.sh — Detect spec-code drift
+- auto-checkpoint.sh — Suggest checkpoint after writes
 - spec-quality.sh — Specification quality metrics
 - ears-validator.sh — EARS pattern compliance
 - task-tracer.sh — Task dependency graph

@@ -12,4 +12,4 @@ Design an API using the Specky SDD pipeline.
 Please:
 1. Call @requirements-engineer to produce FRD + NFRD for the API
 2. Call @sdd-init with project_type=api
-3. Proceed through research → specify → design phases
+3. Proceed through discover → specify → design phases

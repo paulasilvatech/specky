@@ -422,15 +422,15 @@ Use when: You came back from vacation and don't know where a feature was. Or you
 | Phase | Agent | Model | Thinking | Why |
 |-------|-------|-------|----------|-----|
 | Pre / 0 | requirements-engineer / sdd-init | Opus 4.6 / Haiku 4.5 | Opus: yes / Haiku: no | Requirements = highest leverage; init = pure scaffolding |
-| 1 | research-analyst | Sonnet 4.6 | No | Information synthesis, not deep reasoning |
-| 2 | sdd-clarify | Opus 4.6 | Yes | Ambiguity requires deep reasoning |
-| 3 | spec-engineer | Opus 4.6 | Yes | Specification is the most critical phase |
-| 4 | design-architect | Opus 4.6 | Yes | Architectural decisions have long-term impact |
-| 5 | task-planner | Sonnet 4.6 | No | Structured decomposition, not reasoning |
-| 6 | implementer | Sonnet 4.6 | **No** ⚠️ | arXiv:2502.08235: thinking during implementation = -30% quality, +43% cost |
-| 7 | test-verifier | Sonnet 4.6 | No | Iterative verification with executable feedback |
-| 8 | (automatic hooks) | — | — | drift-monitor, metrics, cognitive-debt |
-| 9 | release-engineer | Haiku 4.5 | No | Mechanical checklist, 0.33x cost |
+| 1 — Discover | research-analyst | Sonnet 4.6 | No | Information synthesis, not deep reasoning |
+| 2 — Specify | spec-engineer | Opus 4.6 | Yes | Specification is the most critical phase |
+| 3 — Clarify | sdd-clarify | Opus 4.6 | Yes | Ambiguity requires deep reasoning |
+| 4 — Design | design-architect | Opus 4.6 | Yes | Architectural decisions have long-term impact |
+| 5 — Tasks | task-planner | Sonnet 4.6 | No | Structured decomposition, not reasoning |
+| 6 — Analyze | quality-reviewer | Sonnet 4.6 | Yes | Cross-artifact analysis + compliance/traceability gate |
+| 7 — Implement | implementer | Sonnet 4.6 | **No** ⚠️ | arXiv:2502.08235: thinking during implementation = -30% quality, +43% cost |
+| 8 — Verify | test-verifier | Sonnet 4.6 | No | Iterative verification with executable feedback |
+| 9 — Release | release-engineer | Haiku 4.5 | No | Mechanical checklist, 0.33x cost |
 
 ---
 
