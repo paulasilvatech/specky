@@ -4,7 +4,7 @@
  */
 
 import { mkdir, readFile, writeFile, readdir, stat, rename, access, unlink } from "node:fs/promises";
-import { join, resolve, relative, basename, dirname } from "node:path";
+import { join, resolve, relative, basename, dirname, sep } from "node:path";
 import { randomUUID } from "node:crypto";
 import { DEFAULT_SPEC_DIR, DEFAULT_EXCLUDE_PATTERNS, DEFAULT_SCAN_DEPTH, MAX_SCAN_DEPTH } from "../constants.js";
 import type { DirectoryTree, FeatureInfo } from "../types.js";
@@ -25,14 +25,22 @@ export class FileManager {
    * Returns resolved absolute path within workspace.
    */
   sanitizePath(relativePath: string): string {
-    if (relativePath.startsWith("/") || relativePath.startsWith("\\")) {
+    // Reject absolute paths on every OS: POSIX ("/…"), UNC/Windows-separator
+    // ("\…"), and Windows drive-absolute ("C:\…"). The drive-letter form is not
+    // caught by a "/" or "\" prefix check and slips through on POSIX runtimes
+    // too, so guard it explicitly — mirrors the Zod specDirSchema guard.
+    if (
+      relativePath.startsWith("/") ||
+      relativePath.startsWith("\\") ||
+      /^[a-zA-Z]:/.test(relativePath)
+    ) {
       throw new Error(`Absolute paths are not allowed: ${relativePath}`);
     }
     if (relativePath.includes("..")) {
       throw new Error(`Path traversal is not allowed: ${relativePath}`);
     }
     const resolved = resolve(this.root, relativePath);
-    if (!resolved.startsWith(this.root)) {
+    if (resolved !== this.root && !resolved.startsWith(this.root + sep)) {
       throw new Error(`Path escapes workspace root: ${relativePath}`);
     }
     return resolved;
