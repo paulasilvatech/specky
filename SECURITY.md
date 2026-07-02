@@ -4,10 +4,10 @@
 
 | Version | Supported |
 | --- | --- |
-| 3.3.x | ✅ Active |
-| 3.0.x–3.2.x | ✅ Security fixes only |
-| 2.3.x | ❌ End of life |
-| 2.0.x | ❌ End of life |
+| 3.5.x | ✅ Active |
+| 3.4.x | ✅ Security fixes only |
+| 3.0.x–3.3.x | ❌ End of life |
+| 2.x | ❌ End of life |
 | 1.0.x | ❌ End of life |
 
 ## Reporting a Vulnerability
@@ -212,7 +212,7 @@ Running `npx -y specky-sdd@latest` without a pinned version downloads the latest
 
 ```bash
 # Install into a local vendor directory — no global write permissions needed
-npm install specky-sdd@3.4.0 --prefix ./vendor --ignore-scripts
+npm install specky-sdd@3.5.0 --prefix ./vendor --ignore-scripts
 ./vendor/node_modules/.bin/specky install
 ./vendor/node_modules/.bin/specky doctor     # integrity check
 ```

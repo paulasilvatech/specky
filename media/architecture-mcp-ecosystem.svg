@@ -1,4 +1,4 @@
-<!-- Specky v3.2 — MCP Ecosystem Architecture
+<!-- Specky v3.5 — MCP Ecosystem Architecture
      @paulasilvatech visual identity: purple/blue/gray palette
      Plugin-first · 58 tools · 10-phase pipeline · MCP-to-MCP orchestration
      Canvas: 1200x780
@@ -16,7 +16,7 @@
 </defs>
 
 <!-- ============= TITLE BLOCK ============= -->
-<text x="600" y="34" text-anchor="middle" font-size="22" font-weight="700" fill="#2C2C2A">Specky v3.2 — MCP Ecosystem Architecture</text>
+<text x="600" y="34" text-anchor="middle" font-size="22" font-weight="700" fill="#2C2C2A">Specky v3.5 — MCP Ecosystem Architecture</text>
 <text x="600" y="56" text-anchor="middle" font-size="13" fill="#888780">58 tools · 10-phase pipeline · Plugin-first · MCP-to-MCP orchestration</text>
 <rect x="430" y="66" width="48" height="3" rx="1.5" fill="#3D1A6E"/>
 <rect x="482" y="66" width="48" height="3" rx="1.5" fill="#5B2D8E"/>
@@ -73,7 +73,7 @@
 <text x="815" y="367" text-anchor="middle" font-size="10" font-weight="600" fill="#0058A3">Plugin Marketplace</text>
 
 <rect x="875" y="292" width="58" height="20" rx="10" fill="#5B2D8E"/>
-<text x="904" y="305" text-anchor="middle" font-size="10" font-weight="700" fill="#FFF">v3.2.2</text>
+<text x="904" y="305" text-anchor="middle" font-size="10" font-weight="700" fill="#FFF">v3.5.0</text>
 
 <!-- ============= ROW 3: EXTERNAL MCP SERVERS ============= -->
 <rect x="24" y="414" width="1152" height="186" rx="8" fill="#0058A3" opacity="0.03"/>

@@ -1,6 +1,6 @@
 # Specky CLI Reference
 
-> Version: v3.4.0+
+> Version: v3.5.0+
 
 The `specky` CLI is the single write-path for installing, validating, and upgrading Specky in a workspace. It replaces the previous ad-hoc copying done by APM and manual `.github/` / `.claude/` setup.
 
