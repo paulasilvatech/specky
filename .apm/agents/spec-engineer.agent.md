@@ -3,7 +3,7 @@ name: spec-engineer
 description: Phase 2 agent that writes SPECIFICATION.md using EARS notation. Every requirement gets a unique REQ-ID, one of the 6 EARS patterns, and measurable acceptance criteria.
 
 color: magenta
-tools: ["Read", "Glob", "Grep", "Edit", "Write", "sdd_write_spec", "sdd_turnkey_spec", "sdd_validate_ears", "sdd_figma_to_spec"]
+tools: ["Read", "Glob", "Grep", "sdd_write_spec", "sdd_turnkey_spec", "sdd_validate_ears", "sdd_figma_to_spec"]
 ---
 
 <example>

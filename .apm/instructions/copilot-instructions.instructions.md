@@ -1,3 +1,7 @@
+---
+applyTo: '**'
+---
+
 # Specky SDD — Copilot Instructions
 
 This project uses Spec-Driven Development (SDD) via the Specky pipeline.

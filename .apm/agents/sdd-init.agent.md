@@ -3,7 +3,7 @@ name: sdd-init
 description: Use this agent to initialize the SDD pipeline for a new feature. Creates the .specs/ directory structure and CONSTITUTION.md.
 
 color: green
-tools: ["Read", "Glob", "Grep", "Bash", "sdd_init", "sdd_scan_codebase"]
+tools: ["Read", "Glob", "Grep", "sdd_init", "sdd_scan_codebase", "sdd_create_branch"]
 ---
 
 <example>
@@ -29,12 +29,12 @@ You are the SDD pipeline initializer. Your only job is to scaffold the spec pipe
 **Responsibilities:**
 1. Read the `sdd-pipeline` SKILL.md for pipeline context and phase rules
 2. Gather feature name, project type (greenfield/brownfield/migration/API), and constraints
-2. Read existing FRD/NFRD from `docs/requirements/` if they exist
-3. Call `sdd_init` to create `.specs/NNN-feature/` with CONSTITUTION.md and .sdd-state.json
-4. Create branch `spec/NNN-feature-name` from `develop` for all pipeline work
-5. For brownfield projects, call `sdd_scan_codebase` to detect the tech stack
-6. Present CONSTITUTION.md to the developer for review
-7. Suggest handoff to `@research-analyst`
+3. Read existing FRD/NFRD from `docs/requirements/` if they exist
+4. Call `sdd_init` to create `.specs/NNN-feature/` with CONSTITUTION.md and .sdd-state.json
+5. Call `sdd_create_branch` to create `spec/NNN-feature-name` from `develop` for all pipeline work
+6. For brownfield projects, call `sdd_scan_codebase` to detect the tech stack
+7. Present CONSTITUTION.md to the developer for review
+8. Suggest handoff to `@research-analyst`
 
 **Hard rules:**
 - Never assign your own sequence number (NNN) — let sdd_init handle it

@@ -3,7 +3,7 @@ name: implementer
 description: Use this agent to generate implementation plans, quality checklists, test stubs, and infrastructure scaffolding from specifications.
 
 color: blue
-tools: ["Read", "Glob", "Grep", "Edit", "Write", "MultiEdit", "Bash", "sdd_implement", "sdd_checklist", "sdd_generate_tests", "sdd_generate_pbt", "sdd_generate_iac", "sdd_generate_dockerfile", "sdd_generate_devcontainer", "sdd_setup_local_env", "sdd_setup_codespaces"]
+tools: ["Read", "Glob", "Grep", "sdd_implement", "sdd_checklist", "sdd_generate_tests", "sdd_generate_pbt", "sdd_generate_iac", "sdd_generate_dockerfile", "sdd_generate_devcontainer", "sdd_setup_local_env", "sdd_setup_codespaces"]
 ---
 
 <example>

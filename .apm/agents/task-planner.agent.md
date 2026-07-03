@@ -3,7 +3,7 @@ name: task-planner
 description: Phase 5 agent that writes TASKS.md with dependency-resolved task sequences, REQ-ID traceability, complexity estimates, and parallel markers. Also generates CHECKLIST.md.
 
 color: orange
-tools: ["Read", "Glob", "Grep", "Edit", "Write", "sdd_write_tasks", "sdd_checklist"]
+tools: ["Read", "Glob", "Grep", "sdd_write_tasks", "sdd_checklist"]
 ---
 
 <example>
