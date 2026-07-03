@@ -3,10 +3,16 @@ name: Publish
 on:
   release:
     types: [published]
-  # Manual trigger — e.g. to (re)build & push the GHCR container when npm was
-  # already published, without cutting a new release. npm-publish is skipped on
-  # this event (see its `if`); docker-publish still runs when PUBLISH_DOCKER=true.
+  # Manual trigger — (re)build & push the GHCR container, and optionally run
+  # the npm publish too (publish_npm=true; still idempotent — skips when the
+  # version is already on the registry). Lets a maintainer/agent ship a release
+  # without the GitHub Release UI; the Release page can be created afterwards.
   workflow_dispatch:
+    inputs:
+      publish_npm:
+        description: "Also run the npm publish job (idempotent)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -16,9 +22,9 @@ permissions:
 jobs:
   npm-publish:
     runs-on: ubuntu-latest
-    # Only publish npm on an actual GitHub Release. On workflow_dispatch this
-    # job is skipped (npm is already out) and only docker-publish runs.
-    if: ${{ github.event_name == 'release' }}
+    # Publish npm on a GitHub Release, or on a manual dispatch that explicitly
+    # asks for it (publish_npm=true). The publish step itself is idempotent.
+    if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.publish_npm) }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
