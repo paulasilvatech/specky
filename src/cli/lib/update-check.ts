@@ -5,7 +5,7 @@
  *
  * Design constraints (see README "Staying up to date"):
  *   - CLI only — NEVER invoked by `specky serve` / the MCP server.
- *   - Fail-silent: any error (offline, timeout, bad JSON, unwritable cache)
+ *   - Fail-silent — every error (offline, timeout, bad JSON, unwritable cache)
  *     returns null. An update check must never break or delay a command.
  *   - Opt-out: SPECKY_NO_UPDATE_CHECK=1, CI=true, or `update_check: false`
  *     in .specky/config.yml (the config gate lives in the CLI dispatcher).
