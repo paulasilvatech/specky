@@ -1,5 +1,5 @@
 ---
-name: SDD Markdown Standard
+name: sdd-markdown-standard
 description: "This skill should be used when generating or formatting SDD artifacts (CONSTITUTION.md, SPECIFICATION.md, DESIGN.md, TASKS.md, VERIFICATION.md, ANALYSIS.md). Also trigger on 'sdd markdown', 'artifact format', or 'spec formatting'."
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: Release Engineer
+name: release-engineer
 description: "This skill should be used when the user asks to 'prepare release', 'create PR', 'generate documentation', 'run release gates', or needs guidance on Phase 9 release. Also trigger on 'sdd release', 'blocking gates', 'security scan', 'release gate', or 'export work items'."
 ---
 

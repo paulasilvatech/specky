@@ -1,5 +1,5 @@
 ---
-name: Implementation Orchestrator
+name: implementer
 description: "This skill should be used when the user asks to 'generate implementation plan', 'create test stubs', 'set up infrastructure', 'generate quality checklists', 'transition from spec to code', or needs guidance on Phase 7 implementation scaffolding. Also trigger on 'sdd implement', 'implementation handoff', 'IaC generation', or 'test framework selection'."
 ---
 

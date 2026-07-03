@@ -1,5 +1,5 @@
 ---
-name: Test Verification Specialist
+name: test-verifier
 description: "This skill should be used when the user asks to 'verify tests', 'check coverage', 'detect phantom completions', 'check spec drift', or needs guidance on Phase 8 verification. Also trigger on 'sdd test', 'test traceability', 'verification report', or 'gate criteria'."
 ---
 

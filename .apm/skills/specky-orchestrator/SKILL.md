@@ -1,5 +1,5 @@
 ---
-name: Pipeline Orchestrator
+name: specky-orchestrator
 description: "This skill should be used when the user asks to 'orchestrate pipeline', 'run full pipeline', 'coordinate phases', 'advance phase', or needs guidance on end-to-end pipeline execution. Also trigger on 'specky orchestrate', 'phase transition', 'LGTM gate', 'pipeline status', or 'which agent for this phase'."
 ---
 

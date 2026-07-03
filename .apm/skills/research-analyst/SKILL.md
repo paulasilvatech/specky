@@ -1,5 +1,5 @@
 ---
-name: Research Analyst
+name: research-analyst
 description: "This skill should be used when the user asks to 'research codebase', 'scan tech stack', 'import documents', 'discovery questions', or needs guidance on Phase 1 research. Also trigger on 'sdd research', 'brownfield scan', 'import transcript', or 'check ecosystem'."
 ---
 

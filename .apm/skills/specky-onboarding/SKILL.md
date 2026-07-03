@@ -1,5 +1,5 @@
 ---
-name: Specky Onboarding Guide
+name: specky-onboarding
 description: "This skill should be used when the user asks 'help me with specky', 'what is specky', 'how to use specky', 'specky onboarding', 'get started', or needs guidance on project setup, work modes, or available agents/tools/prompts. Also trigger on '@specky', 'specky help', or 'show me specky commands'."
 ---
 

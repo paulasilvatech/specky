@@ -1,5 +1,5 @@
 ---
-name: SDD Pipeline Guide
+name: sdd-pipeline
 description: "This skill should be used when the user asks about 'spec-driven development', 'SDD pipeline', 'specky', 'pipeline phases', 'EARS notation', 'requirements engineering', 'model routing', or needs guidance on the 10-phase SDD workflow (Init → Discover → Specify → Clarify → Design → Tasks → Analyze → Implement → Verify → Release). Also trigger on 'spec this', 'plan this feature', 'break into tasks', 'quality gate', 'constitution', or 'spec sync'."
 ---
 
