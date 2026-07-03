@@ -37,6 +37,10 @@ const configSchema = z
     profile: z.enum(["standard", "enterprise"]).default("standard"),
     templates_path: safeRelativePath.default(""),
     default_framework: z.string().default("vitest"),
+    // Once-daily CLI update banner (registry check). Workspace-level hard
+    // disable; also skipped via SPECKY_NO_UPDATE_CHECK=1 / CI=true. NOT a
+    // security control — the enterprise profile must not flip it.
+    update_check: z.boolean().default(true),
     compliance_frameworks: z.array(z.string()).default(["general"]),
     audit_enabled: z.boolean().default(false),
     rate_limit: z

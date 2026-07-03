@@ -103,7 +103,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  rmSync(workspace, { recursive: true, force: true });
+  rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 function pyCompile(content: string, name: string): { status: number | null; stderr: string } {

@@ -4,9 +4,9 @@
 
 | Version | Supported |
 | --- | --- |
-| 3.5.x | ✅ Active |
-| 3.4.x | ✅ Security fixes only |
-| 3.0.x–3.3.x | ❌ End of life |
+| 3.7.x | ✅ Active |
+| 3.6.x | ✅ Security fixes only |
+| 3.0.x–3.5.x | ❌ End of life |
 | 2.x | ❌ End of life |
 | 1.0.x | ❌ End of life |
 
@@ -46,9 +46,18 @@ AI Client → JSON-RPC → Zod .strict() validation → Service layer
 
 Specky does **not** use `eval()`, `Function()`, `vm.runInNewContext()`, or any dynamic code execution. Template rendering uses string replacement only — no template engines that execute code.
 
-### No Network Calls
+### Network Calls
 
-Specky operates entirely locally. It makes zero outbound network requests. All data stays on the user's machine. The MCP server communicates only via stdio (JSON-RPC over stdin/stdout) or optional HTTP transport on localhost.
+The **MCP server makes zero outbound network calls**. All data stays on the user's machine. It communicates only via stdio (JSON-RPC over stdin/stdout) or optional HTTP transport on localhost, and this holds unconditionally — `specky serve` never performs the update check described below.
+
+The **CLI performs exactly one optional outbound call**: a once-daily `GET https://registry.npmjs.org/specky-sdd/latest` to detect new releases, run after `install`/`doctor`/`status`/`upgrade`/`--version` and shown as an `Update available: vX → vY` banner. This is not telemetry — nothing is sent beyond the HTTP request itself: no identifiers, no usage data, no payload. The check fails silently when offline and is disabled automatically in CI (`CI=true`).
+
+Opt out with either:
+
+- `SPECKY_NO_UPDATE_CHECK=1` in the environment, or
+- `update_check: false` in `.specky/config.yml`
+
+The local version-drift warning printed by `specky doctor`/`specky status` and at MCP server startup compares installed assets against the running version on disk — it involves no network at all.
 
 ### Dependency Minimalism
 
@@ -81,7 +90,7 @@ Runtime dependencies are kept intentionally small and are audited in CI.
 | A07 Authentication Failures | stdio mode is process-isolated (no network). HTTP mode binds to `127.0.0.1` by default and supports optional bearer-token auth — a shared token (`SDD_HTTP_TOKEN`) or a named token table (`SDD_HTTP_TOKENS_FILE`, principal + RBAC role per token, sha256 storage supported) — all constant-time compared, plus DNS-rebinding protection |
 | A08 Data Integrity Failures | Atomic file writes via FileManager; Zod schema enforcement |
 | A09 Logging Failures | Structured stderr logging; no stdout pollution |
-| A10 SSRF | Zero outbound network requests |
+| A10 SSRF | Zero outbound requests from the MCP server; the CLI's once-daily update check fetches a fixed registry URL only — no user-controlled URLs |
 
 ## Dependency Auditing
 
@@ -106,6 +115,7 @@ We run `npm audit` in CI on every pull request. Any `high` or `critical` vulnera
 | `SDD_HTTP_TOKENS_FILE` | Named token table → principal + RBAC role (identity-based auth) | unset |
 | `SDD_AUDIT_HMAC_KEY` / `SDD_AUDIT_HMAC_KEY_FILE` | Sign audit entries (tamper evidence); keep the key outside the workspace | unset (chain only) |
 | `SDD_ROLE` | Local RBAC role for stdio use — ignored on authenticated HTTP requests | `rbac.default_role` |
+| `SPECKY_NO_UPDATE_CHECK` | Set to `1` to disable the CLI's once-daily update check — the package's only outbound call (see [Network Calls](#network-calls)) | unset (check enabled) |
 
 HTTP transport (`--http`) binds to `127.0.0.1` by default. Binding to a non-loopback address requires an explicit `--host` and prints a warning. Set `SDD_HTTP_TOKEN` (shared token) or `SDD_HTTP_TOKENS_FILE` (named tokens mapping to principal + role) to require an `Authorization: Bearer <token>` header on every `/mcp` request (the `/health` probe stays open). Even so, do not expose Specky to public networks without a TLS-terminating reverse proxy. Hosted, air-gapped, and container deployment patterns: [docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md).
 
@@ -185,7 +195,7 @@ server {
 
 These guarantees describe the intended product boundary. Known implementation gaps are tracked in [docs/DETERMINISM.md](docs/DETERMINISM.md) and [docs/ENTERPRISE-CONTROLS.md](docs/ENTERPRISE-CONTROLS.md).
 
-- **No outbound network calls from core MCP tools** — optional external MCP integrations are returned as routing payloads for the AI client to execute.
+- **No outbound network calls from core MCP tools** — optional external MCP integrations are returned as routing payloads for the AI client to execute. The CLI's once-daily update check (see [Network Calls](#network-calls)) is the package's only outbound call; it is opt-out and never runs in `specky serve`.
 - **No dynamic code execution** — no `eval()`, `Function()`, or `vm.runInNewContext()` in the Specky core.
 - **No credential storage by design** — no API keys, tokens, or passwords are intentionally stored by Specky.
 - **Workspace-scoped I/O is the target boundary** — `FileManager.sanitizePath()` enforces this for core file operations; document import hardening is tracked as an enterprise remediation item.
@@ -255,7 +265,7 @@ Specky addresses the 12 threat categories from the CoSAI MCP Security White Pape
 | --- | --- | --- |
 | M1 | Prompt Injection | No dynamic content in tool descriptions; outputs are structured JSON |
 | M2 | Insecure Tool Design | Thin Tools / Fat Services — tools are pure input/output wrappers |
-| M3 | Excessive Agency | No shell execution, no outbound network, no code eval |
+| M3 | Excessive Agency | No shell execution, no outbound network from the MCP server, no code eval |
 | M4 | Insufficient Authentication | HTTP mode delegates to reverse proxy; stdio is process-isolated |
 | M5 | Broken Object-Level Authorization | RBAC engine enforces per-tool access by role (opt-in) |
 | M6 | Sensitive Data Exposure | FileManager path boundary; no credential logging; workspace-scoped I/O |

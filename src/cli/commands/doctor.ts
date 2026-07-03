@@ -9,6 +9,7 @@
  */
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
+import { VERSION } from "../../constants.js";
 import { hashFile } from "../lib/asset-copier.js";
 import { detectIde } from "../lib/ide-detect.js";
 import { targetPaths, type Targets } from "../lib/paths.js";
@@ -255,6 +256,13 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
   console.log(
     `[specky doctor] IDE scope: ${resolvedIde.ide} (${resolvedIde.detail})`,
   );
+
+  // Version-drift advisory (zero network): installed assets vs running CLI.
+  if (installMeta?.version && installMeta.version !== VERSION) {
+    console.log(
+      `[specky doctor] ⚠️  Version drift: installed assets are v${installMeta.version} but this CLI is v${VERSION} — run \`specky upgrade\` to refresh.`,
+    );
+  }
 
   const integrity = verifyIntegrity(lock, targets.shared.specky);
   printIntegrity(integrity, opts.verbose);

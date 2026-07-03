@@ -87,7 +87,7 @@ describe("happy path through MCP with a mismatched display name", () => {
   });
 
   afterEach(() => {
-    rmSync(ws, { recursive: true, force: true });
+    rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it("writes the spec into the init directory and advances past specify", async () => {

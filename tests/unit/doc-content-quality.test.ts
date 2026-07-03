@@ -199,7 +199,7 @@ describe("generated docs carry real feature content (not frontmatter/ToC/boilerp
   });
 
   afterEach(() => {
-    rmSync(workspace, { recursive: true, force: true });
+    rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   describe("full docs (sdd_generate_docs)", () => {

@@ -51,13 +51,14 @@
 | | [Where Specifications Live](#where-specifications-live) | File structure and naming conventions |
 | | [Input Methods](#input-methods-6-ways-to-start) | 6 ways to feed Specky |
 | | [Three Project Types](#three-project-types-one-pipeline) | Greenfield, Brownfield, Modernization |
+| | [Staying up to date](#staying-up-to-date) | Update notifications and one-command upgrade |
 | **Pipeline** | [Pipeline and LGTM Gates](#pipeline-and-lgtm-gates) | 10 phases with human review gates |
 | | [All 58 Tools](#all-58-tools) | Complete tool reference by category |
 | | [EARS Notation](#ears-notation) | The 6 requirement patterns |
 | **Enterprise** | [Compliance Frameworks](#compliance-frameworks) | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 |
 | | [Enterprise Ready](#enterprise-ready) | Security, audit trail, quality gates |
 | **Platform** | [The SDD Platform](#the-spec-driven-development-platform) | Built on Spec-Kit, everything included |
-| | [Roadmap](#roadmap) | v3.6 current, v3.7+ planned |
+| | [Roadmap](#roadmap) | v3.7 current, v3.8+ planned |
 
 
 ## What is Specky?
@@ -173,7 +174,7 @@ Specky adds a **deterministic engine** between your intent and your code:
 | Gitflow-SDD branching | spec/NNN → develop → stage → main |
 | Unified CLI distribution | `npm install -g specky-sdd && specky install --ide=copilot` — one binary, multi-OS (macOS/Linux/Windows/WSL) |
 | Works in any MCP host | VS Code + Copilot, Claude Code, Cursor, Windsurf, or any MCP client |
-| Zero outbound network calls | Fully air-gapped, code never leaves your machine |
+| Zero outbound calls from the MCP server | Air-gap friendly; code never leaves your machine. The CLI's once-daily update check is [opt-out](#staying-up-to-date) |
 | MIT open source | Fork it, extend it, audit it. No vendor lock, no seat pricing |
 
 
@@ -892,6 +893,7 @@ templates_path: ./my-templates       # Override built-in templates
 default_framework: vitest            # Default test framework
 compliance_frameworks: [hipaa, soc2] # Frameworks to check
 audit_enabled: true                  # Enable audit trail
+update_check: true                   # Once-daily CLI update check (set false to disable)
 rbac:
   enabled: false                     # Role checks (viewer/contributor/admin)
   default_role: contributor
@@ -903,6 +905,26 @@ pipeline:
 ```
 
 When `templates_path` is set, Specky uses your custom templates instead of the built-in ones. When `audit_enabled` is true, tool invocations are logged locally. `profile: enterprise` turns audit, RBAC, rate limiting, and fail-closed auditing on by default (explicit values win) — see [docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md). With `pipeline.require_lgtm: true`, the LGTM quality gates become server-enforced instead of an agent convention: advancing past Specify/Design/Tasks requires the explicit `lgtm: true` input on `sdd_advance_phase`.
+
+
+## Staying up to date
+
+Specky tells you about new versions in two ways:
+
+- **Version drift warning (always on, zero network):** `specky doctor` and `specky status` warn when the assets installed in your project differ from the version of the CLI running them, and suggest `specky upgrade`. The MCP server prints the same warning at startup. This is a local file comparison — no network involved.
+- **Update banner (once daily):** after `install`, `doctor`, `status`, `upgrade`, or `--version`, the CLI checks the npm registry at most once per day and prints `Update available: vX → vY` when a newer release exists. This is a single GET to `registry.npmjs.org` — no telemetry, nothing sent beyond the request itself. It fails silently offline, is disabled in CI (`CI=true`), and **never runs in `specky serve`** — the MCP server itself never phones home.
+
+Upgrading is one command:
+
+```bash
+npm install -g specky-sdd@latest && specky upgrade
+```
+
+`specky upgrade` matters: it refreshes the installed agents, prompts, skills, and hooks **and re-pins `.mcp.json` / `.vscode/mcp.json` to the new version** — updating the npm package alone leaves the MCP registration pointing at the old pinned server.
+
+Teams pinning per-project (`npm install --save-dev specky-sdd`) should let [Renovate](https://docs.renovatebot.com/) or [Dependabot](https://docs.github.com/en/code-security/dependabot) propose the `package.json` bump. For release emails, use **Watch → Custom → Releases** on the [GitHub repo](https://github.com/paulasilvatech/specky).
+
+**Opt out** of the registry check with `SPECKY_NO_UPDATE_CHECK=1` in the environment or `update_check: false` in `.specky/config.yml`. The drift warning stays on — it never touches the network.
 
 
 ## MCP Integration Architecture
@@ -1000,7 +1022,7 @@ Specky is 100% open source (MIT) — enterprise mode is just an opt-in configura
 ### Security Posture
 
 - **3 runtime dependencies** — minimal attack surface (`@modelcontextprotocol/sdk`, `zod`, `yaml`)
-- **Zero outbound network requests** — all data stays local
+- **Zero outbound network requests from the MCP server** — all data stays local; the CLI's optional once-daily update check is the only network touch ([opt-out](#staying-up-to-date))
 - **No `eval()` or dynamic code execution** — template rendering is string replacement only
 - **Path traversal prevention**: FileManager sanitizes all paths, blocks `..` sequences
 - **Zod `.strict()` validation** — every tool input is schema-validated; unknown fields rejected
@@ -1112,7 +1134,7 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 
 ## Roadmap
 
-### v3.6 (current)
+### v3.7 (current)
 
 | Capability | Status |
 |------------|--------|
@@ -1149,7 +1171,7 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 | Tamper-evident audit trail (HMAC-signed entries, fail-closed mode, `sdd_verify_audit`) | Stable |
 | Server-enforced LGTM gates (opt-in `pipeline.require_lgtm`) | Stable |
 
-### v3.7+ (planned)
+### v3.8+ (planned)
 
 | Feature | Description |
 |---------|-------------|

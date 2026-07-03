@@ -23,7 +23,7 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-  rmSync(workspace, { recursive: true, force: true });
+  rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 });
 
 function writeTokensFile(name: string, content: string): string {

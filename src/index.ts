@@ -10,6 +10,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { randomUUID } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { VERSION, SERVER_NAME, DEFAULT_HTTP_PORT } from "./constants.js";
 import { FileManager } from "./services/file-manager.js";
 import { StateMachine } from "./services/state-machine.js";
@@ -68,6 +70,24 @@ import { registerAuditTools } from "./tools/audit.js";
 // Resolve workspace root
 const workspaceRoot = process.env["SDD_WORKSPACE"] || process.cwd();
 console.error(`[specky] Workspace root: ${workspaceRoot}`);
+
+// Version-drift advisory: if the workspace's installed assets were written by
+// a different Specky version, nudge toward `specky upgrade`. This is a local
+// file comparison — zero network, stderr only (stdout is the MCP protocol
+// channel), and it must never block server startup.
+try {
+  const installJsonPath = join(workspaceRoot, ".specky", "install.json");
+  if (existsSync(installJsonPath)) {
+    const installMeta = JSON.parse(readFileSync(installJsonPath, "utf8")) as { version?: unknown };
+    if (typeof installMeta.version === "string" && installMeta.version !== VERSION) {
+      console.error(
+        `[specky] Installed assets are v${installMeta.version} but this server is v${VERSION} — run \`specky upgrade\` to refresh.`,
+      );
+    }
+  }
+} catch {
+  // Absent or unreadable install.json is fine — no advisory.
+}
 
 // Load optional project config (.specky/config.yml). The profile may be
 // forced from outside the workspace: --profile=enterprise flag, SPECKY_PROFILE

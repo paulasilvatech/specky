@@ -378,7 +378,7 @@ describe("DiagramGenerator — generateAllDiagrams writes DIAGRAMS.md", () => {
   });
 
   afterEach(() => {
-    rmSync(workspace, { recursive: true, force: true });
+    rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it("replaces the scaffold with every generated diagram grouped by source", async () => {

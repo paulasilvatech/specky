@@ -132,7 +132,7 @@ describe("DocumentConverter", () => {
   });
 
   afterEach(() => {
-    rmSync(workspace, { recursive: true, force: true });
+    rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it("converts workspace-relative Markdown files", async () => {

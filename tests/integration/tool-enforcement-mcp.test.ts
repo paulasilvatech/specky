@@ -78,7 +78,7 @@ describe("MCP tool enforcement", () => {
   });
 
   afterEach(() => {
-    rmSync(ws, { recursive: true, force: true });
+    rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it("allows viewer read-only tools and writes audit entries", () => {

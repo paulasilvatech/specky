@@ -83,7 +83,7 @@ describe("pipeline-guard.sh", { timeout: INTEGRATION_TIMEOUT }, () => {
     ws = makeWorkspace();
   });
   afterEach(() => {
-    rmSync(ws, { recursive: true, force: true });
+    rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it("allows any prompt when no .specs/ exists (greenfield user)", () => {
@@ -146,7 +146,7 @@ describe("branch-validator.sh (Write|Edit|MultiEdit enforcement)", { timeout: IN
     ws = makeWorkspace();
   });
   afterEach(() => {
-    rmSync(ws, { recursive: true, force: true });
+    rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it("default mode: WARNS but allows Write on impl/* during active P7", () => {

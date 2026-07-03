@@ -19,7 +19,7 @@ describe("FeaturePackageGenerator", () => {
 
   afterEach(() => {
     delete process.env["SDD_FIXED_NOW"];
-    rmSync(workspace, { recursive: true, force: true });
+    rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it("creates the complete companion package for a specification", async () => {

@@ -43,7 +43,7 @@ describe("installToolEnforcement", () => {
   });
 
   afterEach(() => {
-    rmSync(workspace, { recursive: true, force: true });
+    rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it("blocks write tools for viewer role before handler execution", async () => {
@@ -147,7 +147,7 @@ describe("identity-based RBAC (authInfo from the HTTP token table)", () => {
   });
 
   afterEach(() => {
-    rmSync(workspace, { recursive: true, force: true });
+    rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     if (savedRole === undefined) delete process.env["SDD_ROLE"];
     else process.env["SDD_ROLE"] = savedRole;
   });
