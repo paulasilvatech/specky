@@ -26,6 +26,14 @@ import {
   validateEarsInputSchema,
 } from "../schemas/quality.js";
 
+/**
+ * Escape free text for a markdown table cell: backslashes FIRST (so escapes
+ * are not themselves re-escaped), then pipes. Escaping pipes alone lets a
+ * trailing backslash in the input neutralize the escape (CodeQL
+ * js/incomplete-sanitization).
+ */
+const escapeTableCell = (s: string): string => s.replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
+
 /** Domain-specific checklist definitions */
 const DOMAIN_CHECKS: Record<ChecklistDomain, Array<{ id: string; category: string; check: string; mandatory: boolean }>> = {
   security: [
@@ -191,7 +199,7 @@ export function registerQualityTools(
         // gate decision are all passed to the template so the persisted file
         // carries the real data instead of unrendered [TODO: …] placeholders.
         const itemRows = items.map((item) =>
-          `| ${item.id} | ${item.check.replace(/\|/g, "\\|")} | ${item.mandatory ? "Yes" : "No"} | ${item.status} | ${(item.evidence ?? "—").replace(/\|/g, "\\|")} |`
+          `| ${item.id} | ${escapeTableCell(item.check)} | ${item.mandatory ? "Yes" : "No"} | ${item.status} | ${escapeTableCell(item.evidence ?? "—")} |`
         );
         const content = await templateEngine.renderWithFrontmatter("checklist", {
           title: `${domain.charAt(0).toUpperCase() + domain.slice(1)} Quality Checklist`,
@@ -491,7 +499,7 @@ export function registerQualityTools(
         // rendered into the persisted file so it carries the real analysis data
         // instead of unrendered [TODO: …] placeholders.
         const alignmentRow = (check: { source_id: string; status: string; detail: string }): string =>
-          `| ${check.source_id} | ${check.status === "aligned" ? "Yes" : "No"} | ${check.detail.replace(/\|/g, "\\|")} |`;
+          `| ${check.source_id} | ${check.status === "aligned" ? "Yes" : "No"} | ${escapeTableCell(check.detail)} |`;
         const specDesignRows = analysisResult.spec_design_alignment.map(alignmentRow);
         const designTasksRows = analysisResult.design_tasks_alignment.map(alignmentRow);
         const emptyRow = "| — | — | No requirements found |";

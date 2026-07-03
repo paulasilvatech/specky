@@ -312,7 +312,7 @@ describe("export & quality-report regressions", () => {
     expect(persisted).toMatch(/\| SEC-01 \|.*\| Yes \| (pass|fail|pending) \|/);
     // Real totals and gate decision.
     expect(persisted).toContain("- **Total**: 8");
-    expect(persisted).toMatch(/## Gate Decision\n\n(APPROVE|CHANGES_NEEDED)/);
+    expect(persisted).toMatch(/## Gate Decision\r?\n\r?\n(APPROVE|CHANGES_NEEDED)/); // \r?\n: Windows checkouts render templates with CRLF
     // The response mirrors the persisted gate decision.
     expect(String(res.payload["gate_decision"])).toMatch(/^(APPROVE|CHANGES_NEEDED)/);
   });
@@ -343,7 +343,7 @@ describe("export & quality-report regressions", () => {
     expect(persisted).toContain("| REQ-CORE-001 | Yes | REQ-CORE-001 has implementing tasks |");
     expect(persisted).toContain("| REQ-CORE-002 | No | REQ-CORE-002 has NO implementing tasks |");
     // Recommendation section carries the computed guidance.
-    expect(persisted).toMatch(/## Recommendation\n\nConsistency score is \d+%/);
+    expect(persisted).toMatch(/## Recommendation\r?\n\r?\nConsistency score is \d+%/); // \r?\n: Windows checkouts render templates with CRLF
   });
 
   // ── Fix: sdd_figma_to_spec references tools that actually exist ──
