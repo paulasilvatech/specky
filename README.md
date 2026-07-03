@@ -57,7 +57,7 @@
 | **Enterprise** | [Compliance Frameworks](#compliance-frameworks) | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 |
 | | [Enterprise Ready](#enterprise-ready) | Security, audit trail, quality gates |
 | **Platform** | [The SDD Platform](#the-spec-driven-development-platform) | Built on Spec-Kit, everything included |
-| | [Roadmap](#roadmap) | v3.5 current, v3.6+ planned |
+| | [Roadmap](#roadmap) | v3.6 current, v3.7+ planned |
 
 
 ## What is Specky?
@@ -1094,9 +1094,9 @@ npm run dev
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | node dist/index.js 2>/dev/null
 
 # Run the published image from GHCR (multi-arch: linux/amd64 + linux/arm64)
-docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.5.0
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.6.0
 docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
-curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.5.0"}
+curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.6.0"}
 
 # Or build and run locally from source
 docker build -t specky-sdd:dev .
@@ -1112,7 +1112,7 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 
 ## Roadmap
 
-### v3.5 (current)
+### v3.6 (current)
 
 | Capability | Status |
 |------------|--------|
@@ -1147,8 +1147,9 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 | Enterprise profile (`profile: enterprise` — audit/RBAC/rate-limit defaults ON, opt-in) | Stable |
 | Identity-based RBAC over HTTP (`SDD_HTTP_TOKENS_FILE`: token → principal + role) | Stable |
 | Tamper-evident audit trail (HMAC-signed entries, fail-closed mode, `sdd_verify_audit`) | Stable |
+| Server-enforced LGTM gates (opt-in `pipeline.require_lgtm`) | Stable |
 
-### v3.6+ (planned)
+### v3.7+ (planned)
 
 | Feature | Description |
 |---------|-------------|

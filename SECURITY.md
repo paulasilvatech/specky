@@ -212,7 +212,7 @@ Running `npx -y specky-sdd@latest` without a pinned version downloads the latest
 
 ```bash
 # Install into a local vendor directory — no global write permissions needed
-npm install specky-sdd@3.5.0 --prefix ./vendor --ignore-scripts
+npm install specky-sdd@3.6.0 --prefix ./vendor --ignore-scripts
 ./vendor/node_modules/.bin/specky install
 ./vendor/node_modules/.bin/specky doctor     # integrity check
 ```
