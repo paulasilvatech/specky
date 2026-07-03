@@ -75,13 +75,28 @@ export class PbtGenerator {
   extractEarsRequirements(text: string): Array<{ line: string; reqId: string }> {
     const results: Array<{ line: string; reqId: string }> = [];
     const lines = text.split("\n");
+    let currentReq: string | null = null;
 
-    for (const line of lines) {
-      if (/^(When|While|Where|If|The)\s+.+shall\s+/im.test(line)) {
-        const reqMatch = line.match(/REQ-[A-Z]+-\d{3}/);
-        const reqId = reqMatch ? reqMatch[0] : `REQ-GEN-${String(results.length + 1).padStart(3, "0")}`;
-        results.push({ line: line.trim(), reqId });
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+
+      // Skip table rows — the acceptance-criteria summary table repeats
+      // requirement text and would corrupt both tracking and extraction.
+      if (line.startsWith("|")) continue;
+
+      const reqMatch = line.match(/REQ-[A-Z]+-\d{3}/);
+
+      if (/^(When|While|Where|If|The)\s+.+shall\s+/i.test(line)) {
+        // Trace to the inline ID if present, otherwise to the requirement
+        // heading ("### REQ-XXX-NNN: ...") this sentence sits under. Never
+        // fabricate REQ-GEN-00N IDs — an untraceable sentence is skipped
+        // rather than mislabeled.
+        const reqId = reqMatch ? reqMatch[0] : currentReq;
+        if (reqId) results.push({ line, reqId });
+        continue;
       }
+
+      if (reqMatch) currentReq = reqMatch[0];
     }
 
     return results;
@@ -172,14 +187,15 @@ export class PbtGenerator {
   private buildProperties(
     requirements: Array<{ line: string; reqId: string }>,
     framework: PbtFramework,
-    featureDir: string,
+    _featureDir: string,
   ): PbtProperty[] {
+    const usedNames = new Set<string>();
     return requirements.map((req, i) => {
       const propId = `PROP-${String(i + 1).padStart(3, "0")}`;
       const propertyType = this.classifyPropertyType(req.line);
       const description =
         req.line.length > 100 ? req.line.slice(0, 97) + "..." : req.line;
-      const testCode = this.generateTestCode(propId, description, req.line, propertyType, framework, featureDir);
+      const testCode = this.generateTestCode(propId, description, req.line, req.reqId, propertyType, framework, usedNames);
       return {
         id: propId,
         requirement_id: req.reqId,
@@ -194,148 +210,148 @@ export class PbtGenerator {
     propId: string,
     description: string,
     requirementText: string,
+    reqId: string,
     propertyType: PbtPropertyType,
     framework: PbtFramework,
-    _featureDir: string,
+    usedNames: Set<string>,
   ): string {
     const safeDesc = description.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
 
     if (framework === "fast-check") {
-      return this.generateFastCheckTest(propId, safeDesc, requirementText, propertyType);
+      return this.generateFastCheckTest(propId, safeDesc, requirementText, reqId, propertyType);
     }
-    return this.generateHypothesisTest(propId, safeDesc, requirementText, propertyType);
+    return this.generateHypothesisTest(propId, description, requirementText, reqId, propertyType, usedNames);
+  }
+
+  /**
+   * Pick an input arbitrary/strategy informed by the requirement text where
+   * feasible; falls back to strings/text.
+   */
+  private inferFcArbitrary(line: string): string {
+    const lower = line.toLowerCase();
+    if (lower.includes("email")) return "fc.emailAddress()";
+    if (/\b(count|number|amount|quantity|integer|limit|size|total|id)s?\b/.test(lower)) return "fc.integer()";
+    if (/\b(date|time|timestamp)s?\b/.test(lower)) return "fc.date()";
+    if (/\b(url|uri|link)s?\b/.test(lower)) return "fc.webUrl()";
+    return "fc.string()";
+  }
+
+  private inferHypothesisStrategy(line: string): string {
+    const lower = line.toLowerCase();
+    if (lower.includes("email")) return "st.emails()";
+    if (/\b(count|number|amount|quantity|integer|limit|size|total|id)s?\b/.test(lower)) return "st.integers()";
+    if (/\b(date|time|timestamp)s?\b/.test(lower)) return "st.datetimes()";
+    return "st.text()";
   }
 
   private generateFastCheckTest(
     propId: string,
     description: string,
     requirementText: string,
+    reqId: string,
     propertyType: PbtPropertyType,
   ): string {
-    const safeReq = requirementText.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+    // Every body below is a REAL runnable property against the in-file model
+    // stubs defined at the top of the generated file — no undefined helpers,
+    // no TODO-only bodies. The model is what the developer replaces.
+    const open = (label: string) => [
+      `  // Traces to: ${reqId}`,
+      `  it("${propId} [${reqId}]: ${label}${description}", () => {`,
+      `    // Requirement: ${requirementText}`,
+      `    // Replace the in-file model with your real system call, keeping the property shape.`,
+      `    fc.assert(`,
+    ];
+    const close = [
+      `      { numRuns: 100 }`,
+      `    );`,
+      `  });`,
+    ];
 
     switch (propertyType) {
       case "invariant":
         return [
-          `  it("${propId}: ${description}", () => {`,
-          `    fc.assert(`,
-          `      fc.property(fc.string(), fc.integer(), (input1, input2) => {`,
-          `        // TODO: Replace with actual system call`,
-          `        // Property: ${safeReq}`,
-          `        const result = systemUnderTest(input1, input2);`,
-          `        expect(result).toBeDefined();`,
-          `        return true; // Replace with actual invariant check`,
+          ...open(""),
+          `      fc.property(${this.inferFcArbitrary(requirementText)}, fc.integer(), (input1, input2) => {`,
+          `        const first = systemUnderTest(input1, input2);`,
+          `        const second = systemUnderTest(input1, input2);`,
+          `        expect(first).toBeDefined();`,
+          `        expect(second).toEqual(first); // invariant: deterministic for identical inputs`,
           `      }),`,
-          `      { numRuns: 100 }`,
-          `    );`,
-          `  });`,
+          ...close,
         ].join("\n");
 
       case "round_trip":
         return [
-          `  it("${propId}: round-trip — ${description}", () => {`,
-          `    fc.assert(`,
-          `      fc.property(fc.jsonValue(), (input) => {`,
-          `        // TODO: Verify round-trip: parse(serialize(x)) === x`,
-          `        const serialized = serialize(input);`,
-          `        const parsed = parse(serialized);`,
-          `        expect(parsed).toEqual(input);`,
-          `        return true;`,
+          ...open("round-trip — "),
+          `      fc.property(fc.jsonValue(), (value) => {`,
+          `        const restored = parse(serialize(value));`,
+          `        expect(restored).toEqual(value); // round-trip: parse(serialize(x)) === x`,
           `      }),`,
-          `      { numRuns: 100 }`,
-          `    );`,
-          `  });`,
+          ...close,
         ].join("\n");
 
       case "idempotence":
         return [
-          `  it("${propId}: idempotence — ${description}", () => {`,
-          `    fc.assert(`,
-          `      fc.property(fc.anything(), (input) => {`,
-          `        // TODO: Verify f(f(x)) === f(x)`,
-          `        const once = operation(input);`,
-          `        const twice = operation(once);`,
-          `        expect(twice).toEqual(once);`,
-          `        return true;`,
+          ...open("idempotence — "),
+          `      fc.property(fc.string(), (raw) => {`,
+          `        const once = normalize(raw);`,
+          `        expect(normalize(once)).toEqual(once); // idempotence: f(f(x)) === f(x)`,
           `      }),`,
-          `      { numRuns: 100 }`,
-          `    );`,
-          `  });`,
+          ...close,
         ].join("\n");
 
       case "state_transition":
         return [
-          `  it("${propId}: state transition — ${description}", () => {`,
-          `    fc.assert(`,
-          `      fc.property(fc.record({ event: fc.string(), state: fc.string() }), ({ event, state }) => {`,
-          `        // TODO: Verify state transition is valid`,
-          `        const newState = transition(state, event);`,
-          `        expect(newState).toBeDefined();`,
-          `        return true;`,
+          ...open("state transition — "),
+          `      fc.property(fc.record({ state: fc.string(), event: fc.string() }), ({ state, event }) => {`,
+          `        const next = transition(state, event);`,
+          `        expect(typeof next).toBe("string"); // total: every event yields a state`,
+          `        expect(transition(state, event)).toEqual(next); // deterministic transition`,
           `      }),`,
-          `      { numRuns: 100 }`,
-          `    );`,
-          `  });`,
+          ...close,
         ].join("\n");
 
       case "negative":
         return [
-          `  it("${propId}: negative — ${description}", () => {`,
-          `    fc.assert(`,
+          ...open("negative — "),
           `      fc.property(fc.string(), (maliciousInput) => {`,
-          `        // TODO: Verify unwanted behavior never occurs`,
-          `        const result = systemUnderTest(maliciousInput);`,
+          `        expect(() => handleUntrusted(maliciousInput)).not.toThrow(); // unwanted behavior never crashes`,
+          `        const result = handleUntrusted(maliciousInput);`,
+          `        expect(result.ok).toBe(true);`,
           `        expect(result.error).not.toContain("crash");`,
-          `        return true;`,
           `      }),`,
-          `      { numRuns: 100 }`,
-          `    );`,
-          `  });`,
+          ...close,
         ].join("\n");
 
       case "conditional":
         return [
-          `  it("${propId}: conditional — ${description}", () => {`,
-          `    fc.assert(`,
-          `      fc.property(fc.boolean(), fc.anything(), (condition, input) => {`,
-          `        // TODO: Verify behavior only when condition holds`,
-          `        fc.pre(condition); // Only test when condition is true`,
-          `        const result = systemUnderTest(input);`,
-          `        expect(result).toBeDefined();`,
-          `        return true;`,
+          ...open("conditional — "),
+          `      fc.property(fc.boolean(), ${this.inferFcArbitrary(requirementText)}, (condition, input) => {`,
+          `        fc.pre(condition); // property applies only while the condition holds`,
+          `        const first = systemUnderTest(input);`,
+          `        expect(first).toBeDefined();`,
+          `        expect(systemUnderTest(input)).toEqual(first); // stable under the condition`,
           `      }),`,
-          `      { numRuns: 100 }`,
-          `    );`,
-          `  });`,
+          ...close,
         ].join("\n");
 
       case "commutativity":
         return [
-          `  it("${propId}: commutativity — ${description}", () => {`,
-          `    fc.assert(`,
+          ...open("commutativity — "),
           `      fc.property(fc.string(), fc.string(), (a, b) => {`,
-          `        // TODO: Verify f(a, b) === f(b, a)`,
-          `        expect(operation(a, b)).toEqual(operation(b, a));`,
-          `        return true;`,
+          `        expect(combine(a, b)).toEqual(combine(b, a)); // commutativity: f(a, b) === f(b, a)`,
           `      }),`,
-          `      { numRuns: 100 }`,
-          `    );`,
-          `  });`,
+          ...close,
         ].join("\n");
 
       case "monotonicity":
         return [
-          `  it("${propId}: monotonicity — ${description}", () => {`,
-          `    fc.assert(`,
+          ...open("monotonicity — "),
           `      fc.property(fc.integer(), fc.integer(), (x, y) => {`,
-          `        // TODO: Verify x <= y implies f(x) <= f(y)`,
           `        fc.pre(x <= y);`,
-          `        expect(f(x)).toBeLessThanOrEqual(f(y));`,
-          `        return true;`,
+          `        expect(scale(x)).toBeLessThanOrEqual(scale(y)); // monotone: x <= y implies f(x) <= f(y)`,
           `      }),`,
-          `      { numRuns: 100 }`,
-          `    );`,
-          `  });`,
+          ...close,
         ].join("\n");
     }
   }
@@ -344,99 +360,132 @@ export class PbtGenerator {
     propId: string,
     description: string,
     requirementText: string,
+    reqId: string,
     propertyType: PbtPropertyType,
+    usedNames: Set<string>,
   ): string {
-    const descSnake = this.snakeCase(description);
+    // Every body below is a REAL runnable property against the in-file model
+    // stubs defined at module level in the generated file — no undefined
+    // helpers, no TODO-only bodies. The model is what the developer replaces.
+    const testName = (label: string) =>
+      this.uniqueName(`test_${this.snakeCase(`${propId} ${reqId} ${label} ${description}`)}`, usedNames);
+    const docstring = `${propId} [${reqId}]: ${requirementText.replace(/\\/g, "/").replace(/"/g, "'")}`;
+    const modelNote = "        # Replace the in-file model with your real system call, keeping the property shape.";
 
     switch (propertyType) {
       case "invariant":
         return [
-          `    @given(input1=st.text(), input2=st.integers())`,
+          `    # Traces to: ${reqId}`,
+          `    @given(input1=${this.inferHypothesisStrategy(requirementText)}, input2=st.integers())`,
           `    @settings(max_examples=100)`,
-          `    def test_${this.snakeCase(propId)}_${descSnake}(self, input1, input2):`,
-          `        """${propId}: ${requirementText}"""`,
-          `        # TODO: Replace with actual system call`,
-          `        result = system_under_test(input1, input2)`,
-          `        assert result is not None`,
+          `    def ${testName("")}(self, input1, input2):`,
+          `        """${docstring}"""`,
+          modelNote,
+          `        first = system_under_test(input1, input2)`,
+          `        second = system_under_test(input1, input2)`,
+          `        assert first is not None`,
+          `        assert second == first  # invariant: deterministic for identical inputs`,
         ].join("\n");
 
       case "round_trip":
         return [
-          `    @given(data=st.from_type(dict))`,
+          `    # Traces to: ${reqId}`,
+          `    @given(data=st.recursive(st.none() | st.booleans() | st.integers() | st.floats(allow_nan=False, allow_infinity=False) | st.text(), lambda children: st.lists(children) | st.dictionaries(st.text(), children), max_leaves=10))`,
           `    @settings(max_examples=100)`,
-          `    def test_${this.snakeCase(propId)}_round_trip_${descSnake}(self, data):`,
-          `        """${propId}: round-trip — ${requirementText}"""`,
-          `        # TODO: Verify round-trip: parse(serialize(x)) == x`,
-          `        serialized = serialize(data)`,
-          `        parsed = parse(serialized)`,
-          `        assert parsed == data`,
+          `    def ${testName("round trip")}(self, data):`,
+          `        """${docstring}"""`,
+          modelNote,
+          `        restored = parse(serialize(data))`,
+          `        assert restored == data  # round-trip: parse(serialize(x)) == x`,
         ].join("\n");
 
       case "idempotence":
         return [
-          `    @given(data=st.text())`,
+          `    # Traces to: ${reqId}`,
+          `    @given(raw=st.text())`,
           `    @settings(max_examples=100)`,
-          `    def test_${this.snakeCase(propId)}_idempotence_${descSnake}(self, data):`,
-          `        """${propId}: idempotence — ${requirementText}"""`,
-          `        # TODO: Verify f(f(x)) == f(x)`,
-          `        once = operation(data)`,
-          `        twice = operation(once)`,
-          `        assert twice == once`,
+          `    def ${testName("idempotence")}(self, raw):`,
+          `        """${docstring}"""`,
+          modelNote,
+          `        once = normalize(raw)`,
+          `        assert normalize(once) == once  # idempotence: f(f(x)) == f(x)`,
         ].join("\n");
 
       case "state_transition":
         return [
+          `    # Traces to: ${reqId}`,
           `    @given(event=st.text(), state=st.text())`,
           `    @settings(max_examples=100)`,
-          `    def test_${this.snakeCase(propId)}_transition_${descSnake}(self, event, state):`,
-          `        """${propId}: ${requirementText}"""`,
-          `        # TODO: Verify state transition`,
+          `    def ${testName("transition")}(self, event, state):`,
+          `        """${docstring}"""`,
+          modelNote,
           `        new_state = transition(state, event)`,
-          `        assert new_state is not None`,
+          `        assert new_state is not None  # total: every event yields a state`,
+          `        assert transition(state, event) == new_state  # deterministic transition`,
         ].join("\n");
 
       case "negative":
         return [
+          `    # Traces to: ${reqId}`,
           `    @given(malicious_input=st.text())`,
           `    @settings(max_examples=100)`,
-          `    def test_${this.snakeCase(propId)}_negative_${descSnake}(self, malicious_input):`,
-          `        """${propId}: ${requirementText}"""`,
-          `        # TODO: Verify unwanted behavior never occurs`,
-          `        result = system_under_test(malicious_input)`,
-          `        assert "crash" not in str(result)`,
+          `    def ${testName("negative")}(self, malicious_input):`,
+          `        """${docstring}"""`,
+          modelNote,
+          `        result = handle_untrusted(malicious_input)`,
+          `        assert result["ok"] is True  # unwanted behavior never crashes the guard`,
+          `        assert "crash" not in result["error"]`,
         ].join("\n");
 
       case "conditional":
         return [
-          `    @given(condition=st.booleans(), data=st.text())`,
+          `    # Traces to: ${reqId}`,
+          `    @given(condition=st.booleans(), data=${this.inferHypothesisStrategy(requirementText)})`,
           `    @settings(max_examples=100)`,
-          `    def test_${this.snakeCase(propId)}_conditional_${descSnake}(self, condition, data):`,
-          `        """${propId}: ${requirementText}"""`,
-          `        assume(condition)  # Only test when condition holds`,
-          `        result = system_under_test(data)`,
-          `        assert result is not None`,
+          `    def ${testName("conditional")}(self, condition, data):`,
+          `        """${docstring}"""`,
+          `        assume(condition)  # property applies only while the condition holds`,
+          modelNote,
+          `        first = system_under_test(data)`,
+          `        assert first is not None`,
+          `        assert system_under_test(data) == first  # stable under the condition`,
         ].join("\n");
 
       case "commutativity":
         return [
+          `    # Traces to: ${reqId}`,
           `    @given(a=st.text(), b=st.text())`,
           `    @settings(max_examples=100)`,
-          `    def test_${this.snakeCase(propId)}_commutativity_${descSnake}(self, a, b):`,
-          `        """${propId}: commutativity — ${requirementText}"""`,
-          `        # TODO: Verify f(a, b) == f(b, a)`,
-          `        assert operation(a, b) == operation(b, a)`,
+          `    def ${testName("commutativity")}(self, a, b):`,
+          `        """${docstring}"""`,
+          modelNote,
+          `        assert combine(a, b) == combine(b, a)  # commutativity: f(a, b) == f(b, a)`,
         ].join("\n");
 
       case "monotonicity":
         return [
+          `    # Traces to: ${reqId}`,
           `    @given(x=st.integers(), y=st.integers())`,
           `    @settings(max_examples=100)`,
-          `    def test_${this.snakeCase(propId)}_monotonicity_${descSnake}(self, x, y):`,
-          `        """${propId}: monotonicity — ${requirementText}"""`,
-          `        assume(x <= y)  # Only test ordered pairs`,
-          `        assert f(x) <= f(y)`,
+          `    def ${testName("monotonicity")}(self, x, y):`,
+          `        """${docstring}"""`,
+          `        assume(x <= y)  # only ordered pairs`,
+          modelNote,
+          `        assert scale(x) <= scale(y)  # monotone: x <= y implies f(x) <= f(y)`,
         ].join("\n");
     }
+  }
+
+  /** Deduplicate generated method names — Python silently shadows duplicates. */
+  private uniqueName(base: string, used: Set<string>): string {
+    let candidate = base;
+    let counter = 2;
+    while (used.has(candidate)) {
+      candidate = `${base}_${counter}`;
+      counter++;
+    }
+    used.add(candidate);
+    return candidate;
   }
 
   renderFile(properties: PbtProperty[], framework: PbtFramework, featureDir: string): string {
@@ -444,6 +493,7 @@ export class PbtGenerator {
       featureDir.replace(/.*\d{3}-/, "").replace(/[^a-zA-Z0-9 -]/g, "") || "Feature";
     const date = currentDateString();
     const body = properties.map((p) => p.test_code).join("\n\n");
+    const usedTypes = new Set<PbtPropertyType>(properties.map((p) => p.property_type));
 
     if (framework === "fast-check") {
       const header = [
@@ -454,16 +504,20 @@ export class PbtGenerator {
         ` * Generated: ${date}`,
         ` *`,
         ` * Each property traces to an EARS requirement from SPECIFICATION.md.`,
-        ` * Replace the TODO placeholders with real system calls.`,
+        ` * Replace the in-file model stubs with real system calls.`,
         ` */`,
       ].join("\n");
 
+      // fast-check ships a default export named fc — there is no `{ fc }`
+      // named export, so the destructured form throws at import time.
       const imports = [
-        `import { fc } from "fast-check";`,
+        `import fc from "fast-check";`,
         `import { describe, it, expect } from "vitest";`,
       ].join("\n");
 
-      return `${header}\n\n${imports}\n\ndescribe("Property-Based Tests — ${featureName}", () => {\n${body}\n});\n`;
+      const models = properties.length > 0 ? `${this.fastCheckModels(usedTypes)}\n\n` : "";
+
+      return `${header}\n\n${imports}\n\n${models}describe("Property-Based Tests — ${featureName}", () => {\n${body}\n});\n`;
     }
 
     // hypothesis (Python)
@@ -475,26 +529,132 @@ export class PbtGenerator {
       `Generated: ${date}`,
       ``,
       `Each property traces to an EARS requirement from SPECIFICATION.md.`,
-      `Replace the TODO placeholders with real system calls.`,
+      `Replace the in-file model stubs with real system calls.`,
       `"""`,
     ].join("\n");
 
-    const imports = [
-      `import hypothesis`,
-      `from hypothesis import given, assume, settings`,
+    const importLines = [
+      ...(usedTypes.has("round_trip") ? ["import json", ""] : []),
+      `from hypothesis import assume, given, settings`,
       `from hypothesis import strategies as st`,
-    ].join("\n");
+    ];
+    const imports = importLines.join("\n");
+
+    const models = properties.length > 0 ? `\n\n\n${this.hypothesisModels(usedTypes)}` : "";
 
     const className = featureName.replace(/[^a-zA-Z0-9]/g, "");
 
-    return `${header}\n\n${imports}\n\n\nclass TestPropertyBased_${className}:\n    """Property-based tests generated from EARS requirements."""\n\n${body}\n`;
+    return `${header}\n\n${imports}${models}\n\n\nclass TestPropertyBased_${className}:\n    """Property-based tests generated from EARS requirements."""\n\n${body}\n`;
+  }
+
+  /** In-file deterministic models so every generated property runs as-is. */
+  private fastCheckModels(types: Set<PbtPropertyType>): string {
+    const lines: string[] = [
+      `// ── In-file model stubs ──────────────────────────────────────────────`,
+      `// Every property below is runnable against these deterministic models.`,
+      `// Replace each model with a call into your real system under test and`,
+      `// keep the property shape — the model is the TODO, not the property.`,
+    ];
+    if (types.has("invariant") || types.has("conditional")) {
+      lines.push(`const systemUnderTest = (...inputs: unknown[]): { ok: boolean; inputs: unknown[] } => ({ ok: true, inputs });`);
+    }
+    if (types.has("state_transition")) {
+      lines.push(`const transition = (state: string, event: string): string => (event.length > 0 ? event : state);`);
+    }
+    if (types.has("round_trip")) {
+      lines.push(
+        `const serialize = (value: unknown): string => JSON.stringify(value);`,
+        `const parse = (text: string): unknown => JSON.parse(text);`,
+      );
+    }
+    if (types.has("idempotence")) {
+      lines.push(`const normalize = (value: string): string => value.trim().toLowerCase();`);
+    }
+    if (types.has("negative")) {
+      lines.push(`const handleUntrusted = (payload: string): { ok: boolean; error: string } => ({ ok: typeof payload === "string", error: "" });`);
+    }
+    if (types.has("commutativity")) {
+      lines.push(`const combine = (a: string, b: string): string => [a, b].sort().join("|");`);
+    }
+    if (types.has("monotonicity")) {
+      lines.push(`const scale = (x: number): number => 2 * x + 1;`);
+    }
+    return lines.join("\n");
+  }
+
+  /** In-file deterministic models so every generated property runs as-is. */
+  private hypothesisModels(types: Set<PbtPropertyType>): string {
+    const blocks: string[] = [
+      [
+        `# ── In-file model stubs ──────────────────────────────────────────────`,
+        `# Every property below is runnable against these deterministic models.`,
+        `# Replace each model with a call into your real system under test and`,
+        `# keep the property shape — the model is the TODO, not the property.`,
+      ].join("\n"),
+    ];
+    if (types.has("invariant") || types.has("conditional")) {
+      blocks.push([
+        `def system_under_test(*inputs):`,
+        `    """Deterministic model — replace with the real system call."""`,
+        `    return {"ok": True, "inputs": inputs}`,
+      ].join("\n"));
+    }
+    if (types.has("state_transition")) {
+      blocks.push([
+        `def transition(state, event):`,
+        `    """Pure transition model — replace with the real transition function."""`,
+        `    return event if event else state`,
+      ].join("\n"));
+    }
+    if (types.has("round_trip")) {
+      blocks.push([
+        `def serialize(value):`,
+        `    """JSON codec model — replace with the real serializer."""`,
+        `    return json.dumps(value)`,
+      ].join("\n"));
+      blocks.push([
+        `def parse(text):`,
+        `    """JSON codec model — replace with the real parser."""`,
+        `    return json.loads(text)`,
+      ].join("\n"));
+    }
+    if (types.has("idempotence")) {
+      blocks.push([
+        `def normalize(value):`,
+        `    """Normalization model — replace with the real operation."""`,
+        `    return value.strip().lower()`,
+      ].join("\n"));
+    }
+    if (types.has("negative")) {
+      blocks.push([
+        `def handle_untrusted(payload):`,
+        `    """Input-guard model — never raises, always returns a structured result."""`,
+        `    return {"ok": isinstance(payload, str), "error": ""}`,
+      ].join("\n"));
+    }
+    if (types.has("commutativity")) {
+      blocks.push([
+        `def combine(a, b):`,
+        `    """Order-independent model — replace with the real operation."""`,
+        `    return tuple(sorted((a, b)))`,
+      ].join("\n"));
+    }
+    if (types.has("monotonicity")) {
+      blocks.push([
+        `def scale(x):`,
+        `    """Monotone model — replace with the real function."""`,
+        `    return 2 * x + 1`,
+      ].join("\n"));
+    }
+    return blocks.join("\n\n\n");
   }
 
   private snakeCase(s: string): string {
     return s
       .replace(/[^a-zA-Z0-9]+/g, "_")
       .toLowerCase()
-      .slice(0, 60);
+      .slice(0, 60)
+      .replace(/^_+|_+$/g, "");
   }
 
   private async safeRead(featureDir: string, file: string): Promise<string> {

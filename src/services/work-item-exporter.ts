@@ -1,100 +1,272 @@
 /**
  * WorkItemExporter — Transforms tasks into platform-specific work item payloads.
  * Supports GitHub Issues, Azure Boards, and Jira.
+ *
+ * Each platform gets its native payload shape (not a generic item):
+ *   github       → { title, body, labels[] }
+ *   jira         → { fields: { project: { key }, summary, description, issuetype: { name }, labels[] } }
+ *   azure_boards → { work_item_type, fields: { "System.Title", "System.Description", "System.Tags", "System.AreaPath"?, "System.IterationPath"? } }
+ * REQ/task traceability is preserved in every shape (task_id + traces_to plus
+ * the rendered body/description), and the documented inputs — jira project_key,
+ * azure area_path/iteration_path, include_subtasks — are honored.
  */
 import type { FileManager } from "./file-manager.js";
-import type { WorkItemExportResult, WorkItemPayload, GitHubIssuePayload, AzureBoardsPayload, JiraPayload, WorkItemPlatform, RoutingInstructions } from "../types.js";
-import { extractRequirementIds, TASK_LINE_PATTERN, normalizeTaskId } from "../utils/id-contracts.js";
+import type { WorkItemMetadata, WorkItemPlatform, RoutingInstructions } from "../types.js";
+import { extractRequirementIds, normalizeTaskId, TASK_LINE_PATTERN } from "../utils/id-contracts.js";
 import { currentTimestamp } from "../utils/runtime-context.js";
+
+/** A task parsed from TASKS.md, including any indented subtask bullets. */
+interface ParsedTask {
+  id: string;
+  title: string;
+  description: string;
+  traces_to: string[];
+  subtasks: string[];
+}
+
+/** GitHub Issues payload: create_issue takes title/body/labels directly. */
+export interface GitHubWorkItem {
+  task_id: string;
+  traces_to: string[];
+  title: string;
+  body: string;
+  labels: string[];
+}
+
+/** Jira REST payload: create_issue takes a `fields` object. */
+export interface JiraWorkItem {
+  task_id: string;
+  traces_to: string[];
+  fields: {
+    project: { key: string };
+    summary: string;
+    description: string;
+    issuetype: { name: "Task" };
+    labels: string[];
+  };
+}
+
+/** Azure Boards payload: create_work_item takes System.* fields. */
+export interface AzureBoardsWorkItem {
+  task_id: string;
+  traces_to: string[];
+  work_item_type: "Task";
+  fields: {
+    "System.Title": string;
+    "System.Description": string;
+    "System.Tags": string;
+    "System.AreaPath"?: string;
+    "System.IterationPath"?: string;
+  };
+}
+
+export type PlatformWorkItem = GitHubWorkItem | JiraWorkItem | AzureBoardsWorkItem;
+
+export interface WorkItemExportOptions {
+  project_key?: string;
+  area_path?: string;
+  iteration_path?: string;
+}
+
+/** Result of a platform-specific export, with the honored options echoed in metadata. */
+export interface PlatformWorkItemExportResult {
+  platform: WorkItemPlatform;
+  items: PlatformWorkItem[];
+  metadata: WorkItemMetadata & {
+    include_subtasks: boolean;
+    project_key?: string;
+    area_path?: string;
+    iteration_path?: string;
+  };
+  routing_instructions: RoutingInstructions;
+}
+
+/** Per-line (non-global, non-stateful) variant of the shared task-line pattern. */
+const TASK_LINE = new RegExp(TASK_LINE_PATTERN.source);
+const SUBTASK_LINE = /^\s{2,}-\s+(?:\[[ x]\]\s+)?(.+)/;
+const TRAILING_TRACE_SUFFIX =
+  /\s*[(\[]?\s*(?:traces?(?:_to)?\s*:\s*)?REQ-[A-Z]+-\d{3}(?:\s*,\s*REQ-[A-Z]+-\d{3})*\s*[)\]]?\s*$/i;
 
 export class WorkItemExporter {
   constructor(private fileManager: FileManager) {}
 
-  async export(platform: WorkItemPlatform, _specDir: string, featureDir: string, _includeSubtasks: boolean, _options?: { project_key?: string; area_path?: string; iteration_path?: string }): Promise<WorkItemExportResult> {
+  async export(
+    platform: WorkItemPlatform,
+    _specDir: string,
+    featureDir: string,
+    includeSubtasks: boolean,
+    options?: WorkItemExportOptions
+  ): Promise<PlatformWorkItemExportResult> {
+    if (platform === "jira" && !options?.project_key) {
+      throw new Error(
+        "project_key is required for the jira platform. Pass the Jira project key (e.g. 'CHK') so issues are created in the right project."
+      );
+    }
+
     const tasksContent = await this.fileManager.readSpecFile(featureDir, "TASKS.md");
     const specContent = await this.fileManager.readSpecFile(featureDir, "SPECIFICATION.md");
     const tasks = this.parseTasks(tasksContent, specContent);
     const featureNumber = featureDir.match(/(\d{3})/)?.[1] || "000";
     const featureName = featureDir.replace(/.*\d{3}-/, "");
 
-    const items: WorkItemPayload[] = tasks.map(t => ({
-      task_id: t.id,
-      title: t.title,
-      description: t.description,
-      traces_to: t.traces_to,
-      effort: t.effort,
-      dependencies: t.dependencies,
-      acceptance_criteria: t.acceptance_criteria,
-    }));
-
+    const items = this.buildPlatformItems(platform, tasks, featureNumber, includeSubtasks, options);
     const routing = this.getRoutingInstructions(platform);
 
     return {
       platform,
       items,
-      metadata: { feature_number: featureNumber, feature_name: featureName, total_items: items.length, generated_at: currentTimestamp() },
+      metadata: {
+        feature_number: featureNumber,
+        feature_name: featureName,
+        total_items: items.length,
+        generated_at: currentTimestamp(),
+        include_subtasks: includeSubtasks,
+        ...(options?.project_key !== undefined && { project_key: options.project_key }),
+        ...(options?.area_path !== undefined && { area_path: options.area_path }),
+        ...(options?.iteration_path !== undefined && { iteration_path: options.iteration_path }),
+      },
       routing_instructions: routing,
     };
   }
 
-  toGitHubPayloads(items: WorkItemPayload[], featureNumber: string): GitHubIssuePayload[] {
-    return items.map(item => ({
-      title: `[${item.task_id}] ${item.title}`,
-      body: `## Description\n${item.description}\n\n## Acceptance Criteria\n${item.acceptance_criteria.map(ac => `- [ ] ${ac}`).join("\n")}\n\n## Traces To\n${item.traces_to.join(", ")}\n\n## Effort\n${item.effort || "Not estimated"}`,
-      labels: ["sdd", `feature/${featureNumber}`, item.effort ? `effort:${item.effort}` : ""].filter(Boolean),
-      assignees: [],
-    }));
+  private buildPlatformItems(
+    platform: WorkItemPlatform,
+    tasks: ParsedTask[],
+    featureNumber: string,
+    includeSubtasks: boolean,
+    options?: WorkItemExportOptions
+  ): PlatformWorkItem[] {
+    switch (platform) {
+      case "github":
+        return tasks.map((task) => this.toGitHubItem(task, featureNumber, includeSubtasks));
+      case "jira":
+        return tasks.map((task) =>
+          this.toJiraItem(task, featureNumber, includeSubtasks, options?.project_key ?? "")
+        );
+      case "azure_boards":
+        return tasks.map((task) =>
+          this.toAzureBoardsItem(task, featureNumber, includeSubtasks, options?.area_path, options?.iteration_path)
+        );
+    }
   }
 
-  toAzureBoardsPayloads(items: WorkItemPayload[], areaPath?: string, iterationPath?: string): AzureBoardsPayload[] {
-    return items.map(item => ({
-      title: `[${item.task_id}] ${item.title}`,
-      description: `<h2>Description</h2><p>${item.description}</p><h2>Traces To</h2><p>${item.traces_to.join(", ")}</p>`,
-      work_item_type: "Task" as const,
-      area_path: areaPath,
-      iteration_path: iterationPath,
-      tags: ["sdd", item.effort || ""].filter(Boolean),
-      acceptance_criteria: item.acceptance_criteria.map(ac => `<li>${ac}</li>`).join(""),
-    }));
+  private toGitHubItem(task: ParsedTask, featureNumber: string, includeSubtasks: boolean): GitHubWorkItem {
+    const subtaskSection = includeSubtasks && task.subtasks.length > 0
+      ? `\n\n## Subtasks\n${task.subtasks.map((s) => `- [ ] ${s}`).join("\n")}`
+      : "";
+    return {
+      task_id: task.id,
+      traces_to: task.traces_to,
+      title: `[${task.id}] ${task.title}`,
+      body:
+        `## Description\n${task.description}${subtaskSection}\n\n## Traces To\n${this.tracesLine(task)}`,
+      labels: ["sdd", `feature/${featureNumber}`, ...task.traces_to],
+    };
   }
 
-  toJiraPayloads(items: WorkItemPayload[], projectKey: string): JiraPayload[] {
-    return items.map(item => ({
-      summary: `[${item.task_id}] ${item.title}`,
-      description: `h2. Description\n${item.description}\n\nh2. Acceptance Criteria\n${item.acceptance_criteria.map(ac => `* ${ac}`).join("\n")}\n\nh2. Traces To\n${item.traces_to.join(", ")}`,
-      issue_type: "Task" as const,
-      project_key: projectKey,
-      labels: ["sdd", item.effort || ""].filter(Boolean),
-      priority: "Medium" as const,
-    }));
+  private toJiraItem(
+    task: ParsedTask,
+    featureNumber: string,
+    includeSubtasks: boolean,
+    projectKey: string
+  ): JiraWorkItem {
+    const subtaskSection = includeSubtasks && task.subtasks.length > 0
+      ? `\n\nh2. Subtasks\n${task.subtasks.map((s) => `* ${s}`).join("\n")}`
+      : "";
+    return {
+      task_id: task.id,
+      traces_to: task.traces_to,
+      fields: {
+        project: { key: projectKey },
+        summary: `[${task.id}] ${task.title}`,
+        description:
+          `h2. Description\n${task.description}${subtaskSection}\n\nh2. Traces To\n${this.tracesLine(task)}`,
+        issuetype: { name: "Task" },
+        labels: ["sdd", `feature-${featureNumber}`, ...task.traces_to],
+      },
+    };
   }
 
-  private parseTasks(tasksContent: string, specContent: string): Array<{ id: string; title: string; description: string; traces_to: string[]; effort?: string; dependencies: string[]; acceptance_criteria: string[] }> {
-    const tasks: Array<{ id: string; title: string; description: string; traces_to: string[]; effort?: string; dependencies: string[]; acceptance_criteria: string[] }> = [];
-    let match;
-    while ((match = TASK_LINE_PATTERN.exec(tasksContent)) !== null) {
-      const id = normalizeTaskId(match[1]);
-      const story = match[2] || "";
-      const title = match[3].trim();
-      // Extract REQ IDs referenced in the task or linked story
-      const reqIds: string[] = extractRequirementIds(title);
-      // If no direct REQ ref, look in spec for the story
-      if (reqIds.length === 0 && story) {
-        const storySection = specContent.match(new RegExp(`${story}[\\s\\S]*?(?=##|$)`));
-        if (storySection) {
-          reqIds.push(...extractRequirementIds(storySection[0]));
+  private toAzureBoardsItem(
+    task: ParsedTask,
+    featureNumber: string,
+    includeSubtasks: boolean,
+    areaPath?: string,
+    iterationPath?: string
+  ): AzureBoardsWorkItem {
+    const subtaskSection = includeSubtasks && task.subtasks.length > 0
+      ? `<h2>Subtasks</h2><ul>${task.subtasks.map((s) => `<li>${s}</li>`).join("")}</ul>`
+      : "";
+    return {
+      task_id: task.id,
+      traces_to: task.traces_to,
+      work_item_type: "Task",
+      fields: {
+        "System.Title": `[${task.id}] ${task.title}`,
+        "System.Description":
+          `<h2>Description</h2><p>${task.description}</p>${subtaskSection}<h2>Traces To</h2><p>${this.tracesLine(task)}</p>`,
+        "System.Tags": ["sdd", `feature/${featureNumber}`, ...task.traces_to].join("; "),
+        ...(areaPath !== undefined && { "System.AreaPath": areaPath }),
+        ...(iterationPath !== undefined && { "System.IterationPath": iterationPath }),
+      },
+    };
+  }
+
+  private tracesLine(task: ParsedTask): string {
+    return task.traces_to.length > 0 ? task.traces_to.join(", ") : "(no requirement reference)";
+  }
+
+  private parseTasks(tasksContent: string, specContent: string): ParsedTask[] {
+    const tasks: ParsedTask[] = [];
+    for (const line of tasksContent.split("\n")) {
+      const match = TASK_LINE.exec(line);
+      if (match) {
+        const id = normalizeTaskId(match[1]);
+        const story = match[2] || "";
+        const rawTitle = match[3].trim();
+        // Extract REQ IDs referenced in the task or linked story
+        const reqIds: string[] = extractRequirementIds(rawTitle);
+        // If no direct REQ ref, look in spec for the story
+        if (reqIds.length === 0 && story) {
+          const storySection = specContent.match(new RegExp(`${story}[\\s\\S]*?(?=##|$)`));
+          if (storySection) {
+            reqIds.push(...extractRequirementIds(storySection[0]));
+          }
         }
+        // Titles should not repeat the traces_to suffix ("… (REQ-CORE-001)")
+        const title = rawTitle.replace(TRAILING_TRACE_SUFFIX, "").trim() || rawTitle;
+        tasks.push({ id, title, description: rawTitle, traces_to: reqIds, subtasks: [] });
+        continue;
       }
-      tasks.push({ id, title, description: title, traces_to: reqIds, dependencies: [], acceptance_criteria: [] });
+      // Indented bullets under a task line become its subtasks
+      const sub = SUBTASK_LINE.exec(line);
+      if (sub && tasks.length > 0) {
+        tasks[tasks.length - 1].subtasks.push(sub[1].trim());
+      }
     }
     return tasks;
   }
 
   private getRoutingInstructions(platform: WorkItemPlatform): RoutingInstructions {
     switch (platform) {
-      case "github": return { mcp_server: "github", tool_name: "create_issue", note: "Call GitHub MCP create_issue for each item" };
-      case "azure_boards": return { mcp_server: "azure-devops", tool_name: "create_work_item", note: "Call Azure DevOps MCP create_work_item for each item" };
-      case "jira": return { mcp_server: "jira", tool_name: "create_issue", note: "Call Jira MCP create_issue for each item" };
+      case "github":
+        return {
+          mcp_server: "github",
+          tool_name: "create_issue",
+          note: "Call GitHub MCP create_issue for each item using item.title, item.body, and item.labels.",
+        };
+      case "azure_boards":
+        return {
+          mcp_server: "azure-devops",
+          tool_name: "create_work_item",
+          note: "Call Azure DevOps MCP create_work_item for each item using item.work_item_type and item.fields (System.Title, System.Description, System.AreaPath, System.IterationPath).",
+        };
+      case "jira":
+        return {
+          mcp_server: "jira",
+          tool_name: "create_issue",
+          note: "Call Jira MCP create_issue for each item passing item.fields (project.key, summary, description, issuetype.name).",
+        };
     }
   }
 }

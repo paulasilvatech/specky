@@ -112,8 +112,11 @@ export class TestTraceabilityMapper {
         if (reqMatches.length > 0) {
           currentReqs = reqMatches;
         }
-        // Test name line (it/test/describe)
-        const testNameMatch = line.match(/(?:it|test)\s*\(\s*["'`]([^"'`]+)["'`]/);
+        // Test name line — JS/TS (it/test), Python (def test_x), Java/C# (void name()).
+        const testNameMatch =
+          line.match(/(?:it|test)\s*\(\s*["'`]([^"'`]+)["'`]/) ??
+          line.match(/^\s*def\s+(test_\w+)\s*\(/) ??
+          line.match(/^\s*(?:public\s+)?void\s+(\w+)\s*\(/);
         if (testNameMatch && currentReqs.length > 0) {
           const existing = map.get(testNameMatch[1]) ?? [];
           map.set(testNameMatch[1], [...existing, ...currentReqs]);
@@ -131,6 +134,9 @@ export class TestTraceabilityMapper {
     for (const [key, reqs] of testToReq) {
       if (testName.includes(key) || key.includes(testName)) return reqs;
     }
-    return [];
+    // Fall back to requirement IDs embedded in the test name itself — test
+    // results routinely reference requirements by ID even when no test-file
+    // source was scanned, and coverage must not report 0% in that case.
+    return [...new Set([...testName.matchAll(/\bREQ-[A-Z]+-\d{3}\b/g)].map((m) => m[0]))];
   }
 }

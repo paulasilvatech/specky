@@ -4,7 +4,7 @@
 **Feature**: {{feature_id}}
 **Domain**: {{domain}}
 **Date**: {{date}}
-**Mandatory Pass Rate**: {{mandatory_pass_rate}}
+**Mandatory Pass Rate**: {{mandatory_pass_rate}}%
 
 ---
 
@@ -12,8 +12,7 @@
 
 | ID | Check | Mandatory | Status | Evidence |
 |----|-------|-----------|--------|----------|
-{{#each items}}
-| {{id}} | {{check}} | {{mandatory}} | {{status}} | {{evidence}} |
+{{#each items}}{{this}}
 {{/each}}
 
 ## Summary

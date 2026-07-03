@@ -110,6 +110,26 @@ describe("profile resolution and enterprise defaults", () => {
     );
   });
 
+  it("pipeline.require_lgtm defaults to false", () => {
+    const config = loadConfig(workspace, NO_OVERRIDES);
+    expect(config.pipeline.require_lgtm).toBe(false);
+  });
+
+  it("pipeline.require_lgtm is NOT flipped by the enterprise profile", () => {
+    writeConfig("profile: enterprise\n");
+    const config = loadConfig(workspace, NO_OVERRIDES);
+    expect(config.profile).toBe("enterprise");
+    // Human-review gating is a workflow choice, not a security control —
+    // enterprise must not silently change advance-phase behavior.
+    expect(config.pipeline.require_lgtm).toBe(false);
+  });
+
+  it("pipeline.require_lgtm can be enabled explicitly", () => {
+    writeConfig("pipeline:\n  require_lgtm: true\n");
+    const config = loadConfig(workspace, NO_OVERRIDES);
+    expect(config.pipeline.require_lgtm).toBe(true);
+  });
+
   it("enterprise defaults also apply when config.yml is absent or malformed", () => {
     const noFile = loadConfig(workspace, { argv: [], env: { SPECKY_PROFILE: "enterprise" } });
     expect(noFile.audit_enabled).toBe(true);

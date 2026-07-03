@@ -9,6 +9,7 @@ import {} from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { IacGenerator } from "../services/iac-generator.js";
+import { detectTechStackFromDesign } from "../services/iac-generator.js";
 import {
   generateIacInputSchema,
   validateIacInputSchema,
@@ -196,7 +197,11 @@ export function registerInfrastructureTools(
           // DESIGN.md is optional; fall back to defaults
         }
 
-        const techStack = detectTechStack(designContent);
+        // Detect from DESIGN.md prose; default to TypeScript/Node.js when the
+        // design names no recognizable stack.
+        const techStack =
+          detectTechStackFromDesign(designContent) ??
+          { language: "TypeScript", framework: undefined, runtime: "node22" };
 
         const dockerResult = iacGenerator.generateDockerfile(
           techStack,
@@ -249,49 +254,5 @@ export function registerInfrastructureTools(
   );
 }
 
-/**
- * Detects tech stack from DESIGN.md content using keyword matching.
- * Falls back to TypeScript/Node.js if nothing is detected.
- */
-function detectTechStack(designContent: string): {
-  language: string;
-  framework?: string;
-  runtime: string;
-} {
-  const lower = designContent.toLowerCase();
-
-  if (/\bpython\b/.test(lower)) {
-    const framework = /\bdjango\b/.test(lower)
-      ? "Django"
-      : /\bfastapi\b/.test(lower)
-        ? "FastAPI"
-        : /\bflask\b/.test(lower)
-          ? "Flask"
-          : undefined;
-    return { language: "Python", framework, runtime: "python3.12" };
-  }
-
-  if (/\bgo\b|\bgolang\b/.test(lower)) {
-    const framework = /\bgin\b/.test(lower)
-      ? "Gin"
-      : /\becho\b/.test(lower)
-        ? "Echo"
-        : undefined;
-    return { language: "Go", framework, runtime: "go1.22" };
-  }
-
-  if (/\bjava\b/.test(lower) && !/\bjavascript\b/.test(lower)) {
-    const framework = /\bspring\b/.test(lower) ? "Spring Boot" : undefined;
-    return { language: "Java", framework, runtime: "java21" };
-  }
-
-  // Default: TypeScript/Node.js
-  const framework = /\bnext\.?js\b/.test(lower)
-    ? "Next.js"
-    : /\bexpress\b/.test(lower)
-      ? "Express"
-      : /\bfastify\b/.test(lower)
-        ? "Fastify"
-        : undefined;
-  return { language: "TypeScript", framework, runtime: "node22" };
-}
+// Tech stack detection from DESIGN.md lives in services/iac-generator.ts
+// (detectTechStackFromDesign) so the environment tools can reuse it.

@@ -4,9 +4,11 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
 import { formatError, truncate } from "./tool-result.js";
 import { join } from "node:path";
 import { Phase, PHASE_ORDER } from "../constants.js";
+import { loadConfig } from "../config.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
@@ -26,6 +28,13 @@ import {
   runAnalysisInputSchema,
   advancePhaseInputSchema,
 } from "../schemas/pipeline.js";
+
+/**
+ * Phases whose completion is an LGTM quality gate. When pipeline.require_lgtm
+ * is enabled in .specky/config.yml, sdd_advance_phase refuses to complete
+ * these phases unless the caller passes lgtm: true.
+ */
+const LGTM_GATE_PHASES: readonly Phase[] = [Phase.Specify, Phase.Design, Phase.Tasks];
 
 async function shouldOverwriteScaffold(
   fileManager: FileManager,
@@ -51,6 +60,10 @@ export function registerPipelineTools(
 ): void {
   const featurePackageGenerator = new FeaturePackageGenerator(fileManager);
   const analysisEngine = new AnalysisEngine(earsValidator);
+  // Project config (.specky/config.yml) — read from the same workspace root
+  // the server resolved, so pipeline gating (pipeline.require_lgtm) works
+  // without changing the registration signature in index.ts.
+  const config = loadConfig(fileManager.workspaceRoot);
 
   // ─── sdd_init ───
   server.registerTool(
@@ -850,8 +863,15 @@ export function registerPipelineTools(
     {
       title: "Advance Pipeline Phase",
       description:
-        "Validates that the current phase's required files exist, then transitions the state machine to the next phase.",
-      inputSchema: advancePhaseInputSchema,
+        "Validates that the current phase's required files exist, then transitions the state machine to the next phase. When pipeline.require_lgtm is enabled, completing the specify/design/tasks quality gates requires lgtm: true.",
+      inputSchema: advancePhaseInputSchema.extend({
+        lgtm: z
+          .boolean()
+          .optional()
+          .describe(
+            "Explicit human approval (LGTM) for the phase being completed. Required at the specify/design/tasks gates when pipeline.require_lgtm is enabled in .specky/config.yml."
+          ),
+      }),
       annotations: {
         readOnlyHint: false,
         destructiveHint: false,
@@ -859,11 +879,31 @@ export function registerPipelineTools(
         openWorldHint: false,
       },
     },
-    async ({ spec_dir, feature_number }) => {
+    async ({ spec_dir, feature_number, lgtm }) => {
       try {
         // Capture phase before advancing for gate instrumentation
         const priorState = await stateMachine.loadState(spec_dir);
         const completedPhase = priorState.current_phase;
+
+        // Server-side LGTM gate (opt-in): with pipeline.require_lgtm enabled,
+        // completing a review-gated phase demands explicit human approval
+        // instead of relying on the agent-layer "reply LGTM" convention.
+        if (
+          config.pipeline.require_lgtm &&
+          LGTM_GATE_PHASES.includes(completedPhase) &&
+          lgtm !== true
+        ) {
+          return {
+            content: [{ type: "text" as const, text: JSON.stringify({
+              error: "lgtm_required",
+              tool: "sdd_advance_phase",
+              phase: completedPhase,
+              message: `Cannot advance: completing the "${completedPhase}" phase is an LGTM quality gate and pipeline.require_lgtm is enabled. Explicit human approval is required.`,
+              fix: "Review the phase artifact, then call sdd_advance_phase again with lgtm: true to record the approval.",
+            }, null, 2) }],
+            isError: true,
+          };
+        }
 
         const state = await stateMachine.advancePhase(spec_dir, feature_number);
         const currentIndex = PHASE_ORDER.indexOf(state.current_phase);
@@ -880,7 +920,11 @@ export function registerPipelineTools(
           const artifactPath = requiredFiles[0]
             ? `${feature.directory}/${requiredFiles[0]}`
             : feature.directory;
-          gateEntry = await stateMachine.recordGateEvent(spec_dir, completedPhase, artifactPath);
+          // Record LGTM presence on every advance so gate history captures
+          // review approvals, not just artifact-modification signals.
+          gateEntry = await stateMachine.recordGateEvent(spec_dir, completedPhase, artifactPath, {
+            lgtm: lgtm === true,
+          });
         }
 
         const result: Record<string, unknown> = {

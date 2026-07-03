@@ -8,7 +8,37 @@ import type { DocumentationResult } from "../types.js";
 import { extractTaskIds } from "../utils/id-contracts.js";
 import { currentTimestamp } from "../utils/runtime-context.js";
 
+interface ExtractedRequirement {
+  id: string;
+  label: string;
+  text: string;
+  criteria: string[];
+}
+
+interface ExtractedEndpoint {
+  method: string;
+  path: string;
+  description: string;
+  request?: string;
+  response?: string;
+}
+
+export interface DocGenerationFailure {
+  type: DocumentationResult["type"];
+  error: string;
+}
+
 export class DocGenerator {
+  /** Technologies recognized when deriving runbook content from DESIGN.md. */
+  private static readonly KNOWN_TECH = [
+    "Node.js", "TypeScript", "Express", "Fastify", "NestJS", "React", "Next.js", "Vue",
+    "Python", "FastAPI", "Django", "Flask", "Golang", "Rust", "Java", "Spring", "Kotlin",
+    "PostgreSQL", "Postgres", "MySQL", "SQLite", "MongoDB", "Redis", "Kafka", "RabbitMQ",
+    "Elasticsearch", "Docker", "Kubernetes", "Terraform", "Nginx", "GraphQL", "gRPC",
+  ];
+
+  private static readonly DATABASES = ["PostgreSQL", "Postgres", "MySQL", "SQLite", "MongoDB", "Redis"];
+
   constructor(private fileManager: FileManager, private stateMachine?: StateMachine) {}
 
   async generateFullDocs(featureDir: string, featureNumber: string): Promise<DocumentationResult> {
@@ -22,9 +52,9 @@ export class DocGenerator {
     let content = `# ${featureName} — Complete Documentation\n\n`;
     content += `**Feature**: ${featureNumber}-${featureName}\n**Generated**: ${currentTimestamp()}\n\n---\n\n`;
 
-    if (spec) { content += `## Specification\n\n${this.summarize(spec)}\n\n`; sections.push("Specification"); }
-    if (design) { content += `## Architecture & Design\n\n${this.summarize(design)}\n\n`; sections.push("Architecture & Design"); }
-    if (tasks) { content += `## Implementation Plan\n\n${this.summarize(tasks)}\n\n`; sections.push("Implementation Plan"); }
+    if (spec) { content += `## Specification\n\n${this.summarizeSpec(spec)}\n\n`; sections.push("Specification"); }
+    if (design) { content += `## Architecture & Design\n\n${this.summarizeDesign(design)}\n\n`; sections.push("Architecture & Design"); }
+    if (tasks) { content += `## Implementation Plan\n\n${this.summarize(tasks, 30)}\n\n`; sections.push("Implementation Plan"); }
     if (analysis) { content += `## Quality Analysis\n\n${this.summarize(analysis)}\n\n`; sections.push("Quality Analysis"); }
 
     content += `## How It Was Built\n\nThis feature was developed using Spec-Driven Development (SDD) with the Specky MCP Server.\n\n`;
@@ -47,35 +77,95 @@ export class DocGenerator {
       content += `### Response\n\n\`\`\`json\n${ep.response || "{}"}\n\`\`\`\n\n---\n\n`;
     }
 
-    return { type: "api", content, file_path: `docs/api-${featureNumber}.md`, sections: endpoints.map(e => `${e.method} ${e.path}`), explanation: `Generated API documentation with ${endpoints.length} endpoints.` };
+    const withExamples = endpoints.filter((e) => e.request || e.response).length;
+    return { type: "api", content, file_path: `docs/api-${featureNumber}.md`, sections: endpoints.map(e => `${e.method} ${e.path}`), explanation: `Generated API documentation with ${endpoints.length} endpoints (${withExamples} with request/response examples from DESIGN.md).` };
   }
 
   async generateRunbook(featureDir: string, featureNumber: string): Promise<DocumentationResult> {
-    await this.safeRead(featureDir, "DESIGN.md");
+    const design = await this.safeRead(featureDir, "DESIGN.md") || "";
     const featureName = featureDir.replace(/.*\d{3}-/, "");
-    const content = [
+    const endpoints = this.extractEndpoints(design);
+    const stack = this.detectTechStack(design);
+    const infrastructure = this.cleanSectionExcerpt(this.extractDesignSection(design, /infrastructure|deployment/i), 8);
+    const security = this.cleanSectionExcerpt(this.extractDesignSection(design, /security/i), 6);
+    const database = stack.find((t) => DocGenerator.DATABASES.includes(t));
+
+    const lines: string[] = [
       `# Operational Runbook: ${featureName}`,
       `\n**Feature**: ${featureNumber}\n**Last Updated**: ${currentTimestamp()}\n`,
-      `## Deployment`,
-      `1. Build: \`npm run build\``,
-      `2. Test: \`npm test\``,
-      `3. Deploy: Follow CI/CD pipeline\n`,
-      `## Monitoring`,
-      `- Health check: \`GET /health\``,
-      `- Logs: Check application logs for errors\n`,
-      `## Troubleshooting`,
-      `| Symptom | Cause | Resolution |`,
-      `|---------|-------|-----------|`,
-      `| 500 errors | Database connection | Check connection string |`,
-      `| Slow responses | High load | Scale horizontally |`,
-      `| Auth failures | Token expiry | Check token configuration |\n`,
+    ];
+    const sections: string[] = [];
+
+    if (stack.length > 0) {
+      lines.push(`## Tech Stack`, ...stack.map((t) => `- ${t}`), ``);
+      sections.push("Tech Stack");
+    }
+
+    lines.push(`## Deployment`);
+    const deploySteps: string[] = [];
+    if (stack.includes("Docker")) deploySteps.push(`Build the container image: \`docker build -t ${featureName} .\``);
+    if (stack.some((t) => ["Node.js", "TypeScript", "Express", "Fastify", "NestJS"].includes(t))) {
+      deploySteps.push("Install and build: `npm ci && npm run build`", "Run the test suite: `npm test`");
+    }
+    if (stack.includes("Kubernetes")) deploySteps.push(`Roll out: \`kubectl rollout status deployment/${featureName}\``);
+    if (deploySteps.length === 0) deploySteps.push("Build: `npm run build`", "Test: `npm test`", "Deploy: Follow CI/CD pipeline");
+    lines.push(...deploySteps.map((step, i) => `${i + 1}. ${step}`), ``);
+    if (infrastructure) lines.push(`### Infrastructure (from DESIGN.md)`, ``, infrastructure, ``);
+    sections.push("Deployment");
+
+    lines.push(`## Monitoring`);
+    if (endpoints.length > 0) {
+      lines.push(`Feature endpoints to monitor:`);
+      for (const ep of endpoints.slice(0, 8)) {
+        lines.push(`- \`${ep.method} ${ep.path}\` — ${ep.description}`);
+      }
+    }
+    lines.push(`- Health check: \`GET /health\``, `- Logs: Check application logs for errors`);
+    if (database) lines.push(`- Monitor ${database} connectivity, connection-pool saturation, and slow queries`);
+    lines.push(``);
+    sections.push("Monitoring");
+
+    lines.push(`## Troubleshooting`, `| Symptom | Cause | Resolution |`, `|---------|-------|-----------|`);
+    const rows: string[] = [];
+    if (database) rows.push(`| 500 errors | ${database} connection failure | Verify ${database} availability and connection string |`);
+    if (endpoints.length > 0) {
+      const first = endpoints[0];
+      rows.push(`| 4xx/5xx from \`${first.method} ${first.path}\` | Payload drift from the design contract | Compare request/response against the API contracts in DESIGN.md |`);
+    }
+    if (security || /\b(auth|token|jwt|oauth)\b/i.test(design)) {
+      rows.push(`| Auth failures | Token expiry or misconfiguration | Check token configuration |`);
+    }
+    if (rows.length === 0) {
+      rows.push(
+        `| 500 errors | Database connection | Check connection string |`,
+        `| Auth failures | Token expiry | Check token configuration |`,
+      );
+    }
+    rows.push(`| Slow responses | High load | Scale horizontally |`);
+    lines.push(...rows, ``);
+    if (security) lines.push(`### Security Notes (from DESIGN.md)`, ``, security, ``);
+    sections.push("Troubleshooting");
+
+    lines.push(
       `## Rollback`,
-      `1. Revert deployment to previous version`,
+      stack.includes("Kubernetes")
+        ? `1. Roll back: \`kubectl rollout undo deployment/${featureName}\``
+        : `1. Revert deployment to previous version`,
       `2. Verify health checks pass`,
       `3. Notify team\n`,
-    ].join("\n");
+    );
+    sections.push("Rollback");
 
-    return { type: "runbook", content, file_path: `docs/runbook-${featureNumber}.md`, sections: ["Deployment", "Monitoring", "Troubleshooting", "Rollback"], explanation: "Generated operational runbook." };
+    const derived = stack.length > 0 || endpoints.length > 0 || infrastructure || security;
+    return {
+      type: "runbook",
+      content: lines.join("\n"),
+      file_path: `docs/runbook-${featureNumber}.md`,
+      sections,
+      explanation: derived
+        ? `Generated operational runbook derived from DESIGN.md (${stack.length} technologies, ${endpoints.length} endpoints).`
+        : "Generated operational runbook (generic template — DESIGN.md had no detectable stack, endpoints, or infrastructure).",
+    };
   }
 
   async generateOnboarding(featureDir: string, featureNumber: string): Promise<DocumentationResult> {
@@ -86,9 +176,9 @@ export class DocGenerator {
       `# Developer Onboarding: ${featureName}`,
       `\n> Welcome! This guide helps you understand and contribute to this feature.\n`,
       `## What This Feature Does`,
-      this.summarize(spec).substring(0, 500),
+      this.summarizeSpec(spec) || `_No specification content available yet — run sdd_write_spec first._`,
       `\n## Architecture Overview`,
-      this.summarize(design).substring(0, 500),
+      this.summarizeDesign(design) || `_No design content available yet — run sdd_write_design first._`,
       `\n## Getting Started`,
       `1. Clone the repository`,
       `2. Install dependencies: \`npm install\``,
@@ -112,27 +202,35 @@ export class DocGenerator {
 
   async generateAllDocs(featureDir: string, featureNumber: string): Promise<{
     results: DocumentationResult[];
+    failures: DocGenerationFailure[];
     total_generated: number;
     total_sections: number;
   }> {
-    const [full, api, runbook, onboarding] = await Promise.all([
-      this.generateFullDocs(featureDir, featureNumber),
-      this.generateApiDocs(featureDir, featureNumber),
-      this.generateRunbook(featureDir, featureNumber),
-      this.generateOnboarding(featureDir, featureNumber),
-    ]);
+    // All five advertised doc types run in the same parallel batch. Failures
+    // are collected and surfaced to the caller instead of silently dropped.
+    const generators: Array<{ type: DocumentationResult["type"]; generate: () => Promise<DocumentationResult> }> = [
+      { type: "full", generate: () => this.generateFullDocs(featureDir, featureNumber) },
+      { type: "api", generate: () => this.generateApiDocs(featureDir, featureNumber) },
+      { type: "runbook", generate: () => this.generateRunbook(featureDir, featureNumber) },
+      { type: "onboarding", generate: () => this.generateOnboarding(featureDir, featureNumber) },
+      { type: "journey", generate: () => this.generateJourneyDocs(featureDir, featureNumber) },
+    ];
 
-    // Also generate journey docs if state machine is available
-    const results = [full, api, runbook, onboarding];
-    try {
-      const journey = await this.generateJourneyDocs(featureDir, featureNumber);
-      results.push(journey);
-    } catch {
-      // Journey docs are optional — skip if state not available
-    }
+    const settled = await Promise.allSettled(generators.map((g) => g.generate()));
+    const results: DocumentationResult[] = [];
+    const failures: DocGenerationFailure[] = [];
+    settled.forEach((outcome, i) => {
+      if (outcome.status === "fulfilled") {
+        results.push(outcome.value);
+      } else {
+        const reason = outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason);
+        failures.push({ type: generators[i].type, error: reason });
+      }
+    });
 
     return {
       results,
+      failures,
       total_generated: results.length,
       total_sections: results.reduce((sum, r) => sum + r.sections.length, 0),
     };
@@ -266,19 +364,238 @@ export class DocGenerator {
 
   // ─── Helpers ───
 
-  private summarize(content: string): string {
-    const lines = content.split("\n").filter(l => l.trim() && !l.startsWith("---") && !l.startsWith("```"));
-    return lines.slice(0, 15).join("\n");
+  /** Strip a leading YAML frontmatter block (--- ... ---) from a document. */
+  private stripFrontmatter(content: string): string {
+    if (!content.startsWith("---")) return content;
+    const closing = content.indexOf("\n---", 3);
+    if (closing === -1) return content;
+    return content.slice(closing + 4).replace(/^\r?\n/, "");
   }
 
-  private extractEndpoints(design: string): Array<{ method: string; path: string; description: string; request?: string; response?: string }> {
-    const endpoints: Array<{ method: string; path: string; description: string; request?: string; response?: string }> = [];
-    const regex = /\b(GET|POST|PUT|PATCH|DELETE)\s+([/\w{}:-]+)/g;
-    let match;
-    while ((match = regex.exec(design)) !== null) {
-      endpoints.push({ method: match[1], path: match[2], description: `${match[1]} ${match[2]}` });
+  /**
+   * Generic content summary. Skips frontmatter, the Table of Contents,
+   * code fences, separators, comments, and TODO placeholders, then keeps
+   * the first `maxLines` meaningful lines.
+   */
+  private summarize(content: string, maxLines = 15): string {
+    const lines = this.stripFrontmatter(content).split("\n");
+    const kept: string[] = [];
+    let inCodeFence = false;
+    let inToc = false;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("```")) { inCodeFence = !inCodeFence; continue; }
+      if (inCodeFence) continue;
+      if (/^#{1,6}\s+table of contents/i.test(trimmed)) { inToc = true; continue; }
+      if (inToc) {
+        if (!trimmed.startsWith("#")) continue;
+        inToc = false;
+      }
+      if (!trimmed || trimmed === "---" || trimmed.startsWith("<!--") || trimmed.includes("[TODO:")) continue;
+      kept.push(line);
+      if (kept.length >= maxLines) break;
     }
-    return endpoints;
+    return kept.join("\n");
+  }
+
+  /** Parse EARS requirement blocks (### REQ-XXX-NNN ...) out of SPECIFICATION.md. */
+  private extractRequirements(spec: string): ExtractedRequirement[] {
+    const headingRegex = /^###\s+(REQ-[A-Za-z0-9_-]*\d+)\s*:?\s*(.*)$/gm;
+    const headings: Array<{ id: string; label: string; start: number; bodyStart: number }> = [];
+    let match: RegExpExecArray | null;
+    while ((match = headingRegex.exec(spec)) !== null) {
+      headings.push({ id: match[1], label: match[2].trim(), start: match.index, bodyStart: match.index + match[0].length });
+    }
+    return headings
+      .map((heading, i) => {
+        const end = i + 1 < headings.length ? headings[i + 1].start : spec.length;
+        const block = spec.slice(heading.bodyStart, end);
+        // Stop at the next non-REQ heading (e.g. "## 2. Functional Requirements").
+        const nextHeading = block.search(/^#{2,3}\s+/m);
+        const body = nextHeading === -1 ? block : block.slice(0, nextHeading);
+        const parts = body.split(/\*\*Acceptance Criteria:?\*\*/i);
+        const text = (parts[0] || "")
+          .split("\n")
+          .map((l) => l.trim())
+          .filter((l) => l && l !== "---" && !l.startsWith("```"))
+          .join(" ");
+        const criteria = (parts[1] || "")
+          .split("\n")
+          .map((l) => l.trim())
+          .filter((l) => l.startsWith("- "))
+          .map((l) => l.slice(2).trim());
+        return { id: heading.id, label: heading.label, text, criteria };
+      })
+      .filter((req) => req.text.length > 0);
+  }
+
+  /**
+   * Requirement-aware spec summary: pulls the actual EARS "shall" statements
+   * with their REQ IDs instead of the frontmatter/ToC head of the file.
+   */
+  private summarizeSpec(spec: string): string {
+    const requirements = this.extractRequirements(spec);
+    if (requirements.length === 0) return this.summarize(spec);
+    const entries = requirements.map((req) => {
+      const label = req.label ? ` ${req.label}` : "";
+      const criteria = req.criteria.length > 0 ? `\n  - Acceptance: ${req.criteria.join("; ")}` : "";
+      return `- **${req.id}**${label}: ${req.text}${criteria}`;
+    });
+    const plural = requirements.length === 1 ? "requirement" : "requirements";
+    return `This feature is specified by ${requirements.length} EARS ${plural}:\n\n${entries.join("\n")}`;
+  }
+
+  /** Extract the body of the first "## ..." design section whose title matches. */
+  private extractDesignSection(design: string, titlePattern: RegExp): string {
+    const body = this.stripFrontmatter(design);
+    const headingRegex = /^##\s+(.+)$/gm;
+    const headings: Array<{ title: string; start: number; bodyStart: number }> = [];
+    let match: RegExpExecArray | null;
+    while ((match = headingRegex.exec(body)) !== null) {
+      headings.push({ title: match[1].trim(), start: match.index, bodyStart: match.index + match[0].length });
+    }
+    for (let i = 0; i < headings.length; i++) {
+      if (!titlePattern.test(headings[i].title)) continue;
+      const end = i + 1 < headings.length ? headings[i + 1].start : body.length;
+      return body.slice(headings[i].bodyStart, end);
+    }
+    return "";
+  }
+
+  /** Clean a design-section excerpt: drop template hints, TODOs, fences, and separators. */
+  private cleanSectionExcerpt(section: string, maxLines = 12): string {
+    const kept: string[] = [];
+    let inCodeFence = false;
+    for (const line of section.split("\n")) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("```")) { inCodeFence = !inCodeFence; continue; }
+      if (inCodeFence) continue;
+      if (!trimmed || trimmed === "---" || trimmed.startsWith(">") || trimmed.startsWith("<!--") || trimmed.includes("[TODO:")) continue;
+      kept.push(line);
+      if (kept.length >= maxLines) break;
+    }
+    return kept.join("\n").trim();
+  }
+
+  /**
+   * Architecture-aware design summary: pulls the C4 sections, data model, and
+   * API contracts instead of the frontmatter/ToC head of the file.
+   */
+  private summarizeDesign(design: string): string {
+    const parts: string[] = [];
+    const sectionSpecs: Array<{ heading: string; pattern: RegExp }> = [
+      { heading: "System Context", pattern: /system context/i },
+      { heading: "Container Architecture", pattern: /container architecture/i },
+      { heading: "Component Design", pattern: /component design/i },
+      { heading: "Data Model", pattern: /data model/i },
+      { heading: "API Contracts", pattern: /api contracts?/i },
+    ];
+    for (const { heading, pattern } of sectionSpecs) {
+      const excerpt = this.cleanSectionExcerpt(this.extractDesignSection(design, pattern));
+      if (excerpt) parts.push(`### ${heading}\n\n${excerpt}`);
+    }
+    return parts.length > 0 ? parts.join("\n\n") : this.summarize(design);
+  }
+
+  /** Remove ```mermaid fenced blocks so diagram edges are not scanned as endpoints. */
+  private stripMermaidBlocks(content: string): string {
+    return content.replace(/```mermaid[\s\S]*?(?:```|$)/g, "");
+  }
+
+  /** Detect technologies named in DESIGN.md (word-boundary matched). */
+  private detectTechStack(design: string): string[] {
+    const found: string[] = [];
+    for (const tech of DocGenerator.KNOWN_TECH) {
+      const escaped = tech.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (new RegExp(`(?:^|[^\\w])${escaped}(?:[^\\w]|$)`, "i").test(design)) found.push(tech);
+    }
+    return found;
+  }
+
+  /** Pull the schema/JSON body that follows a **Request:** or **Response:** marker. */
+  private extractContractBody(block: string, marker: RegExp, stopAt?: RegExp): string | undefined {
+    const markerMatch = marker.exec(block);
+    if (!markerMatch) return undefined;
+    let rest = block.slice(markerMatch.index + markerMatch[0].length);
+    if (stopAt) {
+      const stop = stopAt.exec(rest);
+      if (stop) rest = rest.slice(0, stop.index);
+    }
+    const separator = rest.search(/^---\s*$/m);
+    if (separator !== -1) rest = rest.slice(0, separator);
+    const value = rest.replace(/```(?:json)?/g, "").trim();
+    if (!value || /^n\/?a\.?$/i.test(value)) return undefined;
+    return value;
+  }
+
+  /**
+   * Extract API endpoints from DESIGN.md. Structured contract blocks
+   * ("### METHOD /path" with **Request:** and **Response:** bodies) are
+   * parsed first, including their JSON examples; a fallback scan picks up
+   * endpoints mentioned in prose. Mermaid diagrams are excluded and
+   * endpoints are deduplicated by METHOD+path.
+   */
+  private extractEndpoints(design: string): ExtractedEndpoint[] {
+    const scannable = this.stripMermaidBlocks(this.stripFrontmatter(design));
+    const byKey = new Map<string, ExtractedEndpoint>();
+
+    // 1. Structured API contract blocks.
+    const contractRegex = /^###\s+(GET|POST|PUT|PATCH|DELETE)\s+(\/\S*)\s*$/gm;
+    const contracts: Array<{ method: string; path: string; bodyStart: number }> = [];
+    let match: RegExpExecArray | null;
+    while ((match = contractRegex.exec(scannable)) !== null) {
+      contracts.push({ method: match[1], path: match[2], bodyStart: match.index + match[0].length });
+    }
+    for (const contract of contracts) {
+      const rest = scannable.slice(contract.bodyStart);
+      const nextHeading = rest.search(/^#{2,3}\s+/m);
+      const block = nextHeading === -1 ? rest : rest.slice(0, nextHeading);
+
+      const description = block
+        .split("\n")
+        .map((l) => l.trim())
+        .find((l) => l && l !== "---" && !l.startsWith("**") && !l.startsWith("```") && !l.startsWith("{") && !l.startsWith("["))
+        || `${contract.method} ${contract.path}`;
+
+      let request = this.extractContractBody(block, /\*\*Request:?\*\*/i, /\*\*Response:?\*\*/i);
+      let response = this.extractContractBody(block, /\*\*Response:?\*\*/i);
+
+      // Fallback: bare ```json fences under the endpoint heading.
+      if (!request && !response) {
+        const fences = [...block.matchAll(/```json\s*([\s\S]*?)```/g)]
+          .map((m) => m[1].trim())
+          .filter((body) => body.length > 0);
+        const hasRequestBody = ["POST", "PUT", "PATCH"].includes(contract.method);
+        if (fences.length >= 2) {
+          request = fences[0];
+          response = fences[1];
+        } else if (fences.length === 1) {
+          if (hasRequestBody) request = fences[0];
+          else response = fences[0];
+        }
+      }
+
+      const key = `${contract.method} ${contract.path}`;
+      if (!byKey.has(key)) {
+        const endpoint: ExtractedEndpoint = { method: contract.method, path: contract.path, description };
+        if (request) endpoint.request = request;
+        if (response) endpoint.response = response;
+        byKey.set(key, endpoint);
+      }
+    }
+
+    // 2. Fallback scan for endpoints mentioned outside contract blocks.
+    const inlineRegex = /\b(GET|POST|PUT|PATCH|DELETE)\s+(\/[\w{}:./-]*)/g;
+    while ((match = inlineRegex.exec(scannable)) !== null) {
+      const method = match[1];
+      const path = match[2].replace(/[.,;:]+$/, "");
+      const key = `${method} ${path}`;
+      if (!byKey.has(key)) {
+        byKey.set(key, { method, path, description: `${method} ${path}` });
+      }
+    }
+
+    return [...byKey.values()];
   }
 
   private async safeRead(featureDir: string, fileName: string): Promise<string | null> {

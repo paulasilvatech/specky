@@ -23,36 +23,51 @@ export interface TestGenerationResult {
   total_tests: number;
 }
 
-const FRAMEWORK_CONFIG: Record<TestFramework, { ext: string; imports: string; wrapper: (name: string, body: string) => string }> = {
+/**
+ * Convert an arbitrary feature name into a PascalCase identifier that is
+ * legal as a Java/C#/Python class name (and therefore as a javac filename).
+ * Never returns an empty string or one that starts with a digit.
+ */
+export function pascalIdentifier(s: string): string {
+  const words = s.replace(/[^a-zA-Z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
+  const pascal = words.map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("");
+  if (pascal.length === 0) return "Feature";
+  return /^\d/.test(pascal) ? `Feature${pascal}` : pascal;
+}
+
+const FRAMEWORK_CONFIG: Record<TestFramework, { fileBase: (featureName: string) => string; imports: string; wrapper: (name: string, body: string) => string }> = {
   vitest: {
-    ext: ".test.ts",
+    fileBase: (f) => `${f || "feature"}.test.ts`,
     imports: 'import { describe, it, expect } from "vitest";',
     wrapper: (name, body) => `describe("${name}", () => {\n${body}\n});`,
   },
   jest: {
-    ext: ".test.ts",
+    fileBase: (f) => `${f || "feature"}.test.ts`,
     imports: '// Jest — no imports needed (globals)',
     wrapper: (name, body) => `describe("${name}", () => {\n${body}\n});`,
   },
   playwright: {
-    ext: ".spec.ts",
+    fileBase: (f) => `${f || "feature"}.spec.ts`,
     imports: 'import { test, expect } from "@playwright/test";',
     wrapper: (name, body) => `test.describe("${name}", () => {\n${body}\n});`,
   },
   pytest: {
-    ext: "_test.py",
+    // Hyphens are illegal in Python module names — pytest cannot import them.
+    fileBase: (f) => `${(f || "feature").replace(/-+/g, "_").toLowerCase()}_test.py`,
     imports: "import pytest",
-    wrapper: (name, body) => `class Test${name.replace(/[^a-zA-Z0-9]/g, "")}:\n${body}`,
+    wrapper: (name, body) =>
+      `class Test${pascalIdentifier(name)}:\n    """Test stubs generated from acceptance criteria."""\n\n${body}`,
   },
   junit: {
-    ext: "Test.java",
+    // javac requires the filename to match the public class name exactly.
+    fileBase: (f) => `${pascalIdentifier(f)}Test.java`,
     imports: 'import org.junit.jupiter.api.Test;\nimport static org.junit.jupiter.api.Assertions.*;',
-    wrapper: (name, body) => `public class ${name.replace(/[^a-zA-Z0-9]/g, "")}Test {\n${body}\n}`,
+    wrapper: (name, body) => `public class ${pascalIdentifier(name)}Test {\n${body}\n}`,
   },
   xunit: {
-    ext: "Tests.cs",
+    fileBase: (f) => `${pascalIdentifier(f)}Tests.cs`,
     imports: "using Xunit;",
-    wrapper: (name, body) => `public class ${name.replace(/[^a-zA-Z0-9]/g, "")}Tests {\n${body}\n}`,
+    wrapper: (name, body) => `public class ${pascalIdentifier(name)}Tests {\n${body}\n}`,
   },
 };
 
@@ -75,7 +90,7 @@ export class TestGenerator {
     const content = this.renderFile(stubs, framework, featureDir);
     const featureName = featureDir.replace(/.*\d{3}-/, "").replace(/[^a-zA-Z0-9-]/g, "");
     const cfg = FRAMEWORK_CONFIG[framework];
-    const outputFile = `${outputDir}/${featureName}${cfg.ext}`;
+    const outputFile = `${outputDir}/${cfg.fileBase(featureName)}`;
 
     return {
       framework,
@@ -89,23 +104,71 @@ export class TestGenerator {
   extractAcceptanceCriteria(text: string): Array<{ id: string; criterion: string }> {
     const results: Array<{ id: string; criterion: string }> = [];
     const lines = text.split("\n");
-    let currentReq = "REQ-000";
+    let currentReq: string | null = null;
+    let inCriteriaBlock = false;
 
-    for (const line of lines) {
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+
+      // Structural markdown is never an acceptance criterion and closes any
+      // open criteria block: headings, table rows, horizontal rules. Headings
+      // still update the current requirement ("### REQ-XXX-NNN: ...").
+      if (line.startsWith("#") || line.startsWith("|") || /^-{3,}$/.test(line)) {
+        if (line.startsWith("#")) {
+          const headingReq = extractRequirementIds(line)[0];
+          if (headingReq) currentReq = headingReq;
+        }
+        inCriteriaBlock = false;
+        continue;
+      }
+
+      // An "**Acceptance Criteria:**" label opens a criteria block; the label
+      // itself is markdown noise, not a criterion.
+      if (/^[-*\s]*\**\s*acceptance criteria\s*:?\s*\**$/i.test(line)) {
+        inCriteriaBlock = true;
+        continue;
+      }
+
+      if (line === "") continue;
+
       const reqId = extractRequirementIds(line)[0];
       if (reqId) currentReq = reqId;
 
-      const acMatch = line.match(/[-*]\s*(?:AC[-_]?\d*[:.])?\s*(.+)/i);
-      if (acMatch && (line.toLowerCase().includes("accept") || line.match(/^\s*[-*]\s+(Given|When|Then|Verify|Check|Ensure|Confirm)/i))) {
-        results.push({ id: currentReq, criterion: acMatch[1].trim() });
+      const bulletMatch = line.match(/^[-*]\s+(?:AC[-_]?\d*[:.]\s*)?(.+)$/i);
+      if (!bulletMatch) {
+        // Plain prose (requirement sentences, "**Source:** ..." trailers)
+        // ends the criteria block.
+        inCriteriaBlock = false;
+        continue;
+      }
+
+      const criterion = bulletMatch[1].trim();
+      // Table-of-contents entries and other pure anchor links are noise.
+      if (/^\[[^\]]*\]\(#[^)]*\)$/.test(criterion)) continue;
+
+      const isBddStyle = /^(Given|When|Then|Verify|Check|Ensure|Confirm)\b/i.test(criterion);
+      // Only emit criteria that trace to a real requirement — never fabricate
+      // a nonexistent REQ-000.
+      if ((inCriteriaBlock || isBddStyle) && currentReq) {
+        results.push({ id: currentReq, criterion });
       }
     }
 
     // Fallback: if no ACs found, generate from requirements themselves
     if (results.length === 0) {
-      const reqLines = text.split("\n").filter(l => l.match(/(?:shall|must|should)\s/i));
+      const reqLines = lines.filter(
+        (l) =>
+          /(?:shall|must|should)\s/i.test(l) &&
+          !l.trim().startsWith("|") &&
+          !l.trim().startsWith("#") &&
+          !/\]\(#/.test(l),
+      );
       for (let i = 0; i < reqLines.length; i++) {
-        results.push({ id: `REQ-${String(i + 1).padStart(3, "0")}`, criterion: reqLines[i].trim().replace(/^[-*#\d.)\s]+/, "") });
+        const inlineId = extractRequirementIds(reqLines[i])[0];
+        results.push({
+          id: inlineId ?? `REQ-${String(i + 1).padStart(3, "0")}`,
+          criterion: reqLines[i].trim().replace(/^[-*#\d.)\s]+/, ""),
+        });
       }
     }
 
@@ -124,12 +187,13 @@ export class TestGenerator {
     _reqs: string[],
     framework: TestFramework,
   ): TestStub[] {
+    const usedNames = new Set<string>();
     return criteria.map((ac, i) => {
       const stubId = `TC-${String(i + 1).padStart(3, "0")}`;
       const desc = ac.criterion.length > 80
         ? ac.criterion.slice(0, 77) + "..."
         : ac.criterion;
-      const testCode = this.generateTestBody(desc, framework);
+      const testCode = this.generateTestBody(desc, ac.id, framework, usedNames);
       return {
         id: stubId,
         requirement_id: ac.id,
@@ -139,43 +203,94 @@ export class TestGenerator {
     });
   }
 
-  private generateTestBody(description: string, framework: TestFramework): string {
-    const safeDesc = description.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+  private generateTestBody(
+    description: string,
+    requirementId: string,
+    framework: TestFramework,
+    usedNames: Set<string>,
+  ): string {
+    // Test names carry the FULL requirement ID (e.g. "REQ-API-001") so that
+    // name-based traceability in sdd_verify_tests works on the stubs as-is.
+    const title = description.startsWith(requirementId)
+      ? description
+      : `${requirementId}: ${description}`;
+    const safeTitle = title.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
     switch (framework) {
       case "vitest":
       case "jest":
-        return `  it("${safeDesc}", () => {\n    // TODO: implement test\n    expect(true).toBe(true);\n  });`;
+        return `  // Traces to: ${requirementId}\n  it("${safeTitle}", () => {\n    // TODO: implement test\n    expect(true).toBe(true);\n  });`;
       case "playwright":
-        return `  test("${safeDesc}", async ({ page }) => {\n    // TODO: implement E2E test\n    await expect(page).toBeTruthy();\n  });`;
-      case "pytest":
-        return `    def test_${this.snakeCase(description)}(self):\n        # TODO: implement test\n        assert True`;
-      case "junit":
-        return `    @Test\n    void ${this.camelCase(description)}() {\n        // TODO: implement test\n        assertTrue(true);\n    }`;
-      case "xunit":
-        return `    [Fact]\n    public void ${this.pascalCase(description)}() {\n        // TODO: implement test\n        Assert.True(true);\n    }`;
+        return `  // Traces to: ${requirementId}\n  test("${safeTitle}", async ({ page }) => {\n    // TODO: implement E2E test\n    await expect(page).toBeTruthy();\n  });`;
+      case "pytest": {
+        const name = this.uniqueName(`test_${this.snakeCase(title)}`, usedNames, "_");
+        const docstring = title.replace(/\\/g, "/").replace(/"/g, "'");
+        return `    # Traces to: ${requirementId}\n    def ${name}(self):\n        """${docstring}"""\n        # TODO: implement test\n        assert True`;
+      }
+      case "junit": {
+        const name = this.uniqueName(this.camelCase(title) || "requirement", usedNames, "");
+        return `    // Traces to: ${requirementId}\n    @Test\n    void ${name}() {\n        // TODO: implement test\n        assertTrue(true);\n    }`;
+      }
+      case "xunit": {
+        const name = this.uniqueName(this.pascalCase(title) || "Requirement", usedNames, "");
+        return `    // Traces to: ${requirementId}\n    [Fact]\n    public void ${name}() {\n        // TODO: implement test\n        Assert.True(true);\n    }`;
+      }
     }
+  }
+
+  /** Deduplicate generated identifiers — javac/C# reject duplicate members. */
+  private uniqueName(base: string, used: Set<string>, separator: string): string {
+    let candidate = base;
+    let counter = 2;
+    while (used.has(candidate)) {
+      candidate = `${base}${separator}${counter}`;
+      counter++;
+    }
+    used.add(candidate);
+    return candidate;
   }
 
   private renderFile(stubs: TestStub[], framework: TestFramework, featureDir: string): string {
     const cfg = FRAMEWORK_CONFIG[framework];
     const featureName = featureDir.replace(/.*\d{3}-/, "").replace(/[^a-zA-Z0-9 -]/g, "") || "Feature";
     const body = stubs.map(s => s.test_code).join("\n\n");
-    const header = `/**\n * Auto-generated test stubs from Specky SDD\n * Feature: ${featureName}\n * Framework: ${framework}\n * Generated: ${currentDateString()}\n *\n * Each test traces to an acceptance criterion from SPECIFICATION.md.\n * Replace the TODO placeholders with real assertions.\n */\n`;
+    const date = currentDateString();
+
+    if (framework === "pytest") {
+      // Python: a JS-style block comment is a SyntaxError. Emit a module
+      // docstring instead, mirroring the hypothesis PBT generator.
+      const header = [
+        `"""`,
+        `Auto-generated test stubs from Specky SDD`,
+        `Feature: ${featureName}`,
+        `Framework: pytest`,
+        `Generated: ${date}`,
+        ``,
+        `Each test traces to an acceptance criterion from SPECIFICATION.md.`,
+        `Replace the TODO placeholders with real assertions.`,
+        `"""`,
+      ].join("\n");
+      return `${header}\n\n${cfg.imports}\n\n\n${cfg.wrapper(featureName, body)}\n`;
+    }
+
+    const header = `/**\n * Auto-generated test stubs from Specky SDD\n * Feature: ${featureName}\n * Framework: ${framework}\n * Generated: ${date}\n *\n * Each test traces to an acceptance criterion from SPECIFICATION.md.\n * Replace the TODO placeholders with real assertions.\n */\n`;
 
     return `${header}\n${cfg.imports}\n\n${cfg.wrapper(featureName, body)}\n`;
   }
 
   private snakeCase(s: string): string {
-    return s.replace(/[^a-zA-Z0-9]+/g, "_").toLowerCase().slice(0, 60);
+    return s.replace(/[^a-zA-Z0-9]+/g, "_").toLowerCase().slice(0, 60).replace(/^_+|_+$/g, "");
   }
 
   private camelCase(s: string): string {
-    const words = s.replace(/[^a-zA-Z0-9]+/g, " ").trim().split(/\s+/);
-    return words[0].toLowerCase() + words.slice(1).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("");
+    const words = s.replace(/[^a-zA-Z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return "";
+    const name = (words[0].toLowerCase() + words.slice(1).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("")).slice(0, 60);
+    return /^\d/.test(name) ? `test${name.charAt(0).toUpperCase()}${name.slice(1)}` : name;
   }
 
   private pascalCase(s: string): string {
-    return s.replace(/[^a-zA-Z0-9]+/g, " ").trim().split(/\s+/).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("").slice(0, 60);
+    const name = s.replace(/[^a-zA-Z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("").slice(0, 60);
+    return /^\d/.test(name) ? `Test${name}` : name;
   }
 
   private async safeRead(featureDir: string, file: string): Promise<string> {

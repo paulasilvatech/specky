@@ -316,42 +316,49 @@ export function registerTranscriptTools(
         await stateMachine.recordPhaseComplete(spec_dir, Phase.Tasks);
 
         // ── Step 7: Write ANALYSIS.md ──
+        // Real quality gate over the artifacts we just wrote — the SAME
+        // AnalysisEngine sdd_run_analysis and sdd_batch_transcripts use, with
+        // a requirement-level traceability matrix. No hard-coded APPROVE/100%:
+        // auto-generated packages report whatever the evidence supports.
         console.error(`[specky] Auto-pipeline: writing ANALYSIS.md...`);
-        const coveragePercent = 100; // All files exist
-        const gateDecision = "APPROVE";
-
-        const traceMatrix = [
-          `| CONSTITUTION.md | Present | — | — | ✅ |`,
-          `| SPECIFICATION.md | Present | — | — | ✅ |`,
-          `| DESIGN.md | Present | — | — | ✅ |`,
-          `| TASKS.md | Present | — | — | ✅ |`,
-        ].join("\n");
+        const gate = analysisEngine.analyze({
+          hasConstitution: true,
+          hasSpec: true,
+          hasDesign: true,
+          hasTasks: true,
+          specContent,
+          designContent,
+          tasksContent,
+        });
 
         const analysisContent = await templateEngine.renderWithFrontmatter("analysis", {
           title: `${project_name} — Analysis`,
           feature_id: `001-${project_name}`,
           project_name,
-          gate_decision: gateDecision,
-          coverage_percent: String(coveragePercent),
-          traceability_matrix: traceMatrix,
-          design_coverage: "100%",
-          task_coverage: "100%",
+          gate_decision: gate.decision,
+          coverage_percent: String(gate.coveragePercent),
+          traceability_matrix: gate.traceMatrix,
+          design_coverage: `${gate.designCoverage}%`,
+          task_coverage: `${gate.taskCoverage}%`,
           test_coverage: "Pending implementation",
-          gaps: analysis.open_questions.length > 0
-            ? analysis.open_questions.map((q) => `Open question from meeting: ${q}`)
-            : ["No gaps — all meeting topics covered"],
+          gaps: gate.gaps.length > 0
+            ? gate.gaps
+            : analysis.open_questions.length > 0
+              ? analysis.open_questions.map((q) => `Open question from meeting: ${q}`)
+              : ["No gaps — all requirements mapped through design and tasks"],
           recommendations: [
             "Review auto-generated EARS requirements for accuracy",
+            ...gate.gaps.map((g) => `Remediate: ${g}`),
             "Validate architecture decisions with team",
             "Add detailed API contracts to DESIGN.md",
             "Prioritize tasks based on team capacity",
             ...analysis.action_items.map((a) => `Action item: ${a}`),
           ],
-          ears_compliance: "Pass",
-          ears_status: "✅",
-          coverage_status: "✅",
-          orphan_count: "0",
-          orphan_status: "✅",
+          ears_compliance: `${gate.earsCoverage}%`,
+          ears_status: gate.earsCoverage === 100 ? "✅" : "❌",
+          coverage_status: gate.coveragePercent >= 90 ? "✅" : "❌",
+          orphan_count: String(gate.orphanCount),
+          orphan_status: gate.orphanCount === 0 ? "✅" : "❌",
         });
 
         await fileManager.writeSpecFile(featureDir, "ANALYSIS.md", analysisContent, force);
@@ -375,21 +382,23 @@ export function registerTranscriptTools(
         await stateMachine.advancePhase(spec_dir, "001");  // Tasks → Analyze
         await stateMachine.recordPhaseComplete(spec_dir, Phase.Analyze);
 
-        // Load final state and set gate decision
-        const finalState = await stateMachine.loadState(spec_dir);
-        finalState.gate_decision = {
-          decision: "APPROVE",
-          reasons: [
-            "All specification documents generated from transcript.",
-            `${earsRequirements.length} EARS requirements extracted.`,
-            `${analysis.decisions.length} decisions captured.`,
-            `${analysis.topics.length} topics covered.`,
-          ],
-          coverage_percent: coveragePercent,
-          gaps: analysis.open_questions.slice(0, 5),
-          decided_at: new Date().toISOString(),
-        };
-        await stateMachine.saveState(spec_dir, finalState);
+        // Persist the COMPUTED gate decision — the state must carry the same
+        // engine verdict written into ANALYSIS.md, not an asserted APPROVE.
+        const gateDecidedAt = new Date().toISOString();
+        await stateMachine.mutateState(spec_dir, (state) => {
+          state.gate_decision = {
+            decision: gate.decision,
+            reasons: [
+              ...gate.reasons,
+              `${earsRequirements.length} EARS requirements extracted from transcript.`,
+              `${analysis.decisions.length} decisions captured.`,
+              `${analysis.topics.length} topics covered.`,
+            ],
+            coverage_percent: gate.coveragePercent,
+            gaps: gate.gaps,
+            decided_at: gateDecidedAt,
+          };
+        });
 
         console.error(`[specky] Auto-pipeline: COMPLETE — ${filesCreated.length} files written.`);
 
@@ -408,8 +417,17 @@ export function registerTranscriptTools(
             requirements_generated: earsRequirements.length,
             open_questions: analysis.open_questions.length,
           },
-          gate_decision: gateDecision,
+          gate_decision: {
+            decision: gate.decision,
+            coverage_percent: gate.coveragePercent,
+            reasons: gate.reasons,
+            gaps: gate.gaps,
+            decided_at: gateDecidedAt,
+          },
           next_action: [
+            ...(gate.decision === "APPROVE"
+              ? []
+              : [`0. Gate is ${gate.decision} (${gate.coveragePercent}% coverage) — remediate the gaps in ANALYSIS.md, then re-run sdd_run_analysis`]),
             "1. Review SPECIFICATION.md — validate auto-generated EARS requirements",
             "2. Review DESIGN.md — add Mermaid diagrams and API contracts",
             "3. Review TASKS.md — adjust priorities and effort estimates",
@@ -675,11 +693,17 @@ export function registerTranscriptTools(
                 completed_at: new Date().toISOString(),
               };
             }
+            // Persist the computed gate — the per-feature state must agree
+            // with the ANALYSIS.md the engine just wrote (sdd_get_status
+            // reads this file).
             state.gate_decision = {
-              decision: "APPROVE",
-              reasons: [`${earsRequirements.length} requirements from ${fileName}`],
-              coverage_percent: 100,
-              gaps: analysis.open_questions.slice(0, 3),
+              decision: gate.decision,
+              reasons: [
+                ...gate.reasons,
+                `${earsRequirements.length} requirements from ${fileName}`,
+              ],
+              coverage_percent: gate.coveragePercent,
+              gaps: gate.gaps,
               decided_at: new Date().toISOString(),
             };
             // Save state per feature (use feature-specific state dir)

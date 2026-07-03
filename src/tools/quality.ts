@@ -17,6 +17,7 @@ import type { ChecklistDomain } from "../constants.js";
 import type { ChecklistItem, VerificationResult } from "../types.js";
 import { enrichResponse } from "./response-builder.js";
 import { normalizeTaskId, TASK_LINE_PATTERN } from "../utils/id-contracts.js";
+import { currentDateString } from "../utils/runtime-context.js";
 import {
   checklistInputSchema,
   verifyTasksInputSchema,
@@ -181,16 +182,29 @@ export function registerQualityTools(
           ? Math.round((mandatoryPassed / mandatoryItems.length) * 100)
           : 100;
 
-        // Render and write CHECKLIST.md
+        const mandatoryGap = mandatoryItems.length - mandatoryPassed;
+        const gateDecision = mandatoryGap === 0
+          ? "APPROVE — all mandatory checks pass."
+          : `CHANGES_NEEDED — ${mandatoryGap} of ${mandatoryItems.length} mandatory checks are not passing. Address them in SPECIFICATION.md or DESIGN.md, then re-run sdd_checklist.`;
+
+        // Render and write CHECKLIST.md — the per-item table, totals, date, and
+        // gate decision are all passed to the template so the persisted file
+        // carries the real data instead of unrendered [TODO: …] placeholders.
+        const itemRows = items.map((item) =>
+          `| ${item.id} | ${item.check.replace(/\|/g, "\\|")} | ${item.mandatory ? "Yes" : "No"} | ${item.status} | ${(item.evidence ?? "—").replace(/\|/g, "\\|")} |`
+        );
         const content = await templateEngine.renderWithFrontmatter("checklist", {
           title: `${domain.charAt(0).toUpperCase() + domain.slice(1)} Quality Checklist`,
           feature_id: feature_number,
           domain,
-          items: JSON.stringify(items, null, 2),
+          date: currentDateString(),
+          items: itemRows,
+          total_items: String(items.length),
           pass_count: String(passCount),
           fail_count: String(failCount),
           pending_count: String(pendingCount),
           mandatory_pass_rate: String(mandatoryPassRate),
+          gate_decision: gateDecision,
         });
 
         const filePath = await fileManager.writeSpecFile(featureDir, "CHECKLIST.md", content, force);
@@ -202,6 +216,7 @@ export function registerQualityTools(
           fail_count: failCount,
           pending_count: pendingCount,
           mandatory_pass_rate: mandatoryPassRate,
+          gate_decision: gateDecision,
           file_written: filePath,
           explanation: `Generated ${domain} quality checklist with ${items.length} items. ${passCount} passed, ${failCount} failed, ${pendingCount} pending review. Mandatory pass rate: ${mandatoryPassRate}%.`,
           next_steps: failCount > 0
@@ -468,17 +483,29 @@ export function registerQualityTools(
         // Run cross-analysis
         const analysisResult = await crossAnalyzer.analyze(featureDir);
 
-        // Write CROSS_ANALYSIS.md
+        const recommendation = analysisResult.consistency_score < 100
+          ? `Consistency score is ${analysisResult.consistency_score}%. Review orphaned requirements (${analysisResult.orphaned_requirements.length}) and orphaned tasks (${analysisResult.orphaned_tasks.length}). Update DESIGN.md and TASKS.md to reference all requirements.`
+          : "Perfect consistency score. All requirements are traced through design and tasks.";
+
+        // Write CROSS_ANALYSIS.md — alignment tables and the recommendation are
+        // rendered into the persisted file so it carries the real analysis data
+        // instead of unrendered [TODO: …] placeholders.
+        const alignmentRow = (check: { source_id: string; status: string; detail: string }): string =>
+          `| ${check.source_id} | ${check.status === "aligned" ? "Yes" : "No"} | ${check.detail.replace(/\|/g, "\\|")} |`;
+        const specDesignRows = analysisResult.spec_design_alignment.map(alignmentRow);
+        const designTasksRows = analysisResult.design_tasks_alignment.map(alignmentRow);
+        const emptyRow = "| — | — | No requirements found |";
         const content = await templateEngine.renderWithFrontmatter("cross_analysis", {
           title: "Cross-Artifact Consistency Analysis",
           feature_id: feature_number,
-          spec_design_alignment: JSON.stringify(analysisResult.spec_design_alignment, null, 2),
-          design_tasks_alignment: JSON.stringify(analysisResult.design_tasks_alignment, null, 2),
+          date: currentDateString(),
+          spec_design_alignment: specDesignRows.length > 0 ? specDesignRows : [emptyRow],
+          design_tasks_alignment: designTasksRows.length > 0 ? designTasksRows : [emptyRow],
           orphaned_requirements: analysisResult.orphaned_requirements,
           orphaned_tasks: analysisResult.orphaned_tasks,
-          missing_designs: analysisResult.missing_designs,
           consistency_score: String(analysisResult.consistency_score),
           diagram: analysisResult.diagram,
+          recommendation,
         });
 
         await fileManager.writeSpecFile(featureDir, "CROSS_ANALYSIS.md", content, true);
@@ -486,9 +513,7 @@ export function registerQualityTools(
         const result = {
           ...analysisResult,
           file_written: join(featureDir, "CROSS_ANALYSIS.md"),
-          next_steps: analysisResult.consistency_score < 100
-            ? `Consistency score is ${analysisResult.consistency_score}%. Review orphaned requirements (${analysisResult.orphaned_requirements.length}) and orphaned tasks (${analysisResult.orphaned_tasks.length}). Update DESIGN.md and TASKS.md to reference all requirements.`
-            : "Perfect consistency score. All requirements are traced through design and tasks.",
+          next_steps: recommendation,
           learning_note: "Cross-analysis ensures every requirement flows from SPECIFICATION.md → DESIGN.md → TASKS.md. Orphaned items indicate gaps in traceability that can lead to missing features or wasted effort.",
         };
 

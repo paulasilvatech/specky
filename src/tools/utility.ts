@@ -11,7 +11,7 @@ import { tieringEngine } from "../utils/context-helper.js";
 import { CognitiveDebtEngine } from "../services/cognitive-debt-engine.js";
 
 const cognitiveDebtEngine = new CognitiveDebtEngine();
-import { PHASE_ORDER, DEFAULT_EXCLUDE_PATTERNS, VERSION, MCP_ECOSYSTEM, TOTAL_TOOLS } from "../constants.js";
+import { PHASE_ORDER, DEFAULT_EXCLUDE_PATTERNS, STATE_FILE, VERSION, MCP_ECOSYSTEM, TOTAL_TOOLS } from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
@@ -54,14 +54,23 @@ export function registerUtilityTools(
     async ({ spec_dir, feature_number }) => {
       try {
         // Scan .specs/ for feature directories — source of truth for what
-        // features exist on disk. Per-feature state lives at
-        // <spec_dir>/<NNN-name>/.sdd-state.json.
+        // features exist on disk.
         const featuresOnDisk = await fileManager.listFeatures(spec_dir);
 
-        // Load per-feature state for each discovered directory.
+        // Root pipeline state at <spec_dir>/.sdd-state.json — this is the
+        // state the pipeline tools (sdd_init, sdd_advance_phase,
+        // sdd_run_analysis, sdd_auto_pipeline) actually persist.
+        const rootState = await stateMachine.loadState(spec_dir);
+
+        // A per-feature state file (<feature-dir>/.sdd-state.json) is only
+        // written by batch flows (sdd_batch_transcripts). Use it when it
+        // exists; otherwise fall back to the ROOT state — never to a silently
+        // fresh default that freezes the headline fields at init/0% while the
+        // real pipeline has long moved on.
         const featuresWithState = await Promise.all(
           featuresOnDisk.map(async (f) => {
-            const fstate = await stateMachine.loadState(f.directory);
+            const hasOwnState = await fileManager.fileExists(join(f.directory, STATE_FILE));
+            const fstate = hasOwnState ? await stateMachine.loadState(f.directory) : rootState;
             return {
               number: f.number,
               name: f.name,
@@ -72,6 +81,7 @@ export function registerUtilityTools(
                 PHASE_ORDER.filter((p) => fstate.phases[p]?.status === "completed").length
               }/${PHASE_ORDER.length}`,
               gate_decision: fstate.gate_decision,
+              state: fstate,
             };
           }),
         );
@@ -82,11 +92,10 @@ export function registerUtilityTools(
           ? featuresWithState.find((f) => f.number === feature_number)
           : featuresWithState.at(-1);
 
-        // Aggregate state: use the target feature's state when present,
-        // fall back to the root state file for pre-feature workflows.
-        const state = targetFeature
-          ? await stateMachine.loadState(targetFeature.directory)
-          : await stateMachine.loadState(spec_dir);
+        // Aggregate state: the target feature's resolved state (its own file
+        // when present, root state otherwise); root state for pre-feature
+        // workflows.
+        const state = targetFeature ? targetFeature.state : rootState;
 
         const filesFound = targetFeature ? targetFeature.files : [];
         const completedPhases = PHASE_ORDER.filter(
@@ -118,14 +127,19 @@ export function registerUtilityTools(
         const executionPlan = DependencyGraph.getExecutionPlan(state.current_phase);
         const parallelGroups = DependencyGraph.getParallelGroups(state.current_phase);
 
+        const featureSummaries = featuresWithState.map(
+          ({ state: _state, ...summary }) => summary,
+        );
+
         const result = {
           current_phase: state.current_phase,
           phase_progress: progress.progress_bar,
           phases: state.phases,
-          // Features discovered on disk with their per-feature phase state.
+          // Features discovered on disk with their resolved phase state
+          // (per-feature file when present, root pipeline state otherwise).
           // Takes precedence over root state.features which only lists
           // features initialized via sdd_init in the current session.
-          features: featuresWithState.length > 0 ? featuresWithState : state.features,
+          features: featureSummaries.length > 0 ? featureSummaries : state.features,
           active_feature: targetFeature
             ? {
                 number: targetFeature.number,
