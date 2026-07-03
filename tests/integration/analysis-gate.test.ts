@@ -99,7 +99,7 @@ describe("sdd_run_analysis semantic gate", () => {
   });
 
   afterEach(() => {
-    rmSync(ws, { recursive: true, force: true });
+    rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it("approves when requirements have EARS, design mapping, and task mapping", () => {

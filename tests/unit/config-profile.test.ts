@@ -21,7 +21,7 @@ describe("profile resolution and enterprise defaults", () => {
   });
 
   afterEach(() => {
-    rmSync(workspace, { recursive: true, force: true });
+    rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   function writeConfig(yaml: string): void {

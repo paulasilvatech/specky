@@ -113,7 +113,7 @@ describe("IaC / environment promise-delivery regressions", () => {
 
   afterEach(async () => {
     for (const close of cleanups.splice(0)) await close();
-    for (const ws of workspaces.splice(0)) rmSync(ws, { recursive: true, force: true });
+    for (const ws of workspaces.splice(0)) rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   // ── Fix 1: sdd_generate_iac emits real resources for what DESIGN.md names ──
@@ -375,7 +375,7 @@ describe("ears-validator.sh hook", () => {
   }
 
   afterEach(() => {
-    for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
+    for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   function runHook(cwd: string, shell: string): { status: number | null; stdout: string; stderr: string } {

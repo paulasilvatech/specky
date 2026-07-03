@@ -42,7 +42,7 @@ describe("AuditLogger HMAC signing", () => {
   });
 
   afterEach(() => {
-    rmSync(workspace, { recursive: true, force: true });
+    rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it("signs each entry and verifyChain validates chain + signatures", async () => {
@@ -142,7 +142,7 @@ describe("AuditLogger fail-closed mode", () => {
       const failOpen = new AuditLogger(workspace, true);
       await expect(logOnce(failOpen, "swallowed")).resolves.toBeUndefined();
     } finally {
-      rmSync(workspace, { recursive: true, force: true });
+      rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 });
@@ -164,7 +164,7 @@ describe("resolveAuditHmacKey", () => {
         resolveAuditHmacKey({ SDD_AUDIT_HMAC_KEY_FILE: join(workspace, "missing.key") }),
       ).toBe("");
     } finally {
-      rmSync(workspace, { recursive: true, force: true });
+      rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 });

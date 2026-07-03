@@ -18,7 +18,7 @@ describe("specky doctor IDE scope", () => {
 
   afterEach(() => {
     for (const workspace of workspaces) {
-      rmSync(workspace, { recursive: true, force: true });
+      rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 

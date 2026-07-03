@@ -89,7 +89,7 @@ describe("spec package generation through MCP", () => {
   });
 
   afterEach(() => {
-    rmSync(ws, { recursive: true, force: true });
+    rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it("creates companion docs, diagrams, TDD status, evidence, and manifest when writing a spec", () => {

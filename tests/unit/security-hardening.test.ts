@@ -60,7 +60,7 @@ describe("loadConfig (.specky/config.yml)", () => {
     ws = mkdtempSync(resolve(tmpdir(), "specky-config-"));
     mkdirSync(resolve(ws, ".specky"), { recursive: true });
   });
-  afterEach(() => rmSync(ws, { recursive: true, force: true }));
+  afterEach(() => rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
 
   const write = (yaml: string): void =>
     writeFileSync(resolve(ws, ".specky", "config.yml"), yaml, "utf8");

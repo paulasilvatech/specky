@@ -160,7 +160,7 @@ describe("export & quality-report regressions", () => {
 
   afterEach(async () => {
     for (const close of cleanups.splice(0)) await close();
-    for (const ws of workspaces.splice(0)) rmSync(ws, { recursive: true, force: true });
+    for (const ws of workspaces.splice(0)) rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   // ── Fix: sdd_export_work_items produces target-specific payload shapes ──

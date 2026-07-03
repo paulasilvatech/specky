@@ -27,7 +27,7 @@ describe("deterministic runtime context", () => {
     } else {
       process.env["SDD_FIXED_NOW"] = previousFixedNow;
     }
-    rmSync(workspace, { recursive: true, force: true });
+    rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it("uses the fixed timestamp for runtime date helpers", () => {

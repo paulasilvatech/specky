@@ -73,7 +73,7 @@ describe("checkForUpdate", () => {
   });
 
   afterEach(() => {
-    rmSync(home, { recursive: true, force: true });
+    rmSync(home, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   /** Counting fake registry fetch. */

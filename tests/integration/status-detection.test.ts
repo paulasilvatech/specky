@@ -80,7 +80,7 @@ describe("sdd_get_status — feature detection regression (rc.8 fix)", () => {
     spawnSync("git", ["init", "-q"], { cwd: ws });
   });
   afterEach(() => {
-    rmSync(ws, { recursive: true, force: true });
+    rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it("returns features:[] when no .specs/ exists (greenfield)", () => {
