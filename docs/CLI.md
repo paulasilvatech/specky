@@ -1,6 +1,6 @@
 # Specky CLI Reference
 
-> Version: v3.6.0+
+> Version: v3.7.0+
 
 The `specky` CLI is the single write-path for installing, validating, and upgrading Specky in a workspace. It replaces the previous ad-hoc copying done by APM and manual `.github/` / `.claude/` setup.
 
@@ -102,7 +102,7 @@ Refresh installed assets to the current package version while preserving `.specs
 specky upgrade
 ```
 
-Internally runs `init --force` with the IDE target read from `.specky/install.json`.
+Internally runs `init --force` with the IDE target read from `.specky/install.json`. This also re-pins `.mcp.json` / `.vscode/mcp.json` to the new version — updating the npm package alone leaves the MCP registration pointing at the old pinned server.
 
 ---
 
@@ -175,12 +175,31 @@ Existing MCP configs using `npx -y specky-sdd` (no subcommand) still work — th
 
 ---
 
+## Update notifications
+
+The CLI surfaces new versions in two layers:
+
+1. **Version drift warning (always on, zero network).** `specky doctor` and `specky status` warn when the assets installed in the workspace differ from the version of the CLI running them, and suggest `specky upgrade`. The MCP server prints the same warning at startup. This is a local version comparison — no network involved.
+2. **Update banner (once daily).** After `install`/`init`, `doctor`, `status`, `upgrade`, and `--version`, the CLI checks `https://registry.npmjs.org/specky-sdd/latest` at most once per day and prints `Update available: vX → vY` when a newer release exists.
+
+The registry check:
+
+- **never runs in `specky serve`** — the MCP server makes zero outbound network calls
+- fails silently when offline (no error, no delay)
+- is disabled automatically in CI (`CI=true`)
+- sends nothing beyond the HTTP GET itself — no telemetry, no identifiers
+
+Opt out with `SPECKY_NO_UPDATE_CHECK=1` in the environment or `update_check: false` in `.specky/config.yml`.
+
+---
+
 ## Environment variables
 
 | Var | Effect |
 |---|---|
 | `SDD_WORKSPACE` | Override the workspace root (default: `process.cwd()`) |
 | `SPECKY_DEBUG=1` | Print full error stacks |
+| `SPECKY_NO_UPDATE_CHECK=1` | Disable the once-daily [update check](#update-notifications) (same as `update_check: false` in `.specky/config.yml`; the check never runs in `specky serve` regardless) |
 | `PORT` | HTTP port for `specky serve --http` (default: 3200) |
 | `SDD_HTTP_TOKEN` | Require `Authorization: Bearer <token>` on `/mcp` (HTTP mode, shared token) |
 | `SDD_HTTP_TOKENS_FILE` | Token table (YAML) mapping bearer tokens to principal + RBAC role |

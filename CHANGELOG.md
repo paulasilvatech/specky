@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.0] - 2026-07-03
+
+Update awareness: users of old versions now find out — without the server ever
+phoning home.
+
+### Added
+
+- **Version-drift advisory (always on, zero network).** `specky doctor`, `specky status`, and the MCP server at startup compare the workspace's installed assets version (`.specky/install.json`) against the running CLI/server version and suggest `specky upgrade` when they differ — the common "updated the global CLI but the project still runs the old pinned server" case. Local file comparison only; stderr only; never blocks startup.
+- **Once-daily update banner (CLI only, opt-out).** After `install`/`init`, `doctor`, `status`, `upgrade`, and `--version`, the CLI checks `https://registry.npmjs.org/specky-sdd/latest` (24h cache in `~/.specky/update-check.json`, 2s timeout, fail-silent offline) and prints `Update available: specky-sdd vX → vY → npm install -g specky-sdd@latest && specky upgrade`. **Never runs in `specky serve`** — the MCP server keeps making zero outbound calls. Disabled automatically in CI (`CI=true`); opt out with `SPECKY_NO_UPDATE_CHECK=1` or `update_check: false` in `.specky/config.yml` (not flipped by the enterprise profile). No telemetry — nothing is sent beyond the GET itself.
+- `compareSemver`/`checkForUpdate` utilities with 37 dependency-injected tests (semver matrix incl. prereleases, cache TTL, opt-outs, offline/timeout, unwritable cache).
+- Docs: README "Staying up to date" (banner, one-command upgrade, Renovate/Dependabot for per-project pins, GitHub Watch → Releases), CLI.md update-notifications section + `SPECKY_NO_UPDATE_CHECK`, INSTALL.md upgrading guidance, SECURITY.md precise network disclosure (server: zero outbound; CLI: the single optional registry GET).
+
+### Changed
+
+- `specky status` no longer crashes on a corrupt `.specky/install.json` (reports "metadata unreadable" instead).
+
 ## [3.6.0] - 2026-07-03
 
 Delivery-honesty release. A black-box audit executed all 65 public product

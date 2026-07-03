@@ -233,12 +233,23 @@ Repairs missing/corrupted files by re-running `init --force`.
 
 ## Upgrading
 
+**How you learn about updates:**
+
+- `specky doctor` and `specky status` warn (locally, no network) when your project's installed assets differ from the CLI version — run `specky upgrade` to resync.
+- The CLI checks the npm registry at most once per day (after `install`, `doctor`, `status`, `upgrade`, or `--version`) and prints `Update available: vX → vY`. It fails silently offline, is disabled in CI (`CI=true`), never runs in `specky serve`, and can be turned off with `SPECKY_NO_UPDATE_CHECK=1` or `update_check: false` in `.specky/config.yml`.
+- For release emails, use **Watch → Custom → Releases** on [GitHub](https://github.com/paulasilvatech/specky). Teams pinning per-project should let Renovate or Dependabot propose the `package.json` bump.
+
+**How to upgrade:**
+
 ```bash
-npm install --save-dev specky-sdd@latest
-npx specky upgrade
+# Global install
+npm install -g specky-sdd@latest && specky upgrade
+
+# Project-local install
+npm install --save-dev specky-sdd@latest && npx specky upgrade
 ```
 
-Preserves `.specs/` (your active pipeline artifacts) and `.specky/profile.json` (onboarding answers). Assets, hooks, and configs are refreshed.
+`specky upgrade` refreshes the installed assets (agents, prompts, skills, hooks, configs) **and re-pins `.mcp.json` / `.vscode/mcp.json` to the new version** — updating the npm package alone leaves the MCP registration pointing at the old version. It preserves `.specs/` (your active pipeline artifacts) and `.specky/profile.json` (onboarding answers).
 
 ---
 
@@ -308,7 +319,7 @@ If you vendor Specky into a monorepo, point `files` at the published tarball —
 
 ## Security considerations
 
-- **No network access at install time** beyond npm itself.
+- **No network access at install time** beyond npm itself and the CLI's once-daily update check against the npm registry (a single GET, no telemetry; disable with `SPECKY_NO_UPDATE_CHECK=1` or `update_check: false` in `.specky/config.yml`). The MCP server (`specky serve`) makes zero outbound calls.
 - Hook scripts are shell scripts — review `.apm/hooks/scripts/` before enabling hooks in security-sensitive environments.
 - `specky doctor` verifies SHA256 of every installed file against the package manifest.
 - For enterprise deployments, enable the opt-in enterprise profile (v3.5.0+): `profile: enterprise` in `.specky/config.yml`, or `SPECKY_PROFILE=enterprise` / `SPECKY_ENTERPRISE=1` in the environment. It defaults `audit_enabled`, `rbac`, `rate_limit`, and `audit.fail_closed` to ON (explicit config values still win). Identity-based HTTP tokens and the tamper-evident audit trail are covered in [ENTERPRISE-DEPLOYMENT.md](ENTERPRISE-DEPLOYMENT.md).
