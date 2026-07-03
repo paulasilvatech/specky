@@ -28,7 +28,7 @@ export function registerInputTools(
     {
       title: "Import Document",
       description:
-        "Imports a document (PDF, DOCX, PPTX, TXT, MD, VTT, SRT) or raw text and converts it to Markdown for SDD processing. Returns the converted content, metadata, and word count.",
+        "Imports a document (PDF, DOCX, PPTX, TXT, MD, VTT, SRT) or raw text and converts it to Markdown for SDD processing. Returns the converted content, metadata, and word count. Native support: MD, TXT, VTT, SRT, and raw text are fully supported; PDF/DOCX/PPTX are natively readable only when UNCOMPRESSED — typical real-world (compressed) Office/PDF files fail with an actionable error. For those, install the MarkItDown MCP integration (uvx markitdown-mcp) or convert to md/txt first.",
       inputSchema: importDocumentInputSchema,
       annotations: {
         readOnlyHint: true,
@@ -57,7 +57,7 @@ export function registerInputTools(
           word_count: result.word_count,
           ...(result.page_count !== undefined && { page_count: result.page_count }),
           explanation:
-            "The document has been converted to Markdown format. You can now use this content as input for the SDD specification pipeline (sdd_discover or sdd_gen_spec).",
+            "The document has been converted to Markdown format. You can now use this content as input for the SDD specification pipeline (sdd_discover or sdd_write_spec).",
           next_steps: [
             "Review the converted Markdown for accuracy and completeness.",
             "Use sdd_discover to analyze the content and identify features.",
@@ -122,7 +122,7 @@ export function registerInputTools(
             step_3:
               `Use sdd_discover with the extracted design context to generate a specification in '${featureDir}'.`,
             step_4:
-              "Proceed through the SDD pipeline: sdd_gen_spec, sdd_gen_design, sdd_gen_tasks.",
+              "Proceed through the SDD pipeline: sdd_write_spec, sdd_write_design, sdd_write_tasks.",
           },
           explanation:
             "This tool generates a routing payload for Figma-to-spec conversion. The AI client orchestrates the multi-step process: first fetching design context from Figma MCP, then feeding it into the SDD pipeline.",
@@ -152,7 +152,7 @@ export function registerInputTools(
     {
       title: "Batch Import Documents",
       description:
-        "Scans a directory for supported documents (PDF, DOCX, PPTX, TXT, MD) and converts each to Markdown. Returns an array of conversion results with total count and per-file metadata.",
+        "Scans a directory for supported documents (PDF, DOCX, PPTX, TXT, MD, VTT, SRT) and converts each to Markdown. Returns an array of conversion results with total count and per-file metadata. Compressed PDF/DOCX/PPTX files (what Office/PDF exporters typically produce) are counted as failed with the reason — only uncompressed ones convert natively; use the MarkItDown MCP integration (uvx markitdown-mcp) for full Office/PDF support.",
       inputSchema: batchImportInputSchema,
       annotations: {
         readOnlyHint: true,

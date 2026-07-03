@@ -62,6 +62,12 @@ export function registerTestingTools(
           true,
         );
 
+        // Record where the tests landed so sdd_verify_tests can scan the
+        // same directory for its coverage mapping (best-effort).
+        try {
+          await recordGeneratedTest(fileManager, feature.directory, framework, genResult.output_file);
+        } catch { /* generation already succeeded — manifest is advisory */ }
+
         const traceability = genResult.stubs.map((s) => ({
           test_id: s.id,
           requirement: s.requirement_id,
@@ -160,15 +166,10 @@ export function registerTestingTools(
             try { specContent = await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md"); } catch { /* ok */ }
             const reqIds = [...specContent.matchAll(/### (REQ-[A-Z]+-\d{3})/g)].map((r) => r[1]);
 
-            const testFileContents: Record<string, string> = {};
-            try {
-              const testFiles = await fileManager.listSpecFiles(feature.directory);
-              for (const tf of testFiles) {
-                if (/\.(test|spec)\.(ts|js|py)$|_test\.py$/.test(tf)) {
-                  try { testFileContents[tf] = await fileManager.readSpecFile(feature.directory, tf); } catch { /* skip */ }
-                }
-              }
-            } catch { /* no test files yet */ }
+            // Scan the feature dir PLUS the directories sdd_generate_tests
+            // actually wrote to — otherwise coverage reports 0% for tests
+            // that were just generated outside .specs.
+            const testFileContents = await collectTestFileContents(fileManager, feature.directory);
 
             const report = testTraceabilityMapper.buildCoverageReport(testFileContents, parsedResults, reqIds);
             failureDetails = testTraceabilityMapper.buildFailureDetails(parsedResults, testFileContents);
@@ -215,4 +216,87 @@ export function registerTestingTools(
       }
     },
   );
+}
+
+// ─── Generated-test bookkeeping (shared by generate/verify) ───
+
+/** Manifest (inside the feature directory) recording where sdd_generate_tests wrote files. */
+export const GENERATED_TESTS_MANIFEST = ".specky-generated-tests.json";
+
+/** Default output directory of sdd_generate_tests — always scanned as a fallback. */
+const DEFAULT_TEST_OUTPUT_DIR = "tests";
+
+const TEST_FILE_PATTERN = /\.(test|spec)\.(ts|tsx|js|jsx)$|_test\.py$|Test\.java$|Tests\.cs$/;
+
+interface GeneratedTestEntry {
+  framework: string;
+  file: string;
+}
+
+function parseManifest(raw: string): GeneratedTestEntry[] {
+  const parsed: unknown = JSON.parse(raw);
+  if (!Array.isArray(parsed)) return [];
+  return parsed.filter(
+    (entry): entry is GeneratedTestEntry =>
+      typeof entry === "object" &&
+      entry !== null &&
+      typeof (entry as GeneratedTestEntry).framework === "string" &&
+      typeof (entry as GeneratedTestEntry).file === "string",
+  );
+}
+
+/** Record a generated test file in the feature's manifest (idempotent per path). */
+export async function recordGeneratedTest(
+  fileManager: FileManager,
+  featureDir: string,
+  framework: string,
+  outputFile: string,
+): Promise<void> {
+  let entries: GeneratedTestEntry[] = [];
+  try {
+    entries = parseManifest(await fileManager.readSpecFile(featureDir, GENERATED_TESTS_MANIFEST));
+  } catch { /* first generation for this feature */ }
+
+  const next = entries.filter((entry) => entry.file !== outputFile);
+  next.push({ framework, file: outputFile });
+  await fileManager.writeSpecFile(
+    featureDir,
+    GENERATED_TESTS_MANIFEST,
+    `${JSON.stringify(next, null, 2)}\n`,
+    true,
+  );
+}
+
+/**
+ * Collect test-file contents for coverage mapping: the feature directory,
+ * every directory recorded in the generated-tests manifest, and the default
+ * "tests" output directory.
+ */
+export async function collectTestFileContents(
+  fileManager: FileManager,
+  featureDir: string,
+): Promise<Record<string, string>> {
+  const contents: Record<string, string> = {};
+
+  const scanDirs = new Set<string>([featureDir, DEFAULT_TEST_OUTPUT_DIR]);
+  try {
+    const entries = parseManifest(await fileManager.readSpecFile(featureDir, GENERATED_TESTS_MANIFEST));
+    for (const entry of entries) {
+      if (entry.file.includes("/")) {
+        scanDirs.add(entry.file.slice(0, entry.file.lastIndexOf("/")));
+      }
+    }
+  } catch { /* no manifest yet — scan the defaults */ }
+
+  for (const dir of scanDirs) {
+    const files = await fileManager.listSpecFiles(dir);
+    for (const name of files) {
+      if (!TEST_FILE_PATTERN.test(name)) continue;
+      try {
+        contents[`${dir}/${name}`] = await fileManager.readSpecFile(dir, name);
+      } catch { /* unreadable — skip */ }
+    }
+  }
+
+  return contents;
 }

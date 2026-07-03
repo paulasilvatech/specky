@@ -352,7 +352,7 @@ The AI calls `sdd_import_document` → converts to Markdown, extracts sections, 
 
 The AI calls `sdd_batch_import` → processes every supported file in the directory.
 
-> **Tip:** For best results with PDF/DOCX, install the optional `mammoth` and `pdfjs-dist` packages for enhanced formatting, table extraction, and image handling.
+> **Honest note on binary formats:** the built-in extractor fully handles `md`/`txt` and simple uncompressed files. Real-world (compressed) PDF/DOCX/PPTX need one of: the optional `mammoth`/`pdfjs-dist` packages, or the recommended **MarkItDown MCP** integration. Since 3.6, unsupported binaries **fail with clear guidance** instead of silently importing garbage.
 
 ### 4. Figma Design (design-to-spec)
 
@@ -897,9 +897,12 @@ rbac:
   default_role: contributor
 rate_limit:
   enabled: false                     # HTTP token bucket (60 rpm, burst 10)
+pipeline:
+  require_lgtm: false                # Server-side LGTM: sdd_advance_phase refuses to pass
+                                     # the Specify/Design/Tasks gates unless lgtm: true
 ```
 
-When `templates_path` is set, Specky uses your custom templates instead of the built-in ones. When `audit_enabled` is true, tool invocations are logged locally. `profile: enterprise` turns audit, RBAC, rate limiting, and fail-closed auditing on by default (explicit values win) — see [docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md).
+When `templates_path` is set, Specky uses your custom templates instead of the built-in ones. When `audit_enabled` is true, tool invocations are logged locally. `profile: enterprise` turns audit, RBAC, rate limiting, and fail-closed auditing on by default (explicit values win) — see [docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md). With `pipeline.require_lgtm: true`, the LGTM quality gates become server-enforced instead of an agent convention: advancing past Specify/Design/Tasks requires the explicit `lgtm: true` input on `sdd_advance_phase`.
 
 
 ## MCP Integration Architecture

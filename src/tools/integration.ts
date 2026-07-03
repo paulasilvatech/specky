@@ -83,7 +83,7 @@ export function registerIntegrationTools(
     {
       title: "Export Work Items",
       description:
-        "Transforms TASKS.md into platform-specific work item payloads (GitHub Issues, Azure Boards, or Jira). Returns routing_instructions for the AI client to create items via the appropriate MCP server.",
+        "Transforms TASKS.md into platform-specific work item payloads: GitHub Issues {title, body, labels}, Jira {fields: {project.key, summary, description, issuetype}} (project_key required), or Azure Boards {work_item_type, fields: System.Title/System.Description/System.AreaPath/System.IterationPath}. Honors include_subtasks and preserves REQ/task traceability in every shape. Returns routing_instructions for the AI client to create items via the appropriate MCP server.",
       inputSchema: exportWorkItemsInputSchema,
       annotations: {
         readOnlyHint: true,
@@ -139,9 +139,9 @@ export function registerIntegrationTools(
           metadata: exportResult.metadata,
           routing_instructions: exportResult.routing_instructions,
           recommended_servers: [serverRecommendations[platform]].filter(Boolean),
-          explanation: `Exported ${exportResult.items.length} work items for ${platform}. Route to ${exportResult.routing_instructions.mcp_server} MCP to create them.`,
-          next_steps: `The AI client should call ${exportResult.routing_instructions.mcp_server} MCP's ${exportResult.routing_instructions.tool_name} for each item in the items array.`,
-          learning_note: "Work items maintain traceability from TASKS.md through to your project management platform via the traces_to field.",
+          explanation: `Exported ${exportResult.items.length} work items in the ${platform}-native payload shape. Route to ${exportResult.routing_instructions.mcp_server} MCP to create them.`,
+          next_steps: `The AI client should call ${exportResult.routing_instructions.mcp_server} MCP's ${exportResult.routing_instructions.tool_name} for each item in the items array. ${exportResult.routing_instructions.note}`,
+          learning_note: "Work items maintain traceability from TASKS.md through to your project management platform: every item carries task_id and traces_to, and the rendered body/description repeats the REQ references.",
         };
 
         const enriched = await enrichResponse("sdd_export_work_items", result, stateMachine, spec_dir);

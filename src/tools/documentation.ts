@@ -223,13 +223,19 @@ export function registerDocumentationTools(
 
         const writtenFiles = await Promise.all(writePromises);
 
+        const failureSummary = allDocs.failures.length > 0
+          ? ` ${allDocs.failures.length} document type(s) failed to generate: ${allDocs.failures.map((f) => f.type).join(", ")}.`
+          : "";
         const result = {
-          status: "all_docs_generated",
+          status: allDocs.failures.length > 0 ? "all_docs_generated_with_errors" : "all_docs_generated",
           total_generated: allDocs.total_generated,
           total_sections: allDocs.total_sections,
           files: writtenFiles,
-          explanation: `Generated ${allDocs.total_generated} documentation files with ${allDocs.total_sections} total sections in parallel.`,
-          next_steps: "Review all generated documentation. The SDD Journey document provides a complete audit trail of the specification process.",
+          generation_failures: allDocs.failures,
+          explanation: `Generated ${allDocs.total_generated} documentation files with ${allDocs.total_sections} total sections in parallel.${failureSummary}`,
+          next_steps: allDocs.failures.length > 0
+            ? "Review the generation_failures list, fix the underlying artifacts, and re-run sdd_generate_all_docs."
+            : "Review all generated documentation. The SDD Journey document provides a complete audit trail of the specification process.",
           learning_note: "Generating all documentation in parallel is faster than sequential generation and ensures consistency across all document types.",
         };
 

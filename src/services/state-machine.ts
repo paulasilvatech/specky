@@ -13,6 +13,22 @@ import { SPECKY_SCAFFOLD_MARKER } from "./feature-package-generator.js";
 
 const SIG_FILE = ".sdd-state.json.sig";
 
+/**
+ * GateHistoryEntry extended with the server-side LGTM approval flag.
+ * `lgtm` records whether the caller passed lgtm:true on sdd_advance_phase —
+ * recorded on every advance so gate history shows review presence, not just
+ * artifact modification.
+ */
+export interface LgtmGateHistoryEntry extends GateHistoryEntry {
+  lgtm?: boolean;
+}
+
+/** Optional instrumentation attached to a gate event. */
+export interface GateEventOptions {
+  reqCount?: number;
+  lgtm?: boolean;
+}
+
 export class StateMachine {
   constructor(
     private fileManager: FileManager,
@@ -157,6 +173,20 @@ export class StateMachine {
         error_message: nextPhase
           ? `Cannot skip to "${targetPhase}". Next phase is "${nextPhase}".`
           : `Already at terminal phase "${state.current_phase}".`,
+      };
+    }
+
+    // Featureless-workspace loophole guard: without a registered feature there
+    // is no directory to validate artifacts against, so every required-file
+    // check below would silently pass and the pipeline could walk six phases
+    // with zero artifacts on disk. Refuse to advance until a feature exists.
+    if (!state.features || state.features.length === 0) {
+      return {
+        allowed: false,
+        from_phase: state.current_phase,
+        to_phase: targetPhase,
+        error_message:
+          "Cannot advance: no feature registered — run sdd_init first to create a feature before advancing phases.",
       };
     }
 
@@ -321,8 +351,8 @@ export class StateMachine {
     specDir: string,
     phase: Phase,
     artifactPath: string,
-    reqCount?: number,
-  ): Promise<GateHistoryEntry> {
+    options?: GateEventOptions,
+  ): Promise<LgtmGateHistoryEntry> {
     return this.withLock(specDir, async () => {
       const state = await this.loadState(specDir);
       const phaseStatus = state.phases[phase];
@@ -330,7 +360,12 @@ export class StateMachine {
 
       let wasModified = true;
       try {
-        const fileStat = await stat(artifactPath);
+        // Artifact paths are workspace-relative. Resolve against the workspace
+        // root, NOT process.cwd(): in hosted/HTTP deployments the server cwd
+        // is not the workspace, and a cwd-relative stat throws for every gate,
+        // silently pinning was_modified=true so cognitive-debt warnings never
+        // fire regardless of user behavior.
+        const fileStat = await stat(resolve(this.workspaceRoot, artifactPath));
         if (phaseStarted) {
           wasModified = fileStat.mtimeMs > new Date(phaseStarted).getTime();
         }
@@ -338,12 +373,13 @@ export class StateMachine {
         // file not found — treat as modified (first write)
       }
 
-      const entry: GateHistoryEntry = {
+      const entry: LgtmGateHistoryEntry = {
         phase,
         timestamp: new Date().toISOString(),
         artifact: artifactPath,
         was_modified: wasModified,
-        ...(reqCount !== undefined ? { req_count: reqCount } : {}),
+        ...(options?.reqCount !== undefined ? { req_count: options.reqCount } : {}),
+        ...(options?.lgtm !== undefined ? { lgtm: options.lgtm } : {}),
       };
 
       const history = state.gate_history ?? [];

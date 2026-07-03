@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-07-03
+
+Delivery-honesty release. A black-box audit executed all 65 public product
+promises against the real 3.5.0 server (`docs/AUDIT-DELIVERY-3.5.md` is the
+full record: 30 delivered / 29 partial / 6 not delivered). This release fixes
+every finding.
+
+### Fixed
+
+- **`sdd_auto_pipeline` fabricated its quality gate** (hard-coded `APPROVE`/100% — the same defect fixed for other paths in 3.4.0 had survived here). It now runs the shared `AnalysisEngine`: real decision, real coverage, requirement-level traceability matrix in `ANALYSIS.md`. Auto-generated packages honestly report `CHANGES_NEEDED` until traceability is complete.
+- **`sdd_get_status` reported a stale phase** (it preferred a per-feature state file no pipeline tool writes and fell back to a fresh default). Headline fields (current phase, progress, gate decision, next action) now reflect the state the pipeline actually persists.
+- **Phase-skip loophole**: with no registered feature, `sdd_advance_phase` skipped every artifact check and could walk six phases with zero artifacts. Advancing past init now requires a registered feature.
+- **Generated tests now compile/run**: pytest output was a Python syntax error (JS-style header); junit class names didn't match filenames and had duplicate methods; xunit had duplicate members; vitest/jest/playwright emitted markdown ToC noise as tests, traced to a nonexistent `REQ-000`, and truncated the `REQ-` prefix. All fixed, with structural (and where possible compile) tests.
+- **PBT generators produce runnable property tests**: valid `fast-check` import, self-contained bodies (no undefined helpers), meaningful assertions, and real REQ IDs (never fabricated `REQ-GEN-00N` — untraceable items are skipped or explicitly labeled `UNTRACED-`).
+- **`sdd_verify_tests` coverage scanned the wrong directories** (always 0%): it now scans where `sdd_generate_tests` writes (via a generated-tests manifest), so the REQ→test mapping and `next_steps` use real numbers.
+- **Doc generators derive real content**: the "first 15 lines" summarizer (which captured only frontmatter + ToC) was replaced with requirement-aware extraction — generated docs now contain the actual EARS requirements; the runbook is derived from `DESIGN.md` (was 100% static template); onboarding explains the feature; API docs extract request/response examples from the design contracts (were always `{}`) and no longer duplicate endpoints from mermaid blocks; the journey doc joined the parallel batch and failures surface in the response.
+- **Diagrams**: `er`/`dfd` emitted invalid Mermaid (unsanitized ids) — fixed; `class`/`state`/`c4_code` were byte-identical stubs regardless of input — now derived from the artifacts; `pie` fabricated numbers — now computed; `gantt` was header-only from spec/design and used a date syntax real Mermaid rejects — fixed; `sequence` derivation is readable (`Client->>System` per requirement). `sdd_generate_all_diagrams` now **writes `DIAGRAMS.md`** (it returned diagrams but wrote nothing) and covers c4_context + state (18 diagrams). ToC headings are no longer treated as architecture components; `sdd_figma_diagram` types differ structurally with meaningful edge labels.
+- **Binary document imports fail honestly**: real (compressed) PDF/DOCX/PPTX used to import as gibberish flagged "success". Unsupported binaries now return a clear error pointing to md/txt conversion or the MarkItDown MCP; `sdd_batch_import` counts them as failed.
+- **`sdd_export_work_items` payloads are target-specific** (GitHub `{title, body, labels}` / Jira `{fields: {project.key, issuetype…}}` / Azure Boards `System.*` fields + `area_path`/`iteration_path`) and honor the documented inputs that were silently discarded (`project_key`, `include_subtasks`, …).
+- **Persisted `[TODO:]` placeholders**: `CHECKLIST.md` and `CROSS_ANALYSIS.md` now render the real items/alignment tables and recommendation (the data existed only in the JSON response).
+- **Terraform generation emits real resources** parsed from the `DESIGN.md` tech stack (was a provider-only skeleton with four generic modules); devcontainer/local-env/codespaces honor the documented DESIGN.md fallback detection (`additional_services` is no longer always empty); the Codespaces payload no longer references a nonexistent `create_codespace` MCP tool.
+- **`ears-validator.sh` hook** no longer fails (exit 1) whenever a spec lacks one of the 6 EARS pattern types — it reports per-pattern coverage as an advisory.
+- **`sdd_figma_to_spec`** payload referenced nonexistent tool names (`sdd_gen_spec` → `sdd_write_spec` etc.).
+- Cognitive-debt gate instrumentation resolved artifact paths against the process cwd instead of the workspace root, silently degrading in hosted (HTTP) mode.
+
+### Added
+
+- **Opt-in server-side LGTM**: `pipeline.require_lgtm: true` in `.specky/config.yml` makes `sdd_advance_phase` refuse to pass the Specify/Design/Tasks gates without an explicit `lgtm: true` input. Default off; not flipped by the enterprise profile (human-review gating is a workflow choice, not a security control). Gate history records LGTM presence.
+- **`docs/AUDIT-DELIVERY-3.5.md`** — the full promise-delivery audit as a public record.
+- 6 new test suites (~112 new tests, 299 total) locking generated-content quality: compilable test output, valid Mermaid structure, target-specific export payloads, honest import failures, requirement-bearing docs, pipeline-state truthfulness.
+
 ### Container publishing docs
 
 - Expanded GHCR/container documentation across README, install, enterprise deployment, and publishing guidance.

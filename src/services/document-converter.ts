@@ -2,6 +2,12 @@
  * DocumentConverter — Converts PDF, DOCX, PPTX, TXT, MD to Markdown.
  * MVP implementation uses built-in parsing. Enhanced conversion with
  * mammoth/pdfjs-dist available when those dependencies are installed.
+ *
+ * HONESTY CONTRACT: the built-in extractor only handles uncompressed
+ * (stored) Office zips and uncompressed PDF text streams. Compressed
+ * content — which is what Word/PowerPoint/PDF exporters actually
+ * produce — FAILS with an actionable error instead of returning
+ * gibberish or empty text presented as success.
  */
 
 import { extname, basename } from "node:path";
@@ -17,6 +23,79 @@ function stripXmlTags(input: string): string {
     result = result.replace(/<[^<]*>/g, " ");
   }
   return result;
+}
+
+/** Decode the five predefined XML entities. */
+function decodeXmlEntities(input: string): string {
+  return input
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&");
+}
+
+/** Actionable failure for compressed content the built-in extractor cannot read. */
+function unsupportedCompressedError(format: string): Error {
+  return new Error(
+    `compressed ${format} not supported natively — convert to md/txt or use the MarkItDown MCP integration (add to MCP settings: uvx markitdown-mcp). ` +
+    `Specky's built-in extractor only reads uncompressed (stored) ${format} content; real-world ${format} files from Office/PDF exporters are compressed and would otherwise yield garbage.`
+  );
+}
+
+/** A single entry parsed from a zip's local file headers. */
+interface ZipEntry {
+  name: string;
+  /** 0 = stored (uncompressed), 8 = deflate. */
+  compressionMethod: number;
+  data: Buffer;
+}
+
+const ZIP_LOCAL_HEADER_SIGNATURE = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
+
+/**
+ * Parse zip local file headers without decompressing anything.
+ * Enough structure to (a) locate an entry by exact name, (b) know whether
+ * its data is stored or compressed, and (c) slice the stored bytes.
+ */
+function parseZipEntries(zipBuffer: Buffer): ZipEntry[] {
+  const entries: ZipEntry[] = [];
+  let offset = zipBuffer.indexOf(ZIP_LOCAL_HEADER_SIGNATURE);
+
+  while (offset !== -1 && offset + 30 <= zipBuffer.length) {
+    const compressionMethod = zipBuffer.readUInt16LE(offset + 8);
+    let compressedSize = zipBuffer.readUInt32LE(offset + 18);
+    const nameLength = zipBuffer.readUInt16LE(offset + 26);
+    const extraLength = zipBuffer.readUInt16LE(offset + 28);
+    const dataStart = offset + 30 + nameLength + extraLength;
+    if (dataStart > zipBuffer.length) break;
+
+    const name = zipBuffer.toString("utf8", offset + 30, offset + 30 + nameLength);
+
+    if (compressedSize === 0) {
+      // Data-descriptor entries record sizes after the data; scan to the next header.
+      const next = zipBuffer.indexOf(ZIP_LOCAL_HEADER_SIGNATURE, dataStart);
+      compressedSize = (next === -1 ? zipBuffer.length : next) - dataStart;
+    }
+    const dataEnd = Math.min(dataStart + compressedSize, zipBuffer.length);
+    entries.push({ name, compressionMethod, data: zipBuffer.subarray(dataStart, dataEnd) });
+
+    offset = zipBuffer.indexOf(ZIP_LOCAL_HEADER_SIGNATURE, dataEnd);
+  }
+
+  return entries;
+}
+
+/** Extract the joined text of all `<tag …>text</tag>` runs from OOXML. */
+function extractXmlRunText(xml: string, tag: string): string {
+  const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const runRegex = new RegExp(`<${escaped}(?:\\s[^>]*)?>([^<]*)</${escaped}>`, "g");
+  const parts: string[] = [];
+  let match;
+  while ((match = runRegex.exec(xml)) !== null) {
+    if (match[1]) parts.push(decodeXmlEntities(match[1]));
+  }
+  return parts.join(" ").replace(/\s+/g, " ").trim();
 }
 
 export class DocumentConverter {
@@ -110,7 +189,8 @@ export class DocumentConverter {
 
   /**
    * DOCX → Markdown via XML extraction from zip.
-   * MVP: extracts paragraph text from document.xml.
+   * Built-in extraction only handles uncompressed (stored) zips — compressed
+   * DOCX (what Word writes) fails honestly instead of returning gibberish.
    * Enhanced: use mammoth when available.
    */
   private async convertDocx(filePath: string): Promise<DocumentConversionResult> {
@@ -130,9 +210,27 @@ export class DocumentConverter {
       }
     } catch { /* fall through to basic extraction */ }
 
-    // Basic extraction: read as buffer, find text patterns
+    // Basic extraction: parse the zip's local headers and read the stored document body
     const content = await this.fileManager.readProjectFileBuffer(filePath);
-    const text = this.extractTextFromXmlZip(content, "word/document.xml");
+    const entry = parseZipEntries(content).find((e) => e.name === "word/document.xml");
+    if (!entry) {
+      throw new Error(
+        `No word/document.xml found in '${filePath}' — this is not a readable DOCX file. Convert it to md/txt or use the MarkItDown MCP integration (uvx markitdown-mcp).`
+      );
+    }
+    if (entry.compressionMethod !== 0) {
+      throw unsupportedCompressedError("docx");
+    }
+
+    const xml = entry.data.toString("utf8");
+    const runText = extractXmlRunText(xml, "w:t");
+    const text = runText || stripXmlTags(xml).replace(/\s+/g, " ").trim();
+    if (!text) {
+      throw new Error(
+        `No readable text extracted from '${filePath}'. The document body is empty or uses features the built-in extractor cannot handle — use the MarkItDown MCP integration (uvx markitdown-mcp).`
+      );
+    }
+
     const title = basename(filePath, ".docx");
     const markdown = `# ${title}\n\n${text}`;
     return {
@@ -177,9 +275,20 @@ export class DocumentConverter {
       }
     } catch { /* fall through */ }
 
-    // Fallback: basic text extraction from PDF bytes
+    // Fallback: basic text extraction from PDF bytes.
+    // Fails honestly when nothing can be extracted — a compressed or image-only
+    // PDF must not become an empty "success".
     const buffer = await this.fileManager.readProjectFileBuffer(filePath);
     const text = this.extractTextFromPdfBuffer(buffer);
+    if (!text) {
+      const binary = buffer.toString("binary");
+      if (/\/(?:Flate|LZW|DCT|RunLength|CCITTFax|JBIG2|JPX)Decode/.test(binary)) {
+        throw unsupportedCompressedError("pdf");
+      }
+      throw new Error(
+        `No extractable text found in '${filePath}'. The PDF has no uncompressed text layer (it may be scanned or image-only) — convert it to md/txt or use the MarkItDown MCP integration (uvx markitdown-mcp).`
+      );
+    }
     const title = basename(filePath, ".pdf");
     const markdown = `# ${title}\n\n${text}\n\n> Note: Basic PDF text extraction. Install pdfjs-dist for enhanced conversion.`;
     return {
@@ -192,17 +301,42 @@ export class DocumentConverter {
 
   /**
    * PPTX → Markdown via XML extraction from zip.
-   * MVP: extracts text from slide XML files.
+   * Built-in extraction only handles uncompressed (stored) zips — compressed
+   * PPTX (what PowerPoint writes) fails honestly instead of returning gibberish.
    */
   private async convertPptx(filePath: string): Promise<DocumentConversionResult> {
     const content = await this.fileManager.readProjectFileBuffer(filePath);
-    const slides: string[] = [];
 
     // PPTX is a zip with ppt/slides/slide1.xml, slide2.xml, etc.
-    for (let i = 1; i <= 100; i++) {
-      const slideText = this.extractTextFromXmlZip(content, `ppt/slides/slide${i}.xml`);
-      if (!slideText) break;
-      slides.push(`## Slide ${i}\n\n${slideText}`);
+    const slideEntries = parseZipEntries(content)
+      .map((entry) => {
+        const match = entry.name.match(/^ppt\/slides\/slide(\d+)\.xml$/);
+        return match ? { entry, index: Number(match[1]) } : null;
+      })
+      .filter((s): s is { entry: ZipEntry; index: number } => s !== null)
+      .sort((a, b) => a.index - b.index);
+
+    if (slideEntries.length === 0) {
+      throw new Error(
+        `No slides found in '${filePath}' — this is not a readable PPTX file. Convert it to md/txt or use the MarkItDown MCP integration (uvx markitdown-mcp).`
+      );
+    }
+    if (slideEntries.some((s) => s.entry.compressionMethod !== 0)) {
+      throw unsupportedCompressedError("pptx");
+    }
+
+    const slides: string[] = [];
+    for (const { entry, index } of slideEntries) {
+      const xml = entry.data.toString("utf8");
+      const runText = extractXmlRunText(xml, "a:t");
+      const slideText = runText || stripXmlTags(xml).replace(/\s+/g, " ").trim();
+      if (slideText) slides.push(`## Slide ${index}\n\n${slideText}`);
+    }
+
+    if (slides.length === 0) {
+      throw new Error(
+        `No readable slide text extracted from '${filePath}'. The slides are empty or use features the built-in extractor cannot handle — use the MarkItDown MCP integration (uvx markitdown-mcp).`
+      );
     }
 
     const title = basename(filePath, ".pptx");
@@ -211,7 +345,7 @@ export class DocumentConverter {
       format: "pptx",
       markdown,
       metadata: { title, sections: slides.map((_, i) => `Slide ${i + 1}`), source_file: filePath },
-      page_count: slides.length,
+      page_count: slideEntries.length,
       word_count: this.countWords(markdown),
     };
   }
@@ -243,34 +377,6 @@ export class DocumentConverter {
       metadata: { title, sections: [title], source_file: filePath },
       word_count: this.countWords(text),
     };
-  }
-
-  /**
-   * Extract text from an XML file inside a zip buffer.
-   * Used for DOCX (word/document.xml) and PPTX (ppt/slides/slideN.xml).
-   */
-  private extractTextFromXmlZip(zipBuffer: Buffer, xmlPath: string): string {
-    // Simple zip parsing: find the XML file by name in the zip central directory
-    const bufStr = zipBuffer.toString("binary");
-    const pathIndex = bufStr.indexOf(xmlPath);
-    if (pathIndex === -1) return "";
-
-    // Find the local file header for this entry
-    // Look backwards from the central directory entry to find the actual data
-    // For MVP, extract all text between XML tags using regex
-    const escapedPath = xmlPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const xmlMatch = bufStr.match(new RegExp(`${escapedPath}.*?PK`, "s"));
-    if (!xmlMatch) return "";
-
-    // Extract text content from XML tags (strip all tags iteratively)
-    const xmlContent = xmlMatch[0];
-    const textContent = stripXmlTags(xmlContent)
-      .replace(/\s+/g, " ")
-      .replace(/PK$/, "")
-      .trim();
-
-    // Clean up non-printable characters
-    return textContent.replace(/[^\x20-\x7E\n\r\t]/g, "").trim();
   }
 
   /**

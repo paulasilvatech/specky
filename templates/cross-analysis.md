@@ -11,16 +11,14 @@
 
 | Requirement | In Design? | Detail |
 |-------------|-----------|--------|
-{{#each spec_design_alignment}}
-| {{source_id}} | {{status}} | {{detail}} |
+{{#each spec_design_alignment}}{{this}}
 {{/each}}
 
 ## Design → Tasks Alignment
 
 | Requirement | Has Tasks? | Detail |
 |-------------|-----------|--------|
-{{#each design_tasks_alignment}}
-| {{source_id}} | {{status}} | {{detail}} |
+{{#each design_tasks_alignment}}{{this}}
 {{/each}}
 
 ## Orphaned Requirements

@@ -59,6 +59,16 @@ const configSchema = z
         default_role: z.enum(["viewer", "contributor", "admin"]).default("contributor"),
       })
       .default({ enabled: false, default_role: "contributor" }),
+    pipeline: z
+      .object({
+        // Server-side LGTM enforcement: when true, sdd_advance_phase refuses to
+        // complete the specify/design/tasks quality gates unless the caller
+        // passes lgtm: true. Off by default (zero behavior change) and NOT
+        // flipped by the enterprise profile — human-review gating is a workflow
+        // choice, not a security control.
+        require_lgtm: z.boolean().default(false),
+      })
+      .default({ require_lgtm: false }),
   })
   .strip();
 
