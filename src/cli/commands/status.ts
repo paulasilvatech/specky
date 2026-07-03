@@ -18,15 +18,30 @@ export async function runStatus(opts: StatusOptions): Promise<number> {
   console.log(`Workspace: ${workspace}`);
   console.log("");
 
-  // Install info
+  // Install info (read defensively — a corrupt install.json must not crash status)
   const installJson = resolve(t.shared.specky, "install.json");
+  let meta: { version?: string; ide?: string; installed_at?: string } | null = null;
   if (existsSync(installJson)) {
-    const meta = JSON.parse(readFileSync(installJson, "utf8")) as {
-      version: string;
-      ide: string;
-      installed_at: string;
-    };
+    try {
+      meta = JSON.parse(readFileSync(installJson, "utf8")) as {
+        version?: string;
+        ide?: string;
+        installed_at?: string;
+      };
+    } catch {
+      meta = null;
+    }
+  }
+  if (meta) {
     console.log(`Install: v${meta.version}, ide=${meta.ide}, at=${meta.installed_at}`);
+    // Version-drift advisory (zero network): installed assets vs running CLI.
+    if (meta.version && meta.version !== VERSION) {
+      console.log(
+        `⚠️  Installed assets are v${meta.version} but this CLI is v${VERSION} — run \`specky upgrade\` to refresh.`,
+      );
+    }
+  } else if (existsSync(installJson)) {
+    console.log("Install: metadata unreadable — run `npx specky doctor`");
   } else {
     console.log("Install: NOT DETECTED — run `npx specky init`");
   }

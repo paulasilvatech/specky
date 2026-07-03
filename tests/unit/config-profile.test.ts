@@ -130,6 +130,26 @@ describe("profile resolution and enterprise defaults", () => {
     expect(config.pipeline.require_lgtm).toBe(true);
   });
 
+  it("update_check defaults to true (config.yml absent)", () => {
+    const config = loadConfig(workspace, NO_OVERRIDES);
+    expect(config.update_check).toBe(true);
+  });
+
+  it("update_check: false in config.yml disables the update banner", () => {
+    writeConfig("update_check: false\n");
+    const config = loadConfig(workspace, NO_OVERRIDES);
+    expect(config.update_check).toBe(false);
+  });
+
+  it("update_check is NOT flipped by the enterprise profile", () => {
+    // Not a security control — enterprise must leave it alone in both directions.
+    writeConfig("profile: enterprise\n");
+    expect(loadConfig(workspace, NO_OVERRIDES).update_check).toBe(true);
+
+    writeConfig("profile: enterprise\nupdate_check: false\n");
+    expect(loadConfig(workspace, NO_OVERRIDES).update_check).toBe(false);
+  });
+
   it("enterprise defaults also apply when config.yml is absent or malformed", () => {
     const noFile = loadConfig(workspace, { argv: [], env: { SPECKY_PROFILE: "enterprise" } });
     expect(noFile.audit_enabled).toBe(true);

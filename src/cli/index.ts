@@ -143,6 +143,38 @@ async function dispatch(command: string, rest: string[]): Promise<number> {
   }
 }
 
+/**
+ * Commands after which the once-daily update banner may print. `serve` (and
+ * the legacy serve routing) is deliberately absent — the MCP server makes
+ * zero outbound calls, ever.
+ */
+const UPDATE_BANNER_COMMANDS = new Set([
+  "install", "init", "doctor", "status", "upgrade", "--version", "-v",
+]);
+
+/**
+ * Best-effort update banner (Layer 2 of update awareness). Runs AFTER the
+ * command so it can never delay or corrupt command output, prints to stderr
+ * only, and swallows every failure — the command's exit code is untouched.
+ */
+async function maybePrintUpdateBanner(command: string): Promise<void> {
+  if (!UPDATE_BANNER_COMMANDS.has(command)) return;
+  try {
+    const { loadConfig } = await import("../config.js");
+    // Workspace-level hard disable (.specky/config.yml). Absent file → default true.
+    if (!loadConfig(process.cwd()).update_check) return;
+    const { checkForUpdate } = await import("./lib/update-check.js");
+    const latest = await checkForUpdate({});
+    if (latest) {
+      console.error(
+        `Update available: specky-sdd v${VERSION} → v${latest}  →  npm install -g specky-sdd@latest && specky upgrade`,
+      );
+    }
+  } catch {
+    // Never let the update check affect the command outcome.
+  }
+}
+
 async function main(): Promise<void> {
   const binName = basename(process.argv[1] ?? "specky");
   const args = process.argv.slice(2);
@@ -177,6 +209,7 @@ async function main(): Promise<void> {
   try {
     const code = await dispatch(command, rest);
     if (typeof code === "number" && command !== "serve") {
+      await maybePrintUpdateBanner(command);
       process.exit(code);
     }
   } catch (err) {
