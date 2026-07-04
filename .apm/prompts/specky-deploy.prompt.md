@@ -1,5 +1,7 @@
 ---
 description: Generate deployment artifacts from specifications
+mode: agent
+argument-hint: <feature-number>
 ---
 Generate deployment artifacts for feature [FEATURE NUMBER].
 

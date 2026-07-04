@@ -115,12 +115,16 @@ async function main() {
   delete copilotHooks.SessionStart;
   delete copilotHooks.UserPromptSubmit;
 
-  // rc.14: Strip Write|Edit|MultiEdit matcher — these are Claude Code native
-  // tool names that don't exist in Copilot. Copilot's matcher may still fire
-  // branch-validator.sh for unrelated tools, causing spurious blocks.
-  if (Array.isArray(copilotHooks.PreToolUse)) {
-    copilotHooks.PreToolUse = copilotHooks.PreToolUse.filter(
-      (g) => !/^(Write|Edit|MultiEdit)(\|(Write|Edit|MultiEdit))*$/.test(g.matcher ?? ""),
+  // rc.14+: Strip Write|Edit|MultiEdit matcher across ALL events — these are
+  // Claude Code native tool names that don't exist in Copilot. Copilot's matcher
+  // may still fire branch-validator.sh / spec-sync.sh for unrelated tools,
+  // causing spurious blocks. This must cover PostToolUse too, not just PreToolUse.
+  const NATIVE_ONLY_MATCHER =
+    /^(Write|Edit|MultiEdit)(\|(Write|Edit|MultiEdit))*$/;
+  for (const event of Object.keys(copilotHooks)) {
+    if (!Array.isArray(copilotHooks[event])) continue;
+    copilotHooks[event] = copilotHooks[event].filter(
+      (g) => !NATIVE_ONLY_MATCHER.test(g.matcher ?? ""),
     );
   }
 

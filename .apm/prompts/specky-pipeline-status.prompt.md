@@ -1,5 +1,6 @@
 ---
 description: Check SDD pipeline status
+mode: agent
 ---
 Check the SDD pipeline status for feature [FEATURE NUMBER or "all"].
 

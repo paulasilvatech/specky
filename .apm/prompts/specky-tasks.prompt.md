@@ -1,5 +1,7 @@
 ---
 description: Run SDD task breakdown phase
+mode: agent
+argument-hint: <feature-number>
 ---
 Run the SDD task breakdown phase for feature [FEATURE NUMBER].
 

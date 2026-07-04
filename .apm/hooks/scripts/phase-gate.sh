@@ -47,7 +47,7 @@ case "$TOOL" in
   sdd_write_spec|sdd_turnkey_spec|sdd_figma_to_spec)
     check_created "SPECIFICATION.md" "SPECIFICATION.md"
     check_has_content "SPECIFICATION.md" "REQ-[A-Z]+-[0-9]+" "REQ-IDs" 3
-    check_has_content "SPECIFICATION.md" "(shall|should|When .* shall|While .* shall|Where .* shall|If .* then)" "EARS patterns" 3
+    check_has_content "SPECIFICATION.md" "(shall|When .* shall|While .* shall|Where .* shall|If .* then)" "EARS patterns" 3
     ;;
   sdd_write_design)
     check_created "DESIGN.md" "DESIGN.md"

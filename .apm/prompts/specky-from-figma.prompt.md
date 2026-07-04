@@ -1,5 +1,7 @@
 ---
 description: Import Figma designs into SDD pipeline
+mode: agent
+argument-hint: <Figma URL or export path>
 ---
 Import Figma designs into the SDD pipeline.
 

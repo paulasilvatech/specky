@@ -21,7 +21,7 @@ const VIEWER_TOOLS: readonly string[] = [
   "sdd_model_routing",
   "sdd_context_status",
   "sdd_metrics",
-  "sdd_detect_drift",
+  "sdd_check_sync",
   "sdd_check_ecosystem",
   "sdd_list_checkpoints",
   "sdd_check_access",
@@ -43,7 +43,7 @@ export class RbacEngine {
   constructor(
     private readonly enabled: boolean,
     private readonly defaultRole: RbacRole,
-  ) {}
+  ) { }
 
   /**
    * Check whether a given role may invoke a specific tool.

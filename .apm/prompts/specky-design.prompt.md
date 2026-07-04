@@ -1,5 +1,7 @@
 ---
 description: Run SDD design phase
+mode: agent
+argument-hint: <feature-number>
 ---
 Run the SDD design phase for feature [FEATURE NUMBER].
 

@@ -1,5 +1,7 @@
 ---
 description: Design an API with SDD pipeline
+mode: agent
+argument-hint: <API name and requirements>
 ---
 Design an API using the Specky SDD pipeline.
 

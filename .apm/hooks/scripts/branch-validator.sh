@@ -33,7 +33,7 @@ if [[ "$TOOL" == "Write" || "$TOOL" == "Edit" || "$TOOL" == "MultiEdit" ]]; then
 
   PHASE="?"
   if command -v jq >/dev/null 2>&1; then
-    PHASE=$(jq -r '.phase // "?"' "$STATE" 2>/dev/null || echo "?")
+    PHASE=$(jq -r '.current_phase // "?"' "$STATE" 2>/dev/null || echo "?")
   fi
 
   FEATURE=$(basename "$LATEST")
@@ -52,17 +52,17 @@ if [[ "$TOOL" == "Write" || "$TOOL" == "Edit" || "$TOOL" == "MultiEdit" ]]; then
   }
 
   case "$PHASE" in
-    0|1|2|3|4|5|6|7)
+    init|discover|specify|clarify|design|tasks|analyze|implement)
       if [[ "$CURRENT_BRANCH" != spec/* ]]; then
         emit_violation "spec/$FEATURE"
       fi
       ;;
-    8)
+    verify)
       if [[ "$CURRENT_BRANCH" != "develop" ]]; then
         emit_violation "develop"
       fi
       ;;
-    9)
+    release)
       if [[ "$CURRENT_BRANCH" != "stage" ]]; then
         emit_violation "stage"
       fi

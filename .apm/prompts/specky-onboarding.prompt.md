@@ -1,5 +1,6 @@
 ---
 description: Get started with Specky SDD — interactive wizard
+mode: agent
 ---
 Help me get started with Specky SDD.
 

@@ -35,7 +35,7 @@ fi
 FEATURE=$(basename "$LATEST")
 PHASE="?"
 if command -v jq >/dev/null 2>&1; then
-  PHASE=$(jq -r '.phase // "?"' "$STATE" 2>/dev/null || echo "?")
+  PHASE=$(jq -r '.current_phase // "?"' "$STATE" 2>/dev/null || echo "?")
 fi
 
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr -d '\n' || true)
@@ -58,22 +58,22 @@ echo ""
 
 # Validate branch matches expected for phase (advisory warning only)
 case "$PHASE" in
-  0|1|2|3|4|5|6|7)
+  init|discover|specify|clarify|design|tasks|analyze|implement)
     if [[ ! "$BRANCH" =~ ^spec/ ]]; then
       echo "⚠️  [session-banner] Phase $PHASE expects branch spec/NNN-* — you are on '$BRANCH'"
       echo "    Consider: git checkout -b spec/$FEATURE (or let @specky-orchestrator handle it)"
       echo ""
     fi
     ;;
-  8)
+  verify)
     if [ "$BRANCH" != "develop" ]; then
-      echo "⚠️  [session-banner] Phase 8 expects branch 'develop' — you are on '$BRANCH'"
+      echo "⚠️  [session-banner] Phase 'verify' expects branch 'develop' — you are on '$BRANCH'"
       echo ""
     fi
     ;;
-  9)
+  release)
     if [ "$BRANCH" != "stage" ]; then
-      echo "⚠️  [session-banner] Phase 9 expects branch 'stage' — you are on '$BRANCH'"
+      echo "⚠️  [session-banner] Phase 'release' expects branch 'stage' — you are on '$BRANCH'"
       echo ""
     fi
     ;;

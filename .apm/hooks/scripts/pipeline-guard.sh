@@ -67,7 +67,7 @@ FEATURE=$(basename "$LATEST")
 # Try to read current phase (optional — requires jq)
 PHASE="?"
 if command -v jq >/dev/null 2>&1; then
-  PHASE=$(jq -r '.phase // "?"' "$STATE" 2>/dev/null || echo "?")
+  PHASE=$(jq -r '.current_phase // "?"' "$STATE" 2>/dev/null || echo "?")
 fi
 
 # ── Extract user prompt ──────────────────────────────────

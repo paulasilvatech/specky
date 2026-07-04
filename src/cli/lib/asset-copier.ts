@@ -105,7 +105,11 @@ export function copyToClaude(
   copyDir(src.hookScriptsDir, targets.claude.hooksScripts, opts, result);
 
   // Make hook scripts executable (Unix only — Windows ignores mode)
-  if (!opts.dryRun && process.platform !== "win32") {
+  if (
+    !opts.dryRun &&
+    process.platform !== "win32" &&
+    existsSync(targets.claude.hooksScripts)
+  ) {
     for (const f of readdirSync(targets.claude.hooksScripts)) {
       if (f.endsWith(".sh") || f.endsWith(".mjs")) {
         try {
@@ -158,16 +162,28 @@ export function copyToCopilot(
     try { unlinkSync(staleManifest); } catch { /* ignore — might be read-only */ }
   }
 
-  // IMPORTANT: use the build-time copilot-hooks.json (paths already resolved
-  // to .github/hooks/specky/scripts/), NOT the raw .apm/hooks/sdd-hooks.json
-  // which still contains ${CLAUDE_PLUGIN_ROOT}. See rc.12 CHANGELOG.
-  const copilotHooksSrc = existsSync(src.copilotHooksManifest)
-    ? src.copilotHooksManifest
-    : src.hooksManifest; // fallback for dev builds without the generator run
-  copyFile(copilotHooksSrc, targets.copilot.hooksManifest, opts, result);
+  // IMPORTANT: only ship the build-time copilot-hooks.json (paths already
+  // resolved to .github/hooks/specky/scripts/). NEVER fall back to the raw
+  // .apm/hooks/sdd-hooks.json — it still contains ${CLAUDE_PLUGIN_ROOT}, which
+  // Copilot cannot resolve and which causes spurious hook blocks. See rc.12/rc.14.
+  if (existsSync(src.copilotHooksManifest)) {
+    copyFile(src.copilotHooksManifest, targets.copilot.hooksManifest, opts, result);
+  } else {
+    result.skipped.push(targets.copilot.hooksManifest);
+    if (!opts.dryRun) {
+      console.warn(
+        "[specky] Skipped Copilot hooks manifest: dist/copilot-hooks.json is missing. " +
+        "Run `npm run build` to generate it; SDD hook automation stays disabled until then.",
+      );
+    }
+  }
   copyDir(src.instructionsDir, targets.copilot.instructions, opts, result);
 
-  if (!opts.dryRun && process.platform !== "win32") {
+  if (
+    !opts.dryRun &&
+    process.platform !== "win32" &&
+    existsSync(targets.copilot.hooksScripts)
+  ) {
     for (const f of readdirSync(targets.copilot.hooksScripts)) {
       if (f.endsWith(".sh") || f.endsWith(".mjs")) {
         try {

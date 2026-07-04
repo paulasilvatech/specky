@@ -24,9 +24,9 @@ SPEC_COVERAGE=$(grep -iE '(in scope|out of scope|must|shall not)' "$SPEC" 2>/dev
 
 if [ "$CONST_SCOPE" -gt 0 ] && [ "$SPEC_COVERAGE" -eq 0 ]; then
   echo "⚠️  Constitution has scope constraints but SPECIFICATION.md may not reference them."
-  echo "   Run sdd_detect_drift for detailed analysis."
+  echo "   Run sdd_check_sync for detailed analysis."
 fi
 
 echo "📊 Constitution: $CONST_TERMS key terms, $CONST_SCOPE scope constraints."
-echo "   Run sdd_detect_drift for intent drift score."
+echo "   Run sdd_check_sync for intent drift score."
 exit 0

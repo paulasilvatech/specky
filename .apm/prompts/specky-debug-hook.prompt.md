@@ -1,5 +1,7 @@
 ---
 description: Debug a failing SDD hook
+mode: agent
+argument-hint: <hook name or error message>
 ---
 Debug a failing SDD hook.
 

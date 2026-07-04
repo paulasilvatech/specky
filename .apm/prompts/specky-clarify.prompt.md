@@ -1,5 +1,7 @@
 ---
 description: Run SDD clarification phase
+mode: agent
+argument-hint: <feature-number>
 ---
 Run the SDD clarification phase for feature [FEATURE NUMBER].
 

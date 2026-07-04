@@ -1,5 +1,7 @@
 ---
 description: Run SDD Discover phase (research)
+mode: agent
+argument-hint: <feature-number or research topic>
 ---
 Run the SDD Discover phase (research) for feature [FEATURE NUMBER].
 

@@ -39,7 +39,25 @@ function makeWorkspace(): string {
 function activatePipeline(workspace: string, phase = 7, feature = "001-test"): void {
   const dir = resolve(workspace, ".specs", feature);
   mkdirSync(dir, { recursive: true });
-  writeFileSync(resolve(dir, ".sdd-state.json"), JSON.stringify({ phase, feature }));
+  // Match the real runtime state shape: `.sdd-state.json` stores
+  // `current_phase` as a string phase name (see src/services/state-machine.ts).
+  const PHASE_NAMES = [
+    "init",
+    "discover",
+    "specify",
+    "clarify",
+    "design",
+    "tasks",
+    "analyze",
+    "implement",
+    "verify",
+    "release",
+  ];
+  const current_phase = PHASE_NAMES[phase] ?? "implement";
+  writeFileSync(
+    resolve(dir, ".sdd-state.json"),
+    JSON.stringify({ current_phase, feature }),
+  );
 }
 
 function checkoutBranch(workspace: string, branch: string): void {
