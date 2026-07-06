@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.2] - 2026-07-06
+
+Platform-native primitive generation for GitHub Copilot and Claude Code.
+
+### Changed
+
+- `.apm` primitive source is now GitHub Copilot-native: agents use VS Code tool ids such as `search`, `agent`, and namespaced Specky MCP tools like `specky/sdd_get_status`; prompts use `agent: agent` frontmatter.
+- `specky install --ide=claude` now transforms the shared source into Claude-native primitives at install time: agents use `Read`, `Glob`, `Grep`, `Task`, and `mcp__specky__sdd_*`; slash commands omit Copilot-only `agent:` metadata; Claude rules use `paths` instead of `applyTo`.
+- `specky install --ide=copilot` keeps Copilot-native syntax in `.github/agents` and `.github/prompts` instead of copying Claude-style tool names.
+
+### Added
+
+- Primitive audit coverage for Copilot-native tool names, namespaced Specky MCP tool ids, and prompt `agent:` frontmatter.
+- Regression tests proving Copilot and Claude installs generate different platform-correct agent, prompt, and instruction frontmatter.
+
+### Fixed
+
+- GitHub Copilot agents no longer receive Claude-only tool names such as `Read`, `Glob`, `Grep`, or `Task`.
+- Claude Code agents no longer receive Copilot-only tool names such as `search`, `agent`, or `specky/sdd_*`.
+
+## [3.7.1] - 2026-07-04
+
+GitHub Copilot primitive metadata and hook cleanup.
+
+### Changed
+
+- Normalized Specky Agent Skill names to lowercase kebab-case matching their folder names.
+- Added agent-mode prompt metadata and corrected reset-phase guidance to use checkpoint restore tools.
+- Reduced native mutating tools in agents where Specky MCP tools perform the artifact writes.
+
+### Fixed
+
+- Copilot instruction file now has `applyTo: '**'` frontmatter.
+- Fixed branch-validator/session hooks to read `current_phase` and string phase names.
+- Prevented Copilot hook manifests from falling back to unresolved Claude plugin paths.
+
 ## [3.7.0] - 2026-07-03
 
 Update awareness: users of old versions now find out — without the server ever

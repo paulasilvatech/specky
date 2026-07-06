@@ -36,7 +36,7 @@ specky install --ide=claude    # Claude Code
 
 > **Important:** Always specify `--ide=copilot` or `--ide=claude`. Do NOT use `--ide=both` — Copilot reads `.claude/settings.json` hooks, causing cross-read conflicts that block tool calls.
 
-The CLI installs agents, prompts, skills, hooks, and MCP registration to the correct IDE-specific locations.
+The CLI installs agents, prompts, skills, hooks, and MCP registration to the correct IDE-specific locations. It also generates the correct primitive syntax for the selected IDE: GitHub Copilot receives `.github/agents/*.agent.md` and `.github/prompts/*.prompt.md` with `search`, `agent`, `specky/sdd_*`, and `agent: agent`; Claude Code receives `.claude/agents/*.md` and `.claude/commands/*.md` with `Read`, `Glob`, `Grep`, `Task`, and `mcp__specky__sdd_*`.
 
 ### Other install modes
 
@@ -66,6 +66,8 @@ npx -y specky-sdd@latest install --ide=copilot
 | `.specky/install.lock` | SHA256 integrity manifest | ❌ gitignored |
 | `.gitignore` | Auto-appends managed block | ✅ **commit** |
 
+Copilot agents and prompts are generated with GitHub Copilot-native frontmatter. For example, the orchestrator uses `tools: ["search","agent","specky/sdd_get_status", ...]`, and slash prompts use `agent: agent`.
+
 ### What `specky install --ide=claude` creates
 
 | Path | Purpose | Commit? |
@@ -79,6 +81,8 @@ npx -y specky-sdd@latest install --ide=copilot
 | `.specky/config.yml` | Pipeline config | ✅ **commit** |
 | `.specky/install.lock` | SHA256 integrity manifest | ❌ gitignored |
 | `.gitignore` | Auto-appends managed block | ✅ **commit** |
+
+Claude agents and commands are generated with Claude-native frontmatter. For example, the orchestrator uses `tools: Read, Glob, Grep, Task, mcp__specky__sdd_get_status, ...`, and slash commands omit Copilot-only `agent:` metadata.
 
 The CLI **automatically adds a `.gitignore` block** — vendored assets (regenerated on every `specky upgrade`) are excluded, while team-shared configs are committed.
 

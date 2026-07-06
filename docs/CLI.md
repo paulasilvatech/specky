@@ -1,6 +1,6 @@
 # Specky CLI Reference
 
-> Version: v3.7.0+
+> Version: v3.7.2+
 
 The `specky` CLI is the single write-path for installing, validating, and upgrading Specky in a workspace. It replaces the previous ad-hoc copying done by APM and manual `.github/` / `.claude/` setup.
 
@@ -10,7 +10,7 @@ The `specky` CLI is the single write-path for installing, validating, and upgrad
 
 ### `specky install` (alias: `specky init`)
 
-Install Specky assets (agents, prompts, skills, hooks) into the current workspace. `install` is the preferred spelling (matches `npm install` intuition); `init` remains as an alias and dispatches to the same implementation.
+Install Specky assets (agents, prompts, skills, hooks) into the current workspace. `install` is the preferred spelling (matches `npm install` intuition); `init` remains as an alias and dispatches to the same implementation. Starting in v3.7.2, the installer generates platform-native primitives for the selected IDE instead of copying one shared syntax into both environments.
 
 ```
 specky install [--ide=<claude|copilot|both|auto>] [--force] [--dry-run]
@@ -36,6 +36,8 @@ When `--ide=copilot`:
 - `.vscode/settings.json` — deep-merged with `chat.mcp.enabled`, `chat.agent.enabled`, etc.
 - If `.claude/settings.json` exists, **strips the `hooks` section** to prevent Copilot cross-read
 
+The installed Copilot agents use GitHub Copilot-native tool identifiers such as `search`, `agent`, and namespaced Specky MCP tools like `specky/sdd_get_status`. Prompt files use `agent: agent` frontmatter so VS Code runs them with agent-mode tool access.
+
 When `--ide=claude`:
 - `.claude/agents/*.md` (13 files)
 - `.claude/commands/*.md` (22 slash commands)
@@ -46,6 +48,8 @@ When `--ide=claude`:
   - `permissions.allow` auto-populated with native tools (`Read`, `Edit`, `Write`, `Bash(git:*)`, etc.) and all `mcp__specky__*` tools
 - `.claude/rules/copilot-instructions.md`
 - `.mcp.json` — MCP server registration
+
+The installed Claude agents use Claude-native tool identifiers such as `Read`, `Glob`, `Grep`, `Task`, and Specky MCP tools like `mcp__specky__sdd_get_status`. Claude slash commands omit Copilot-only `agent:` frontmatter.
 
 Both modes also write:
 - `.specky/config.yml` — project pipeline config
@@ -58,7 +62,7 @@ Never overwrites `.specs/`, `.specky/profile.json`, or existing user-authored ke
 Without `chat.mcp.enabled` and `chat.mcp.discovery.enabled`, GitHub Copilot in VS Code won't discover the Specky MCP server even if `.vscode/mcp.json` is correct. Users previously had to manually toggle tools in the Copilot Chat tool selector — now it Just Works.
 
 **Why Claude `permissions.allow` matters:**
-Claude Code asks for approval each time an agent invokes a tool unless the tool is pre-authorized via `permissions.allow`. Specky's agents need `Read`, `Write`, `Bash`, `mcp__specky__*`, etc. The CLI pre-authorizes them so pipeline work doesn't get interrupted by prompts.
+Claude Code asks for approval each time an agent invokes a tool unless the tool is pre-authorized via `permissions.allow`. Specky's Claude agents need read/search tools, scoped git/npm/npx shell commands, workspace edit tools, and `mcp__specky__*`. The CLI pre-authorizes that least-privilege set so pipeline work does not get interrupted by repeated prompts.
 
 ---
 
