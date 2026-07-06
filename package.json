@@ -9,8 +9,8 @@
     "specky-sdd": "dist/cli/index.js"
   },
   "scripts": {
-    "audit": "node scripts/audit-agent-frontmatter.mjs",
-    "build": "node scripts/audit-agent-frontmatter.mjs && tsc && rm -rf dist/templates && cp -r templates dist/templates && node scripts/build-claude-hooks.mjs && node scripts/finalize-build.mjs",
+    "audit": "node scripts/check-manifest-sync.mjs && node scripts/audit-agent-frontmatter.mjs",
+    "build": "node scripts/check-manifest-sync.mjs && node scripts/audit-agent-frontmatter.mjs && tsc && rm -rf dist/templates && cp -r templates dist/templates && node scripts/build-claude-hooks.mjs && node scripts/finalize-build.mjs",
     "start": "node dist/cli/index.js serve",
     "dev": "tsx watch src/index.ts",
     "clean": "rm -rf dist",

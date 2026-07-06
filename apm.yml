@@ -1,9 +1,36 @@
 name: specky-sdd
-version: 3.7.0
+version: 3.7.2
 description: "Agentic Spec-Driven Development — 10-phase pipeline with 58 MCP tools, 13 agents, 22 prompts, 8 skills, 16 hooks, EARS notation, model routing, and enterprise security"
 author: Paula Silva
 license: MIT
-target: all
+
+# Harness targets this package compiles to. Each target is rendered from the
+# single canonical primitive source below via a Specky harness compiler
+# (src/cli/lib/harness). `specky install --ide=<target>` and
+# `specky compile --target=<target>` produce that harness's native layout.
+targets:
+  - github-copilot
+  - claude-code
+
+# Canonical, harness-agnostic primitive source. Authored once and compiled per
+# target — never hand-edited per harness.
+primitives:
+  agents: .apm/agents
+  prompts: .apm/prompts
+  skills: .apm/skills
+  instructions: .apm/instructions
+  hooks: .apm/hooks
+
+# MCP runtime that backs the `specky/sdd_*` (Copilot) and `mcp__specky__sdd_*`
+# (Claude) tool ids referenced by the primitives above.
+mcp:
+  servers:
+    - name: specky
+      registry: false
+      transport: stdio
+      command: npx
+      args: ["-y", "specky-sdd@latest", "serve"]
+      tools: ["sdd_*"]
 
 dependencies:
   mcp:
