@@ -1,6 +1,6 @@
 ---
 description: Plan a system migration with SDD pipeline
-mode: agent
+agent: agent
 argument-hint: <source system and target>
 ---
 Plan a system migration using the Specky SDD pipeline.

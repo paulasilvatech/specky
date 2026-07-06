@@ -1,6 +1,6 @@
 ---
 description: Run SDD release phase
-mode: agent
+agent: agent
 argument-hint: <feature-number>
 ---
 Run the SDD release phase for feature [FEATURE NUMBER].

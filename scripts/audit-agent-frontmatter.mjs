@@ -50,6 +50,29 @@ function parseTools(frontmatter) {
     .filter(Boolean);
 }
 
+const COPILOT_AGENT_TOOLS = new Set([
+  "agent",
+  "edit",
+  "fetch",
+  "runCommands",
+  "search",
+  "todos",
+]);
+
+const CLAUDE_TOOL_NAMES = new Set([
+  "Bash",
+  "Edit",
+  "Glob",
+  "Grep",
+  "MultiEdit",
+  "Read",
+  "Task",
+  "TodoWrite",
+  "WebFetch",
+  "WebSearch",
+  "Write",
+]);
+
 function parseSddTokens(text) {
   return [...new Set(text.match(/\bsdd_[a-z0-9_]+\b/g) ?? [])].sort((a, b) =>
     a.localeCompare(b),
@@ -103,7 +126,25 @@ function main() {
     if (!fmValue(fm, "description"))
       errors.push(`${filePath}: missing 'description' in frontmatter`);
 
-    const missingTools = sddTokens.filter((tool) => !tools.includes(tool));
+    for (const tool of tools) {
+      if (CLAUDE_TOOL_NAMES.has(tool)) {
+        errors.push(`${filePath}: Claude-native tool "${tool}" is not allowed in .apm Copilot source`);
+      }
+      if (tool.startsWith("sdd_")) {
+        errors.push(`${filePath}: use namespaced Copilot MCP tool "specky/${tool}" instead of "${tool}"`);
+      }
+      if (tool.startsWith("mcp__")) {
+        errors.push(`${filePath}: Claude MCP tool "${tool}" is not allowed in .apm Copilot source`);
+      }
+      if (
+        !COPILOT_AGENT_TOOLS.has(tool) &&
+        !tool.startsWith("specky/sdd_")
+      ) {
+        errors.push(`${filePath}: unknown Copilot tool "${tool}"`);
+      }
+    }
+
+    const missingTools = sddTokens.filter((tool) => !tools.includes(`specky/${tool}`));
     if (missingTools.length > 0)
       errors.push(
         `${filePath}: missing tools in frontmatter -> ${missingTools.join(", ")}`,
@@ -151,11 +192,13 @@ function main() {
     } else {
       if (!fmValue(fm, "description"))
         errors.push(`${filePath}: missing 'description' in frontmatter`);
-      const mode = fmValue(fm, "mode");
-      if (!mode)
-        errors.push(`${filePath}: missing 'mode' in frontmatter (expected agent)`);
-      else if (!["agent", "ask", "edit"].includes(mode))
-        errors.push(`${filePath}: invalid mode "${mode}"`);
+      if (fmValue(fm, "mode"))
+        errors.push(`${filePath}: use 'agent: agent' instead of legacy 'mode'`);
+      const agent = fmValue(fm, "agent");
+      if (!agent)
+        errors.push(`${filePath}: missing 'agent' in frontmatter (expected agent)`);
+      else if (!["agent", "ask", "edit", "plan"].includes(agent))
+        errors.push(`${filePath}: invalid agent "${agent}"`);
     }
     checkUnknownTools(filePath, text);
   }

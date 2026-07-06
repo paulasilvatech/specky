@@ -3,7 +3,7 @@ name: design-architect
 description: Phase 4 agent that writes DESIGN.md with system architecture, API contracts, data models, and Mermaid diagrams. All design decisions trace to specification requirements.
 
 color: blue
-tools: ["Read", "Glob", "Grep", "sdd_write_design", "sdd_generate_all_diagrams", "sdd_generate_diagram"]
+tools: ["search", "specky/sdd_write_design", "specky/sdd_generate_all_diagrams", "specky/sdd_generate_diagram"]
 ---
 
 <example>

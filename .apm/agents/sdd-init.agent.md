@@ -3,7 +3,7 @@ name: sdd-init
 description: Use this agent to initialize the SDD pipeline for a new feature. Creates the .specs/ directory structure and CONSTITUTION.md.
 
 color: green
-tools: ["Read", "Glob", "Grep", "sdd_init", "sdd_scan_codebase", "sdd_create_branch"]
+tools: ["search", "specky/sdd_init", "specky/sdd_scan_codebase", "specky/sdd_create_branch"]
 ---
 
 <example>

@@ -40,7 +40,13 @@ function shouldWrite(dest: string, opts: CopyOptions): boolean {
   return !existsSync(dest);
 }
 
-function copyFile(src: string, dest: string, opts: CopyOptions, result: CopyResult): void {
+function copyFile(
+  src: string,
+  dest: string,
+  opts: CopyOptions,
+  result: CopyResult,
+  transformer?: FileTransformer,
+): void {
   if (!shouldWrite(dest, opts)) {
     result.skipped.push(dest);
     return;
@@ -50,7 +56,35 @@ function copyFile(src: string, dest: string, opts: CopyOptions, result: CopyResu
     return;
   }
   ensureDir(resolve(dest, ".."));
-  cpSync(src, dest);
+  if (transformer) {
+    const content = readFileSync(src, "utf8");
+    writeFileSync(dest, transformer(content, src, dest), "utf8");
+  } else {
+    cpSync(src, dest);
+  }
+  result.written.push(dest);
+}
+
+type FileTransformer = (content: string, src: string, dest: string) => string;
+
+function copyTextFile(
+  src: string,
+  dest: string,
+  opts: CopyOptions,
+  result: CopyResult,
+  transformer: FileTransformer,
+): void {
+  if (!shouldWrite(dest, opts)) {
+    result.skipped.push(dest);
+    return;
+  }
+  if (opts.dryRun) {
+    result.written.push(dest);
+    return;
+  }
+  ensureDir(resolve(dest, ".."));
+  const content = readFileSync(src, "utf8");
+  writeFileSync(dest, transformer(content, src, dest), "utf8");
   result.written.push(dest);
 }
 
@@ -60,6 +94,7 @@ function copyDir(
   opts: CopyOptions,
   result: CopyResult,
   renamer?: (name: string) => string,
+  transformer?: FileTransformer,
 ): void {
   if (!existsSync(src)) return;
   ensureDir(dest);
@@ -69,16 +104,135 @@ function copyDir(
     const destPath = resolve(dest, name);
     const st = statSync(srcPath);
     if (st.isDirectory()) {
-      copyDir(srcPath, destPath, opts, result, renamer);
+      copyDir(srcPath, destPath, opts, result, renamer, transformer);
     } else {
-      copyFile(srcPath, destPath, opts, result);
+      if (transformer) copyTextFile(srcPath, destPath, opts, result, transformer);
+      else copyFile(srcPath, destPath, opts, result);
     }
   }
 }
 
+function unique(values: string[]): string[] {
+  return [...new Set(values.filter(Boolean))];
+}
+
+function parseToolArray(tools: string): string[] {
+  const trimmed = tools.trim();
+  if (!trimmed) return [];
+  if (trimmed.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(trimmed) as unknown;
+      if (Array.isArray(parsed)) return parsed.map(String);
+    } catch {
+      // Fall through to the comma parser below.
+    }
+  }
+  return trimmed
+    .replace(/^\[/, "")
+    .replace(/\]$/, "")
+    .split(",")
+    .map((token) => token.trim().replace(/^"|"$/g, ""))
+    .filter(Boolean);
+}
+
+function transformToolsLine(
+  content: string,
+  mapper: (tool: string) => string[],
+  format: "json-array" | "comma-list",
+): string {
+  return content.replace(/^tools:\s*(.+)$/m, (_line, rawTools: string) => {
+    const mapped = unique(parseToolArray(rawTools).flatMap(mapper));
+    if (format === "comma-list") return `tools: ${mapped.join(", ")}`;
+    return `tools: ${JSON.stringify(mapped)}`;
+  });
+}
+
+function toCopilotTool(tool: string): string[] {
+  if (tool.startsWith("specky/")) return [tool];
+  if (tool.startsWith("mcp__specky__")) {
+    return [`specky/${tool.slice("mcp__specky__".length)}`];
+  }
+  if (tool.startsWith("sdd_")) return [`specky/${tool}`];
+
+  switch (tool) {
+    case "Read":
+    case "Glob":
+    case "Grep":
+    case "search":
+      return ["search"];
+    case "Edit":
+    case "Write":
+    case "MultiEdit":
+    case "edit":
+      return ["edit"];
+    case "Bash":
+    case "runCommands":
+      return ["runCommands"];
+    case "WebFetch":
+    case "WebSearch":
+    case "fetch":
+      return ["fetch"];
+    case "Task":
+    case "agent":
+      return ["agent"];
+    case "TodoWrite":
+    case "todos":
+      return ["todos"];
+    default:
+      return [tool];
+  }
+}
+
+function toClaudeTool(tool: string): string[] {
+  if (tool.startsWith("mcp__specky__")) return [tool];
+  if (tool.startsWith("specky/")) {
+    return [`mcp__specky__${tool.slice("specky/".length)}`];
+  }
+  if (tool.startsWith("sdd_")) return [`mcp__specky__${tool}`];
+
+  switch (tool) {
+    case "search":
+      return ["Read", "Glob", "Grep"];
+    case "edit":
+      return ["Edit", "Write"];
+    case "runCommands":
+      return ["Bash"];
+    case "fetch":
+      return ["WebFetch", "WebSearch"];
+    case "agent":
+      return ["Task"];
+    case "todos":
+      return ["TodoWrite"];
+    default:
+      return [tool];
+  }
+}
+
+function toCopilotAgent(content: string): string {
+  return transformToolsLine(content, toCopilotTool, "json-array");
+}
+
+function toClaudeAgent(content: string): string {
+  return transformToolsLine(content, toClaudeTool, "comma-list");
+}
+
+function toCopilotPrompt(content: string): string {
+  if (/^agent:/m.test(content)) return content.replace(/^mode:\s*agent\s*$/m, "");
+  return content.replace(/^mode:\s*agent\s*$/m, "agent: agent");
+}
+
+function toClaudePrompt(content: string): string {
+  return content
+    .replace(/^agent:\s*agent\s*\n/m, "")
+    .replace(/^mode:\s*agent\s*\n/m, "");
+}
+
+function toClaudeInstruction(content: string): string {
+  return content.replace(/^applyTo:\s*['"]?\*\*['"]?\s*$/m, "paths: ['**']");
+}
+
 /**
- * Transform `.agent.md` (Copilot format) to `.md` (Claude Code format) and
- * strip Copilot-specific frontmatter markers. For now we just rename.
+ * Transform `.agent.md` (Copilot format) to `.md` (Claude Code format).
  */
 function claudeAgentRenamer(fileName: string): string {
   return fileName.replace(/\.agent\.md$/, ".md");
@@ -99,8 +253,8 @@ export function copyToClaude(
   const src = sourcePaths(pkgRoot);
   const result: CopyResult = { written: [], skipped: [] };
 
-  copyDir(src.agentsDir, targets.claude.agents, opts, result, claudeAgentRenamer);
-  copyDir(src.promptsDir, targets.claude.commands, opts, result, claudePromptRenamer);
+  copyDir(src.agentsDir, targets.claude.agents, opts, result, claudeAgentRenamer, toClaudeAgent);
+  copyDir(src.promptsDir, targets.claude.commands, opts, result, claudePromptRenamer, toClaudePrompt);
   copyDir(src.skillsDir, targets.claude.skills, opts, result);
   copyDir(src.hookScriptsDir, targets.claude.hooksScripts, opts, result);
 
@@ -132,6 +286,7 @@ export function copyToClaude(
       resolve(targets.claude.rules, "copilot-instructions.md"),
       opts,
       result,
+      toClaudeInstruction,
     );
   }
 
@@ -149,8 +304,8 @@ export function copyToCopilot(
   const src = sourcePaths(pkgRoot);
   const result: CopyResult = { written: [], skipped: [] };
 
-  copyDir(src.agentsDir, targets.copilot.agents, opts, result);
-  copyDir(src.promptsDir, targets.copilot.prompts, opts, result);
+  copyDir(src.agentsDir, targets.copilot.agents, opts, result, undefined, toCopilotAgent);
+  copyDir(src.promptsDir, targets.copilot.prompts, opts, result, undefined, toCopilotPrompt);
   copyDir(src.skillsDir, targets.copilot.skills, opts, result);
   copyDir(src.hookScriptsDir, targets.copilot.hooksScripts, opts, result);
 

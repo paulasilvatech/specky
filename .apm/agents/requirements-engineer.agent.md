@@ -3,7 +3,7 @@ name: requirements-engineer
 description: Use this agent to analyze raw input and produce validated FRD and NFRD documents ready for sdd_init.
 
 color: magenta
-tools: ["Read", "Glob", "Grep", "Write", "Edit", "sdd_init", "sdd_discover", "sdd_import_document", "sdd_import_transcript", "sdd_batch_import", "sdd_validate_ears"]
+tools: ["search", "edit", "specky/sdd_init", "specky/sdd_discover", "specky/sdd_import_document", "specky/sdd_import_transcript", "specky/sdd_batch_import", "specky/sdd_validate_ears"]
 ---
 
 <example>

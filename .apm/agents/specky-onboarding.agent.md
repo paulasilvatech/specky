@@ -3,7 +3,7 @@ name: specky-onboarding
 description: Default entry point and interactive wizard for Specky SDD. Detects project context, explains the plugin, guides through project type selection, work mode, and branch setup. Triggered when user says "specky" without specifics.
 
 color: green
-tools: ["Read", "Glob", "Grep", "sdd_get_status", "sdd_scan_codebase", "sdd_check_ecosystem", "sdd_context_status", "sdd_auto_pipeline", "sdd_batch_import", "sdd_create_branch", "sdd_discover", "sdd_figma_to_spec", "sdd_import_document", "sdd_import_transcript"]
+tools: ["search", "specky/sdd_get_status", "specky/sdd_scan_codebase", "specky/sdd_check_ecosystem", "specky/sdd_context_status", "specky/sdd_auto_pipeline", "specky/sdd_batch_import", "specky/sdd_create_branch", "specky/sdd_discover", "specky/sdd_figma_to_spec", "specky/sdd_import_document", "specky/sdd_import_transcript"]
 ---
 
 <example>

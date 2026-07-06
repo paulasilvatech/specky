@@ -3,7 +3,7 @@ name: sdd-clarify
 description: Use this agent to find and resolve ambiguities in requirements, validate EARS patterns, and produce a clarification log.
 
 color: yellow
-tools: ["Read", "Glob", "Grep", "sdd_clarify", "sdd_validate_ears", "sdd_turnkey_spec"]
+tools: ["search", "specky/sdd_clarify", "specky/sdd_validate_ears", "specky/sdd_turnkey_spec"]
 ---
 
 <example>

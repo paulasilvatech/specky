@@ -3,7 +3,7 @@ name: specky-orchestrator
 description: Master agent that coordinates the full SDD 10-phase pipeline end-to-end, routing to phase agents, validating artifacts between phases, and enforcing hooks and LGTM gates.
 
 color: purple
-tools: ["Read", "Glob", "Grep", "Task", "sdd_get_status", "sdd_checkpoint", "sdd_advance_phase", "sdd_validate_ears", "sdd_model_routing", "sdd_context_status"]
+tools: ["search", "agent", "specky/sdd_get_status", "specky/sdd_checkpoint", "specky/sdd_advance_phase", "specky/sdd_validate_ears", "specky/sdd_model_routing", "specky/sdd_context_status"]
 ---
 
 <example>

@@ -1,6 +1,6 @@
 ---
 description: Start a greenfield project with SDD pipeline
-mode: agent
+agent: agent
 argument-hint: <project idea>
 ---
 Start a greenfield project with the Specky SDD pipeline.

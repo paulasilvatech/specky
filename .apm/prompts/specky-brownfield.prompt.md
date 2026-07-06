@@ -1,6 +1,6 @@
 ---
 description: Add SDD pipeline to an existing codebase
-mode: agent
+agent: agent
 argument-hint: <feature to add>
 ---
 Add the Specky SDD pipeline to this existing codebase.

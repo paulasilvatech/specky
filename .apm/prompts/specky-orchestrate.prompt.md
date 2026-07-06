@@ -1,6 +1,6 @@
 ---
 description: Run the full SDD pipeline end-to-end
-mode: agent
+agent: agent
 argument-hint: <feature description or number>
 ---
 Run the full SDD pipeline for feature [FEATURE NUMBER or NAME].

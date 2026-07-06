@@ -3,7 +3,7 @@ name: test-verifier
 description: Use this agent to verify test coverage, detect phantom completions, and check spec-code drift.
 
 color: yellow
-tools: ["Read", "Glob", "Grep", "sdd_verify_tests", "sdd_verify_tasks", "sdd_check_sync", "sdd_validate_ears", "sdd_get_status"]
+tools: ["search", "specky/sdd_verify_tests", "specky/sdd_verify_tasks", "specky/sdd_check_sync", "specky/sdd_validate_ears", "specky/sdd_get_status"]
 ---
 
 <example>

@@ -1,6 +1,6 @@
 ---
 description: Run SDD implementation phase
-mode: agent
+agent: agent
 argument-hint: <feature-number>
 ---
 Run the SDD implementation phase for feature [FEATURE NUMBER].

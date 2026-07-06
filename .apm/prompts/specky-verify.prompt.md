@@ -1,6 +1,6 @@
 ---
 description: Run SDD verification phase
-mode: agent
+agent: agent
 argument-hint: <feature-number>
 ---
 Run the SDD verification phase for feature [FEATURE NUMBER].

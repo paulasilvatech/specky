@@ -1,6 +1,6 @@
 ---
 description: Check spec-code drift for a feature
-mode: agent
+agent: agent
 argument-hint: <feature-number>
 ---
 Check spec-code drift for feature [FEATURE NUMBER].

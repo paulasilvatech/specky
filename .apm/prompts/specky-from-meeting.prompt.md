@@ -1,6 +1,6 @@
 ---
 description: Import meeting transcript into SDD pipeline
-mode: agent
+agent: agent
 argument-hint: <transcript file path>
 ---
 Import a meeting transcript into the SDD pipeline.

@@ -3,7 +3,7 @@ name: release-engineer
 description: Use this agent to prepare features for release — run blocking gates, generate documentation, create PR, and export work items.
 
 color: green
-tools: ["Read", "Glob", "Grep", "sdd_create_pr", "sdd_generate_all_docs", "sdd_generate_docs", "sdd_generate_api_docs", "sdd_generate_runbook", "sdd_generate_onboarding", "sdd_export_work_items"]
+tools: ["search", "specky/sdd_create_pr", "specky/sdd_generate_all_docs", "specky/sdd_generate_docs", "specky/sdd_generate_api_docs", "specky/sdd_generate_runbook", "specky/sdd_generate_onboarding", "specky/sdd_export_work_items"]
 ---
 
 <example>

@@ -1,6 +1,6 @@
 ---
 description: Reset an SDD pipeline phase by restoring the checkpoint taken before it
-mode: agent
+agent: agent
 argument-hint: <feature-number> <phase 0-9 or phase name>
 ---
 Reset an SDD pipeline phase for feature [FEATURE NUMBER].

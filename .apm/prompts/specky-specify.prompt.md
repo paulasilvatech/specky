@@ -1,6 +1,6 @@
 ---
 description: Run SDD specification phase
-mode: agent
+agent: agent
 argument-hint: <feature-number>
 ---
 Run the SDD specification phase for feature [FEATURE NUMBER].
