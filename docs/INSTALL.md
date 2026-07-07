@@ -4,6 +4,8 @@
 
 Specky is distributed as a single npm package (`specky-sdd`) that bundles both the MCP server and all assets (13 agents, 22 prompts, 8 skills, 16 hooks). A unified CLI (`specky`) handles install, validation, and upgrade.
 
+Specky includes its own APM governance commands (`specky apm ...`). Users do **not** need to install the Microsoft APM CLI to install or run Specky. See [Uso do APM pelo Specky](APM-USAGE.md) for the detailed package, CLI, MCP, and container model.
+
 ---
 
 ## Prerequisites

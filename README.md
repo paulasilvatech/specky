@@ -117,7 +117,7 @@ The CLI installs 13 agents, 22 prompts, 8 skills, 16 hooks, the MCP server regis
 
 Starting in v3.7.3, generated assets are platform-native. `specky install --ide=copilot` writes GitHub Copilot agents/prompts with VS Code tool names such as `search`, `agent`, and `specky/sdd_get_status`, plus prompt `agent: agent` frontmatter. `specky install --ide=claude` writes Claude Code agents/commands with `Read`, `Glob`, `Grep`, `Task`, and `mcp__specky__sdd_get_status`, with Copilot-only prompt metadata removed.
 
-Specky also has an APM governance layer for enterprise package control. `apm.yml` declares the package primitives, targets, and MCP runtime; `apm.lock.yaml` pins primitive hashes; `apm-policy.yml` enforces MCP and tool-name policy. Maintainers and CI can run `specky apm validate`, `specky apm policy`, `specky apm verify-lock`, and `specky apm sbom` before publishing or installing.
+Specky also has an APM governance layer for enterprise package control. `apm.yml` declares the package primitives, targets, and MCP runtime; `apm.lock.yaml` pins primitive hashes; `apm-policy.yml` enforces MCP and tool-name policy. Maintainers and CI can run `specky apm validate`, `specky apm policy`, `specky apm verify-lock`, and `specky apm sbom` before publishing or installing. See [Uso do APM pelo Specky](docs/APM-USAGE.md) for the detailed model, including why APM is not a runtime proxy and why users do not need to install the Microsoft APM CLI.
 
 Full walkthroughs per OS, offline install, and CLI reference: [docs/INSTALL.md](docs/INSTALL.md) · [docs/CLI.md](docs/CLI.md).
 

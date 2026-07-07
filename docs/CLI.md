@@ -145,6 +145,8 @@ The APM layer does not replace `specky install`; it governs what `specky install
 
 `apm.lock.yaml` pins the primitive hashes shipped in the package. `apm-policy.yml` enforces MCP allowlists, allowed hook events, and per-harness tool-name isolation.
 
+For the detailed architecture, including why APM is not a runtime proxy and why Specky users do not need the external Microsoft APM CLI, see [Uso do APM pelo Specky](APM-USAGE.md).
+
 ---
 
 ### `specky serve`
