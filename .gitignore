@@ -64,10 +64,13 @@ Thumbs.db
 
 # ── AI tooling internals ─────────────────────────────────
 .claude/
+.cursor/
+.agents/
 .remember/
 CLAUDE.md
 BUILD_PROMPT.md
 SESSION_LOG_*.md
+.mcp.json
 
 # ── APM consumer artifacts (not package content) ─────────
 apm_modules/
@@ -77,6 +80,7 @@ apm_modules/
 .specky/
 
 # ── Local workspace assets / sibling checkouts ───────────
+harness/
 images/
 specky-site/
 
