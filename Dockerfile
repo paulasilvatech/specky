@@ -10,9 +10,10 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
-# Sources consumed by `npm run build`: tsc, then the hook/finalize scripts.
-# build-claude-hooks.mjs reads .apm/hooks/sdd-hooks.json, so .apm is required.
+# Sources consumed by `npm run build`: manifest sync, tsc, then the hook/finalize scripts.
+# check-manifest-sync.mjs reads apm.yml; build-claude-hooks.mjs reads .apm/hooks/sdd-hooks.json.
 COPY tsconfig.json ./
+COPY apm.yml config.yml apm.lock.yaml apm-policy.yml ./
 COPY src ./src
 COPY templates ./templates
 COPY scripts ./scripts
@@ -27,14 +28,14 @@ WORKDIR /app
 # Install production dependencies only (the 3 runtime deps).
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --no-audit --no-fund \
- && npm cache clean --force
+  && npm cache clean --force
 
 # Ship the compiled server plus the assets it reads at runtime.
 # TemplateEngine resolves templates from dist/templates (produced by the build);
-# .apm and the yml manifests are copied to match the published npm package.
+# .apm and the governance manifests are copied to match the published npm package.
 COPY --from=build /app/dist ./dist
 COPY .apm ./.apm
-COPY apm.yml config.yml ./
+COPY apm.yml config.yml apm.lock.yaml apm-policy.yml ./
 
 # Run unprivileged; /workspace is the project root mounted at runtime
 # (README: `docker run -p 3200:3200 -v $(pwd):/workspace ...`).
