@@ -1,5 +1,5 @@
 #!/bin/bash
-# ears-validator.sh — Validate EARS pattern compliance
+# specky-ears-validator.sh — Validate EARS pattern compliance
 # Target: Claude Code (.claude/hooks/)
 # Type: Advisory | Trigger: PostToolUse | Phase: 2,3
 # Paper: arXiv:2601.03878 — EARS quality

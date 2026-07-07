@@ -64,7 +64,7 @@ sequenceDiagram
 | Role | Access |
 | --- | --- |
 | Viewer | Read-only status, routing, context, metrics, templates, checkpoints list, audit verification. |
-| Contributor | Authoring and analysis tools, excluding release-gate operations. |
+| Contributor | Authoring and analysis tools, excluding specky-release-gate operations. |
 | Admin | All tools, including release, branch governance, and enterprise configuration. |
 
 RBAC may remain opt-in for local use, but when enabled it must be enforced by the wrapper before any handler executes.

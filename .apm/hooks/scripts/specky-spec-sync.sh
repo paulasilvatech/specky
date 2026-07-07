@@ -1,11 +1,11 @@
 #!/bin/bash
-# spec-sync.sh — Detect spec-code drift
+# specky-spec-sync.sh — Detect spec-code drift
 # Target: Claude Code (.claude/hooks/)
 # Type: Advisory | Trigger: PostToolUse | Phase: 6
 # Paper: arXiv:2602.20478 — anti-context-collapse
 #
 # Claude Code settings.json:
-#   "hooks": { "PostToolUse": ["bash .claude/hooks/spec-sync.sh"] }
+#   "hooks": { "PostToolUse": ["bash .claude/hooks/specky-spec-sync.sh"] }
 
 set -euo pipefail
 SPECS_DIR=".specs"

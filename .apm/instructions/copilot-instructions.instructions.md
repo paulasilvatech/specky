@@ -11,7 +11,7 @@ This project uses Spec-Driven Development (SDD) via the Specky pipeline.
 1. **EARS notation is mandatory.** Every requirement must follow one of the 6 EARS patterns.
 2. **REQ-ID traceability is non-negotiable.** Every test, task, and design decision traces to a REQ-ID.
 3. **Model routing matters.** Use a fast model class for lightweight scaffolding (Phase 0, 9), a balanced model class for iterative delivery (Phase 1, 5-7), and a reasoning-focused model class for complex analysis and design (Phase 2-4, 8). The user chooses any available model.
-4. **Never skip hooks.** Blocking hooks (security-scan, release-gate) must pass before release.
+4. **Never skip hooks.** Blocking hooks (specky-security-scan, specky-release-gate) must pass before release.
 5. **Artifacts live in `.specs/NNN-feature/`.** CONSTITUTION.md, RESEARCH.md, SPECIFICATION.md, DESIGN.md, TASKS.md, VERIFICATION.md, ANALYSIS.md.
 6. **One branch per spec.** Create `spec/NNN-feature-name` from `develop` for all pipeline work (Phases 0-7). All `.specs/` artifacts are created on this branch. Merge to `develop` after verification, then `stage` for QA and release gates, then `main` for production. Never commit spec work directly to develop, stage, or main.
 
@@ -19,17 +19,17 @@ This project uses Spec-Driven Development (SDD) via the Specky pipeline.
 
 - @specky-onboarding — Interactive wizard and default entry point
 - @specky-orchestrator — Full pipeline coordinator (all 10 phases)
-- @sdd-init — Initialize pipeline (Phase 0)
-- @requirements-engineer — Produce FRD + NFRD
-- @research-analyst — Technical research (Phase 1)
-- @spec-engineer — Write SPECIFICATION.md with EARS (Phase 2)
-- @sdd-clarify — Resolve ambiguities (Phase 3)
-- @design-architect — Write DESIGN.md + diagrams (Phase 4)
-- @task-planner — Write TASKS.md + CHECKLIST.md (Phase 5)
-- @quality-reviewer — Completeness audit + compliance (Phase 6)
-- @implementer — Implementation scaffolding (Phase 7)
-- @test-verifier — Coverage verification (Phase 8)
-- @release-engineer — Release preparation (Phase 9)
+- @specky-sdd-init — Initialize pipeline (Phase 0)
+- @specky-requirements-engineer — Produce FRD + NFRD
+- @specky-research-analyst — Technical research (Phase 1)
+- @specky-spec-engineer — Write SPECIFICATION.md with EARS (Phase 2)
+- @specky-sdd-clarify — Resolve ambiguities (Phase 3)
+- @specky-design-architect — Write DESIGN.md + diagrams (Phase 4)
+- @specky-task-planner — Write TASKS.md + CHECKLIST.md (Phase 5)
+- @specky-quality-reviewer — Completeness audit + compliance (Phase 6)
+- @specky-implementer — Implementation scaffolding (Phase 7)
+- @specky-test-verifier — Coverage verification (Phase 8)
+- @specky-release-engineer — Release preparation (Phase 9)
 
 ## Available Prompts
 
@@ -43,15 +43,15 @@ Use in Copilot Chat with `@workspace /prompt-name`:
 ## Hook Enforcement
 
 Hooks fire automatically on MCP tool calls:
-- **Pre-tool:** artifact-validator (BLOCKING) + branch-validator (advisory) before every phase tool
-- **Post-tool:** phase-gate (BLOCKING) + lgtm-gate (advisory) + quality hooks after artifact writes
+- **Pre-tool:** specky-artifact-validator (BLOCKING) + specky-branch-validator (advisory) before every phase tool
+- **Post-tool:** specky-phase-gate (BLOCKING) + specky-lgtm-gate (advisory) + quality hooks after artifact writes
 - **LGTM gates:** Phases 2 (Specify), 4 (Design), 5 (Tasks) pause for human review
-- **Blocking gates:** security-scan + release-gate before PR creation
+- **Blocking gates:** specky-security-scan + specky-release-gate before PR creation
 
 ## Work Modes
 
 - **Full Pipeline:** Use @specky-orchestrator or /specky-orchestrate for automated end-to-end
-- **Agent-by-agent:** Call individual agents (@spec-engineer, @implementer, etc.)
+- **Agent-by-agent:** Call individual agents (@specky-spec-engineer, @specky-implementer, etc.)
 - **Direct MCP tools:** Call sdd_* tools directly for maximum control
 - **Use /specky-onboarding to choose your mode**
 
@@ -61,7 +61,7 @@ Hooks fire automatically on MCP tool calls:
 
 ## Rule #8
 
-8. **Orchestrator is the single entry point.** When `.specs/` exists with an active pipeline (`.sdd-state.json` present), ALL work — code, branches, commits, PRs — MUST flow through `@specky-orchestrator`. Direct calls to phase agents, manual branch creation outside `spec/NNN-*`, or free-form edits bypass the quality gates and are pipeline violations. If unsure where to start, invoke `@specky-onboarding`. The orchestrator validates branch, artifacts, phase prerequisites, and routes to the correct phase agent. Starting in v3.5, `pipeline-guard` hook enforces this automatically.
+8. **Orchestrator is the single entry point.** When `.specs/` exists with an active pipeline (`.sdd-state.json` present), ALL work — code, branches, commits, PRs — MUST flow through `@specky-orchestrator`. Direct calls to phase agents, manual branch creation outside `spec/NNN-*`, or free-form edits bypass the quality gates and are pipeline violations. If unsure where to start, invoke `@specky-onboarding`. The orchestrator validates branch, artifacts, phase prerequisites, and routes to the correct phase agent. Starting in v3.5, `specky-pipeline-guard` hook enforces this automatically.
 
 ## MCP Server
 

@@ -74,10 +74,10 @@ Specky is a **complete AI development toolkit** — not just an MCP server. The 
 
 | Primitive | What it is | Specky includes |
 |-----------|-----------|------------------|
-| **Agents** | Specialized AI personas with defined roles, tools, and guardrails | 13 agents — @specky-orchestrator (full pipeline), @specky-onboarding (wizard), @spec-engineer, @design-architect, @task-planner, @quality-reviewer, and 7 more |
+| **Agents** | Specialized AI personas with defined roles, tools, and guardrails | 13 agents — @specky-orchestrator (full pipeline), @specky-onboarding (wizard), @specky-spec-engineer, @specky-design-architect, @specky-task-planner, @specky-quality-reviewer, and 7 more |
 | **Prompts** | Slash commands that activate the right agent for a task | 22 prompts — `/specky-greenfield`, `/specky-specify`, `/specky-release`, `/specky-orchestrate`, etc. |
 | **Skills** | Domain knowledge files loaded into agent context automatically | 8 skills — SDD pipeline rules, EARS patterns, implementation patterns, test criteria, release gate protocol |
-| **Hooks** | Scripts that run before/after every tool call for validation | 16 hooks — artifact-validator, branch-validator, phase-gate, lgtm-gate, security-scan, etc. |
+| **Hooks** | Scripts that run before/after every tool call for validation | 16 hooks — specky-artifact-validator, specky-branch-validator, specky-phase-gate, specky-lgtm-gate, specky-security-scan, etc. |
 | **MCP Server** | The tool engine that validates, generates, and enforces | 58 tools via Model Context Protocol (the runtime underneath) |
 
 ### Why not just an MCP server?
@@ -172,7 +172,7 @@ Specky adds a **deterministic engine** between your intent and your code:
 | Any input (PDF, DOCX, PPTX, transcript, Figma) to spec | 58 MCP tools handle all input formats |
 | EARS validation (programmatic, not AI guessing) | 6 patterns enforced at schema level |
 | Enforced pipeline (not suggestions) | 10 phases with actual gates that block advancement |
-| Pre/post hooks on every phase | artifact-validator, branch-validator, phase-gate, lgtm-gate |
+| Pre/post hooks on every phase | specky-artifact-validator, specky-branch-validator, specky-phase-gate, specky-lgtm-gate |
 | 17 diagram types generated automatically | C4 (4 levels), sequence, ER, activity, use case, DFD, deployment, network |
 | Infrastructure as Code | Terraform, Bicep, Dockerfile from DESIGN.md |
 | Work item export | GitHub Issues, Azure Boards, Jira via MCP-to-MCP routing |
@@ -1033,7 +1033,7 @@ Specky is 100% open source (MIT) — enterprise mode is just an opt-in configura
 - **No `eval()` or dynamic code execution** — template rendering is string replacement only
 - **Path traversal prevention**: FileManager sanitizes all paths, blocks `..` sequences
 - **Zod `.strict()` validation** — every tool input is schema-validated; unknown fields rejected
-- **security-scan hook** blocks commits containing hardcoded secrets (exit code 2)
+- **specky-security-scan hook** blocks commits containing hardcoded secrets (exit code 2)
 - See [SECURITY.md](SECURITY.md) for full OWASP Top 10 coverage
 - See [docs/SYSTEM-DESIGN.md](docs/SYSTEM-DESIGN.md) for complete security architecture
 - See [docs/ENTERPRISE-CONTROLS.md](docs/ENTERPRISE-CONTROLS.md) for RBAC, audit trail, and tool-enforcement controls
@@ -1053,7 +1053,7 @@ When using Specky, follow these practices to protect your data:
 | **Protect the `.specs/` directory** | Contains your specification artifacts (architecture, API contracts, business logic) | Add `.specs/` to `.gitignore` if specs contain sensitive IP, or use a private repo |
 | **Protect checkpoints** | `.specs/{feature}/.checkpoints/` stores full artifact snapshots | Same as above — treat checkpoints like source code |
 | **Review auto-generated specs before committing** | Turnkey and auto-pipeline generate from natural language — may capture sensitive details | Review SPECIFICATION.md and DESIGN.md before `git add` |
-| **Keep the security-scan hook enabled** | Detects API keys, passwords, tokens in staged files | Comes pre-configured; don't disable `.claude/hooks/security-scan.sh` |
+| **Keep the specky-security-scan hook enabled** | Detects API keys, passwords, tokens in staged files | Comes pre-configured; don't disable `.claude/hooks/specky-security-scan.sh` |
 | **Use environment variables for secrets** | Specky never stores credentials, but your specs might reference them | Write `$DATABASE_URL` in specs, never the actual connection string |
 | **Run `npm audit` regularly** | Catches dependency vulnerabilities | `npm audit` — CI runs this automatically on every PR |
 

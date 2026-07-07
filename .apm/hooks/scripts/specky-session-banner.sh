@@ -1,5 +1,5 @@
 #!/bin/bash
-# session-banner.sh — Show Specky pipeline status at session start.
+# specky-session-banner.sh — Show Specky pipeline status at session start.
 # Target: Claude Code + GitHub Copilot
 # Type: Advisory (exit 0 always) | Trigger: SessionStart
 #
@@ -60,20 +60,20 @@ echo ""
 case "$PHASE" in
   init|discover|specify|clarify|design|tasks|analyze|implement)
     if [[ ! "$BRANCH" =~ ^spec/ ]]; then
-      echo "⚠️  [session-banner] Phase $PHASE expects branch spec/NNN-* — you are on '$BRANCH'"
+      echo "⚠️  [specky-session-banner] Phase $PHASE expects branch spec/NNN-* — you are on '$BRANCH'"
       echo "    Consider: git checkout -b spec/$FEATURE (or let @specky-orchestrator handle it)"
       echo ""
     fi
     ;;
   verify)
     if [ "$BRANCH" != "develop" ]; then
-      echo "⚠️  [session-banner] Phase 'verify' expects branch 'develop' — you are on '$BRANCH'"
+      echo "⚠️  [specky-session-banner] Phase 'verify' expects branch 'develop' — you are on '$BRANCH'"
       echo ""
     fi
     ;;
   release)
     if [ "$BRANCH" != "stage" ]; then
-      echo "⚠️  [session-banner] Phase 'release' expects branch 'stage' — you are on '$BRANCH'"
+      echo "⚠️  [specky-session-banner] Phase 'release' expects branch 'stage' — you are on '$BRANCH'"
       echo ""
     fi
     ;;

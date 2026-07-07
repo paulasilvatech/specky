@@ -1,5 +1,5 @@
 ---
-name: test-verifier
+name: specky-test-verifier
 description: "This skill should be used when the user asks to 'verify tests', 'check coverage', 'detect phantom completions', 'check spec drift', or needs guidance on Phase 8 verification. Also trigger on 'sdd test', 'test traceability', 'verification report', or 'gate criteria'."
 ---
 
@@ -214,4 +214,4 @@ Produce standardized verification artifact:
 
 ## Companion Agent
 
-**@test-verifier** — Phase 8 agent that calls these tools in sequence. Load this skill as first step.
+**@specky-test-verifier** — Phase 8 agent that calls these tools in sequence. Load this skill as first step.

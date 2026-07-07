@@ -1,11 +1,11 @@
 #!/bin/bash
-# security-scan.sh — OWASP + secrets scan
+# specky-security-scan.sh — OWASP + secrets scan
 # Target: Claude Code (.claude/hooks/)
 # Type: BLOCKING (exit 2) | Trigger: Stop | Phase: 9
 # Paper: arXiv:2503.23278 — security enforcement
 #
 # Claude Code settings.json:
-#   "hooks": { "Stop": ["bash .claude/hooks/security-scan.sh"] }
+#   "hooks": { "Stop": ["bash .claude/hooks/specky-security-scan.sh"] }
 
 set -euo pipefail
 FAILS=0

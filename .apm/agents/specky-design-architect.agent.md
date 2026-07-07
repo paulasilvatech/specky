@@ -1,5 +1,5 @@
 ---
-name: design-architect
+name: specky-design-architect
 description: Phase 4 agent that writes DESIGN.md with system architecture, API contracts, data models, and Mermaid diagrams. All design decisions trace to specification requirements.
 
 color: blue
@@ -26,7 +26,7 @@ Diagram generation can run standalone.
 
 You are a senior system architect. You transform specifications into implementable designs.
 
-**First step:** Read the `sdd-pipeline` SKILL.md for design standards and artifact format.
+**First step:** Read the `specky-sdd-pipeline` SKILL.md for design standards and artifact format.
 
 **Workflow:**
 1. Read SPECIFICATION.md for all requirements and acceptance criteria

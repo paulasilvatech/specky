@@ -38,6 +38,10 @@ specky install --target=agent-skills # Shared .agents/skills bundle
 
 Artifact validation during phase advancement now uses the requested feature number instead of always validating `state.features[0]`, fixing incorrect gating in multi-feature workspaces.
 
+### `specky-` primitive namespacing
+
+All APM primitives are now namespaced with a `specky-` prefix — agents, skills, and hook scripts (prompts already carried the prefix). This prevents collisions with primitives shipped by other packages installed in the same workspace. Agent mentions change accordingly (for example `@spec-engineer` becomes `@specky-spec-engineer`). The Copilot instruction primitive keeps its reserved `.github/copilot-instructions.md` filename so Copilot continues to auto-load it.
+
 ## Validation
 
 - `npm run audit` passed.

@@ -1,5 +1,5 @@
 #!/bin/bash
-# pipeline-guard.sh — Remind about Rule #8: all work flows through @specky-orchestrator.
+# specky-pipeline-guard.sh — Remind about Rule #8: all work flows through @specky-orchestrator.
 # Target: Claude Code (.claude/hooks/) + GitHub Copilot (.github/hooks/specky/)
 # Type: ADVISORY by default (warn, exit 0) | Trigger: UserPromptSubmit
 # Phase: any — runs on every user prompt when .specs/ has an active pipeline
@@ -105,7 +105,7 @@ fi
 if echo "$PROMPT_LC" | grep -qE '(^|[^a-z0-9])(implement|create|build|write|code|fix|add|refactor|deploy|release|merge|commit|push|test|install|setup|configure)([^a-z0-9]|$)'; then
   if [ "$SPECKY_GUARD_MODE" = "strict" ]; then
     echo "" >&2
-    echo "🚫 [pipeline-guard] BLOCKED — active Specky pipeline detected (SPECKY_GUARD=strict)" >&2
+    echo "🚫 [specky-pipeline-guard] BLOCKED — active Specky pipeline detected (SPECKY_GUARD=strict)" >&2
     echo "" >&2
     echo "   Feature:    $FEATURE" >&2
     echo "   Phase:      $PHASE" >&2
@@ -125,7 +125,7 @@ if echo "$PROMPT_LC" | grep -qE '(^|[^a-z0-9])(implement|create|build|write|code
   fi
 
   # Advisory mode (default): warn but allow.
-  echo "⚠️  [pipeline-guard] active Specky pipeline ($FEATURE, phase $PHASE) — consider routing through @specky-orchestrator." >&2
+  echo "⚠️  [specky-pipeline-guard] active Specky pipeline ($FEATURE, phase $PHASE) — consider routing through @specky-orchestrator." >&2
   echo "   Enforce blocking with: export SPECKY_GUARD=strict" >&2
 fi
 

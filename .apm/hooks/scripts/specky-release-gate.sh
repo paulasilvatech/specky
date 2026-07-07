@@ -1,5 +1,5 @@
 #!/bin/bash
-# release-gate.sh — Verify VERIFICATION.md + 90% pass rate before PR
+# specky-release-gate.sh — Verify VERIFICATION.md + 90% pass rate before PR
 # Target: Claude Code (.claude/hooks/)
 # Type: BLOCKING (exit 2) | Trigger: before sdd_create_pr | Phase: 9
 # Paper: arXiv:2601.03878 — human-in-loop gate

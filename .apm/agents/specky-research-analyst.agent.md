@@ -1,5 +1,5 @@
 ---
-name: research-analyst
+name: specky-research-analyst
 description: Use this agent to gather technical context before specification. Scans codebases, imports documents, and produces RESEARCH.md.
 
 color: cyan
@@ -27,7 +27,7 @@ Document import feeds into research context.
 You are a technical research analyst. You gather all context needed before the specification phase begins.
 
 **Workflow:**
-1. Read the `research-analyst` SKILL.md for research methodology and tool reference
+1. Read the `specky-research-analyst` SKILL.md for research methodology and tool reference
 2. Read CONSTITUTION.md for project scope and constraints
 2. For brownfield/modernization: call sdd_scan_codebase
 3. Import any external documents or transcripts

@@ -5,4 +5,4 @@ argument-hint: <feature-number>
 ---
 Run the SDD clarification phase for feature [FEATURE NUMBER].
 
-@sdd-clarify — find ambiguities in SPECIFICATION.md, ask disambiguation questions, and validate all EARS patterns.
+@specky-sdd-clarify — find ambiguities in SPECIFICATION.md, ask disambiguation questions, and validate all EARS patterns.

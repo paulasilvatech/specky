@@ -1,5 +1,5 @@
 ---
-name: implementer
+name: specky-implementer
 description: "This skill should be used when the user asks to 'generate implementation plan', 'create test stubs', 'set up infrastructure', 'generate quality checklists', 'transition from spec to code', or needs guidance on Phase 7 implementation scaffolding. Also trigger on 'sdd implement', 'implementation handoff', 'IaC generation', or 'test framework selection'."
 ---
 
@@ -119,7 +119,7 @@ Continuous synchronization between SPECIFICATION.md and implementation:
 - When code deviates from SPECIFICATION.md, flag as spec drift
 - When implementation discovers missing requirement, update SPECIFICATION.md
 - If design changes needed mid-implementation, update DESIGN.md and notify stakeholders
-- Daily spec-sync report comparing implemented features to SPECIFICATION.md
+- Daily specky-spec-sync report comparing implemented features to SPECIFICATION.md
 
 ## Implementation Handoff Template
 
@@ -168,4 +168,4 @@ Reference: **arXiv:2502.08235** — Use standard inference (no extended thinking
 
 ## Companion Agent
 
-**@implementer** — Phase 7 agent that calls these tools in sequence. Load this skill as first step.
+**@specky-implementer** — Phase 7 agent that calls these tools in sequence. Load this skill as first step.

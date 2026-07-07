@@ -46,7 +46,7 @@ import { registerInfrastructureTools } from "../../src/tools/infrastructure.js";
 import { registerEnvironmentTools } from "../../src/tools/environment.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
-const HOOK = join(REPO, ".apm/hooks/scripts/ears-validator.sh");
+const HOOK = join(REPO, ".apm/hooks/scripts/specky-ears-validator.sh");
 
 interface Harness {
   workspace: string;

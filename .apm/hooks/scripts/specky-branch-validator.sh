@@ -1,5 +1,5 @@
 #!/bin/bash
-# branch-validator.sh — Validate git branch matches expected pattern for current tool.
+# specky-branch-validator.sh — Validate git branch matches expected pattern for current tool.
 #
 # Type: Mixed (see below) | Trigger: PreToolUse | All phases
 #   • Advisory (exit 0, warn) for sdd_* pipeline tools (always).
@@ -42,13 +42,13 @@ if [[ "$TOOL" == "Write" || "$TOOL" == "Edit" || "$TOOL" == "MultiEdit" ]]; then
     local expected="$1"
     if [ "$SPECKY_GUARD_MODE" = "strict" ]; then
       echo "" >&2
-      echo "🚫 [branch-validator] BLOCKED — $TOOL on '$CURRENT_BRANCH' (phase $PHASE expects $expected) [SPECKY_GUARD=strict]" >&2
+      echo "🚫 [specky-branch-validator] BLOCKED — $TOOL on '$CURRENT_BRANCH' (phase $PHASE expects $expected) [SPECKY_GUARD=strict]" >&2
       echo "   Feature:  $FEATURE" >&2
       echo "   Fix:      git checkout $expected   (or: git checkout -b spec/$FEATURE)" >&2
       echo "   Disable:  unset SPECKY_GUARD" >&2
       exit 2
     fi
-    echo "⚠️  [branch-validator] $TOOL on '$CURRENT_BRANCH' during phase $PHASE (expected $expected). Enforce with: export SPECKY_GUARD=strict" >&2
+    echo "⚠️  [specky-branch-validator] $TOOL on '$CURRENT_BRANCH' during phase $PHASE (expected $expected). Enforce with: export SPECKY_GUARD=strict" >&2
   }
 
   case "$PHASE" in

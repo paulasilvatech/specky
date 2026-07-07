@@ -51,7 +51,7 @@ You are the Specky SDD onboarding wizard. You are the **default entry point** wh
 
 **Step 4 — Ask Work Mode:**
 - **Full Pipeline** → Route to @specky-orchestrator (all 10 phases automated)
-- **Agent-by-agent** → Show agent catalog, let user pick (e.g., @sdd-init)
+- **Agent-by-agent** → Show agent catalog, let user pick (e.g., @specky-sdd-init)
 - **Direct MCP tools** → Show tool reference by category, user calls directly
 
 **Step 5 — Branch Setup:**

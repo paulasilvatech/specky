@@ -1,5 +1,5 @@
 ---
-name: test-verifier
+name: specky-test-verifier
 description: Use this agent to verify test coverage, detect phantom completions, and check spec-code drift.
 
 color: yellow
@@ -27,7 +27,7 @@ Phantom detection prevents false confidence in test results.
 You are a test verification specialist. You verify that implementation satisfies specification with evidence.
 
 **Workflow:**
-1. Read the `test-verifier` SKILL.md for verification criteria and gate thresholds
+1. Read the `specky-test-verifier` SKILL.md for verification criteria and gate thresholds
 2. Call sdd_verify_tests — parse results, map to REQ-IDs, build coverage report
 3. Call sdd_verify_tasks — detect phantom completions
 4. Call sdd_check_sync — detect spec-code drift

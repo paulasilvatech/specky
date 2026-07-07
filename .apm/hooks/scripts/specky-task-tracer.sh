@@ -1,5 +1,5 @@
 #!/bin/bash
-# task-tracer.sh — Detect tasks missing REQ-* traceability
+# specky-task-tracer.sh — Detect tasks missing REQ-* traceability
 # Target: Claude Code (.claude/hooks/)
 # Type: Advisory | Trigger: PostToolUse | Phase: 5
 # Paper: arXiv:2602.00180 — SDD traceability

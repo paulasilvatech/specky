@@ -47,17 +47,17 @@ Check for:
 |-------|-------|---------|
 | @specky-onboarding | Pre | Interactive wizard and help |
 | @specky-orchestrator | All | Full pipeline coordinator |
-| @sdd-init | 0 | Initialize pipeline + create spec branch |
-| @research-analyst | 1 | Codebase scan + discovery |
-| @spec-engineer | 2 | Write SPECIFICATION.md with EARS |
-| @sdd-clarify | 3 | Resolve ambiguities + EARS validation |
-| @design-architect | 4 | Write DESIGN.md + diagrams |
-| @task-planner | 5 | Write TASKS.md + CHECKLIST.md |
-| @quality-reviewer | 6 | Completeness audit + compliance |
-| @implementer | 7 | Implementation plan + test stubs + IaC |
-| @test-verifier | 8 | Coverage + drift + phantom detection |
-| @requirements-engineer | Pre | FRD + NFRD from raw input |
-| @release-engineer | 9 | Gates + PR + docs + work items |
+| @specky-sdd-init | 0 | Initialize pipeline + create spec branch |
+| @specky-research-analyst | 1 | Codebase scan + discovery |
+| @specky-spec-engineer | 2 | Write SPECIFICATION.md with EARS |
+| @specky-sdd-clarify | 3 | Resolve ambiguities + EARS validation |
+| @specky-design-architect | 4 | Write DESIGN.md + diagrams |
+| @specky-task-planner | 5 | Write TASKS.md + CHECKLIST.md |
+| @specky-quality-reviewer | 6 | Completeness audit + compliance |
+| @specky-implementer | 7 | Implementation plan + test stubs + IaC |
+| @specky-test-verifier | 8 | Coverage + drift + phantom detection |
+| @specky-requirements-engineer | Pre | FRD + NFRD from raw input |
+| @specky-release-engineer | 9 | Gates + PR + docs + work items |
 
 ## All 22 Prompts
 
@@ -95,14 +95,14 @@ Check for:
 
 | Skill | Triggers On |
 |-------|-------------|
-| sdd-pipeline | "specky", "SDD pipeline", "EARS notation", "pipeline phases" |
+| specky-sdd-pipeline | "specky", "SDD pipeline", "EARS notation", "pipeline phases" |
 | specky-orchestrator | "orchestrate", "run full pipeline", "advance phase" |
 | specky-onboarding | "help", "get started", "what is specky" |
 | implementer | "implementation plan", "test stubs", "IaC generation" |
 | test-verifier | "verify tests", "check coverage", "phantom detection" |
 | release-engineer | "prepare release", "create PR", "release gates" |
 | research-analyst | "research codebase", "scan tech stack", "import documents" |
-| sdd-markdown-standard | "artifact format", "spec formatting" |
+| specky-sdd-markdown-standard | "artifact format", "spec formatting" |
 
 ## 58 MCP Tools by Category
 
@@ -135,21 +135,21 @@ Check for:
 ## 16 Hook Scripts
 
 **Blocking (exit 2 = halt):**
-- artifact-validator.sh — Prerequisite .md files exist
-- phase-gate.sh — Output artifact created with quality
-- security-scan.sh — OWASP + secrets scan
-- release-gate.sh — 90% pass rate + artifact checks
+- specky-artifact-validator.sh — Prerequisite .md files exist
+- specky-phase-gate.sh — Output artifact created with quality
+- specky-security-scan.sh — OWASP + secrets scan
+- specky-release-gate.sh — 90% pass rate + artifact checks
 
 **Advisory (exit 0 = warn):**
-- branch-validator.sh — Branch matches phase expectations
-- pipeline-guard.sh — Pipeline ordering / phase-skip guard
-- lgtm-gate.sh — Human review reminder at Phases 2/4/5
-- session-banner.sh — Session start pipeline-status banner
-- spec-sync.sh — Detect spec-code drift
-- auto-checkpoint.sh — Suggest checkpoint after writes
-- spec-quality.sh — Specification quality metrics
-- ears-validator.sh — EARS pattern compliance
-- task-tracer.sh — Task dependency graph
-- drift-monitor.sh — CONSTITUTION drift detection
-- cognitive-debt-alert.sh — Cognitive surrender detection
-- metrics-dashboard.sh — Quality metrics collection
+- specky-branch-validator.sh — Branch matches phase expectations
+- specky-pipeline-guard.sh — Pipeline ordering / phase-skip guard
+- specky-lgtm-gate.sh — Human review reminder at Phases 2/4/5
+- specky-session-banner.sh — Session start pipeline-status banner
+- specky-spec-sync.sh — Detect spec-code drift
+- specky-auto-checkpoint.sh — Suggest checkpoint after writes
+- specky-spec-quality.sh — Specification quality metrics
+- specky-ears-validator.sh — EARS pattern compliance
+- specky-task-tracer.sh — Task dependency graph
+- specky-drift-monitor.sh — CONSTITUTION drift detection
+- specky-cognitive-debt-alert.sh — Cognitive surrender detection
+- specky-metrics-dashboard.sh — Quality metrics collection

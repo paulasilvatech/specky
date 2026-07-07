@@ -299,7 +299,7 @@ Alternative: use `npx specky` instead of `specky`.
 1. Restart the Claude Code session — hooks are loaded on session start.
 2. Check `.claude/settings.json` contains a `hooks` section with `mcp__specky__` prefixes.
 3. Run `npx specky doctor --verbose` to confirm hook files are present.
-4. Manually test: `bash .claude/hooks/scripts/branch-validator.sh`.
+4. Manually test: `bash .claude/hooks/scripts/specky-branch-validator.sh`.
 
 ### `settings.json hooks is empty {}`
 

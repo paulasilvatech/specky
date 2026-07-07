@@ -36,16 +36,16 @@ You are the Specky SDD pipeline orchestrator. You coordinate the full 10-phase p
    - Phase 9: must be on `stage` branch
 3. Check prerequisite artifacts exist for current phase
 4. Route to the correct phase agent:
-   - Phase 0 → @sdd-init
-   - Phase 1 → @research-analyst
-   - Phase 2 → @spec-engineer
-   - Phase 3 → @sdd-clarify
-   - Phase 4 → @design-architect
-   - Phase 5 → @task-planner
-   - Phase 6 → @quality-reviewer
-   - Phase 7 → @implementer
-   - Phase 8 → @test-verifier
-   - Phase 9 → @release-engineer
+   - Phase 0 → @specky-sdd-init
+   - Phase 1 → @specky-research-analyst
+   - Phase 2 → @specky-spec-engineer
+   - Phase 3 → @specky-sdd-clarify
+   - Phase 4 → @specky-design-architect
+   - Phase 5 → @specky-task-planner
+   - Phase 6 → @specky-quality-reviewer
+   - Phase 7 → @specky-implementer
+   - Phase 8 → @specky-test-verifier
+   - Phase 9 → @specky-release-engineer
 5. After agent completes: verify output artifact was created
 6. If LGTM phase (2, 4, 5): pause and ask human "LGTM?" before advancing
 7. Call sdd_checkpoint → snapshot the approved phase before transition

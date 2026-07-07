@@ -10,10 +10,10 @@ Specky is a CLI toolkit that installs specialized agents, prompts, skills, hooks
 
 | What you get | What it does |
 |-------------|-------------|
-| **13 Agents** | Specialized AI personas — `@specky-orchestrator` runs the full pipeline, `@specky-onboarding` guides setup, `@spec-engineer` writes specs, etc. |
+| **13 Agents** | Specialized AI personas — `@specky-orchestrator` runs the full pipeline, `@specky-onboarding` guides setup, `@specky-spec-engineer` writes specs, etc. |
 | **22 Prompts** | Slash commands — `/specky-greenfield`, `/specky-specify`, `/specky-release`. One command activates the right agent. |
 | **8 Skills** | Domain knowledge loaded into agents — EARS patterns, implementation rules, test criteria, release gate protocol. |
-| **16 Hooks** | Pre/post validation scripts + `pipeline-guard` (UserPromptSubmit) + `session-banner` (SessionStart) — check artifacts, validate branch, enforce gates, block out-of-flow prompts. |
+| **16 Hooks** | Pre/post validation scripts + `specky-pipeline-guard` (UserPromptSubmit) + `specky-session-banner` (SessionStart) — check artifacts, validate branch, enforce gates, block out-of-flow prompts. |
 | **58 MCP Tools** | The engine underneath — validates, generates, and enforces. Agents call it; hooks guard it. |
 
 **Why does this matter?** Instead of calling raw MCP tools and hoping you're in the right phase with the right prerequisites, you call an agent and it does everything correctly — validates, routes, enforces hooks, and pauses for review.
@@ -111,17 +111,17 @@ The APM commands validate the package that feeds `specky install`. They do not r
 ```
 @specky-onboarding        → Interactive wizard (default entry point)
 @specky-orchestrator      → Full pipeline coordinator
-@sdd-init                 → Initialize pipeline
-@requirements-engineer    → Extract FRD + NFRD
-@research-analyst         → Research and discovery
-@sdd-clarify              → Resolve ambiguities
-@spec-engineer            → Write SPECIFICATION.md
-@design-architect         → Write DESIGN.md + diagrams
-@task-planner             → Write TASKS.md + CHECKLIST.md
-@implementer              → Generate implementation plan
-@test-verifier            → Verify test coverage
-@quality-reviewer         → Completeness audit + compliance
-@release-engineer         → Release checklist and PR
+@specky-sdd-init                 → Initialize pipeline
+@specky-requirements-engineer    → Extract FRD + NFRD
+@specky-research-analyst         → Research and discovery
+@specky-sdd-clarify              → Resolve ambiguities
+@specky-spec-engineer            → Write SPECIFICATION.md
+@specky-design-architect         → Write DESIGN.md + diagrams
+@specky-task-planner             → Write TASKS.md + CHECKLIST.md
+@specky-implementer              → Generate implementation plan
+@specky-test-verifier            → Verify test coverage
+@specky-quality-reviewer         → Completeness audit + compliance
+@specky-release-engineer         → Release checklist and PR
 ```
 
 Ready-to-use prompts (slash commands):
@@ -151,34 +151,34 @@ Ready-to-use prompts (slash commands):
   requirements-engineer → Produces FRD.md + NFRD.md in docs/requirements/
 
 [Phase 0] Init
-  @sdd-init → Creates .specs/NNN-feature/ with CONSTITUTION.md
+  @specky-sdd-init → Creates .specs/NNN-feature/ with CONSTITUTION.md
 
 [Phase 1] Discover
-  @research-analyst → Scans codebase, imports docs, runs discovery → RESEARCH.md
+  @specky-research-analyst → Scans codebase, imports docs, runs discovery → RESEARCH.md
 
 [Phase 2] Specify
-  @spec-engineer → Writes complete SPECIFICATION.md in EARS notation
+  @specky-spec-engineer → Writes complete SPECIFICATION.md in EARS notation
 
 [Phase 3] Clarify (optional but recommended)
-  @sdd-clarify → Resolves EARS ambiguities, detects contradictions → CLARIFICATION-LOG.md
+  @specky-sdd-clarify → Resolves EARS ambiguities, detects contradictions → CLARIFICATION-LOG.md
 
 [Phase 4] Design
-  @design-architect → Technical architecture, Mermaid diagrams, ADRs → DESIGN.md
+  @specky-design-architect → Technical architecture, Mermaid diagrams, ADRs → DESIGN.md
 
 [Phase 5] Tasks
-  @task-planner → Breaks design into sequenced tasks → TASKS.md
+  @specky-task-planner → Breaks design into sequenced tasks → TASKS.md
 
 [Phase 6] Analyze
-  @quality-reviewer → Cross-artifact analysis, compliance checks → ANALYSIS.md
+  @specky-quality-reviewer → Cross-artifact analysis, compliance checks → ANALYSIS.md
 
 [Phase 7] Implement ← Sonnet 4.6, WITHOUT extended thinking
-  @implementer → Executes tasks with automatic git checkpoints
+  @specky-implementer → Executes tasks with automatic git checkpoints
 
 [Phase 8] Verify
-  @test-verifier → Validates coverage against spec acceptance criteria
+  @specky-test-verifier → Validates coverage against spec acceptance criteria
 
 [Phase 9] Release ← Haiku 4.5
-  @release-engineer → Security gates (BLOCKING) + PR creation
+  @specky-release-engineer → Security gates (BLOCKING) + PR creation
 ```
 
 ---
@@ -204,7 +204,7 @@ Expected stack: Node.js + PostgreSQL + React
 Timeline: MVP in 8 weeks
 Compliance: GDPR
 ```
-**What happens:** `requirements-engineer` → `sdd-init` → pipeline ready for research.
+**What happens:** `specky-requirements-engineer` → `specky-sdd-init` → pipeline ready for research.
 
 ---
 
@@ -218,7 +218,7 @@ Existing system: Django ERP + PostgreSQL in production
 Why now: Enterprise clients requesting it
 Constraints: Must not impact the existing v2 API
 ```
-**What happens:** `sdd_scan_codebase` detects stack → `requirements-engineer` considers legacy constraints → `sdd-init` initializes with `project_type: brownfield`.
+**What happens:** `sdd_scan_codebase` detects stack → `specky-requirements-engineer` considers legacy constraints → `specky-sdd-init` initializes with `project_type: brownfield`.
 
 ---
 
@@ -408,8 +408,8 @@ Hypothesis: Perhaps these apply to different roles (admin vs. regular user)?
 Most common issues:
 | Symptom | Likely cause | Quick fix |
 |---------|-------------|-----------|
-| `security-scan.sh` blocking | String "api_key" in example spec | Rename to `API_KEY_EXAMPLE` or move to a comment |
-| `release-gate.sh` blocking | Missing DESIGN.md | Complete Phase 4 before release |
+| `specky-security-scan.sh` blocking | String "api_key" in example spec | Rename to `API_KEY_EXAMPLE` or move to a comment |
+| `specky-release-gate.sh` blocking | Missing DESIGN.md | Complete Phase 4 before release |
 | Hook not firing | Invalid JSON in settings.json | `cat .vscode/settings.json \| python3 -m json.tool` |
 | Hook not firing in VS Code | Settings not reloaded | Ctrl+Shift+P → "Reload Window" |
 
@@ -452,16 +452,16 @@ You don't need to call these hooks — they fire automatically on the right even
 
 | Hook | When it fires | What it does |
 |------|--------------|-------------|
-| `security-scan.sh` ★ BLOCKING | Before creating PR / end of session | Scans for secrets in `.specs/` |
-| `release-gate.sh` ★ BLOCKING | Before creating PR | Validates all artifacts exist |
-| `spec-sync.sh` | After Write/Edit on specs | Detects drift between artifacts |
-| `auto-checkpoint.sh` | After Write/Edit on specs | Creates automatic git commit |
-| `spec-quality.sh` | After writing spec | EARS quality score |
-| `ears-validator.sh` | After writing spec | Validates EARS notation |
-| `task-tracer.sh` | After writing tasks | Validates REQ ↔ Task traceability |
-| `drift-monitor.sh` | After cross-analysis | Code vs. spec comparison |
-| `cognitive-debt-alert.sh` | After cross-analysis | Alerts if spec became too complex |
-| `metrics-dashboard.sh` | After cross-analysis | Consolidates metrics into dashboard.json |
+| `specky-security-scan.sh` ★ BLOCKING | Before creating PR / end of session | Scans for secrets in `.specs/` |
+| `specky-release-gate.sh` ★ BLOCKING | Before creating PR | Validates all artifacts exist |
+| `specky-spec-sync.sh` | After Write/Edit on specs | Detects drift between artifacts |
+| `specky-auto-checkpoint.sh` | After Write/Edit on specs | Creates automatic git commit |
+| `specky-spec-quality.sh` | After writing spec | EARS quality score |
+| `specky-ears-validator.sh` | After writing spec | Validates EARS notation |
+| `specky-task-tracer.sh` | After writing tasks | Validates REQ ↔ Task traceability |
+| `specky-drift-monitor.sh` | After cross-analysis | Code vs. spec comparison |
+| `specky-cognitive-debt-alert.sh` | After cross-analysis | Alerts if spec became too complex |
+| `specky-metrics-dashboard.sh` | After cross-analysis | Consolidates metrics into dashboard.json |
 
 ---
 
@@ -486,7 +486,7 @@ A: arXiv:2502.08235 demonstrated that extended thinking during implementation ph
 A: Yes. The `.github/agents/` and `.github/prompts/` require GitHub Copilot. But you can use Claude Code with `.claude/commands/` and `.claude/hooks/` without any GitHub dependency. Use `specky install --target=claude` to install Claude-only.
 
 **Q: Does Specky write the code for me?**
-A: The `@implementer` (Phase 7) generates detailed implementation plans, test stubs, and IaC scaffolding. The production code is written by your IDE's AI tool (Claude Code, Copilot) following the plan generated by Specky. Specky ensures that what is implemented matches exactly what was specified.
+A: The `@specky-implementer` (Phase 7) generates detailed implementation plans, test stubs, and IaC scaffolding. The production code is written by your IDE's AI tool (Claude Code, Copilot) following the plan generated by Specky. Specky ensures that what is implemented matches exactly what was specified.
 
 ---
 

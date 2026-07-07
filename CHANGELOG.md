@@ -16,9 +16,12 @@ Wave 1 multi-harness APM targets (Cursor, OpenCode, Agent Skills) plus a multi-f
 - Wave 1 APM target support for `cursor`, `opencode`, and `agent-skills`, including target-native compiler registration, install paths, MCP config writers, and regression coverage.
 - `specky install --target=<targets>` as the canonical APM-aligned install selector. The legacy `--ide` flag remains as a deprecated alias for backward compatibility.
 - `specky compile --target=<targets>` for compiling instruction primitives into root context files (`.github/copilot-instructions.md`, `CLAUDE.md`, or `AGENTS.md`).
+- `.markdownlint.json` configuration codifying the repository's Markdown conventions (Keep a Changelog sibling headings, intentional inline HTML in `README.md`) so documentation lint is clean.
+- Regression test verifying that pre-existing Claude hooks in `.claude/settings.json` are removed when Copilot is installed into the same workspace, while non-hook user settings are preserved.
 
 ### Changed
 
+- **All APM primitives are now namespaced with a `specky-` prefix** (agents, skills, and hook scripts; prompts already carried the prefix) to avoid collisions with other packages installed in the same workspace. Agent mentions change accordingly (for example `@spec-engineer` is now `@specky-spec-engineer`). The Copilot instruction primitive keeps the reserved `.github/copilot-instructions.md` filename.
 - `specky doctor` now validates installed `targets[]` metadata instead of assuming only Copilot/Claude IDE scopes.
 - Copilot-inclusive installs strip Claude hooks from `.claude/settings.json` even when installing both Copilot and Claude assets, preventing Copilot hook cross-read blocks.
 - APM manifest and policy now use canonical target names and include Cursor/OpenCode target isolation checks.
@@ -506,6 +509,7 @@ default array.
 **Regression test (`tests/integration/status-detection.test.ts`):**
 
 4 new tests covering:
+
 1. Greenfield (no `.specs/`) → features:[] + current_phase:init ✅
 2. Single feature in progress → detected with correct phase/progress ✅
 3. Multiple features → aggregated independently with per-feature state ✅

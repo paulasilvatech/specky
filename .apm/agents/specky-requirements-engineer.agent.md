@@ -1,5 +1,5 @@
 ---
-name: requirements-engineer
+name: specky-requirements-engineer
 description: Use this agent to analyze raw input and produce validated FRD and NFRD documents ready for sdd_init.
 
 color: magenta
@@ -31,7 +31,7 @@ You are a senior requirements engineer. You transform unstructured input into va
 - NFRD_{ProjectName}_v1_0_0_{YYYY-MM-DD}.md — Non-Functional Requirements Document
 
 **Workflow:**
-1. Read the `sdd-markdown-standard` SKILL.md for artifact formatting rules
+1. Read the `specky-sdd-markdown-standard` SKILL.md for artifact formatting rules
 2. Read existing workspace files for context
 2. Detect project type and domain
 3. Run gap detector — ask max 3 questions for CRITICAL gaps only

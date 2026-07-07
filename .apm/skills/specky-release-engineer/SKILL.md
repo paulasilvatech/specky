@@ -1,5 +1,5 @@
 ---
-name: release-engineer
+name: specky-release-engineer
 description: "This skill should be used when the user asks to 'prepare release', 'create PR', 'generate documentation', 'run release gates', or needs guidance on Phase 9 release. Also trigger on 'sdd release', 'blocking gates', 'security scan', 'release gate', or 'export work items'."
 ---
 
@@ -33,11 +33,11 @@ Missing prerequisites block release. Run `/specky:check-gates` to validate.
 
 Two sequential blocking gates must pass before release:
 
-### Gate 1: Security Gate (security-scan.sh)
+### Gate 1: Security Gate (specky-security-scan.sh)
 
 Execute security scanning:
 ```bash
-./scripts/security-scan.sh --full
+./scripts/specky-security-scan.sh --full
 ```
 
 Checks performed:
@@ -56,11 +56,11 @@ Pass criteria:
 
 Fail items block release completely.
 
-### Gate 2: Release Gate (release-gate.sh)
+### Gate 2: Release Gate (specky-release-gate.sh)
 
 Execute final release checklist:
 ```bash
-./scripts/release-gate.sh --version=X.Y.Z
+./scripts/specky-release-gate.sh --version=X.Y.Z
 ```
 
 Verifies:
@@ -260,7 +260,7 @@ Generate from commit history, SPECIFICATION.md, and VERIFICATION.md:
 
 ```
 /specky:release --version=X.Y.Z          # Full release workflow
-/specky:release --security-scan          # Run security gate only
+/specky:release --specky-security-scan          # Run security gate only
 /specky:release --generate-docs          # Generate docs only
 /specky:release --create-pr --no-merge   # Create PR, don't merge
 /specky:release --export-items            # Export to project mgmt
@@ -290,4 +290,4 @@ If post-release issues detected:
 
 ## Companion Agent
 
-**@release-engineer** — Phase 9 agent that runs blocking gates and calls these tools. Load this skill as first step.
+**@specky-release-engineer** — Phase 9 agent that runs blocking gates and calls these tools. Load this skill as first step.

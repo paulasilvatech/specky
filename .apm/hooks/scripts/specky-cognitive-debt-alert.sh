@@ -1,5 +1,5 @@
 #!/bin/bash
-# cognitive-debt-alert.sh — Alert when LGTM-without-modification rate is high
+# specky-cognitive-debt-alert.sh — Alert when LGTM-without-modification rate is high
 # Target: Claude Code (.claude/hooks/)
 # Type: Advisory | Trigger: PostToolUse | Phase: 8
 # Paper: arXiv:2603.22106 — cognitive surrender measurement

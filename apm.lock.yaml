@@ -4,68 +4,68 @@ package:
   name: specky-sdd
   version: 3.8.0
 primitives:
-  .apm/agents/design-architect.agent.md: sha256:b96b16fe04f68afb3b6c656a492603f143527ebe82089a9d4c0d2111f4446836
-  .apm/agents/implementer.agent.md: sha256:f78ffbbb4c4a69abb8b0c0158aea914ababd0036c51d7ed77138c21cd3d40979
-  .apm/agents/quality-reviewer.agent.md: sha256:deab4a84577f3256f87b7de7a48ff66093996e47570e134cf6cfa3a3d15db902
-  .apm/agents/release-engineer.agent.md: sha256:2e895fcfc3f5b42f7c58e3162e3f2b6dfcbeaa1be3b4f0d1f2bf3205bb447c70
-  .apm/agents/requirements-engineer.agent.md: sha256:d36a6e95a5612e4a38a1d77f03d3d654ad5c429edfdd01dc1847763cae2d69e3
-  .apm/agents/research-analyst.agent.md: sha256:2d9aee79aa46afd5c68f1bf154df3d4b84f313d8249a05b2ad41afa1a7c4822c
-  .apm/agents/sdd-clarify.agent.md: sha256:01b2322ba93d76aaf7e2268a90d08c8e0df220a679ec9817164ca71c47ade7fd
-  .apm/agents/sdd-init.agent.md: sha256:d674022d21c1c4f60f4cdc6fee7136ecb6f931b523377ed5b1263be284b9c434
-  .apm/agents/spec-engineer.agent.md: sha256:a51bfd89b823ba1f107e2c1b4cc56d016ab2f30cdba5881f3374d65556b5d273
-  .apm/agents/specky-onboarding.agent.md: sha256:061c2338b2ccafdbb8a41f33d8a6fbc191d5c0e17798057d28c1d4aa5e0a1ed8
-  .apm/agents/specky-orchestrator.agent.md: sha256:685753cfd1b70fc4ca26295242606e1f4c20689edae439d246071e447f72b71b
-  .apm/agents/task-planner.agent.md: sha256:b6db870691b87efd29ce3836fefe54f0a2f8324f6fc13edf6e7523dab8fd66c8
-  .apm/agents/test-verifier.agent.md: sha256:206eb184709ed53f5a35cfa6ab7c1943856a3da2e9310c10a4906ba267f318f3
-  .apm/hooks/scripts/artifact-validator.sh: sha256:0575406bbaa8e17a30407c6c1cdde20ffcaf13d2f7af784f7552d0c9766ce7b9
-  .apm/hooks/scripts/auto-checkpoint.sh: sha256:503e13b517dfe32ca2e96bcf3a8c36186bd0cde5c8f2e8a9bdda72117449f1dc
-  .apm/hooks/scripts/branch-validator.sh: sha256:06cf44594387a5b9088db7c92c2bcb7f4fddd8f96a87cb6815614c593108a5f6
-  .apm/hooks/scripts/cognitive-debt-alert.sh: sha256:4808b0d4686605861e209011115d000b2f1137d321f81fc49f17ed47db2f4dbe
-  .apm/hooks/scripts/drift-monitor.sh: sha256:5229c55640c521740391e5b4aeae87b332ab66f8d74fc697fc3d0f3972681da1
-  .apm/hooks/scripts/ears-validator.sh: sha256:58afda3b30ddc883d89122dc39a740bcde4d8ec43b96826aa03c0d9bf242a9d0
-  .apm/hooks/scripts/lgtm-gate.sh: sha256:7bfde5bb0d7ae29164b280634c5829d9c43580c7e4edeab13868aeba42f5571f
-  .apm/hooks/scripts/metrics-dashboard.sh: sha256:05dc1bf7a97eeaf1165851428dc2dadaabc7f368359e6cfe53cfa5362d5e4835
-  .apm/hooks/scripts/phase-gate.sh: sha256:5c7ddbba01f6444feb649e6f954689d9885835dfe25dabfa58efb6b604434cfc
-  .apm/hooks/scripts/pipeline-guard.sh: sha256:2137418c06fa94c99cc4182caad35736c559e90df26d78d56a4b449c183d78b7
-  .apm/hooks/scripts/release-gate.sh: sha256:8d1a3ab57bf73618e7c03eef9e3d6ab148e48e350b9ec374c07ef4ac6bc23bcf
-  .apm/hooks/scripts/security-scan.sh: sha256:dc8f58757064b6b1d469a2d14fed4e2dd7395f92c421ba88c36fced6f9babf38
-  .apm/hooks/scripts/session-banner.sh: sha256:618dece6577abb20591be9f2b9c5a910c4ff382e07fcdc43a40499e0d5474b5d
-  .apm/hooks/scripts/spec-quality.sh: sha256:c9f4b0a4356077e55ca39301af0d6c4ec2a96c47b29e31735f614176a4bfbc47
-  .apm/hooks/scripts/spec-sync.sh: sha256:5a72c59829ef2c484bc26b6cf413fb233ef54962ea736deed77d7db7afc62e7b
-  .apm/hooks/scripts/task-tracer.sh: sha256:2c9eab6dcb0fd24c5326ff799f69b71e64f9fc1b8622040a0687dde895494552
-  .apm/hooks/sdd-hooks.json: sha256:363939df17a54b8361ca6c0eb4e2fdd4637e79a36ad04ed948ebed5e59c1868f
-  .apm/instructions/copilot-instructions.instructions.md: sha256:57378a57344403f16e37221981414b0febe1b7719a874115be6caf746c840a0a
-  .apm/prompts/specky-api.prompt.md: sha256:8fe67a5c3eb5a9e5e3e886d1f146b337a76276ff91ad7cb57e304268d9bd4065
-  .apm/prompts/specky-brownfield.prompt.md: sha256:b5979f957ff630ca64f35d8e8d82f8685ee24047f53eecfba9e8d59e1c514da0
+  .apm/agents/specky-design-architect.agent.md: sha256:2f12be707aae3fe040042e5cd6f52c5f4cf8a54141f2fc2cdf4a21c9faea4ea7
+  .apm/agents/specky-implementer.agent.md: sha256:9bb72a3b82156b2e15d8b56cdc317881b630046b2b288337289688f47df4a67d
+  .apm/agents/specky-onboarding.agent.md: sha256:af84ea48222526be6a5c05eae282551632f771dd4c7b271185bd80aca05c8918
+  .apm/agents/specky-orchestrator.agent.md: sha256:aae379a2dd8833fc9861ee9302f244032856a739b3fb31f568713f866a16f0c8
+  .apm/agents/specky-quality-reviewer.agent.md: sha256:69246d0f2bc3cd8acc9e4961a8443c2e0f6cd6c88db32c4498793cd78c30d587
+  .apm/agents/specky-release-engineer.agent.md: sha256:e8130b6eafc12fdd5c08f8236b7d77c8ca9a91d8a19b121082077365a8956ab9
+  .apm/agents/specky-requirements-engineer.agent.md: sha256:10d56e07f8b1351adfd35c73a67d1a2b664427e54223fff11db2b8e7a1b2b516
+  .apm/agents/specky-research-analyst.agent.md: sha256:036249a79df8d19b5507cee583705ea9a7946c010ace0c46f10d8b8ba3a9611d
+  .apm/agents/specky-sdd-clarify.agent.md: sha256:020f13f8f99e8734fdd28f59f372d1c8bd2dd967236a1317c24dd4fd04cfced2
+  .apm/agents/specky-sdd-init.agent.md: sha256:eaff90a9cac828f5e796de2c85c57731a1de411506ca7bc0f7bf0b172d8a84ef
+  .apm/agents/specky-spec-engineer.agent.md: sha256:0e2abf1fc8980a85b1716d6c6d4dc62c7e0a3dd5175b2d124cad2e47f6845c77
+  .apm/agents/specky-task-planner.agent.md: sha256:bfccde52d4bb0674e2e9e48e90e9a3efaba03e16cad4e7ac78d6e150dee2c8e2
+  .apm/agents/specky-test-verifier.agent.md: sha256:26291f7940f909649da55f8755f0b4a03bbaeae15e2fd61c18f00e7488d44220
+  .apm/hooks/scripts/specky-artifact-validator.sh: sha256:2c255e3221cca919ace520ce319c66cc4904aa9c917ce08a52547fe63f8d9770
+  .apm/hooks/scripts/specky-auto-checkpoint.sh: sha256:46d5a336b20c844469574b2281b5cae24ee5116547a262bb160135aaef38d62e
+  .apm/hooks/scripts/specky-branch-validator.sh: sha256:73256941bdc4aaac518935214c6f0029f32b1529307088243142fe7423594cf6
+  .apm/hooks/scripts/specky-cognitive-debt-alert.sh: sha256:b790bfcc693081e22639704e9f99e76635aa34474b1cdbe2bae2204fc9d69dae
+  .apm/hooks/scripts/specky-drift-monitor.sh: sha256:842636d4e125d855c47dfae1182113f684b0dbe9a215d47105f66a8ccec431f4
+  .apm/hooks/scripts/specky-ears-validator.sh: sha256:96d6b1f64d64d9e230b95f3f90487c8109eb3f72d1420b106fcb2b0d5a2807a0
+  .apm/hooks/scripts/specky-lgtm-gate.sh: sha256:7ec0a7b92dfec4f419785cab0005df452d41ce9f3edcb1c283e7fe93408e9c0b
+  .apm/hooks/scripts/specky-metrics-dashboard.sh: sha256:5893891464add75f138e01717679e8e40c504b757d0520d0131d67210aca82ae
+  .apm/hooks/scripts/specky-phase-gate.sh: sha256:28c2a180b64290312f224dcbc702a50dd812a01200e011e6d662738af113c6e2
+  .apm/hooks/scripts/specky-pipeline-guard.sh: sha256:c985e7d7ad0b31ef4045557122e5d6804707f6c41c7ca89d974822d1557d8b53
+  .apm/hooks/scripts/specky-release-gate.sh: sha256:6216bb9eaeccd761e92673231cfd0d13674f4b0dcd170f58daf8db9d3074cf00
+  .apm/hooks/scripts/specky-security-scan.sh: sha256:eacda868bfffdfd483b820774f86b37e64578effb1019fdffebfd7651348692c
+  .apm/hooks/scripts/specky-session-banner.sh: sha256:731c33f21cf9346258d97f3926a6482e702ff6697afa6b1dda241a9a1c124f51
+  .apm/hooks/scripts/specky-spec-quality.sh: sha256:c0f0a47f108257f75140de5b06619b994d1833462ebba569d4c46fcb973d2e51
+  .apm/hooks/scripts/specky-spec-sync.sh: sha256:48072608e947a19df03b136627c8b7cf01597cee0aed4b15d01fc9f2a5daccea
+  .apm/hooks/scripts/specky-task-tracer.sh: sha256:fe7bf1d20dc48f21b68b78b8540ce6c9bbeb6b1e299b3099579b7cc922fd3588
+  .apm/hooks/sdd-hooks.json: sha256:ec018c950bfca25d9e67da9eb69bdaf6ca9d38ed7ebc5696f6bd06bffdec55f5
+  .apm/instructions/copilot-instructions.instructions.md: sha256:5deefa455c7a3dbf08688bcbadbc5746583e1170dde358dbb3ed657d6cc0313b
+  .apm/prompts/specky-api.prompt.md: sha256:4a13ba39ba58773cbb0bf39c12e462a80d2348aa5fdc4ce612f924658f00c7ed
+  .apm/prompts/specky-brownfield.prompt.md: sha256:0f66839cc82434fead66a7dd5e26934f385afc95a3537b414471f3603b31b4ec
   .apm/prompts/specky-check-drift.prompt.md: sha256:f3a04b00ef10167cbd1cdcf63f8b8595d3bc8196d107b48963f8b123f711f3af
-  .apm/prompts/specky-clarify.prompt.md: sha256:caaf14ffc4cd738323ecf76355286eb1537a3b1005f05f5829a8c37e3ce7c0cf
-  .apm/prompts/specky-debug-hook.prompt.md: sha256:f3b8bb30b841a764a497b51ab75dedea26b74ba022b67aae911f79504b7aac2a
-  .apm/prompts/specky-deploy.prompt.md: sha256:acbb188902f203815cddb15f36c1c47a9f2e2ffd9de836ba50a85a75b12cfbb6
-  .apm/prompts/specky-design.prompt.md: sha256:745dd294d7a1eeb47f3f6e46d682614d26fcc99fa147501f31a0f29e1b9f07d6
+  .apm/prompts/specky-clarify.prompt.md: sha256:60ec6230c3dbf2c943896dae07f8643335e55ce6e14a90d91b815fe77aada930
+  .apm/prompts/specky-debug-hook.prompt.md: sha256:c5c0054280f3f05103f4ac2459631f6f1494fe10f248bf8c9a4779d83f5d60b4
+  .apm/prompts/specky-deploy.prompt.md: sha256:e6c2a77ff40eca6770344bb7f71a8ecb8529795cdf555c308ba48113b0682a8e
+  .apm/prompts/specky-design.prompt.md: sha256:c125b4e9da56de11160189b6c23665a181b35753cd4c86191925e7896f282f24
   .apm/prompts/specky-from-figma.prompt.md: sha256:0ba1d4d4a9ced39ea89bae8fa98ae3449c2d973510e9a6cf80e3cfe9f29b1fce
-  .apm/prompts/specky-from-meeting.prompt.md: sha256:6c3c237f86e3bc786b490cb71e2e29964e073fbc95b15b77cc48436cd6e4b215
-  .apm/prompts/specky-greenfield.prompt.md: sha256:c981a25c67b06ee7a031298ca1e49184f324e0cfe636b66aa7f6c07d1b11cf37
-  .apm/prompts/specky-implement.prompt.md: sha256:7c9392a4bb24a1f88778a5c603cf5f851dfefb10d9577338cb8f2e72a3795b33
-  .apm/prompts/specky-migration.prompt.md: sha256:462aef852d5d59f65a09d576b387797f5671a08ef85f4154f4f55d506de142af
+  .apm/prompts/specky-from-meeting.prompt.md: sha256:7682a5a2784fd8b9f95e67eca8d8eb21f4755c5c3e5ad4f2c02412493f9ac35f
+  .apm/prompts/specky-greenfield.prompt.md: sha256:64f6cce93ad3fad4f61c72aa079b27bc8c78f43915a8ceff022a3b703fadb230
+  .apm/prompts/specky-implement.prompt.md: sha256:94cb003d5a096b28c099a09cf003dfc3c4da2eb841b859cf1f56f79f5e1bfaec
+  .apm/prompts/specky-migration.prompt.md: sha256:b0ec812513f30718be36666dd2a4cc377ec099d68928e9bfc691ac14360e36f6
   .apm/prompts/specky-onboarding.prompt.md: sha256:41e623d0730f7e9bfe5c30569149a4f7ecc925a256645b2b30eee058ffa1c5fc
   .apm/prompts/specky-orchestrate.prompt.md: sha256:8b40cc61bed8f85103c0bf6ea5ff4fa4741b0b8af6a18ec71dc8a049434cf62e
   .apm/prompts/specky-pipeline-status.prompt.md: sha256:aa0f65c88a190b02532125acef55174559d997ad0deb3336577fb61b7e7f6fed
-  .apm/prompts/specky-release.prompt.md: sha256:db9c58674fe8288b839f7768b3b786746c1c6c1c81650cfe6e157883db7c7954
-  .apm/prompts/specky-research.prompt.md: sha256:5d45a1aa5e343b382dcb0879f42f0b1a29a25f8fb2ce2877e0afc7d9f808378e
+  .apm/prompts/specky-release.prompt.md: sha256:6bf07516853fc1ce31d73af9ecaf8c9c49d02c060fd4fe7f9cda329805f3c1c5
+  .apm/prompts/specky-research.prompt.md: sha256:bb1040cbfeb90f9c3ecd0ae6f31e3dbfa09e7937c970844d107414fc7b7f54de
   .apm/prompts/specky-reset-phase.prompt.md: sha256:81218d63f7d8fdd8b7b9de8e8115f180ced3086dc4bc0853c46268ce335361de
   .apm/prompts/specky-resolve-conflict.prompt.md: sha256:785a60f9515f13a601e421049aeac1b519f65db6c83fdce061df9e19f1f5947f
-  .apm/prompts/specky-specify.prompt.md: sha256:0c5e0cb14e360efda2272e7cbd9ff314b1960e75fecc0e9e30137fa8b30fc3c5
-  .apm/prompts/specky-tasks.prompt.md: sha256:f1a5848d162feb11e1c09da373fc3c6941720ba38a8d6a531b3bb03999bf29c3
-  .apm/prompts/specky-verify.prompt.md: sha256:2d2ebd12276078445a50a16d2775f207eca20ca9a4118d56391a95df86b7e0ee
-  .apm/skills/implementer/SKILL.md: sha256:7afc5a235cd25c9757aa91653157291cc755bd9938e83a2d58068cbdb684ecbd
-  .apm/skills/release-engineer/SKILL.md: sha256:b52f5081d546e63de1becf53c67dbbf11b4848b94e31144951cb347a9e1c0157
-  .apm/skills/research-analyst/SKILL.md: sha256:b3346101b1784f173fda50731d81fb5831f6c9d28f8af58a7527fc167af739d0
-  .apm/skills/sdd-markdown-standard/SKILL.md: sha256:0d5f59773d1c965c5daf7e91638fe0019e593261eda2ab29c9dec82c00ee8d5b
-  .apm/skills/sdd-pipeline/references/ears-notation.md: sha256:580dc051802750904ef409b9f89873ad250326bc17c992bd53366b3b1a04f1c5
-  .apm/skills/sdd-pipeline/references/model-routing.md: sha256:6ca9bd5cde2a8d227c795d37c4d43b712dd183c10d5d87b987514b494f7c28f3
-  .apm/skills/sdd-pipeline/SKILL.md: sha256:7a8173d9882cafa303f35881fc88cc5482b97a287618dcb851959b704895340a
-  .apm/skills/specky-onboarding/SKILL.md: sha256:cdfb2dfaeb74d6ee33eee4773a80f00c0fc263c288853d3b6a966ce00b0fa442
-  .apm/skills/specky-orchestrator/SKILL.md: sha256:66af8f8fb882f70e2484d74bff974942f346874e957bbee520994804a2edd734
-  .apm/skills/test-verifier/SKILL.md: sha256:b0d3f66271508ab8015b6145dbc85906143662d2841685b55c177adbea7c2a78
+  .apm/prompts/specky-specify.prompt.md: sha256:b160f1e6d90657702430a404bd7a372f98161b4c78a1d2f43e827cb0b2dc3e04
+  .apm/prompts/specky-tasks.prompt.md: sha256:e06dd4cd6c4e7edddd2bc8319bacc6b4b4c849d3e52ba892fa08f4a77ed711cc
+  .apm/prompts/specky-verify.prompt.md: sha256:217327ac0c25b1d39c2fa41390f535aaae38e7c81d8e4cf3127917f44f98d3b9
+  .apm/skills/specky-implementer/SKILL.md: sha256:fba84269cb3dc350d5c9dfe307e2dceec635ed4bafe9c4a59e460846acbd267b
+  .apm/skills/specky-onboarding/SKILL.md: sha256:49e86f1c73fd3997f9a942eab295e6b92984b2f275ddd4f714dfcf8d8fcfe219
+  .apm/skills/specky-orchestrator/SKILL.md: sha256:7164ed55355028c8ebb40631b90d9901640aece221039d9fa9764f081643fb1d
+  .apm/skills/specky-release-engineer/SKILL.md: sha256:45e642cca21ca4b27bf78e96d8f16d59a30a3fd9b7d913ac00470d6c0a8ebeea
+  .apm/skills/specky-research-analyst/SKILL.md: sha256:2a136457af156ce9225798a9c25097b0fcf1e6e9582ac55afd60cc03085b38fa
+  .apm/skills/specky-sdd-markdown-standard/SKILL.md: sha256:ca74b956fa30cc40f2223e6692797f3d7048ddf5b3e082835476fa3e0de1af66
+  .apm/skills/specky-sdd-pipeline/references/ears-notation.md: sha256:580dc051802750904ef409b9f89873ad250326bc17c992bd53366b3b1a04f1c5
+  .apm/skills/specky-sdd-pipeline/references/model-routing.md: sha256:6ca9bd5cde2a8d227c795d37c4d43b712dd183c10d5d87b987514b494f7c28f3
+  .apm/skills/specky-sdd-pipeline/SKILL.md: sha256:b3eff6d615a598e11178fc8feb32463dcd9e9eed5f6ac66103327bb17f15ab32
+  .apm/skills/specky-test-verifier/SKILL.md: sha256:7e663a68f597f409a7209e07830b90b467052583bde8557eed389848baaa8609
   apm-policy.yml: sha256:11aaf7c0555b2b863c5ff0a3ae896397a09bd4c27b8a7003d938680a3fd66fb4
   apm.yml: sha256:d28d600234bf9e44caf51dcebd1e86d98d3f52dc3c719fb97c556d9e0265f436

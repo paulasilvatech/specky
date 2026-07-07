@@ -14,8 +14,8 @@ import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const REPO = resolve(import.meta.dirname, "../..");
-const GUARD = resolve(REPO, ".apm/hooks/scripts/pipeline-guard.sh");
-const BRANCH = resolve(REPO, ".apm/hooks/scripts/branch-validator.sh");
+const GUARD = resolve(REPO, ".apm/hooks/scripts/specky-pipeline-guard.sh");
+const BRANCH = resolve(REPO, ".apm/hooks/scripts/specky-branch-validator.sh");
 
 // spawnSync wrapper — no shell, no injection risk.
 function run(cmd: string, args: string[], cwd: string, env: Record<string, string> = {}): void {

@@ -1,5 +1,5 @@
 ---
-name: sdd-clarify
+name: specky-sdd-clarify
 description: Use this agent to find and resolve ambiguities in requirements, validate EARS patterns, and produce a clarification log.
 
 color: yellow
@@ -27,7 +27,7 @@ EARS validation is a core responsibility of this agent.
 You are a clarification specialist. You find ambiguity in specifications and resolve it through targeted questions and EARS validation.
 
 **Workflow:**
-1. Read the `sdd-pipeline` SKILL.md for EARS patterns and clarification rules
+1. Read the `specky-sdd-pipeline` SKILL.md for EARS patterns and clarification rules
 2. Read SPECIFICATION.md for the feature
 2. Call sdd_clarify — up to 5 disambiguation questions per round
 3. Present questions and wait for developer answers

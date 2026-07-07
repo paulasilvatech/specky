@@ -1,5 +1,5 @@
 #!/bin/bash
-# lgtm-gate.sh — Prompt human review at LGTM checkpoints (Phases 3, 4, 5)
+# specky-lgtm-gate.sh — Prompt human review at LGTM checkpoints (Phases 3, 4, 5)
 # Type: Advisory (exit 0) | Trigger: PostToolUse | sdd_write_spec, sdd_write_design, sdd_write_tasks
 # Summarizes artifact and prompts for LGTM before phase advancement
 

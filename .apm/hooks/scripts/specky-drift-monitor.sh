@@ -1,5 +1,5 @@
 #!/bin/bash
-# drift-monitor.sh — Monitor CONSTITUTION.md drift from spec artifacts
+# specky-drift-monitor.sh — Monitor CONSTITUTION.md drift from spec artifacts
 # Target: Claude Code (.claude/hooks/)
 # Type: Advisory | Trigger: PostToolUse | Phase: 8
 # Paper: arXiv:2602.20478, arXiv:2603.22106

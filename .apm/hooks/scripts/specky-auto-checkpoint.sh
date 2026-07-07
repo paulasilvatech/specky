@@ -1,5 +1,5 @@
 #!/bin/bash
-# auto-checkpoint.sh — Suggest checkpoint when spec artifacts are written
+# specky-auto-checkpoint.sh — Suggest checkpoint when spec artifacts are written
 # Target: Claude Code (.claude/hooks/)
 # Type: Advisory | Trigger: PostToolUse | Phase: 0,3,4,5
 # Paper: arXiv:2602.20478 — artifact preservation

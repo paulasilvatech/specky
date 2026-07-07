@@ -1,5 +1,5 @@
 #!/bin/bash
-# spec-quality.sh — Validate specification quality after sdd_write_spec
+# specky-spec-quality.sh — Validate specification quality after sdd_write_spec
 # Target: Claude Code (.claude/hooks/)
 # Type: Advisory | Trigger: PostToolUse | Phase: 3
 # Paper: arXiv:2601.03878 — EARS quality

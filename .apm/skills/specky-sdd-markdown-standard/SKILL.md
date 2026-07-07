@@ -1,5 +1,5 @@
 ---
-name: sdd-markdown-standard
+name: specky-sdd-markdown-standard
 description: "This skill should be used when generating or formatting SDD artifacts (CONSTITUTION.md, SPECIFICATION.md, DESIGN.md, TASKS.md, VERIFICATION.md, ANALYSIS.md). Also trigger on 'sdd markdown', 'artifact format', or 'spec formatting'."
 ---
 
@@ -279,4 +279,4 @@ Run markdown linter: `markdownlint sdd-artifacts/`
 
 ## Companion Agent
 
-**@requirements-engineer** — Pre-pipeline agent that produces FRD/NFRD documents using this formatting standard. Load this skill as first step.
+**@specky-requirements-engineer** — Pre-pipeline agent that produces FRD/NFRD documents using this formatting standard. Load this skill as first step.

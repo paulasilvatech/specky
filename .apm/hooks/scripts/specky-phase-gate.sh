@@ -1,5 +1,5 @@
 #!/bin/bash
-# phase-gate.sh — Validate output artifact was created after tool execution
+# specky-phase-gate.sh — Validate output artifact was created after tool execution
 # Type: BLOCKING (exit 2) | Trigger: PostToolUse | Artifact-writing tools
 # Ensures phase artifacts exist and meet minimum quality after creation
 

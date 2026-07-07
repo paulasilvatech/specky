@@ -1,5 +1,5 @@
 ---
-name: sdd-pipeline
+name: specky-sdd-pipeline
 description: "This skill should be used when the user asks about 'spec-driven development', 'SDD pipeline', 'specky', 'pipeline phases', 'EARS notation', 'requirements engineering', 'model routing', or needs guidance on the 10-phase SDD workflow (Init → Discover → Specify → Clarify → Design → Tasks → Analyze → Implement → Verify → Release). Also trigger on 'spec this', 'plan this feature', 'break into tasks', 'quality gate', 'constitution', or 'spec sync'."
 ---
 
@@ -79,22 +79,22 @@ For Phase 7 (Implementation), prioritize fast feedback loops over long reasoning
 The pipeline includes 16 automation hooks for customization:
 
 **Blocking Hooks** (workflow stops if hook fails — exit code 2):
-1. `artifact-validator` — Pre-tool: blocks if required artifacts missing
-2. `phase-gate` — Post-tool: blocks if output artifact wasn't created
-3. `security-scan` — Pre-release: blocks if hardcoded secrets detected
-4. `release-gate` — Pre-release: blocks if gate conditions not met
+1. `specky-artifact-validator` — Pre-tool: blocks if required artifacts missing
+2. `specky-phase-gate` — Post-tool: blocks if output artifact wasn't created
+3. `specky-security-scan` — Pre-release: blocks if hardcoded secrets detected
+4. `specky-release-gate` — Pre-release: blocks if gate conditions not met
 
 **Advisory Hooks** (workflow continues; failures logged):
-1. `branch-validator` — Pre-tool: warns if wrong branch for phase
-2. `spec-sync` — Post-tool: checks spec-code drift
-3. `auto-checkpoint` — Post-tool: suggests checkpoint after artifact changes
-4. `spec-quality` — Post-spec: validates specification quality
-5. `task-tracer` — Post-tasks: traces task dependencies
-6. `ears-validator` — Post-spec: validates EARS notation patterns
-7. `lgtm-gate` — Post-spec/design/tasks: pauses for human LGTM
-8. `drift-monitor` — Post-verify/review: monitors specification drift
-9. `cognitive-debt-alert` — Post-analysis: flags cognitive debt metrics
-10. `metrics-dashboard` — Post-analysis: updates metrics dashboard
+1. `specky-branch-validator` — Pre-tool: warns if wrong branch for phase
+2. `specky-spec-sync` — Post-tool: checks spec-code drift
+3. `specky-auto-checkpoint` — Post-tool: suggests checkpoint after artifact changes
+4. `specky-spec-quality` — Post-spec: validates specification quality
+5. `specky-task-tracer` — Post-tasks: traces task dependencies
+6. `specky-ears-validator` — Post-spec: validates EARS notation patterns
+7. `specky-lgtm-gate` — Post-spec/design/tasks: pauses for human LGTM
+8. `specky-drift-monitor` — Post-verify/review: monitors specification drift
+9. `specky-cognitive-debt-alert` — Post-analysis: flags cognitive debt metrics
+10. `specky-metrics-dashboard` — Post-analysis: updates metrics dashboard
 
 Hooks are configured in `sdd-hooks.json` with PreToolUse and PostToolUse matchers.
 
@@ -127,9 +127,9 @@ Hooks are configured in `sdd-hooks.json` with PreToolUse and PostToolUse matcher
 **Agent-based:**
 ```
 @specky-orchestrator           (end-to-end pipeline coordinator)
-@sdd-init feature-name         (Phase 0 — initialize feature)
-@spec-engineer                 (Phase 2 — write SPECIFICATION.md)
-@implementer                   (Phase 7 — scaffold code + tests)
+@specky-sdd-init feature-name         (Phase 0 — initialize feature)
+@specky-spec-engineer                 (Phase 2 — write SPECIFICATION.md)
+@specky-implementer                   (Phase 7 — scaffold code + tests)
 ```
 
 See [copilot-instructions.instructions.md](../../instructions/copilot-instructions.instructions.md) for the full agent catalog.
@@ -179,7 +179,7 @@ spec/003-notifs    ──→    ↑
 git checkout develop
 git pull origin develop
 git checkout -b spec/001-user-authentication
-# Run @sdd-init / /specky-greenfield
+# Run @specky-sdd-init / /specky-greenfield
 ```
 
 **After Phase 7 passes:**
@@ -195,7 +195,7 @@ git push origin develop
 git checkout stage
 git merge --no-ff develop
 git push origin stage
-# Run @release-engineer for blocking gates
+# Run @specky-release-engineer for blocking gates
 ```
 
 **Releasing to production:**
@@ -228,13 +228,13 @@ git push origin main --tags
 |-------|-------|-------------------|
 | Pre | @specky-onboarding | Fast |
 | All | @specky-orchestrator | Balanced |
-| 0 | @sdd-init | Fast |
-| 1 | @research-analyst | Balanced |
-| 2 | @spec-engineer | Reasoning-focused |
-| 3 | @sdd-clarify | Reasoning-focused |
-| 4 | @design-architect | Reasoning-focused |
-| 5 | @task-planner | Balanced |
-| 6 | @quality-reviewer | Balanced |
-| 7 | @implementer | Balanced |
-| 8 | @test-verifier | Reasoning-focused |
-| 9 | @release-engineer | Fast |
+| 0 | @specky-sdd-init | Fast |
+| 1 | @specky-research-analyst | Balanced |
+| 2 | @specky-spec-engineer | Reasoning-focused |
+| 3 | @specky-sdd-clarify | Reasoning-focused |
+| 4 | @specky-design-architect | Reasoning-focused |
+| 5 | @specky-task-planner | Balanced |
+| 6 | @specky-quality-reviewer | Balanced |
+| 7 | @specky-implementer | Balanced |
+| 8 | @specky-test-verifier | Reasoning-focused |
+| 9 | @specky-release-engineer | Fast |

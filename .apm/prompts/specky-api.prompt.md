@@ -12,6 +12,6 @@ Design an API using the Specky SDD pipeline.
 **Versioning:** [e.g., URL path /v1/, header, none]
 
 Please:
-1. Call @requirements-engineer to produce FRD + NFRD for the API
-2. Call @sdd-init with project_type=api
+1. Call @specky-requirements-engineer to produce FRD + NFRD for the API
+2. Call @specky-sdd-init with project_type=api
 3. Proceed through discover → specify → design phases

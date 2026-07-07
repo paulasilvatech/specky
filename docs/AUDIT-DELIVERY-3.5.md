@@ -74,7 +74,7 @@ Reading the table honestly: the **engine, CLI, and plumbing are real** — phase
 - **`specky doctor` integrity checking works end to end** — healthy exit 0 on fresh install; a corrupted hook detected by name with exit 1; `doctor --fix` restores it; healthy again.
 - **`specky status` and `specky hooks list`** report accurate live versions, asset counts, and pipeline state.
 - **`specky upgrade` preserves user data** — `.specs/` content byte-identical after upgrade while a tampered installed asset was restored.
-- **Hooks are real executable enforcement** — `branch-validator.sh` warns (exit 0) in advisory mode and hard-blocks (exit 2) under `SPECKY_GUARD=strict` against live git state; `security-scan.sh` blocks (exit 2) on a real staged AWS-key pattern with file:line output; `session-banner.sh` prints an accurate pipeline banner.
+- **Hooks are real executable enforcement** — `specky-branch-validator.sh` warns (exit 0) in advisory mode and hard-blocks (exit 2) under `SPECKY_GUARD=strict` against live git state; `specky-security-scan.sh` blocks (exit 2) on a real staged AWS-key pattern with file:line output; `specky-session-banner.sh` prints an accurate pipeline banner.
 - **`specky --version`** prints `specky v3.5.0`.
 - **The legacy `npx specky-sdd` entry routes to serve** — a bin named `specky-sdd` with no subcommand boots a working stdio MCP server that answers `initialize` with `{name:'specky', version:'3.5.0'}`.
 - **The npm tarball ships everything** — `npm pack --dry-run`: 488 files including `.apm/` (63), `templates/` (22), `dist/` (396), matching the installer's source assets exactly.
@@ -84,7 +84,7 @@ Reading the table honestly: the **engine, CLI, and plumbing are real** — phase
 - **Markdown/plain-text/raw-text documents** — `sdd_import_document` returned correct format detection, word counts, and verbatim content; `sdd_batch_import` processed a directory of 8 files with per-file metadata.
 - **Codebase scan (brownfield)** — `sdd_scan_codebase` returned an accurate recursive file tree and correct tech-stack detection (TypeScript/Express/npm/Node.js) from a seeded project.
 - **Raw text to spec package** — `sdd_turnkey_spec` produced 7 EARS-valid requirements spanning all 5 patterns, each traceable to an input sentence, wrote a 10-file package, and the state machine honestly refused to advance past its scaffold DESIGN/TASKS until they were completed.
-- **`sdd_create_branch` / `sdd_create_pr` are data-only and gated** — routing payloads with full REQ traceability, zero git side effects (verified against the live repo), phase-gate enforced, and the RBAC release gate blocked a contributor from `create_pr` while `sdd_check_access` reported the active role correctly.
+- **`sdd_create_branch` / `sdd_create_pr` are data-only and gated** — routing payloads with full REQ traceability, zero git side effects (verified against the live repo), specky-phase-gate enforced, and the RBAC release gate blocked a contributor from `create_pr` while `sdd_check_access` reported the active role correctly.
 - **`sdd_check_ecosystem` / `sdd_check_sync` / `sdd_amend` / `sdd_write_bugfix`** all executed with real behavior: concrete MCP server recommendations tied to the tools they enhance, an honest code-drift report, a persisted constitutional amendment (Amendment Log row + state), and a fully populated BUGFIX_SPEC.md.
 
 ---
@@ -197,8 +197,8 @@ Each finding lists what was promised, what execution showed, and the specific ga
 
 ### CLI toolkit & installed assets
 
-**P-24 — One of the 16 installed hooks crashes on nearly every real spec** (`ears-validator.sh`)
-*Evidence:* 4 of 16 hooks were executed directly; branch-validator, security-scan, and session-banner behave exactly as advertised. ears-validator errored with `syntax error in expression` then `TOTAL: unbound variable`, exit 1, on a 3-requirement spec.
+**P-24 — One of the 16 installed hooks crashes on nearly every real spec** (`specky-ears-validator.sh`)
+*Evidence:* 4 of 16 hooks were executed directly; specky-branch-validator, specky-security-scan, and specky-session-banner behave exactly as advertised. specky-ears-validator errored with `syntax error in expression` then `TOTAL: unbound variable`, exit 1, on a 3-requirement spec.
 *Gap:* Root cause read from the installed file: `VAR=$(grep -cE '...' "$SPEC" 2>/dev/null || echo "0")` — when grep counts 0 matches it prints `0` *and* exits 1, so the `|| echo` appends a second `0`, producing a two-line value that breaks `$((...))` arithmetic under `set -euo pipefail`. The hook only completes when a spec contains at least one of *every* one of the 6 EARS patterns, so its advertised EARS coverage report is effectively never produced. (Advisory tier, so exit 1 does not block; the remaining 12 hooks were installed and wired but not individually executed.)
 
 ### Input formats & MCP-to-MCP integration

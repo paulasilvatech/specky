@@ -68,7 +68,7 @@ the policy):
 | Role | Access |
 | --- | --- |
 | `viewer` | Read-only tools (status, metrics, templates, audit verification) |
-| `contributor` | Everything except release-gate tools (`sdd_create_pr`) |
+| `contributor` | Everything except specky-release-gate tools (`sdd_create_pr`) |
 | `admin` | All 58 tools |
 
 ### Where the role comes from

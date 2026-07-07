@@ -5,7 +5,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/session-banner.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-session-banner.sh",
           "timeout": 5
         }
       ]
@@ -17,7 +17,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/pipeline-guard.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-pipeline-guard.sh",
           "timeout": 5
         }
       ]
@@ -29,7 +29,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-branch-validator.sh",
           "timeout": 5
         }
       ]
@@ -39,12 +39,12 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-artifact-validator.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-branch-validator.sh",
           "timeout": 5
         }
       ]
@@ -54,12 +54,12 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-artifact-validator.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-branch-validator.sh",
           "timeout": 5
         }
       ]
@@ -69,12 +69,12 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-artifact-validator.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-branch-validator.sh",
           "timeout": 5
         }
       ]
@@ -84,12 +84,12 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-artifact-validator.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-branch-validator.sh",
           "timeout": 5
         }
       ]
@@ -99,12 +99,12 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-artifact-validator.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-branch-validator.sh",
           "timeout": 5
         }
       ]
@@ -114,12 +114,12 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-artifact-validator.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-branch-validator.sh",
           "timeout": 5
         }
       ]
@@ -129,12 +129,12 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-artifact-validator.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-branch-validator.sh",
           "timeout": 5
         }
       ]
@@ -144,22 +144,22 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/artifact-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-artifact-validator.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-branch-validator.sh",
           "timeout": 5
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/security-scan.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-security-scan.sh",
           "timeout": 30
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/release-gate.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-release-gate.sh",
           "timeout": 15
         }
       ]
@@ -169,7 +169,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/branch-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-branch-validator.sh",
           "timeout": 5
         }
       ]
@@ -181,12 +181,12 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/phase-gate.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-phase-gate.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-checkpoint.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-auto-checkpoint.sh",
           "timeout": 5
         }
       ]
@@ -196,32 +196,32 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/phase-gate.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-phase-gate.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/spec-quality.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-spec-quality.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/ears-validator.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-ears-validator.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/lgtm-gate.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-lgtm-gate.sh",
           "timeout": 5
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/spec-sync.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-spec-sync.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-checkpoint.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-auto-checkpoint.sh",
           "timeout": 5
         }
       ]
@@ -231,22 +231,22 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/phase-gate.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-phase-gate.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/spec-sync.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-spec-sync.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/lgtm-gate.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-lgtm-gate.sh",
           "timeout": 5
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-checkpoint.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-auto-checkpoint.sh",
           "timeout": 5
         }
       ]
@@ -256,27 +256,27 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/phase-gate.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-phase-gate.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/task-tracer.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-task-tracer.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/lgtm-gate.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-lgtm-gate.sh",
           "timeout": 5
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/spec-sync.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-spec-sync.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-checkpoint.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-auto-checkpoint.sh",
           "timeout": 5
         }
       ]
@@ -286,7 +286,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-checkpoint.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-auto-checkpoint.sh",
           "timeout": 5
         }
       ]
@@ -296,12 +296,12 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/spec-sync.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-spec-sync.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-checkpoint.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-auto-checkpoint.sh",
           "timeout": 5
         }
       ]
@@ -311,12 +311,12 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/phase-gate.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-phase-gate.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/drift-monitor.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-drift-monitor.sh",
           "timeout": 10
         }
       ]
@@ -326,22 +326,22 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/phase-gate.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-phase-gate.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/cognitive-debt-alert.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-cognitive-debt-alert.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/metrics-dashboard.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-metrics-dashboard.sh",
           "timeout": 5
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/drift-monitor.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-drift-monitor.sh",
           "timeout": 10
         }
       ]
@@ -351,12 +351,12 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/spec-sync.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-spec-sync.sh",
           "timeout": 10
         },
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/auto-checkpoint.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-auto-checkpoint.sh",
           "timeout": 5
         }
       ]
@@ -368,7 +368,7 @@
       "hooks": [
         {
           "type": "command",
-          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/security-scan.sh",
+          "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/scripts/specky-security-scan.sh",
           "timeout": 30
         }
       ]
