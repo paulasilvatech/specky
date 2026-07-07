@@ -91,7 +91,12 @@ The CLI **automatically adds a `.gitignore` block** — vendored assets (regener
 ```bash
 specky doctor          # Integrity + config health (should be all green)
 specky status          # Active features and pipeline phase
+specky apm validate    # Package manifest and primitive path validation
+specky apm policy      # Enterprise APM policy checks
+specky apm verify-lock # Primitive hash lock verification
 ```
+
+The APM commands validate the package that feeds `specky install`. They do not replace the installer: `specky install --ide=copilot` and `specky install --ide=claude` still generate the harness-native assets consumed by each IDE.
 
 > **Why CLI instead of APM?** Versions 3.4+ ship a unified CLI that works cross-platform (macOS/Linux/Windows/WSL) with no external tooling. The `--ide` flag ensures clean separation between Copilot and Claude Code assets.
 

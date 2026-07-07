@@ -124,6 +124,29 @@ Useful for debugging why a hook did or did not fire.
 
 ---
 
+### `specky apm`
+
+Validate and govern Specky's APM package metadata and primitive integrity. These commands operate on the package source (`apm.yml`, `apm-policy.yml`, `apm.lock.yaml`, and `.apm/`) and are intended for maintainers, CI, and enterprise governance.
+
+```bash
+specky apm validate      # validate apm.yml against package.json and primitive paths
+specky apm lock          # write apm.lock.yaml with SHA256 per primitive
+specky apm verify-lock   # diff current primitives against apm.lock.yaml
+specky apm policy        # enforce apm-policy.yml governance rules
+specky apm audit         # run the primitive frontmatter/tool audit
+specky apm sbom          # emit a CycloneDX SBOM for packaged primitives
+```
+
+The APM layer does not replace `specky install`; it governs what `specky install` consumes. The normal flow is:
+
+1. Maintain canonical primitives under `.apm/`.
+2. Run `specky apm validate`, `specky apm policy`, and `specky apm verify-lock` in CI.
+3. Run `specky install --ide=copilot` or `specky install --ide=claude` to generate platform-native assets.
+
+`apm.lock.yaml` pins the primitive hashes shipped in the package. `apm-policy.yml` enforces MCP allowlists, allowed hook events, and per-harness tool-name isolation.
+
+---
+
 ### `specky serve`
 
 Start the MCP server.

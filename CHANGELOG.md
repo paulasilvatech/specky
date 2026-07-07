@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- APM governance commands: `specky apm validate`, `specky apm lock`, `specky apm verify-lock`, `specky apm policy`, `specky apm audit`, and `specky apm sbom`.
+- `apm-policy.yml` and `apm.lock.yaml` package governance files. The lock pins SHA256 hashes for packaged primitives and the policy enforces MCP allowlists, allowed hook events, and per-harness tool-name isolation.
+- Harness compiler registry (`src/cli/lib/harness`) and APM governance modules (`src/cli/lib/apm`) with regression coverage.
+
+### Changed
+
+- `npm run build` now checks `apm.yml` name/version parity with `package.json` before compiling.
+- `npm pack --dry-run` now includes `apm.yml`, `apm.lock.yaml`, `apm-policy.yml`, and the compiled `specky apm` command/modules.
+
 ## [3.7.2] - 2026-07-06
 
 Platform-native primitive generation for GitHub Copilot and Claude Code.
