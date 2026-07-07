@@ -16,6 +16,14 @@ media
 # Local Specky working data
 .specs
 .specky
+/harness
+
+# Generated AI harness assets
+.claude
+.cursor
+.agents
+.mcp.json
+.vscode
 
 # Editor / OS noise
 .DS_Store

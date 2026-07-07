@@ -42,12 +42,18 @@ index.html
 
 # AI tooling internals (per-project, not repo)
 .claude/
+.cursor/
+.agents/
 .remember/
 CLAUDE.md
 BUILD_PROMPT.md
 SESSION_LOG_*.md
+.mcp.json
 .specs/
 .specky/
+
+# Local harness notes and experiments
+/harness/
 
 # APM consumer artifacts (populated after install; not package content)
 apm_modules/

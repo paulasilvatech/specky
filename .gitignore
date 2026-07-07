@@ -80,7 +80,7 @@ apm_modules/
 .specky/
 
 # ── Local workspace assets / sibling checkouts ───────────
-harness/
+/harness/
 images/
 specky-site/
 
