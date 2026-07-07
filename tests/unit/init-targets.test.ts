@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -65,5 +65,44 @@ describe("specky install target selection", () => {
         );
         expect(settings.hooks).toBeUndefined();
         expect(settings.permissions).toBeDefined();
+    });
+
+    it("removes pre-existing Claude hooks from .claude/settings.json when Copilot is added to the same workspace", async () => {
+        // Simulate a workspace that already has a Claude Code config with the
+        // user's own hooks, permissions and unrelated settings.
+        const claudeDir = resolve(workspace, ".claude");
+        mkdirSync(claudeDir, { recursive: true });
+        const settingsPath = resolve(claudeDir, "settings.json");
+        writeFileSync(
+            settingsPath,
+            JSON.stringify(
+                {
+                    hooks: {
+                        SessionStart: [
+                            { matcher: "", hooks: [{ type: "command", command: "echo user-owned-hook" }] },
+                        ],
+                    },
+                    permissions: { allow: ["Read(*)"] },
+                    env: { USER_SETTING: "keep-me" },
+                },
+                null,
+                2,
+            ) + "\n",
+            "utf8",
+        );
+
+        await expect(runInit({ target: "both", force: true, dryRun: false, workspace })).resolves.toBe(0);
+
+        const settings = readJson<{
+            hooks?: unknown;
+            permissions?: { allow?: string[] };
+            env?: Record<string, string>;
+        }>(settingsPath);
+
+        // Hooks (including the user's pre-existing ones) must be gone.
+        expect(settings.hooks).toBeUndefined();
+        // Non-hook user configuration must be preserved.
+        expect(settings.env?.USER_SETTING).toBe("keep-me");
+        expect(settings.permissions?.allow).toContain("Read(*)");
     });
 });
