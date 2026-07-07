@@ -115,7 +115,7 @@ npx specky install --ide=copilot
 
 The CLI installs 13 agents, 22 prompts, 8 skills, 16 hooks, the MCP server registration (`.mcp.json` + `.vscode/mcp.json`, pinned to the installed version), and pre-authorizes a **least-privilege** set of tools — the Specky MCP tools plus scoped `git`/`npm`/`npx` and file editing. It does **not** pre-authorize arbitrary shell, `rm`, or network access; those still prompt. Run `specky doctor` anytime to validate integrity and config.
 
-Starting in v3.7.2, generated assets are platform-native. `specky install --ide=copilot` writes GitHub Copilot agents/prompts with VS Code tool names such as `search`, `agent`, and `specky/sdd_get_status`, plus prompt `agent: agent` frontmatter. `specky install --ide=claude` writes Claude Code agents/commands with `Read`, `Glob`, `Grep`, `Task`, and `mcp__specky__sdd_get_status`, with Copilot-only prompt metadata removed.
+Starting in v3.7.3, generated assets are platform-native. `specky install --ide=copilot` writes GitHub Copilot agents/prompts with VS Code tool names such as `search`, `agent`, and `specky/sdd_get_status`, plus prompt `agent: agent` frontmatter. `specky install --ide=claude` writes Claude Code agents/commands with `Read`, `Glob`, `Grep`, `Task`, and `mcp__specky__sdd_get_status`, with Copilot-only prompt metadata removed.
 
 Specky also has an APM governance layer for enterprise package control. `apm.yml` declares the package primitives, targets, and MCP runtime; `apm.lock.yaml` pins primitive hashes; `apm-policy.yml` enforces MCP and tool-name policy. Maintainers and CI can run `specky apm validate`, `specky apm policy`, `specky apm verify-lock`, and `specky apm sbom` before publishing or installing.
 
@@ -1120,9 +1120,9 @@ npm run dev
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | node dist/index.js 2>/dev/null
 
 # Run the published image from GHCR (multi-arch: linux/amd64 + linux/arm64)
-docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.6.0
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.7.3
 docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
-curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.6.0"}
+curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.7.3"}
 
 # Or build and run locally from source
 docker build -t specky-sdd:dev .

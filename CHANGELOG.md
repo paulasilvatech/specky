@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.7.3] - 2026-07-07
+
+APM governance, primitive lockfiles, and enterprise package validation.
+
 ### Added
 
 - APM governance commands: `specky apm validate`, `specky apm lock`, `specky apm verify-lock`, `specky apm policy`, `specky apm audit`, and `specky apm sbom`.

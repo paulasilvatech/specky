@@ -1,5 +1,5 @@
 audit_enabled: true
-version: "3.7.0"
+version: "3.7.3"
 pipeline:
   phases: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
   phase_names:
@@ -59,10 +59,10 @@ branching:
     stage: "stage"
     production: "main"
   phase_mapping:
-    spec_branch: [0, 1, 2, 3, 4, 5, 6, 7]   # All spec work
-    develop: [8]                               # Integration + review
-    stage: [8, 9]                              # QA + release gates
-    main: []                                   # Production only
+    spec_branch: [0, 1, 2, 3, 4, 5, 6, 7] # All spec work
+    develop: [8] # Integration + review
+    stage: [8, 9] # QA + release gates
+    main: [] # Production only
   artifacts_per_phase:
     0: ["CONSTITUTION.md", ".sdd-state.json"]
     1: ["RESEARCH.md"]

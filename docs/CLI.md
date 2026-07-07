@@ -1,6 +1,6 @@
 # Specky CLI Reference
 
-> Version: v3.7.2+
+> Version: v3.7.3+
 
 The `specky` CLI is the single write-path for installing, validating, and upgrading Specky in a workspace. It replaces the previous ad-hoc copying done by APM and manual `.github/` / `.claude/` setup.
 
@@ -10,7 +10,7 @@ The `specky` CLI is the single write-path for installing, validating, and upgrad
 
 ### `specky install` (alias: `specky init`)
 
-Install Specky assets (agents, prompts, skills, hooks) into the current workspace. `install` is the preferred spelling (matches `npm install` intuition); `init` remains as an alias and dispatches to the same implementation. Starting in v3.7.2, the installer generates platform-native primitives for the selected IDE instead of copying one shared syntax into both environments.
+Install Specky assets (agents, prompts, skills, hooks) into the current workspace. `install` is the preferred spelling (matches `npm install` intuition); `init` remains as an alias and dispatches to the same implementation. Starting in v3.7.3, the installer generates platform-native primitives for the selected IDE instead of copying one shared syntax into both environments.
 
 ```
 specky install [--ide=<claude|copilot|both|auto>] [--force] [--dry-run]
