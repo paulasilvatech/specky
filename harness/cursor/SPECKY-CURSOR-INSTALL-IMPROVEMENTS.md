@@ -3,8 +3,9 @@
 **Versão auditada:** Specky 3.8.0  
 **Projeto de referência:** `cinema-app-agent-v2`  
 **Data:** 2026-07-07  
-**Última revisão:** 2026-07-07 (Apêndices A–F: hooks, permissões, tokens, primitivos, doctor, modelo APM)  
-**Autor:** feedback de instalação Cursor  
+**Última revisão:** 2026-07-07 (Apêndices A–G — spec **completo para implementação**)  
+
+**Escopo de completude:** Este documento inclui decisões travadas, arquitetura, conteúdo de primitivos, **build script hooks**, **6 companion skills**, **patches TypeScript** e **testes de regressão** (Apêndice G). Implementador não deve precisar de decisões extras além de merge/review.
 
 ## Contexto
 
@@ -44,7 +45,7 @@ cursor:
 | P0 | Unificar definição EARS | Médio |
 | P0 | Honestidade sobre hooks no Cursor | Médio |
 | P0 | Rule slim (token budget) — ver Apêndice C | Baixo |
-| P1 | Companion skills faltantes (6 agents) | Médio |
+| P1 | Companion skills faltantes (6 agents) — conteúdo em **Apêndice G.3** | Médio |
 | P1 | Permissões / first-run Cursor — ver Apêndice B | Médio |
 | P1 | Corrigir bugs de conteúdo nos agents | Baixo |
 | P1 | Referências MCP/path desatualizadas | Baixo |
@@ -54,7 +55,7 @@ cursor:
 | P2 | Primitivos canônicos APM — ver Apêndice D | Médio |
 | P2 | `config.yml` — comentário hooks incluir Cursor | Baixo |
 
-**Status da documentação:** Apêndice A (hooks) ✅ · Apêndices B–E adicionados nesta revisão ✅
+**Status da documentação:** Apêndices A–G ✅ — **pronto para implementação no repo Specky**
 
 ---
 
@@ -332,7 +333,7 @@ Commands sem `argument-hint` hoje: `specky-onboarding`, `specky-pipeline-status`
 
 Every developer must run:
 
-  npx specky-sdd@<version> install --ide cursor
+  npx specky-sdd@<version> install --target=cursor
 
 This regenerates:
   .cursor/agents/
@@ -408,7 +409,7 @@ projeto/
 
 ## Checklist de aceite (QA do install Cursor)
 
-Após `specky install --ide cursor`, validar:
+Após `specky install --target=cursor`, validar:
 
 - [ ] `.cursor/rules/specky-sdd.mdc` com `alwaysApply: true` + `description`
 - [ ] Zero referências a "Copilot" ou `.vscode/mcp.json` nos artefatos Cursor
@@ -450,7 +451,7 @@ As correções acima devem ser feitas **no pacote Specky (APM)**, não manualmen
 Para testar após release APM:
 
 ```bash
-npx specky-sdd@next install --ide cursor
+npx specky-sdd@next install --target=cursor
 ```
 
 ---
@@ -647,7 +648,7 @@ Manter **uma fonte** (`.apm/hooks/sdd-hooks.json`) e **três manifests compilado
 ### A.9 QA pós-implementação
 
 ```bash
-# Após specky install --ide cursor
+# Após specky install --target=cursor
 npx specky hooks list          # deve listar .cursor/hooks/scripts
 npx specky hooks test          # scripts rodam sem crash
 # No Cursor: Settings → Hooks → ver entradas carregadas
@@ -705,7 +706,7 @@ Espelhar a filosofia de `SPECKY_REQUIRED_ALLOWS` em Claude, mas **por agent**, n
 
 ### B.3 First-run checklist (documentar no INSTALL.md)
 
-Após `specky install --ide cursor`, o dev deve:
+Após `specky install --target=cursor`, o dev deve:
 
 ```markdown
 1. Abrir Cursor → Settings → MCP → confirmar server `specky` enabled
@@ -1085,8 +1086,8 @@ specky doctor
 | `prompts/*.prompt.md` | `.cursor/commands/*.md` | Remove `agent: agent` (Copilot-only) |
 | `skills/*/SKILL.md` | `.agents/skills/*/SKILL.md` | Cópia direta (path APM) |
 | `instructions/*.md` | `.cursor/rules/*.mdc` | `compileInstruction` → frontmatter Cursor |
-| `hooks/scripts/*.sh` | `.cursor/hooks/scripts/` | **Não implementado** — gap |
-| `hooks/sdd-hooks.json` | `.cursor/hooks.json` | Build → `dist/cursor-hooks.json` — **Não implementado** |
+| `hooks/scripts/*.sh` | `.cursor/hooks/scripts/` | Apêndice G.1–G.2 — build + `copyToCursor()` |
+| `hooks/sdd-hooks.json` | `.cursor/hooks.json` | Build → `dist/cursor-hooks.json` — Apêndice G.1 |
 | MCP em `apm.yml` | `.cursor/mcp.json` | `writeMcpRegistration` ✅ |
 
 **Policy (`apm-policy.yml`)** já valida isolamento Cursor:
@@ -1165,6 +1166,571 @@ Após hooks (Apêndice A): gates blocking passam a valer nativamente no Cursor, 
 
 ---
 
+## Apêndice G — Implementação completa (sem decisões pendentes)
+
+Este apêndice fecha os 4 gaps que impediam implementação “copy-paste”: **build script**, **6 skills**, **patches TS**, **testes**.
+
+### G.1 Build script — `dist/cursor-hooks.json` completo
+
+**Decisão:** estender `scripts/build-claude-hooks.mjs` → renomear para `scripts/build-hook-manifests.mjs` (gera Claude + Copilot + Cursor).
+
+**Arquivos:**
+
+| Arquivo | Ação |
+|---------|------|
+| `scripts/build-hook-manifests.mjs` | Renomear + adicionar bloco Cursor abaixo |
+| `.apm/hooks/specky-run.sh` | Novo — adaptador stdin Cursor (copiado para `.cursor/hooks/` no install) |
+| `dist/cursor-hooks.json` | Gerado no build (não editar manualmente) |
+| `package.json` | `"build": "... && node scripts/build-hook-manifests.mjs && ..."` |
+
+**Constantes Cursor (adicionar ao script):**
+
+```javascript
+const CURSOR_OUTPUT = resolve(ROOT, "dist/cursor-hooks.json");
+const CURSOR_SCRIPTS_PATH = ".cursor/hooks/scripts/";
+const CURSOR_RUNNER = ".cursor/hooks/specky-run.sh";
+const BLOCKING_SCRIPTS = new Set([
+  "specky-artifact-validator.sh",
+  "specky-phase-gate.sh",
+  "specky-security-scan.sh",
+  "specky-release-gate.sh",
+]);
+
+// Claude event → Cursor hooks.json key
+const CURSOR_EVENT_MAP = {
+  SessionStart: "sessionStart",
+  UserPromptSubmit: "beforeSubmitPrompt",
+  Stop: "stop",
+};
+// PreToolUse/PostToolUse split by matcher below
+```
+
+**Algoritmo `buildCursorHooks(claudeManifest)`:**
+
+```javascript
+function scriptNameFromCommand(cmd) {
+  const m = cmd.match(/\/(specky-[^/\s]+\.sh)/);
+  return m ? m[1] : null;
+}
+
+function cursorHookEntry(group, event) {
+  const script = scriptNameFromCommand(group.hooks[0]?.command ?? "");
+  if (!script) return null;
+  const blocking = BLOCKING_SCRIPTS.has(script);
+  const flags = blocking ? " --blocking" : "";
+  const entry = {
+    command: `${CURSOR_RUNNER} ${script}${flags}`,
+    timeout: group.hooks[0]?.timeout ?? 10,
+  };
+  if (blocking) entry.failClosed = true;
+
+  const matcher = group.matcher ?? "";
+  const isNativeWrite = /^(Write|Edit|MultiEdit)(\|(Write|Edit|MultiEdit))*$/.test(matcher);
+
+  if (event === "PreToolUse" || event === "PostToolUse") {
+    if (isNativeWrite) {
+      entry.matcher = "Write|Edit";
+      return { bucket: event === "PreToolUse" ? "preToolUse" : "postToolUse", entry };
+    }
+    if (matcher.includes("mcp__specky__") || !NATIVE_TOOLS.has(matcher.split("|")[0])) {
+      entry.matcher = matcher; // already mcp__specky__* from claude transform
+      return { bucket: event === "PreToolUse" ? "beforeMCPExecution" : "afterMCPExecution", entry };
+    }
+  }
+
+  const cursorEvent = CURSOR_EVENT_MAP[event];
+  if (!cursorEvent) return null;
+  if (matcher) entry.matcher = matcher;
+  return { bucket: cursorEvent, entry };
+}
+
+function buildCursorManifest(claudeManifest) {
+  const hooks = {};
+  for (const [event, groups] of Object.entries(claudeManifest)) {
+    if (!Array.isArray(groups)) continue;
+    for (const group of groups) {
+      const mapped = cursorHookEntry(group, event);
+      if (!mapped) continue;
+      hooks[mapped.bucket] ??= [];
+      hooks[mapped.bucket].push(mapped.entry);
+    }
+  }
+  return { version: 1, hooks };
+}
+```
+
+**No `main()`**, após escrever Copilot:
+
+```javascript
+const cursorManifest = buildCursorManifest(claudeHooks);
+await writeManifest(CURSOR_OUTPUT, cursorManifest, "build-cursor-hooks");
+```
+
+**Saída esperada:** `dist/cursor-hooks.json` com ~40 entradas espelhando `dist/claude-hooks.json`, chaves:
+
+- `sessionStart` (1)
+- `beforeSubmitPrompt` (1)
+- `beforeMCPExecution` (~10 grupos)
+- `afterMCPExecution` (~10 grupos)
+- `preToolUse` (1 — Write|Edit)
+- `postToolUse` (1 — Write|Edit)
+- `stop` (1)
+
+**Validação build:**
+
+```bash
+node scripts/build-hook-manifests.mjs
+test -f dist/cursor-hooks.json
+node -e "const j=require('./dist/cursor-hooks.json'); if(j.version!==1||!j.hooks.beforeMCPExecution) process.exit(1)"
+```
+
+---
+
+### G.2 Adaptador — `.apm/hooks/specky-run.sh` (copiar no install)
+
+Criar em `.apm/hooks/specky-run.sh` e copiar para `.cursor/hooks/specky-run.sh` (chmod +x):
+
+```bash
+#!/usr/bin/env bash
+# specky-run.sh — Cursor hook adapter → Specky .apm hook scripts
+set -euo pipefail
+SCRIPT="${1:?usage: specky-run.sh <script-name> [--blocking]}"
+BLOCKING="${2:-}"
+HOOK=".cursor/hooks/scripts/${SCRIPT}"
+INPUT=$(cat || true)
+
+if command -v jq >/dev/null 2>&1 && [ -n "$INPUT" ]; then
+  RAW=$(echo "$INPUT" | jq -r '
+    .tool_name // .toolName // .tool // .mcpTool // empty
+  ' 2>/dev/null || true)
+  case "$RAW" in
+    mcp__specky__*) export SDD_TOOL_NAME="${RAW#mcp__specky__}" ;;
+    MCP:*|*mcp__specky__*) export SDD_TOOL_NAME="$(echo "$RAW" | sed -n 's/.*sdd_/sdd_/p')" ;;
+    Write|Edit|MultiEdit) export SDD_TOOL_NAME="$RAW" ;;
+  esac
+  PROMPT=$(echo "$INPUT" | jq -r '.prompt // .user_prompt // .text // empty' 2>/dev/null || true)
+  [ -n "$PROMPT" ] && export CLAUDE_USER_PROMPT="$PROMPT"
+fi
+
+bash "$HOOK"
+CODE=$?
+
+if [ "$BLOCKING" = "--blocking" ] && [ "$CODE" -eq 2 ]; then
+  echo '{"permission":"deny","user_message":"Specky quality gate blocked this action."}'
+fi
+exit "$CODE"
+```
+
+---
+
+### G.3 Seis companion skills — conteúdo canônico
+
+Criar em `.apm/skills/{name}/SKILL.md`. Cada skill: frontmatter + workflow + hard rules + link para `specky-sdd-pipeline/references/ears-notation.md` quando relevante.
+
+#### G.3.1 `specky-sdd-init/SKILL.md`
+
+```markdown
+---
+name: specky-sdd-init
+description: "Use when initializing Phase 0 (Init): scaffold .specs/NNN-feature/, CONSTITUTION.md, .sdd-state.json, and spec branch from develop. Trigger on sdd_init, greenfield setup, or new feature bootstrap."
+---
+
+# Phase 0 — Init
+
+## Prerequisites
+- Feature name and project type (greenfield | brownfield | migration | API)
+- Branch `develop` exists (or document exception)
+
+## Workflow
+1. Gather feature name, type, constraints
+2. Read FRD/NFRD from `docs/requirements/` if present
+3. Call `sdd_init` — creates `.specs/NNN-feature/` + CONSTITUTION.md + `.sdd-state.json`
+4. Call `sdd_create_branch` — `spec/NNN-feature-name` from `develop`
+5. Brownfield: call `sdd_scan_codebase`
+6. Present CONSTITUTION.md; wait for developer confirmation
+7. Hand off to `@specky-research-analyst`
+
+## Outputs (only these)
+- `CONSTITUTION.md`
+- `.sdd-state.json`
+
+## Hard rules
+- Never assign NNN manually — `sdd_init` owns numbering
+- Never write artifacts beyond Phase 0
+- Branch: `spec/NNN-*` from `develop`, never from `main`/`stage`
+```
+
+#### G.3.2 `specky-spec-engineer/SKILL.md`
+
+```markdown
+---
+name: specky-spec-engineer
+description: "Use for Phase 2 (Specify): write SPECIFICATION.md with EARS, REQ-IDs, and acceptance criteria. Trigger on sdd_write_spec, sdd_turnkey_spec, sdd_validate_ears, or /specky-specify."
+---
+
+# Phase 2 — Specify
+
+## Prerequisites
+- `CONSTITUTION.md`, `RESEARCH.md` on `spec/NNN-*`
+
+## Workflow
+1. Read CONSTITUTION.md + RESEARCH.md
+2. Call `sdd_write_spec` or `sdd_turnkey_spec`
+3. Optional: `sdd_figma_to_spec`
+4. Call `sdd_validate_ears` — fix all failures
+5. Present SPECIFICATION.md for LGTM (Phase 2 gate)
+
+## EARS (canonical 6 patterns)
+See `../specky-sdd-pipeline/references/ears-notation.md`
+
+## REQ-ID format
+`REQ-{DOMAIN}-{NNN}` — unique, uppercase domain
+
+## Hard rules
+- Every requirement: EARS pattern + REQ-ID + measurable acceptance criteria
+- Always run `sdd_validate_ears` before presenting
+- Branch must be `spec/NNN-*`
+```
+
+#### G.3.3 `specky-sdd-clarify/SKILL.md`
+
+```markdown
+---
+name: specky-sdd-clarify
+description: "Use for Phase 3 (Clarify): resolve ambiguous requirements, validate EARS, produce CLARIFICATION-LOG.md. Trigger on sdd_clarify or /specky-clarify."
+---
+
+# Phase 3 — Clarify
+
+## Prerequisites
+- `SPECIFICATION.md` exists
+
+## Workflow
+1. Read SPECIFICATION.md
+2. Call `sdd_clarify` — max 5 questions per round
+3. Wait for developer answers
+4. Call `sdd_validate_ears`
+5. Rewrite non-compliant requirements
+6. Loop until EARS passes
+7. Write/update CLARIFICATION-LOG.md
+
+## Hard rules
+- Max 5 disambiguation questions per round
+- Do not advance to Design until ambiguities resolved
+```
+
+#### G.3.4 `specky-design-architect/SKILL.md`
+
+```markdown
+---
+name: specky-design-architect
+description: "Use for Phase 4 (Design): produce DESIGN.md with architecture, API contracts, data model, Mermaid diagrams. Trigger on sdd_write_design, sdd_generate_all_diagrams, or /specky-design."
+---
+
+# Phase 4 — Design
+
+## Prerequisites
+- Approved SPECIFICATION.md (LGTM Phase 2)
+
+## Workflow
+1. Read SPECIFICATION.md + CONSTITUTION.md
+2. Call `sdd_write_design` — C4, API contracts, data model, deployment
+3. Call `sdd_generate_all_diagrams`
+4. Trace every design decision to REQ-ID
+5. Present DESIGN.md for LGTM (Phase 4 gate)
+
+## Hard rules
+- API contracts cover all functional REQ-IDs
+- Diagrams: Mermaid only
+- Branch: `spec/NNN-*`
+```
+
+#### G.3.5 `specky-task-planner/SKILL.md`
+
+```markdown
+---
+name: specky-task-planner
+description: "Use for Phase 5 (Tasks): produce TASKS.md + CHECKLIST.md with dependencies, REQ traceability, complexity. Trigger on sdd_write_tasks, sdd_checklist, or /specky-tasks."
+---
+
+# Phase 5 — Tasks
+
+## Prerequisites
+- Approved DESIGN.md (LGTM Phase 4)
+
+## Workflow
+1. Read DESIGN.md + SPECIFICATION.md
+2. Call `sdd_write_tasks` — TASK-NNN, [P], S/M/L/XL, REQ links
+3. Call `sdd_checklist` — security, testing, NFR domains
+4. Present for LGTM (Phase 5 gate)
+
+## Hard rules
+- Every task traces to ≥1 REQ-ID
+- Parallel tasks marked `[P]`
+- Dependencies explicit
+```
+
+#### G.3.6 `specky-quality-reviewer/SKILL.md`
+
+```markdown
+---
+name: specky-quality-reviewer
+description: "Use for Phase 6 (Analyze): completeness audit, cross-analysis, compliance, ANALYSIS.md gate decision. Trigger on sdd_run_analysis, sdd_cross_analyze, sdd_compliance_check."
+---
+
+# Phase 6 — Analyze
+
+## Prerequisites
+- TASKS.md, CHECKLIST.md complete on `spec/NNN-*` (or post-merge on `develop` per project policy)
+
+## Workflow
+1. Read SPECIFICATION.md, DESIGN.md, TASKS.md, CHECKLIST.md
+2. Call `sdd_run_analysis`
+3. Call `sdd_cross_analyze`
+4. Call `sdd_check_sync` if code exists
+5. Optional: `sdd_compliance_check` (SOC2, HIPAA, GDPR, PCI-DSS, ISO 27001)
+6. Write ANALYSIS.md — gate: APPROVE | CONDITIONAL | REJECT
+7. Write COMPLIANCE.md if compliance ran
+8. Call `sdd_metrics`
+
+## Gate rules
+- REJECT blocks pipeline
+- CONDITIONAL lists required fixes
+- Never APPROVE if pass rate < 90% or critical drift
+
+## Hard rules
+- Evidence-based findings only
+- Phase 6 runs after Tasks, before Implement/Verify
+```
+
+**Atualizar agents** para apontar skill dedicada (ex.: `specky-sdd-init` → `specky-sdd-init/SKILL.md`, não só `specky-sdd-pipeline`).
+
+---
+
+### G.4 Patches TypeScript concretos
+
+Paths relativos ao repo `paulasilvatech/specky` (`src/cli/`).
+
+#### G.4.1 `src/cli/lib/paths.ts`
+
+```typescript
+// Em targetPaths().cursor, adicionar:
+hooksScripts: resolve(cursor, "hooks/scripts"),
+hooksRunner: resolve(cursor, "hooks/specky-run.sh"),
+hooksManifest: resolve(cursor, "hooks.json"), // já existe
+
+// Em sourcePaths(), adicionar:
+cursorHooksManifest: resolve(pkgRoot, "dist/cursor-hooks.json"),
+speckyRunScript: resolve(pkgRoot, ".apm/hooks/specky-run.sh"),
+```
+
+#### G.4.2 `src/cli/lib/asset-copier.ts` — `copyToCursor()`
+
+```typescript
+export function copyToCursor(pkgRoot, targets, opts) {
+  const src = sourcePaths(pkgRoot);
+  const result = { written: [], skipped: [] };
+  const cursor = getCompiler("cursor");
+
+  copyDir(src.agentsDir, targets.cursor.agents, opts, result, ...);
+  copyDir(src.promptsDir, targets.cursor.commands, opts, result, ...);
+  copyDir(src.skillsDir, targets.shared.agentSkills, opts, result);
+
+  // NOVO: instruction Cursor-native
+  const instructionSrc = resolve(src.instructionsDir, "cursor-instructions.instructions.md");
+  const fallbackSrc = resolve(src.instructionsDir, "copilot-instructions.instructions.md");
+  const ruleSrc = existsSync(instructionSrc) ? instructionSrc : fallbackSrc;
+  copyFile(ruleSrc, resolve(targets.cursor.rules, "specky-sdd.mdc"), opts, result, cursor.compileInstruction);
+
+  // NOVO: hooks
+  copyDir(src.hookScriptsDir, targets.cursor.hooksScripts, opts, result);
+  copyFile(src.speckyRunScript, targets.cursor.hooksRunner, opts, result);
+  if (existsSync(src.cursorHooksManifest)) {
+    copyFile(src.cursorHooksManifest, targets.cursor.hooksManifest, opts, result);
+  }
+
+  chmodHookScripts(targets.cursor.hooksScripts, opts);
+  chmodHookScripts(dirname(targets.cursor.hooksRunner), opts); // specky-run.sh
+
+  return result;
+}
+```
+
+#### G.4.3 `src/cli/commands/init.ts` — `installCursor()`
+
+```typescript
+function installCursor(ctx) {
+  console.log("[specky init] Installing to .cursor/ …");
+  const r = copyToCursor(ctx.pkg, ctx.targets, ctx.copyOpts);
+  console.log(summarizeCopy(".cursor", r));
+  const mcp = writeMcpRegistration(ctx.targets.cursor.mcp, { ... });
+  console.log(`  .cursor/mcp.json: ${mcp.action}`);
+  console.log(`  .cursor/hooks.json: ${existsSync(ctx.targets.cursor.hooksManifest) ? "installed" : "skipped"}`);
+  console.log("");
+  return r;
+}
+```
+
+#### G.4.4 `src/cli/commands/hooks.ts`
+
+```typescript
+const candidates = [
+  t.cursor.hooksScripts,  // NOVO — first for cursor-only workspaces
+  t.claude.hooksScripts,
+  t.copilot.hooksScripts,
+];
+```
+
+#### G.4.5 `src/cli/commands/doctor.ts`
+
+```typescript
+function checkCursorInstall(targets, workspace) {
+  const checks = [];
+  checks.push(checkMcpRegistration(targets.cursor.mcp, ".cursor/mcp.json"));
+  checks.push(checkFileCount(targets.cursor.agents, 13, "Cursor agents"));
+  checks.push(checkFileCount(resolve(targets.cursor.commands), 22, "Cursor commands"));
+  checks.push(checkFileExists(targets.cursor.rules + "/specky-sdd.mdc", "Cursor rule"));
+  checks.push(checkNoCopilotLeak(resolve(targets.cursor.root)));
+  checks.push(checkFileExists(targets.cursor.hooksManifest, "Cursor hooks.json"));
+  checks.push(checkFileCount(targets.cursor.hooksScripts, 16, "Cursor hook scripts"));
+  return checks;
+}
+```
+
+#### G.4.6 `src/cli/lib/gitignore-writer.ts`
+
+Adicionar ao bloco Specky:
+
+```
+.cursor/hooks/
+```
+
+Manter `.cursor/mcp.json` na lista KEEP.
+
+#### G.4.7 `src/cli/lib/harness/compilers/cursor.ts` — `compileInstruction`
+
+Gerar frontmatter Cursor:
+
+```typescript
+compileInstruction(content) {
+  const body = content.replace(/^---[\s\S]*?---\n/, "");
+  return `---\ndescription: Specky SDD pipeline rules\nalwaysApply: true\n---\n${body}`;
+}
+```
+
+#### G.4.8 Novo primitive — `.apm/instructions/cursor-instructions.instructions.md`
+
+Usar texto **Apêndice C.1** (rule slim) + seção Quality Gates honesta (Apêndice A ou B se hooks ainda não instalados).
+
+#### G.4.9 `apm-policy.yml` — adicionar eventos Cursor (se validar hooks.json)
+
+```yaml
+hooks:
+  allowedEvents:
+    # existentes...
+    - sessionStart
+    - beforeSubmitPrompt
+    - beforeMCPExecution
+    - afterMCPExecution
+    - preToolUse
+    - postToolUse
+    - stop
+```
+
+---
+
+### G.5 Testes de regressão (Vitest)
+
+**Arquivo:** `tests/cli/cursor-target.test.ts`
+
+```typescript
+import { describe, it, expect } from "vitest";
+import { readFileSync, existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { packageRoot, sourcePaths, targetPaths } from "../../src/cli/lib/paths.js";
+import { getCompiler } from "../../src/cli/lib/harness/index.js";
+
+const ROOT = packageRoot();
+const src = sourcePaths(ROOT);
+
+describe("cursor hooks build", () => {
+  it("dist/cursor-hooks.json exists after build", () => {
+    expect(existsSync(src.cursorHooksManifest)).toBe(true);
+  });
+
+  it("cursor manifest has version 1 and MCP hooks", () => {
+    const j = JSON.parse(readFileSync(src.cursorHooksManifest, "utf8"));
+    expect(j.version).toBe(1);
+    expect(j.hooks.beforeMCPExecution?.length).toBeGreaterThan(0);
+    expect(j.hooks.afterMCPExecution?.length).toBeGreaterThan(0);
+  });
+
+  it("blocking hooks set failClosed", () => {
+    const j = JSON.parse(readFileSync(src.cursorHooksManifest, "utf8"));
+    const all = Object.values(j.hooks).flat();
+    const blocking = all.filter((h) => h.command?.includes("--blocking"));
+    expect(blocking.every((h) => h.failClosed === true)).toBe(true);
+  });
+});
+
+describe("cursor compiler isolation", () => {
+  const sample = `---
+name: test
+tools: ["search", "agent", "specky/sdd_init"]
+---
+body`;
+
+  it("maps specky/ to mcp__specky__", () => {
+    const out = getCompiler("cursor").compileAgent(sample);
+    expect(out).toContain("mcp__specky__sdd_init");
+    expect(out).not.toContain("specky/");
+    expect(out).not.toContain('"search"');
+    expect(out).toContain("Task");
+  });
+});
+
+describe("copyToCursor integration", () => {
+  it("installs hooks + rule + skills paths", async () => {
+    // use temp dir fixture — run copyToCursor, assert:
+    // .cursor/hooks.json, .cursor/hooks/scripts/*.sh (16),
+    // .cursor/rules/specky-sdd.mdc, .agents/skills/specky-sdd-init/
+  });
+});
+```
+
+**Arquivo:** `tests/apm/policy-cursor.test.ts`
+
+```typescript
+it("rejects Copilot tool tokens in cursor agent output", () => {
+  const bad = "tools: search, agent, specky/sdd_init";
+  expect(() => assertCursorToolIsolation(bad)).toThrow();
+});
+```
+
+**CI:** adicionar ao workflow existente:
+
+```yaml
+- run: npm run build
+- run: npm test -- tests/cli/cursor-target.test.ts tests/apm/policy-cursor.test.ts
+- run: node -e "require('./dist/cursor-hooks.json')"
+```
+
+---
+
+### G.6 Ordem de PRs (implementação recomendada)
+
+| PR | Conteúdo | Arquivos principais |
+|----|----------|---------------------|
+| **PR-1** | Rule slim + instruction fork + agent fixes + EARS | `.apm/instructions/`, `.apm/agents/`, `.apm/skills/specky-sdd-pipeline/` |
+| **PR-2** | 6 companion skills | `.apm/skills/specky-{init,spec-engineer,...}/` |
+| **PR-3** | Hooks build + install + specky-run.sh | `scripts/build-hook-manifests.mjs`, `asset-copier.ts`, `init.ts` |
+| **PR-4** | Doctor + gitignore + tests | `doctor.ts`, `gitignore-writer.ts`, `tests/cli/cursor-target.test.ts` |
+| **PR-5** | Docs | `docs/INSTALL.md`, `docs/APM-USAGE.md` §6 Cursor |
+
+**Gate merge:** `npm run build && npm test && specky apm validate && specky apm policy`
+
+---
+
 ## Issue template (copiar para GitHub)
 
 **Título:** `[cursor target] Align install output with Cursor conventions (v3.8.0 audit)`
@@ -1182,7 +1748,14 @@ Full spec: [link to SPECKY-CURSOR-INSTALL-IMPROVEMENTS.md]
 - [ ] Replace `copilot-instructions.mdc` with Cursor-native `specky-sdd.mdc` (`alwaysApply`, `description`)
 - [ ] Remove Copilot/.vscode references from Cursor artifacts
 - [ ] Unify EARS definition across rule, agents, and `specky-sdd-pipeline` skill
-- [ ] Document Cursor hook limitations (or implement `.cursor/hooks/` per Appendix A)
+- [ ] Document Cursor hook limitations (or implement `.cursor/hooks/` per Appendix A + **G**)
+
+## Implementation spec (Appendix G)
+
+- [ ] `build-hook-manifests.mjs` → `dist/cursor-hooks.json`
+- [ ] `.apm/hooks/specky-run.sh` + install in `copyToCursor()`
+- [ ] 6 companion skills (G.3) + agent skill refs
+- [ ] TypeScript patches (G.4) + Vitest (G.5)
 
 ## Should fix (P1)
 
