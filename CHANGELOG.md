@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-07-07
+
+Wave 1 multi-harness APM targets (Cursor, OpenCode, Agent Skills) plus a multi-feature phase-advancement fix.
+
 ### Added
 
 - Wave 1 APM target support for `cursor`, `opencode`, and `agent-skills`, including target-native compiler registration, install paths, MCP config writers, and regression coverage.
