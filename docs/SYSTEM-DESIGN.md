@@ -17,7 +17,7 @@ C4Context
   title Specky - System Context
   Person(user, "Developer or AI operator", "Uses an AI IDE to run SDD workflows")
   System(specky, "Specky", "Spec-Driven Development CLI and MCP server")
-  System_Ext(mcpHost, "MCP Host", "VS Code Copilot, Claude Code, Cursor, Windsurf, or another MCP client")
+  System_Ext(mcpHost, "MCP Host", "VS Code Copilot, Claude Code, Cursor, OpenCode, or another MCP client")
   System_Ext(npm, "npm Registry", "Distributes specky-sdd package")
   System_Ext(github, "GitHub", "Repository, releases, PRs, issues, workflows")
   System_Ext(optionalMcp, "Optional external MCP servers", "GitHub, Azure, Terraform, Figma, Docker and document conversion integrations")

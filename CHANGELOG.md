@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Wave 1 APM target support for `cursor`, `opencode`, and `agent-skills`, including target-native compiler registration, install paths, MCP config writers, and regression coverage.
+- `specky install --target=<targets>` as the canonical APM-aligned install selector. The legacy `--ide` flag remains as a deprecated alias for backward compatibility.
+- `specky compile --target=<targets>` for compiling instruction primitives into root context files (`.github/copilot-instructions.md`, `CLAUDE.md`, or `AGENTS.md`).
+
+### Changed
+
+- `specky doctor` now validates installed `targets[]` metadata instead of assuming only Copilot/Claude IDE scopes.
+- Copilot-inclusive installs strip Claude hooks from `.claude/settings.json` even when installing both Copilot and Claude assets, preventing Copilot hook cross-read blocks.
+- APM manifest and policy now use canonical target names and include Cursor/OpenCode target isolation checks.
+
+### Fixed
+
+- Fixed multi-feature phase advancement so artifact validation uses the requested feature number instead of always validating `state.features[0]`.
+- Confirmed existing diagram persistence and REQ-ID test generation regressions remain covered by passing tests.
+
 ## [3.7.3] - 2026-07-07
 
 APM governance, primitive lockfiles, and enterprise package validation.

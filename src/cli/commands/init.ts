@@ -275,11 +275,11 @@ export async function runInit(opts: InitOptions): Promise<number> {
     results.push(installAgentSkills(ctx));
   }
 
-  // rc.14: When target is copilot-only, strip hooks from .claude/settings.json
-  // to prevent Copilot from cross-reading Claude Code lifecycle hooks.
-  // Copilot reads .claude/settings.json and treats SessionStart/UserPromptSubmit
-  // as PreToolUse, causing spurious "Blocked by Pre-Tool Use hook" errors.
-  if (resolvedTargets.includes("copilot") && !resolvedTargets.includes("claude") && !ctx.dryRun) {
+  // rc.14+: When Copilot is installed in this workspace, strip hooks from
+  // .claude/settings.json to prevent Copilot from cross-reading Claude Code
+  // lifecycle hooks. Users that need Claude hooks should run a Claude-only
+  // install in a separate workspace.
+  if (resolvedTargets.includes("copilot") && !ctx.dryRun) {
     const claudeSettings = ctx.targets.claude.settingsJson;
     if (existsSync(claudeSettings)) {
       try {

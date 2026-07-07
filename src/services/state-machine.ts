@@ -6,7 +6,7 @@
 import { Phase, PHASE_ORDER, PHASE_REQUIRED_FILES, STATE_FILE, DEFAULT_SPEC_DIR } from "../constants.js";
 import type { SddState, PhaseStatus, TransitionResult, GateHistoryEntry } from "../types.js";
 import type { FileManager } from "./file-manager.js";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { stat } from "node:fs/promises";
 import { createHmac, createHash } from "node:crypto";
 import { SPECKY_SCAFFOLD_MARKER } from "./feature-package-generator.js";
@@ -33,7 +33,7 @@ export class StateMachine {
   constructor(
     private fileManager: FileManager,
     private workspaceRoot: string = process.cwd(),
-  ) {}
+  ) { }
 
   /**
    * Per-workspace-and-spec-dir serialization queue. Tool handlers can run
@@ -43,7 +43,7 @@ export class StateMachine {
    * pair can be written torn, producing a false "tamper detected". Every
    * read-modify-write below runs inside withLock so those cycles are atomic.
    */
-  private static locks = new Map<string, Promise<unknown>>();
+  private static readonly locks = new Map<string, Promise<unknown>>();
 
   private withLock<T>(specDir: string, fn: () => Promise<T>): Promise<T> {
     const key = resolve(this.workspaceRoot, specDir);
@@ -156,7 +156,7 @@ export class StateMachine {
   /**
    * Check if transition to target phase is allowed.
    */
-  async canTransition(specDir: string, targetPhase: Phase): Promise<TransitionResult> {
+  async canTransition(specDir: string, targetPhase: Phase, featureNumber?: string): Promise<TransitionResult> {
     const state = await this.loadState(specDir);
     const currentIndex = PHASE_ORDER.indexOf(state.current_phase);
     const targetIndex = PHASE_ORDER.indexOf(targetPhase);
@@ -190,7 +190,7 @@ export class StateMachine {
       };
     }
 
-    const { missingFiles, scaffoldFiles } = await this.checkRequiredArtifacts(state);
+    const { missingFiles, scaffoldFiles } = await this.checkRequiredArtifacts(state, featureNumber);
 
     if (missingFiles.length > 0) {
       return {
@@ -219,12 +219,20 @@ export class StateMachine {
     };
   }
 
-  private async checkRequiredArtifacts(state: SddState): Promise<{
+  private resolveFeatureDir(state: SddState, featureNumber?: string): string | undefined {
+    if (!featureNumber) return state.features[0];
+    return state.features.find((featureDir) => {
+      const name = basename(featureDir);
+      return name === featureNumber || name.startsWith(`${featureNumber}-`);
+    }) ?? state.features[0];
+  }
+
+  private async checkRequiredArtifacts(state: SddState, featureNumber?: string): Promise<{
     missingFiles: string[];
     scaffoldFiles: string[];
   }> {
     const requiredFiles = PHASE_REQUIRED_FILES[state.current_phase];
-    const featureDir = state.features[0];
+    const featureDir = this.resolveFeatureDir(state, featureNumber);
     if (!featureDir) return { missingFiles: [], scaffoldFiles: [] };
 
     const missingFiles: string[] = [];
@@ -256,11 +264,11 @@ export class StateMachine {
   /**
    * Advance to the next phase. Validates prerequisites first.
    */
-  async advancePhase(specDir: string, _featureNumber: string): Promise<SddState> {
-    return this.withLock(specDir, () => this._advancePhase(specDir));
+  async advancePhase(specDir: string, featureNumber: string): Promise<SddState> {
+    return this.withLock(specDir, () => this._advancePhase(specDir, featureNumber));
   }
 
-  private async _advancePhase(specDir: string): Promise<SddState> {
+  private async _advancePhase(specDir: string, featureNumber?: string): Promise<SddState> {
     const state = await this.loadState(specDir);
     const currentIndex = PHASE_ORDER.indexOf(state.current_phase);
 
@@ -269,7 +277,7 @@ export class StateMachine {
     }
 
     const nextPhase = PHASE_ORDER[currentIndex + 1];
-    const transition = await this.canTransition(specDir, nextPhase);
+    const transition = await this.canTransition(specDir, nextPhase, featureNumber);
 
     if (!transition.allowed) {
       throw new Error(transition.error_message || "Transition not allowed.");

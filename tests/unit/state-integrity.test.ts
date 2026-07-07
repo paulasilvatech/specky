@@ -116,7 +116,7 @@ describe("StateMachine — state file integrity (HMAC-SHA256)", () => {
     await stateMachine.saveState(specDir, state);
     writeFileSync(join(tempDir, specDir, ".sdd-state.json.sig"), "wrongsig");
 
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => { });
     const loaded = await stateMachine.loadState(specDir);
     expect(loaded.project_name).toBe("degrade-test");
   });
@@ -151,6 +151,21 @@ describe("StateMachine — state file integrity (HMAC-SHA256)", () => {
     await stateMachine.saveState(specDir, state);
 
     const advanced = await stateMachine.advancePhase(specDir, "001");
+    expect(advanced.current_phase).toBe(Phase.Discover);
+  });
+
+  it("validates the requested feature instead of always using the first feature", async () => {
+    const incompleteFeature = `${specDir}/001-incomplete`;
+    const completeFeature = `${specDir}/002-complete`;
+    mkdirSync(join(tempDir, incompleteFeature), { recursive: true });
+    mkdirSync(join(tempDir, completeFeature), { recursive: true });
+    writeFileSync(join(tempDir, completeFeature, "CONSTITUTION.md"), "# Constitution\n");
+
+    const state = stateMachine.createDefaultState("multi-feature");
+    state.features = [incompleteFeature, completeFeature];
+    await stateMachine.saveState(specDir, state);
+
+    const advanced = await stateMachine.advancePhase(specDir, "002");
     expect(advanced.current_phase).toBe(Phase.Discover);
   });
 

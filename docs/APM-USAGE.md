@@ -5,7 +5,7 @@ author: "Paula Silva"
 date: "2026-07-07"
 version: "1.0.0"
 status: "approved"
-tags: ["apm", "mcp", "github-copilot", "claude-code", "enterprise"]
+tags: ["apm", "mcp", "github-copilot", "claude-code", "cursor", "opencode", "enterprise"]
 ---
 
 <!-- markdownlint-disable MD025 -->
@@ -126,7 +126,7 @@ O Specky usa compiladores por harness para gerar assets nativos.
 
 ### GitHub Copilot
 
-`specky install --ide=copilot` gera:
+`specky install --target=copilot` gera:
 
 ```text
 .github/agents/*.agent.md
@@ -152,7 +152,7 @@ agent: agent
 
 ### Claude Code
 
-`specky install --ide=claude` gera:
+`specky install --target=claude` gera:
 
 ```text
 .claude/agents/*.md
@@ -179,8 +179,11 @@ O CLI `specky` e o ponto de entrada principal para usuarios. Nao e necessario in
 Comandos principais:
 
 ```bash
-specky install --ide=copilot
-specky install --ide=claude
+specky install --target=copilot
+specky install --target=claude
+specky install --target=cursor
+specky install --target=opencode
+specky install --target=agent-skills
 specky doctor
 specky status
 specky upgrade
@@ -322,14 +325,14 @@ Instalacao individual:
 ```bash
 npm install -g specky-sdd@latest
 cd your-project
-specky install --ide=copilot
+specky install --target=copilot
 ```
 
 Instalacao versionada por projeto:
 
 ```bash
 npm install --save-dev specky-sdd@latest
-npx specky install --ide=copilot
+npx specky install --target=copilot
 ```
 
 Depois:

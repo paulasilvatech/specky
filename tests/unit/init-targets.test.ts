@@ -56,4 +56,14 @@ describe("specky install target selection", () => {
         expect(existsSync(resolve(workspace, ".cursor/agents/specky-orchestrator.md"))).toBe(false);
         expect(existsSync(resolve(workspace, "opencode.json"))).toBe(false);
     });
+
+    it("strips Claude hooks whenever Copilot is installed in the same workspace", async () => {
+        await expect(runInit({ target: "both", force: true, dryRun: false, workspace })).resolves.toBe(0);
+
+        const settings = readJson<{ hooks?: unknown; permissions?: unknown }>(
+            resolve(workspace, ".claude/settings.json"),
+        );
+        expect(settings.hooks).toBeUndefined();
+        expect(settings.permissions).toBeDefined();
+    });
 });

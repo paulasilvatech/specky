@@ -97,25 +97,28 @@ Specky ships as a single npm package with a unified `specky` CLI. Works on macOS
 # 1. Install the CLI globally (once per machine)
 npm install -g specky-sdd@latest
 
-# 2. Bootstrap your project — choose your IDE:
+# 2. Bootstrap your project — choose your target harness:
 cd your-project
-specky install --ide=copilot   # VS Code + GitHub Copilot (recommended)
-specky install --ide=claude    # Claude Code
+specky install --target=copilot      # VS Code + GitHub Copilot (recommended)
+specky install --target=claude       # Claude Code
+specky install --target=cursor       # Cursor
+specky install --target=opencode     # OpenCode
+specky install --target=agent-skills # Shared .agents/skills bundle
 ```
 
-> **Important:** Always specify `--ide=copilot` or `--ide=claude`. The default `--ide=auto` installs for both IDEs, which can cause hook cross-read conflicts between Copilot and Claude Code in the same workspace. See [docs/INSTALL.md](docs/INSTALL.md) for details.
+> **Important:** Prefer `--target=...`. The legacy `--ide` flag still works for `copilot`, `claude`, `both`, and `auto`, but it is deprecated in favor of APM-style targets. If Copilot is installed in a workspace, Specky strips Claude hooks from `.claude/settings.json` to prevent Copilot cross-read blocks. See [docs/INSTALL.md](docs/INSTALL.md) for details.
 
 Or per-project (for teams — pins version in `package.json`, run via `npx`):
 
 ```bash
 cd your-project
 npm install --save-dev specky-sdd@latest
-npx specky install --ide=copilot
+npx specky install --target=copilot
 ```
 
 The CLI installs 13 agents, 22 prompts, 8 skills, 16 hooks, the MCP server registration (`.mcp.json` + `.vscode/mcp.json`, pinned to the installed version), and pre-authorizes a **least-privilege** set of tools — the Specky MCP tools plus scoped `git`/`npm`/`npx` and file editing. It does **not** pre-authorize arbitrary shell, `rm`, or network access; those still prompt. Run `specky doctor` anytime to validate integrity and config.
 
-Starting in v3.7.3, generated assets are platform-native. `specky install --ide=copilot` writes GitHub Copilot agents/prompts with VS Code tool names such as `search`, `agent`, and `specky/sdd_get_status`, plus prompt `agent: agent` frontmatter. `specky install --ide=claude` writes Claude Code agents/commands with `Read`, `Glob`, `Grep`, `Task`, and `mcp__specky__sdd_get_status`, with Copilot-only prompt metadata removed.
+Generated assets are platform-native. `specky install --target=copilot` writes GitHub Copilot agents/prompts with VS Code tool names such as `search`, `agent`, and `specky/sdd_get_status`, plus prompt `agent: agent` frontmatter. `specky install --target=claude` writes Claude Code agents/commands with `Read`, `Glob`, `Grep`, `Task`, and `mcp__specky__sdd_get_status`, with Copilot-only prompt metadata removed. Wave 1 APM targets also include Cursor, OpenCode, and the neutral `agent-skills` target.
 
 Specky also has an APM governance layer for enterprise package control. `apm.yml` declares the package primitives, targets, and MCP runtime; `apm.lock.yaml` pins primitive hashes; `apm-policy.yml` enforces MCP and tool-name policy. Maintainers and CI can run `specky apm validate`, `specky apm policy`, `specky apm verify-lock`, and `specky apm sbom` before publishing or installing. See [Uso do APM pelo Specky](docs/APM-USAGE.md) for the detailed model, including why APM is not a runtime proxy and why users do not need to install the Microsoft APM CLI.
 
@@ -176,8 +179,8 @@ Specky adds a **deterministic engine** between your intent and your code:
 | 6 compliance frameworks | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 built-in |
 | Cross-artifact traceability | Requirement to design to task to test to code |
 | Gitflow-SDD branching | spec/NNN → develop → stage → main |
-| Unified CLI distribution | `npm install -g specky-sdd && specky install --ide=copilot` — one binary, multi-OS (macOS/Linux/Windows/WSL) |
-| Works in any MCP host | VS Code + Copilot, Claude Code, Cursor, Windsurf, or any MCP client |
+| Unified CLI distribution | `npm install -g specky-sdd && specky install --target=copilot` — one binary, multi-OS (macOS/Linux/Windows/WSL) |
+| First-class harness targets | VS Code + Copilot, Claude Code, Cursor, OpenCode, plus shared `.agents/skills` |
 | Zero outbound calls from the MCP server | Air-gap friendly; code never leaves your machine. The CLI's once-daily update check is [opt-out](#staying-up-to-date) |
 | MIT open source | Fork it, extend it, audit it. No vendor lock, no seat pricing |
 
@@ -187,7 +190,7 @@ Specky adds a **deterministic engine** between your intent and your code:
 ### Prerequisites
 
 - **Node.js 20+**: [Download here](https://nodejs.org/) (Node 20 LTS recommended)
-- **An AI IDE**: VS Code with Copilot, Claude Code, Cursor, or Windsurf
+- **An AI IDE or agent CLI**: VS Code with Copilot, Claude Code, Cursor, or OpenCode
 
 ### Install the Plugin
 
@@ -884,7 +887,7 @@ Together they form the **SDD layer** of the GitHub + Microsoft enterprise platfo
 }
 ```
 
-> **Note:** This example assumes Specky is installed via `specky install --ide=copilot` (after `npm install -g specky-sdd@latest`). See [Quick Start](#quick-start) for details.
+> **Note:** This example assumes Specky is installed via `specky install --target=copilot` (after `npm install -g specky-sdd@latest`). See [Quick Start](#quick-start) for details.
 
 ## Project Configuration
 
@@ -1144,7 +1147,7 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 |------------|--------|
 | 58 MCP tools across 10 enforced pipeline phases | Stable |
 | Unified `specky` CLI: install, doctor, status, upgrade, hooks, serve | Stable |
-| IDE-specific install: `--ide=copilot` or `--ide=claude` | Stable |
+| Target-specific install: `--target=copilot`, `claude`, `cursor`, `opencode`, or `agent-skills` | Stable |
 | Copilot-safe hook manifests (no lifecycle event cross-read) | Stable |
 | Phase validation on every tool with gate enforcement | Stable |
 | 17 software engineering diagram types (C4, sequence, ER, DFD, deployment, network) | Stable |

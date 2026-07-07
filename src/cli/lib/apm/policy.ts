@@ -51,6 +51,85 @@ function toolsLine(content: string): string {
     return content.split("\n").find((line) => line.startsWith("tools:")) ?? "";
 }
 
+function checkMcpAllowlist(pkgRoot: string, policy: ApmPolicy, errors: string[]): void {
+    const allowedServers = policy.mcp?.allowedServers ?? [];
+    const manifest = loadManifest(pkgRoot);
+    for (const server of manifest.mcp?.servers ?? []) {
+        if (!allowedServers.includes(server.name)) {
+            errors.push(`MCP server "${server.name}" is not in policy allowedServers`);
+        }
+    }
+}
+
+function checkHookEvents(policy: ApmPolicy, hooksManifest: string, errors: string[]): void {
+    const allowedEvents = policy.hooks?.allowedEvents;
+    if (!allowedEvents || !existsSync(hooksManifest)) return;
+
+    const manifestJson = JSON.parse(readFileSync(hooksManifest, "utf8")) as Record<
+        string,
+        unknown
+    >;
+    for (const event of Object.keys(manifestJson)) {
+        if (!allowedEvents.includes(event)) {
+            errors.push(`Hook manifest registers disallowed event "${event}"`);
+        }
+    }
+}
+
+function policyAgentFiles(agentsDir: string): string[] {
+    return existsSync(agentsDir)
+        ? readdirSync(agentsDir).filter((file) => file.endsWith(".agent.md"))
+        : [];
+}
+
+function checkForbiddenTokens(
+    targetName: string,
+    target: HarnessTarget,
+    forbidden: string[],
+    agentsDir: string,
+    agentFiles: string[],
+    errors: string[],
+): void {
+    if (forbidden.length === 0) return;
+    const compiler = getCompiler(target);
+
+    for (const file of agentFiles) {
+        const source = readFileSync(resolve(agentsDir, file), "utf8");
+        const line = toolsLine(compiler.compileAgent(source));
+        for (const token of forbidden) {
+            if (line.includes(token)) {
+                errors.push(
+                    `${targetName}: agent "${file}" compiles to a forbidden tool token "${token}"`,
+                );
+            }
+        }
+    }
+}
+
+function checkTargetIsolation(
+    policy: ApmPolicy,
+    agentsDir: string,
+    errors: string[],
+    warnings: string[],
+): void {
+    const agentFiles = policyAgentFiles(agentsDir);
+    for (const [targetName, rules] of Object.entries(policy.targets ?? {})) {
+        const target = TARGET_ALIASES[targetName];
+        if (!target) {
+            warnings.push(`policy targets: unknown target "${targetName}"`);
+            continue;
+        }
+        checkForbiddenTokens(
+            targetName,
+            target,
+            rules.forbidToolTokens ?? [],
+            agentsDir,
+            agentFiles,
+            errors,
+        );
+    }
+}
+
 export function checkPolicy(pkgRoot: string): PolicyResult {
     const errors: string[] = [];
     const warnings: string[] = [];
@@ -63,56 +142,9 @@ export function checkPolicy(pkgRoot: string): PolicyResult {
 
     const { agentsDir, hooksManifest } = sourcePaths(pkgRoot);
 
-    // 1. MCP allowlist.
-    const allowedServers = policy.mcp?.allowedServers ?? [];
-    const manifest = loadManifest(pkgRoot);
-    for (const server of manifest.mcp?.servers ?? []) {
-        if (!allowedServers.includes(server.name)) {
-            errors.push(`MCP server "${server.name}" is not in policy allowedServers`);
-        }
-    }
-
-    // 2. Hook event allowlist.
-    const allowedEvents = policy.hooks?.allowedEvents;
-    if (allowedEvents && existsSync(hooksManifest)) {
-        const manifestJson = JSON.parse(readFileSync(hooksManifest, "utf8")) as Record<
-            string,
-            unknown
-        >;
-        for (const event of Object.keys(manifestJson)) {
-            if (!allowedEvents.includes(event)) {
-                errors.push(`Hook manifest registers disallowed event "${event}"`);
-            }
-        }
-    }
-
-    // 3. Per-target tool-name isolation.
-    const agentFiles = existsSync(agentsDir)
-        ? readdirSync(agentsDir).filter((f) => f.endsWith(".agent.md"))
-        : [];
-
-    for (const [targetName, rules] of Object.entries(policy.targets ?? {})) {
-        const target = TARGET_ALIASES[targetName];
-        if (!target) {
-            warnings.push(`policy targets: unknown target "${targetName}"`);
-            continue;
-        }
-        const forbidden = rules.forbidToolTokens ?? [];
-        if (forbidden.length === 0) continue;
-        const compiler = getCompiler(target);
-
-        for (const file of agentFiles) {
-            const source = readFileSync(resolve(agentsDir, file), "utf8");
-            const line = toolsLine(compiler.compileAgent(source));
-            for (const token of forbidden) {
-                if (line.includes(token)) {
-                    errors.push(
-                        `${targetName}: agent "${file}" compiles to a forbidden tool token "${token}"`,
-                    );
-                }
-            }
-        }
-    }
+    checkMcpAllowlist(pkgRoot, policy, errors);
+    checkHookEvents(policy, hooksManifest, errors);
+    checkTargetIsolation(policy, agentsDir, errors, warnings);
 
     return { ok: errors.length === 0, errors, warnings };
 }

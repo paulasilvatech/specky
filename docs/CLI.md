@@ -1,6 +1,6 @@
 # Specky CLI Reference
 
-> Version: v3.7.3+
+> Version: v3.8.0-dev
 
 The `specky` CLI is the single write-path for installing, validating, and upgrading Specky in a workspace. It replaces the previous ad-hoc copying done by APM and manual `.github/` / `.claude/` setup.
 
@@ -10,22 +10,26 @@ The `specky` CLI is the single write-path for installing, validating, and upgrad
 
 ### `specky install` (alias: `specky init`)
 
-Install Specky assets (agents, prompts, skills, hooks) into the current workspace. `install` is the preferred spelling (matches `npm install` intuition); `init` remains as an alias and dispatches to the same implementation. Starting in v3.7.3, the installer generates platform-native primitives for the selected IDE instead of copying one shared syntax into both environments.
+Install Specky assets (agents, prompts, skills, hooks where supported) into the current workspace. `install` is the preferred spelling (matches `npm install` intuition); `init` remains as an alias and dispatches to the same implementation. The installer generates platform-native primitives for the selected APM target instead of copying one shared syntax into every environment.
 
 ```
+specky install [--target=<targets>] [--force] [--dry-run]
+specky init    [--target=<targets>] [--force] [--dry-run]   # alias
+
+# Backward-compatible legacy spelling
 specky install [--ide=<claude|copilot|both|auto>] [--force] [--dry-run]
-specky init    [--ide=<claude|copilot|both|auto>] [--force] [--dry-run]   # alias
 ```
 
 | Flag | Default | Description |
 |---|---|---|
-| `--ide` | `auto` | Target IDE. **Recommended: always specify `copilot` or `claude` explicitly.** `auto` detects based on workspace signals but may default to `both`, which causes hook cross-read conflicts. |
+| `--target` | `auto` | APM-style target list. Supports `copilot`, `claude`, `cursor`, `opencode`, `agent-skills`, `both`, `all`, and aliases `github-copilot`, `claude-code`, `vscode`. |
+| `--ide` | `auto` | Deprecated alias for legacy `copilot`, `claude`, `both`, and `auto` installs. Prefer `--target`. |
 | `--force` | false | Overwrite existing files. Required to re-install over an existing layout. |
 | `--dry-run` | false | Show what would be written without modifying the filesystem. |
 
-**What it writes (depends on `--ide` flag):**
+**What it writes (depends on `--target`):**
 
-When `--ide=copilot`:
+When `--target=copilot`:
 - `.github/agents/*.agent.md` (13 files)
 - `.github/prompts/*.prompt.md` (22)
 - `.github/skills/*/SKILL.md` (8)
@@ -38,7 +42,7 @@ When `--ide=copilot`:
 
 The installed Copilot agents use GitHub Copilot-native tool identifiers such as `search`, `agent`, and namespaced Specky MCP tools like `specky/sdd_get_status`. Prompt files use `agent: agent` frontmatter so VS Code runs them with agent-mode tool access.
 
-When `--ide=claude`:
+When `--target=claude`:
 - `.claude/agents/*.md` (13 files)
 - `.claude/commands/*.md` (22 slash commands)
 - `.claude/skills/*/SKILL.md` (8 skills)
@@ -50,6 +54,26 @@ When `--ide=claude`:
 - `.mcp.json` — MCP server registration
 
 The installed Claude agents use Claude-native tool identifiers such as `Read`, `Glob`, `Grep`, `Task`, and Specky MCP tools like `mcp__specky__sdd_get_status`. Claude slash commands omit Copilot-only `agent:` frontmatter.
+
+When `--target=cursor`:
+- `.cursor/agents/*.md`
+- `.cursor/commands/*.md`
+- `.cursor/rules/copilot-instructions.mdc`
+- `.agents/skills/*/SKILL.md`
+- `.cursor/mcp.json` with `mcpServers.specky`
+- Cursor hooks are not enabled yet; the installer skips hook primitives for this target.
+
+When `--target=opencode`:
+- `.opencode/agents/*.md`
+- `.opencode/commands/*.md`
+- `.agents/skills/*/SKILL.md`
+- `opencode.json` with `mcp.specky`
+- OpenCode has no hooks concept, so hook primitives are skipped.
+
+When `--target=agent-skills`:
+- `.agents/skills/*/SKILL.md` only.
+
+If Copilot is part of the target set (`copilot`, `both`, or `all`), Specky strips `hooks` from `.claude/settings.json` to prevent VS Code Copilot from cross-reading Claude lifecycle hooks and blocking tool calls.
 
 Both modes also write:
 - `.specky/config.yml` — project pipeline config
@@ -63,6 +87,26 @@ Without `chat.mcp.enabled` and `chat.mcp.discovery.enabled`, GitHub Copilot in V
 
 **Why Claude `permissions.allow` matters:**
 Claude Code asks for approval each time an agent invokes a tool unless the tool is pre-authorized via `permissions.allow`. Specky's Claude agents need read/search tools, scoped git/npm/npx shell commands, workspace edit tools, and `mcp__specky__*`. The CLI pre-authorizes that least-privilege set so pipeline work does not get interrupted by repeated prompts.
+
+---
+
+### `specky compile`
+
+Compile `.apm/instructions/*.instructions.md` into root context files for harnesses that read startup context.
+
+```
+specky compile [--target=<targets>] [--dry-run]
+```
+
+| Target | Output |
+| --- | --- |
+| `copilot` | `.github/copilot-instructions.md` |
+| `claude` | `CLAUDE.md` |
+| `cursor` | `AGENTS.md` |
+| `opencode` | `AGENTS.md` |
+| `agent-skills` | no-op |
+
+`compile` only handles instruction/context output. Agents, commands, prompts, skills, hooks, and MCP config are deployed by `specky install`.
 
 ---
 
@@ -141,7 +185,7 @@ The APM layer does not replace `specky install`; it governs what `specky install
 
 1. Maintain canonical primitives under `.apm/`.
 2. Run `specky apm validate`, `specky apm policy`, and `specky apm verify-lock` in CI.
-3. Run `specky install --ide=copilot` or `specky install --ide=claude` to generate platform-native assets.
+3. Run `specky install --target=copilot`, `--target=claude`, or another supported target to generate platform-native assets.
 
 `apm.lock.yaml` pins the primitive hashes shipped in the package. `apm-policy.yml` enforces MCP allowlists, allowed hook events, and per-harness tool-name isolation.
 
@@ -176,7 +220,7 @@ This is the canonical replacement for `npx specky-sdd`. The legacy `specky-sdd` 
 
 ```bash
 npm install --save-dev specky-sdd@latest
-npx specky init --ide=copilot
+npx specky init --target=copilot
 ```
 
 Pins the version in `package.json` — reproducible across teammates.
@@ -185,7 +229,7 @@ Pins the version in `package.json` — reproducible across teammates.
 
 ```bash
 npm install -g specky-sdd@latest
-specky init --ide=copilot
+specky init --target=copilot
 ```
 
 Convenient for individual use; version not pinned per project.
@@ -193,7 +237,7 @@ Convenient for individual use; version not pinned per project.
 ### Zero install via npx
 
 ```bash
-npx -y specky-sdd@latest init --ide=copilot
+npx -y specky-sdd@latest init --target=copilot
 ```
 
 No prior install required. Each invocation downloads fresh.

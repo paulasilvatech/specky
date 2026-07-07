@@ -67,5 +67,5 @@ primitives:
   .apm/skills/specky-onboarding/SKILL.md: sha256:cdfb2dfaeb74d6ee33eee4773a80f00c0fc263c288853d3b6a966ce00b0fa442
   .apm/skills/specky-orchestrator/SKILL.md: sha256:66af8f8fb882f70e2484d74bff974942f346874e957bbee520994804a2edd734
   .apm/skills/test-verifier/SKILL.md: sha256:b0d3f66271508ab8015b6145dbc85906143662d2841685b55c177adbea7c2a78
-  apm-policy.yml: sha256:c7af3a9a0f73dc7addd88f92df93d93f1726aceb1671b298d0e397919ac5bf19
-  apm.yml: sha256:270e785f7a586c9c3f5c9839cf8b5b40c120a9558acec2f880dfd21ef7962503
+  apm-policy.yml: sha256:11aaf7c0555b2b863c5ff0a3ae896397a09bd4c27b8a7003d938680a3fd66fb4
+  apm.yml: sha256:b3996410f424c58545841e3769387d59ecb6202aaedc9ebc8e25322b02a8891e
