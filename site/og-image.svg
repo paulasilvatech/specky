@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0c0a1a"/>
+      <stop offset="50%" stop-color="#110e24"/>
+      <stop offset="100%" stop-color="#0c0a1a"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="50%" cy="35%" r="45%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="25%" cy="70%" r="35%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="purpleText" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="50%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+    <linearGradient id="btnGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <!-- Grid pattern -->
+    <pattern id="grid" patternUnits="userSpaceOnUse" width="60" height="60">
+      <path d="M 60 0 L 0 0 0 60" fill="none" stroke="#7c3aed" stroke-opacity="0.06" stroke-width="1"/>
+    </pattern>
+    <mask id="gridMask">
+      <radialGradient id="gridFade" cx="50%" cy="40%" r="50%">
+        <stop offset="0%" stop-color="white"/>
+        <stop offset="70%" stop-color="black"/>
+      </radialGradient>
+      <rect width="1200" height="630" fill="url(#gridFade)"/>
+    </mask>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Grid overlay -->
+  <rect width="1200" height="630" fill="url(#grid)" mask="url(#gridMask)" opacity="0.6"/>
+
+  <!-- Glow orbs -->
+  <rect width="1200" height="630" fill="url(#glow1)"/>
+  <rect width="1200" height="630" fill="url(#glow2)"/>
+
+  <!-- Badge: Open Source · MIT License · v3.3 -->
+  <rect x="410" y="80" width="380" height="32" rx="16" fill="#7c3aed" fill-opacity="0.12" stroke="#7c3aed" stroke-opacity="0.25" stroke-width="1"/>
+  <circle cx="434" cy="96" r="4" fill="#a78bfa"/>
+  <text x="600" y="101" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#c4b5fd" letter-spacing="0.3">Open Source · MIT License · v3.3</text>
+
+  <!-- Title: Stop vibe coding. -->
+  <text x="600" y="178" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="64" font-weight="900" fill="#ffffff" letter-spacing="-2.5">Stop vibe coding.</text>
+
+  <!-- Title: Start spec coding. (purple gradient) -->
+  <text x="600" y="252" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="64" font-weight="900" fill="url(#purpleText)" letter-spacing="-2.5">Start spec coding.</text>
+
+  <!-- Subtitle -->
+  <text x="600" y="300" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="17" fill="rgba(255,255,255,0.55)" letter-spacing="0.2">
+    <tspan font-weight="600" fill="rgba(255,255,255,0.85)">The complete SDD plugin</tspan> that keeps your requirements, code, and tests in sync.
+  </text>
+  <text x="600" y="326" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="17" fill="rgba(255,255,255,0.55)">13 agents, 57 MCP tools, 22 prompts, 14 hooks, 10-phase enforced pipeline.</text>
+  <text x="600" y="352" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="17" fill="rgba(255,255,255,0.55)">Six compliance frameworks. One install, everything works.</text>
+
+  <!-- CTA Button -->
+  <rect x="478" y="385" width="244" height="48" rx="10" fill="url(#btnGrad)"/>
+  <!-- Arrow icon -->
+  <path d="M570 401 L570 421 M563 414 L570 421 L577 414" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="612" y="415" font-family="Inter, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#ffffff">Install Now</text>
+
+  <!-- Install command bar -->
+  <rect x="370" y="455" width="460" height="44" rx="10" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+  <text x="394" y="482" font-family="SF Mono, Fira Code, monospace" font-size="14" fill="#a78bfa">$</text>
+  <text x="414" y="482" font-family="SF Mono, Fira Code, monospace" font-size="14" fill="rgba(255,255,255,0.5)">apm install paulasilvatech/specky</text>
+
+  <!-- Stats bar at bottom -->
+  <rect x="0" y="530" width="1200" height="100" fill="rgba(255,255,255,0.02)"/>
+  <line x1="0" y1="530" x2="1200" y2="530" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+
+  <!-- Stats -->
+  <g font-family="Inter, -apple-system, sans-serif" text-anchor="middle">
+    <!-- 13 Agents -->
+    <text x="130" y="568" font-size="28" font-weight="800" fill="#7c3aed">13</text>
+    <text x="130" y="590" font-size="10" font-weight="500" fill="rgba(255,255,255,0.35)" letter-spacing="1.5" text-transform="uppercase">AGENTS</text>
+
+    <!-- 57 MCP Tools -->
+    <text x="330" y="568" font-size="28" font-weight="800" fill="#7c3aed">57</text>
+    <text x="330" y="590" font-size="10" font-weight="500" fill="rgba(255,255,255,0.35)" letter-spacing="1.5">MCP TOOLS</text>
+
+    <!-- 10 Phases -->
+    <text x="510" y="568" font-size="28" font-weight="800" fill="#7c3aed">10</text>
+    <text x="510" y="590" font-size="10" font-weight="500" fill="rgba(255,255,255,0.35)" letter-spacing="1.5">PHASES</text>
+
+    <!-- 22 Prompts -->
+    <text x="690" y="568" font-size="28" font-weight="800" fill="#7c3aed">22</text>
+    <text x="690" y="590" font-size="10" font-weight="500" fill="rgba(255,255,255,0.35)" letter-spacing="1.5">PROMPTS</text>
+
+    <!-- 14 Hooks -->
+    <text x="870" y="568" font-size="28" font-weight="800" fill="#7c3aed">14</text>
+    <text x="870" y="590" font-size="10" font-weight="500" fill="rgba(255,255,255,0.35)" letter-spacing="1.5">HOOKS</text>
+
+    <!-- 6 Compliance -->
+    <text x="1060" y="568" font-size="28" font-weight="800" fill="#7c3aed">6</text>
+    <text x="1060" y="590" font-size="10" font-weight="500" fill="rgba(255,255,255,0.35)" letter-spacing="1.5">COMPLIANCE</text>
+  </g>
+
+  <!-- getspecky.ai watermark -->
+  <text x="600" y="622" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="11" font-weight="500" fill="rgba(255,255,255,0.15)" letter-spacing="0.5">getspecky.ai</text>
+</svg>
