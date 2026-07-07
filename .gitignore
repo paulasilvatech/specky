@@ -1,7 +1,7 @@
 # ============================================================
 # Specky .gitignore — APM Package
 # ============================================================
-# TRACKED: apm.yml, .apm/, src/, package.json, config.yml,
+# TRACKED: apm.yml, apm.lock.yaml, apm-policy.yml, .apm/, src/, package.json, config.yml,
 #          media/, README, LICENSE, CHANGELOG, SECURITY,
 #          CONTRIBUTING, GETTING-STARTED, .github/workflows,
 #          index.html (site), templates/, tests/, docs/
@@ -35,7 +35,6 @@ SESSION_LOG_*.md
 
 # ── APM consumer artifacts (not package content) ─────────
 apm_modules/
-apm.lock.yaml
 
 # ── SDD process artifacts (per-project, not repo) ────────
 .specs/

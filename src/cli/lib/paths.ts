@@ -41,6 +41,7 @@ export function sourcePaths(pkgRoot: string): {
   copilotHooksManifest: string;
   configYml: string;
   apmYml: string;
+  apmPolicyYml: string;
 } {
   return {
     apmDir: resolve(pkgRoot, ".apm"),
@@ -55,6 +56,7 @@ export function sourcePaths(pkgRoot: string): {
     copilotHooksManifest: resolve(pkgRoot, "dist/copilot-hooks.json"),
     configYml: resolve(pkgRoot, "config.yml"),
     apmYml: resolve(pkgRoot, "apm.yml"),
+    apmPolicyYml: resolve(pkgRoot, "apm-policy.yml"),
   };
 }
 

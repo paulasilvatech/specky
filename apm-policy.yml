@@ -1,0 +1,41 @@
+# apm-policy.yml — enterprise governance policy for Specky primitive packaging.
+#
+# Enforced by `specky apm policy check` (and in CI via .github/workflows).
+# The goal is least-privilege, reproducible, harness-isolated primitives.
+
+schemaVersion: 1
+
+# Package sources that may be installed/trusted.
+allowedSources:
+  - github.com/paulasilvatech/specky
+  - registry.npmjs.org/specky-sdd
+
+# MCP governance. Only these servers may be declared in apm.yml, and
+# transitive MCP servers are not auto-trusted.
+mcp:
+  allowTransitive: false
+  allowedServers:
+    - specky
+
+# Hook governance. Hook manifests may only register these event types.
+hooks:
+  allowedEvents:
+    - SessionStart
+    - UserPromptSubmit
+    - PreToolUse
+    - PostToolUse
+    - Stop
+
+# Per-target tool-name isolation. Compiled output for one harness must never
+# contain another harness's native tool tokens.
+targets:
+  github-copilot:
+    forbidToolTokens:
+      - Read
+      - Glob
+      - Grep
+      - Task
+      - mcp__specky__
+  claude-code:
+    forbidToolTokens:
+      - "specky/"

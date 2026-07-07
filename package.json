@@ -25,6 +25,8 @@
     ".apm/",
     "templates/",
     "apm.yml",
+    "apm.lock.yaml",
+    "apm-policy.yml",
     "config.yml",
     "media/specky-icon-256.png",
     "media/specky-icon-128.png",

@@ -8,6 +8,7 @@
  *   specky status
  *   specky upgrade
  *   specky hooks  <list|test|run NAME>
+ *   specky apm    <validate|lock|verify-lock|policy|audit|sbom>
  *   specky serve  [--http] [--port=N] [--profile=enterprise]
  *   specky --version | -v
  *   specky --help  | -h
@@ -66,6 +67,10 @@ Commands:
   hooks <list|test|run NAME>
                          Manage installed hooks
 
+  apm <validate|lock|verify-lock|policy|audit|sbom>
+                         Validate APM manifest, lock primitives, enforce
+                         governance policy, and export primitive SBOM
+
   serve                  Start the MCP server (stdio by default)
     --http                              HTTP streaming transport
     --port=<N>                          HTTP port (default 3200)
@@ -115,6 +120,10 @@ async function dispatch(command: string, rest: string[]): Promise<number> {
       const { runHooks } = await import("./commands/hooks.js");
       const action = (positional[0] ?? "list") as "list" | "test" | "run";
       return runHooks({ action, name: positional[1] });
+    }
+    case "apm": {
+      const { apmCommand } = await import("./commands/apm.js");
+      return apmCommand(positional);
     }
     case "serve": {
       const { runServe } = await import("./commands/serve.js");
@@ -182,7 +191,7 @@ async function main(): Promise<void> {
 
   // Legacy back-compat: `specky-sdd` with no subcommand OR with --http maps to serve
   const knownCommands = new Set([
-    "install", "init", "doctor", "status", "upgrade", "hooks", "serve",
+    "install", "init", "doctor", "status", "upgrade", "hooks", "apm", "serve",
     "help", "--help", "-h", "--version", "-v",
   ]);
 
