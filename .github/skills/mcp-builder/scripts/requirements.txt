@@ -1,2 +1,0 @@
-# No third-party runtime dependencies are required for the bundled deterministic evaluators.
-# MCP server implementations may have their own project-specific dependencies.
