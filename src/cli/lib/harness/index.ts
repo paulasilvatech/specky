@@ -8,10 +8,16 @@
 import type { HarnessCompiler, HarnessTarget } from "./types.js";
 import { copilotCompiler } from "./compilers/copilot.js";
 import { claudeCompiler } from "./compilers/claude.js";
+import { cursorCompiler } from "./compilers/cursor.js";
+import { opencodeCompiler } from "./compilers/opencode.js";
+import { agentSkillsCompiler } from "./compilers/agent-skills.js";
 
 const COMPILERS: Record<HarnessTarget, HarnessCompiler> = {
     copilot: copilotCompiler,
     claude: claudeCompiler,
+    cursor: cursorCompiler,
+    opencode: opencodeCompiler,
+    "agent-skills": agentSkillsCompiler,
 };
 
 export function getCompiler(target: HarnessTarget): HarnessCompiler {

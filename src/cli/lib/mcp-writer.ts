@@ -16,6 +16,7 @@ interface McpServerEntry {
 interface McpConfig {
   mcpServers?: Record<string, McpServerEntry>;
   servers?: Record<string, McpServerEntry>;
+  mcp?: Record<string, McpServerEntry>;
   [k: string]: unknown;
 }
 
@@ -52,13 +53,16 @@ function writeJson(path: string, data: McpConfig, dryRun: boolean): void {
  */
 export function writeMcpRegistration(
   path: string,
-  opts: { dryRun: boolean; serverName?: string; useVscodeSchema?: boolean },
+  opts: { dryRun: boolean; serverName?: string; useVscodeSchema?: boolean; useOpenCodeSchema?: boolean },
 ): { path: string; written: boolean; action: "created" | "merged" | "unchanged" } {
   const name = opts.serverName ?? "specky";
   const existing = readJson(path);
   const before = JSON.stringify(existing);
 
-  if (opts.useVscodeSchema) {
+  if (opts.useOpenCodeSchema) {
+    existing.mcp = existing.mcp ?? {};
+    existing.mcp[name] = DEFAULT_SERVER;
+  } else if (opts.useVscodeSchema) {
     existing.servers = existing.servers ?? {};
     existing.servers[name] = DEFAULT_SERVER;
   } else {

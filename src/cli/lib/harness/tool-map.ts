@@ -61,31 +61,51 @@ const NATIVE: Record<PlainLogicalTool, Record<HarnessTarget, string[]>> = {
     "workspace.search": {
         copilot: ["search"],
         claude: ["Read", "Glob", "Grep"],
+        cursor: ["Read", "Glob", "Grep"],
+        opencode: ["read"],
+        "agent-skills": ["workspace.search"],
     },
     "workspace.edit": {
         copilot: ["edit"],
         claude: ["Edit", "Write"],
+        cursor: ["Edit", "Write"],
+        opencode: ["edit"],
+        "agent-skills": ["workspace.edit"],
     },
     "workspace.command": {
         copilot: ["runCommands"],
         claude: ["Bash"],
+        cursor: ["Bash"],
+        opencode: ["bash"],
+        "agent-skills": ["workspace.command"],
     },
     "web.fetch": {
         copilot: ["fetch"],
         claude: ["WebFetch", "WebSearch"],
+        cursor: ["WebFetch", "WebSearch"],
+        opencode: ["fetch"],
+        "agent-skills": ["web.fetch"],
     },
     "agent.delegate": {
         copilot: ["agent"],
         claude: ["Task"],
+        cursor: ["Task"],
+        opencode: ["agent"],
+        "agent-skills": ["agent.delegate"],
     },
     "todo.write": {
         copilot: ["todos"],
         claude: ["TodoWrite"],
+        cursor: ["TodoWrite"],
+        opencode: ["todo"],
+        "agent-skills": ["todo.write"],
     },
 };
 
 function speckyMcpToken(tool: string, target: HarnessTarget): string {
-    return target === "claude" ? `mcp__specky__${tool}` : `specky/${tool}`;
+    if (target === "claude" || target === "cursor") return `mcp__specky__${tool}`;
+    if (target === "agent-skills") return tool;
+    return `specky/${tool}`;
 }
 
 /** Render a logical tool id into the native token(s) for a harness. */

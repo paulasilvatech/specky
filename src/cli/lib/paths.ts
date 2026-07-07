@@ -79,9 +79,24 @@ export interface Targets {
     hooksManifest: string;
     instructions: string;
   };
+  cursor: {
+    root: string;
+    agents: string;
+    commands: string;
+    rules: string;
+    hooksManifest: string;
+    mcp: string;
+  };
+  opencode: {
+    root: string;
+    agents: string;
+    commands: string;
+    mcp: string;
+  };
   shared: {
     specky: string;
     specs: string;
+    agentSkills: string;
     vscodeMcp: string;
     claudeMcp: string;
   };
@@ -90,6 +105,8 @@ export interface Targets {
 export function targetPaths(workspace: string): Targets {
   const claude = resolve(workspace, ".claude");
   const github = resolve(workspace, ".github");
+  const cursor = resolve(workspace, ".cursor");
+  const opencode = resolve(workspace, ".opencode");
   return {
     claude: {
       root: claude,
@@ -109,9 +126,24 @@ export function targetPaths(workspace: string): Targets {
       hooksManifest: resolve(github, "hooks/specky/sdd-hooks.json"),
       instructions: resolve(github, "instructions"),
     },
+    cursor: {
+      root: cursor,
+      agents: resolve(cursor, "agents"),
+      commands: resolve(cursor, "commands"),
+      rules: resolve(cursor, "rules"),
+      hooksManifest: resolve(cursor, "hooks.json"),
+      mcp: resolve(cursor, "mcp.json"),
+    },
+    opencode: {
+      root: opencode,
+      agents: resolve(opencode, "agents"),
+      commands: resolve(opencode, "commands"),
+      mcp: resolve(workspace, "opencode.json"),
+    },
     shared: {
       specky: resolve(workspace, ".specky"),
       specs: resolve(workspace, ".specs"),
+      agentSkills: resolve(workspace, ".agents/skills"),
       vscodeMcp: resolve(workspace, ".vscode/mcp.json"),
       claudeMcp: resolve(workspace, ".mcp.json"),
     },

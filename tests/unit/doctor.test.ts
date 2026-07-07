@@ -43,4 +43,20 @@ describe("specky doctor IDE scope", () => {
     expect(existsSync(resolve(workspace, ".mcp.json"))).toBe(true);
     expect(existsSync(resolve(workspace, ".vscode/mcp.json"))).toBe(false);
   });
+
+  it.each([
+    ["cursor", ".cursor/mcp.json"],
+    ["opencode", "opencode.json"],
+    ["agent-skills", ".agents/skills/specky-onboarding/SKILL.md"],
+  ])("validates %s target installs", async (target, expectedPath) => {
+    const workspace = makeWorkspace(`specky-doctor-${target}-`);
+    workspaces.push(workspace);
+
+    await expect(runInit({ target, force: false, dryRun: false, workspace })).resolves.toBe(0);
+    await expect(runDoctor({ fix: false, verbose: false, workspace })).resolves.toBe(0);
+
+    expect(existsSync(resolve(workspace, expectedPath))).toBe(true);
+    expect(existsSync(resolve(workspace, ".vscode/mcp.json"))).toBe(false);
+    expect(existsSync(resolve(workspace, ".mcp.json"))).toBe(false);
+  });
 });

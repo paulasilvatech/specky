@@ -6,11 +6,14 @@ license: MIT
 
 # Harness targets this package compiles to. Each target is rendered from the
 # single canonical primitive source below via a Specky harness compiler
-# (src/cli/lib/harness). `specky install --ide=<target>` and
+# (src/cli/lib/harness). `specky install --target=<target>` and
 # `specky compile --target=<target>` produce that harness's native layout.
 targets:
-  - github-copilot
-  - claude-code
+  - copilot
+  - claude
+  - cursor
+  - opencode
+  - agent-skills
 
 # Canonical, harness-agnostic primitive source. Authored once and compiled per
 # target — never hand-edited per harness.
@@ -21,8 +24,8 @@ primitives:
   instructions: .apm/instructions
   hooks: .apm/hooks
 
-# MCP runtime that backs the `specky/sdd_*` (Copilot) and `mcp__specky__sdd_*`
-# (Claude) tool ids referenced by the primitives above.
+# MCP runtime that backs the target-native Specky tool ids referenced by the
+# primitives above.
 mcp:
   servers:
     - name: specky

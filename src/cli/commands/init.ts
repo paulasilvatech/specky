@@ -5,13 +5,17 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from
 import { resolve } from "node:path";
 import { VERSION } from "../../constants.js";
 import {
+  copyToAgentSkills,
   copyToClaude,
   copyToCopilot,
+  copyToCursor,
+  copyToOpenCode,
   summarizeCopy,
   writeInstallLock,
   type CopyResult,
 } from "../lib/asset-copier.js";
 import { detectIde, type IdeTarget } from "../lib/ide-detect.js";
+import { SUPPORTED_TARGETS, type HarnessTarget } from "../lib/harness/index.js";
 import { packageRoot, sourcePaths, targetPaths, type Targets } from "../lib/paths.js";
 import { loadClaudeHooksManifest, mergeClaudeHooks } from "../lib/settings-merger.js";
 import { writeMcpRegistration } from "../lib/mcp-writer.js";
@@ -20,6 +24,7 @@ import { writeGitignoreBlock } from "../lib/gitignore-writer.js";
 
 export interface InitOptions {
   ide?: IdeTarget | "auto";
+  target?: string;
   force: boolean;
   dryRun: boolean;
   workspace?: string;
@@ -32,6 +37,56 @@ interface Ctx {
   src: ReturnType<typeof sourcePaths>;
   copyOpts: { force: boolean; dryRun: boolean };
   dryRun: boolean;
+}
+
+const TARGET_ALIASES: Record<string, HarnessTarget | "both" | "all" | "auto"> = {
+  "github-copilot": "copilot",
+  vscode: "copilot",
+  "claude-code": "claude",
+  both: "both",
+  all: "all",
+  auto: "auto",
+};
+
+function uniqueTargets(targets: HarnessTarget[]): HarnessTarget[] {
+  return [...new Set(targets)];
+}
+
+function targetsFromLegacyIde(ide: IdeTarget | "auto", detected: ReturnType<typeof detectIde>): HarnessTarget[] {
+  const resolved = ide === "auto" ? detected.recommendation : ide;
+  if (resolved === "both") return ["claude", "copilot"];
+  return [resolved];
+}
+
+function parseTargetToken(token: string, detected: ReturnType<typeof detectIde>): HarnessTarget[] {
+  const normalized = token.trim().toLowerCase();
+  const aliased = TARGET_ALIASES[normalized] ?? normalized;
+  if (aliased === "auto") return targetsFromLegacyIde("auto", detected);
+  if (aliased === "both") return ["claude", "copilot"];
+  if (aliased === "all") return SUPPORTED_TARGETS.filter((target) => target !== "agent-skills");
+  if (SUPPORTED_TARGETS.includes(aliased as HarnessTarget)) return [aliased as HarnessTarget];
+  throw new Error(
+    `[specky init] Unknown target "${token}". Supported targets: ${SUPPORTED_TARGETS.join(", ")}, both, all`,
+  );
+}
+
+function resolveInstallTargets(opts: InitOptions, detected: ReturnType<typeof detectIde>): HarnessTarget[] {
+  if (opts.target) {
+    return uniqueTargets(
+      opts.target
+        .split(",")
+        .flatMap((token) => parseTargetToken(token, detected)),
+    );
+  }
+  return targetsFromLegacyIde(opts.ide ?? "auto", detected);
+}
+
+function legacyIdeFromTargets(targets: HarnessTarget[]): IdeTarget | "auto" {
+  const set = new Set(targets);
+  if (set.size === 1 && set.has("claude")) return "claude";
+  if (set.size === 1 && set.has("copilot")) return "copilot";
+  if (set.size === 2 && set.has("claude") && set.has("copilot")) return "both";
+  return "auto";
 }
 
 function installClaude(ctx: Ctx): CopyResult {
@@ -83,7 +138,46 @@ function installCopilot(ctx: Ctx): CopyResult {
   return r;
 }
 
-function writeSpeckyMeta(ctx: Ctx, resolvedIde: IdeTarget): void {
+function installCursor(ctx: Ctx): CopyResult {
+  console.log("[specky init] Installing to .cursor/ …");
+  const r = copyToCursor(ctx.pkg, ctx.targets, ctx.copyOpts);
+  console.log(summarizeCopy(".cursor", r));
+
+  const mcp = writeMcpRegistration(ctx.targets.cursor.mcp, {
+    dryRun: ctx.dryRun,
+    serverName: "specky",
+  });
+  console.log(`  .cursor/mcp.json: ${mcp.action}`);
+  console.log("  hooks: skipped (Cursor hook schema support is not enabled yet)");
+  console.log("");
+  return r;
+}
+
+function installOpenCode(ctx: Ctx): CopyResult {
+  console.log("[specky init] Installing to .opencode/ …");
+  const r = copyToOpenCode(ctx.pkg, ctx.targets, ctx.copyOpts);
+  console.log(summarizeCopy(".opencode", r));
+
+  const mcp = writeMcpRegistration(ctx.targets.opencode.mcp, {
+    dryRun: ctx.dryRun,
+    serverName: "specky",
+    useOpenCodeSchema: true,
+  });
+  console.log(`  opencode.json: ${mcp.action}`);
+  console.log("  hooks: skipped (OpenCode has no hooks concept)");
+  console.log("");
+  return r;
+}
+
+function installAgentSkills(ctx: Ctx): CopyResult {
+  console.log("[specky init] Installing to .agents/skills/ …");
+  const r = copyToAgentSkills(ctx.pkg, ctx.targets, ctx.copyOpts);
+  console.log(summarizeCopy(".agents/skills", r));
+  console.log("");
+  return r;
+}
+
+function writeSpeckyMeta(ctx: Ctx, resolvedIde: IdeTarget | "auto", resolvedTargets: HarnessTarget[]): void {
   if (ctx.dryRun) return;
   mkdirSync(ctx.targets.shared.specky, { recursive: true });
 
@@ -96,6 +190,7 @@ function writeSpeckyMeta(ctx: Ctx, resolvedIde: IdeTarget): void {
   const meta = {
     version: VERSION,
     ide: resolvedIde,
+    targets: resolvedTargets,
     installed_at: new Date().toISOString(),
   };
   writeFileSync(
@@ -121,11 +216,15 @@ function ensureGitignore(ctx: Ctx): void {
   console.log(`[specky init] .gitignore: ${verb} (${suffix})`);
 }
 
-function printHeader(opts: InitOptions, workspace: string, resolvedIde: IdeTarget, detected: ReturnType<typeof detectIde>): void {
-  const autoNote = opts.ide === "auto" || !opts.ide ? " (auto-detected)" : "";
+function printHeader(opts: InitOptions, workspace: string, resolvedTargets: HarnessTarget[], resolvedIde: IdeTarget | "auto", detected: ReturnType<typeof detectIde>): void {
+  const autoNote = !opts.target && (opts.ide === "auto" || !opts.ide) ? " (auto-detected)" : "";
   console.log(`[specky init] Version ${VERSION}`);
   console.log(`[specky init] Workspace: ${workspace}`);
-  console.log(`[specky init] IDE target: ${resolvedIde}${autoNote}`);
+  console.log(`[specky init] Target(s): ${resolvedTargets.join(", ")}${autoNote}`);
+  if (opts.ide && opts.ide !== "auto") {
+    console.log(`[specky init] --ide is deprecated; prefer --target=${resolvedTargets.join(",")}`);
+  }
+  if (resolvedIde !== "auto") console.log(`[specky init] Legacy IDE metadata: ${resolvedIde}`);
   if (detected.signals.length) {
     console.log(`[specky init] Detected signals: ${detected.signals.join(", ")}`);
   }
@@ -154,24 +253,33 @@ export async function runInit(opts: InitOptions): Promise<number> {
   };
 
   const detected = detectIde(workspace);
-  const resolvedIde: IdeTarget =
-    !opts.ide || opts.ide === "auto" ? detected.recommendation : opts.ide;
+  const resolvedTargets = resolveInstallTargets(opts, detected);
+  const resolvedIde = legacyIdeFromTargets(resolvedTargets);
 
-  printHeader(opts, workspace, resolvedIde, detected);
+  printHeader(opts, workspace, resolvedTargets, resolvedIde, detected);
 
   const results: CopyResult[] = [];
-  if (resolvedIde === "claude" || resolvedIde === "both") {
+  if (resolvedTargets.includes("claude")) {
     results.push(installClaude(ctx));
   }
-  if (resolvedIde === "copilot" || resolvedIde === "both") {
+  if (resolvedTargets.includes("copilot")) {
     results.push(installCopilot(ctx));
+  }
+  if (resolvedTargets.includes("cursor")) {
+    results.push(installCursor(ctx));
+  }
+  if (resolvedTargets.includes("opencode")) {
+    results.push(installOpenCode(ctx));
+  }
+  if (resolvedTargets.includes("agent-skills")) {
+    results.push(installAgentSkills(ctx));
   }
 
   // rc.14: When target is copilot-only, strip hooks from .claude/settings.json
   // to prevent Copilot from cross-reading Claude Code lifecycle hooks.
   // Copilot reads .claude/settings.json and treats SessionStart/UserPromptSubmit
   // as PreToolUse, causing spurious "Blocked by Pre-Tool Use hook" errors.
-  if (resolvedIde === "copilot" && !ctx.dryRun) {
+  if (resolvedTargets.includes("copilot") && !resolvedTargets.includes("claude") && !ctx.dryRun) {
     const claudeSettings = ctx.targets.claude.settingsJson;
     if (existsSync(claudeSettings)) {
       try {
@@ -188,7 +296,7 @@ export async function runInit(opts: InitOptions): Promise<number> {
     }
   }
 
-  writeSpeckyMeta(ctx, resolvedIde);
+  writeSpeckyMeta(ctx, resolvedIde, resolvedTargets);
   ensureGitignore(ctx);
 
   const lockPath = writeInstallLock(ctx.targets, results, VERSION, ctx.copyOpts);

@@ -26,6 +26,9 @@ const TARGET_ALIASES: Record<string, HarnessTarget> = {
     copilot: "copilot",
     "claude-code": "claude",
     claude: "claude",
+    cursor: "cursor",
+    opencode: "opencode",
+    "agent-skills": "agent-skills",
 };
 
 export function policyPath(pkgRoot: string): string {

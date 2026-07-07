@@ -3,7 +3,8 @@
  * cli/index.ts — Specky unified CLI entry point.
  *
  * Subcommands:
- *   specky init   [--ide=claude|copilot|both|auto] [--force] [--dry-run]
+ *   specky init   [--target=TARGET[,TARGET...]] [--force] [--dry-run]
+ *   specky compile [--target=TARGET[,TARGET...]] [--dry-run]
  *   specky doctor [--fix] [--verbose]
  *   specky status
  *   specky upgrade
@@ -52,7 +53,10 @@ Usage:
 Commands:
   install                Install Specky assets into the current workspace
   init                   Alias of 'install' (same command)
+    --target=<targets>                  comma-list: copilot, claude, cursor,
+                                        opencode, agent-skills, both, all, auto
     --ide=<claude|copilot|both|auto>   Default: auto
+                                        Deprecated alias for --target
     --force                             Overwrite existing files
     --dry-run                           Show changes without writing
 
@@ -61,6 +65,11 @@ Commands:
     --verbose                           Show all tracked files
 
   status                 Show install + pipeline status
+
+  compile                Compile instruction primitives into root context files
+    --target=<targets>                  comma-list: copilot, claude, cursor,
+                                        opencode, agent-skills, both, all
+    --dry-run                           Show output paths without writing
 
   upgrade                Refresh installed assets (preserves .specs/)
 
@@ -94,9 +103,11 @@ async function dispatch(command: string, rest: string[]): Promise<number> {
     case "init": {
       const { runInit } = await import("./commands/init.js");
       const ideRaw = flags["ide"];
+      const targetRaw = flags["target"];
       const ide = typeof ideRaw === "string" ? (ideRaw as "claude" | "copilot" | "both" | "auto") : "auto";
       return runInit({
         ide,
+        target: typeof targetRaw === "string" ? targetRaw : undefined,
         force: flags["force"] === true,
         dryRun: flags["dry-run"] === true,
       });
@@ -111,6 +122,14 @@ async function dispatch(command: string, rest: string[]): Promise<number> {
     case "status": {
       const { runStatus } = await import("./commands/status.js");
       return runStatus({});
+    }
+    case "compile": {
+      const { runCompile } = await import("./commands/compile.js");
+      const targetRaw = flags["target"];
+      return runCompile({
+        target: typeof targetRaw === "string" ? targetRaw : undefined,
+        dryRun: flags["dry-run"] === true,
+      });
     }
     case "upgrade": {
       const { runUpgrade } = await import("./commands/upgrade.js");
@@ -191,7 +210,7 @@ async function main(): Promise<void> {
 
   // Legacy back-compat: `specky-sdd` with no subcommand OR with --http maps to serve
   const knownCommands = new Set([
-    "install", "init", "doctor", "status", "upgrade", "hooks", "apm", "serve",
+    "install", "init", "doctor", "status", "compile", "upgrade", "hooks", "apm", "serve",
     "help", "--help", "-h", "--version", "-v",
   ]);
 

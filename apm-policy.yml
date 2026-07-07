@@ -39,3 +39,15 @@ targets:
   claude-code:
     forbidToolTokens:
       - "specky/"
+  cursor:
+    forbidToolTokens:
+      - "specky/"
+      - '"search"'
+      - '"agent"'
+  opencode:
+    forbidToolTokens:
+      - Read
+      - Glob
+      - Grep
+      - Task
+      - mcp__specky__

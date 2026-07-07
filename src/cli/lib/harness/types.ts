@@ -11,10 +11,15 @@
 
 /**
  * Supported harness targets. Extend this union and register a compiler in
- * `harness/index.ts` to add a new harness (e.g. "cursor", "codex", "opencode").
+ * `harness/index.ts` to add a new harness (e.g. "codex", "gemini", "kiro").
  * New targets must also add native tool mappings in `harness/tool-map.ts`.
  */
-export type HarnessTarget = "copilot" | "claude";
+export type HarnessTarget =
+    | "copilot"
+    | "claude"
+    | "cursor"
+    | "opencode"
+    | "agent-skills";
 
 /**
  * Canonical, harness-agnostic tool vocabulary. Primitive sources are authored

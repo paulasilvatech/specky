@@ -35,17 +35,20 @@ export async function runUpgrade(opts: UpgradeOptions): Promise<number> {
 
   // Upgrade = init with --force, re-detect IDE from existing install
   let ide: "claude" | "copilot" | "both" | "auto" = "auto";
+  let target: string | undefined;
   if (existsSync(installJson)) {
     try {
       const meta = JSON.parse(readFileSync(installJson, "utf8")) as {
         ide?: "claude" | "copilot" | "both";
+        targets?: string[];
       };
-      if (meta.ide) ide = meta.ide;
+      if (Array.isArray(meta.targets) && meta.targets.length > 0) target = meta.targets.join(",");
+      else if (meta.ide) ide = meta.ide;
     } catch {
       // ignore
     }
   }
 
   console.log(`[specky upgrade] .specs/ and .specky/profile.json will be preserved.`);
-  return runInit({ force: true, dryRun: false, ide, workspace });
+  return runInit({ force: true, dryRun: false, ide, target, workspace });
 }

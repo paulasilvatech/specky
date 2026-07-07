@@ -12,6 +12,7 @@ import { resolve } from "node:path";
 import { VERSION } from "../../constants.js";
 import { hashFile } from "../lib/asset-copier.js";
 import { detectIde } from "../lib/ide-detect.js";
+import type { HarnessTarget } from "../lib/harness/index.js";
 import { targetPaths, type Targets } from "../lib/paths.js";
 import { SPECKY_REQUIRED_ALLOWS } from "../lib/settings-merger.js";
 import { SPECKY_VSCODE_SETTINGS } from "../lib/vscode-settings-writer.js";
@@ -38,12 +39,13 @@ type InstalledIde = "claude" | "copilot" | "both" | "auto";
 
 interface InstallMeta {
   version: string;
-  ide: InstalledIde;
+  ide?: InstalledIde;
+  targets?: HarnessTarget[];
   installed_at: string;
 }
 
-interface IdeResolution {
-  ide: InstalledIde;
+interface TargetResolution {
+  targets: HarnessTarget[];
   source: "install.json" | "workspace-signals" | "default";
   detail: string;
 }
@@ -139,10 +141,13 @@ function checkMcpRegistration(path: string, label: string): Check {
   const cfg = readJsonSafe<{
     mcpServers?: Record<string, unknown>;
     servers?: Record<string, unknown>;
+    mcp?: Record<string, unknown>;
   }>(path);
   if (!cfg) return { name: label, pass: false, detail: "file missing" };
   const hasServer =
-    Boolean(cfg.mcpServers?.["specky"]) || Boolean(cfg.servers?.["specky"]);
+    Boolean(cfg.mcpServers?.["specky"]) ||
+    Boolean(cfg.servers?.["specky"]) ||
+    Boolean(cfg.mcp?.["specky"]);
   return {
     name: label,
     pass: hasServer,
@@ -154,29 +159,43 @@ function loadInstallMeta(path: string): InstallMeta | null {
   return readJsonSafe<InstallMeta>(path);
 }
 
-function resolveInstalledIde(
+function targetsFromIde(ide: InstalledIde): HarnessTarget[] {
+  if (ide === "claude") return ["claude"];
+  if (ide === "copilot") return ["copilot"];
+  return ["claude", "copilot"];
+}
+
+function resolveInstalledTargets(
   installMeta: InstallMeta | null,
   workspace: string,
-): IdeResolution {
+): TargetResolution {
+  if (Array.isArray(installMeta?.targets) && installMeta.targets.length > 0) {
+    return {
+      targets: installMeta.targets,
+      source: "install.json",
+      detail: "recorded as targets in .specky/install.json",
+    };
+  }
+
   if (installMeta?.ide) {
     return {
-      ide: installMeta.ide,
+      targets: targetsFromIde(installMeta.ide),
       source: "install.json",
-      detail: "recorded in .specky/install.json",
+      detail: `recorded as legacy ide=${installMeta.ide} in .specky/install.json`,
     };
   }
 
   const detected = detectIde(workspace);
   if (detected.signals.length > 0) {
     return {
-      ide: detected.recommendation,
+      targets: targetsFromIde(detected.recommendation),
       source: "workspace-signals",
       detail: `inferred from workspace signals: ${detected.signals.join(", ")}`,
     };
   }
 
   return {
-    ide: "auto",
+    targets: ["claude", "copilot"],
     source: "default",
     detail: "no install metadata or IDE signals found; validating shared defaults only",
   };
@@ -185,18 +204,26 @@ function resolveInstalledIde(
 function runConfigChecks(
   targets: Targets,
   workspace: string,
-  ide: InstalledIde,
+  installTargets: HarnessTarget[],
 ): Check[] {
   const checks: Check[] = [];
 
-  if (ide === "claude" || ide === "both" || ide === "auto") {
+  if (installTargets.includes("claude")) {
     checks.push(checkClaudePermissions(targets));
     checks.push(checkMcpRegistration(targets.shared.claudeMcp, ".mcp.json"));
   }
 
-  if (ide === "copilot" || ide === "both" || ide === "auto") {
+  if (installTargets.includes("copilot")) {
     checks.push(checkMcpRegistration(targets.shared.vscodeMcp, ".vscode/mcp.json"));
     checks.push(checkVscodeSettings(workspace));
+  }
+
+  if (installTargets.includes("cursor")) {
+    checks.push(checkMcpRegistration(targets.cursor.mcp, ".cursor/mcp.json"));
+  }
+
+  if (installTargets.includes("opencode")) {
+    checks.push(checkMcpRegistration(targets.opencode.mcp, "opencode.json"));
   }
 
   return checks;
@@ -248,13 +275,13 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
 
   const lock = JSON.parse(readFileSync(lockPath, "utf8")) as InstallLock;
   const installMeta = loadInstallMeta(installJsonPath);
-  const resolvedIde = resolveInstalledIde(installMeta, workspace);
+  const resolvedTargets = resolveInstalledTargets(installMeta, workspace);
   console.log(
     `[specky doctor] Lock version: ${lock.version} (generated ${lock.generated_at})`,
   );
   console.log(`[specky doctor] Files tracked: ${Object.keys(lock.files).length}`);
   console.log(
-    `[specky doctor] IDE scope: ${resolvedIde.ide} (${resolvedIde.detail})`,
+    `[specky doctor] Target scope: ${resolvedTargets.targets.join(", ")} (${resolvedTargets.detail})`,
   );
 
   // Version-drift advisory (zero network): installed assets vs running CLI.
@@ -267,7 +294,7 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
   const integrity = verifyIntegrity(lock, targets.shared.specky);
   printIntegrity(integrity, opts.verbose);
 
-  const checks = runConfigChecks(targets, workspace, resolvedIde.ide);
+  const checks = runConfigChecks(targets, workspace, resolvedTargets.targets);
   printChecks(checks);
 
   const integrityOk =
@@ -289,7 +316,7 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
     return init.runInit({
       force: true,
       dryRun: false,
-      ide: resolvedIde.ide,
+      target: resolvedTargets.targets.join(","),
       workspace,
     });
   }

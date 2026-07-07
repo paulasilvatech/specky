@@ -12,6 +12,8 @@
  *   .claude/agents/, .claude/commands/, .claude/skills/, .claude/hooks/,
  *   .claude/rules/, .github/agents/, .github/prompts/, .github/skills/,
  *   .github/hooks/specky/, .github/instructions/,
+ *   .cursor/agents/, .cursor/commands/, .cursor/rules/,
+ *   .opencode/agents/, .opencode/commands/, .agents/skills/,
  *   .specky/install.lock, .specky/install.json
  *
  * What we keep (project-specific):
@@ -37,6 +39,12 @@ const IGNORED_PATHS = [
   ".github/skills/",
   ".github/hooks/specky/",
   ".github/instructions/",
+  ".cursor/agents/",
+  ".cursor/commands/",
+  ".cursor/rules/",
+  ".opencode/agents/",
+  ".opencode/commands/",
+  ".agents/skills/",
   ".specky/install.lock",
   ".specky/install.json",
 ];
@@ -52,6 +60,8 @@ const BLOCK_BODY = [
   "#   .specs/                  your pipeline artifacts",
   "#   .claude/settings.json    team-shared permissions + hooks",
   "#   .mcp.json                MCP server registration",
+  "#   .cursor/mcp.json         MCP server registration (Cursor)",
+  "#   opencode.json            MCP server registration (OpenCode)",
   "#   .vscode/mcp.json         MCP server registration (Copilot)",
   "#   .vscode/settings.json    team-shared VS Code settings",
   BLOCK_END,

@@ -2,7 +2,13 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { copyToClaude, copyToCopilot } from "../../src/cli/lib/asset-copier.js";
+import {
+    copyToAgentSkills,
+    copyToClaude,
+    copyToCopilot,
+    copyToCursor,
+    copyToOpenCode,
+} from "../../src/cli/lib/asset-copier.js";
 import { targetPaths } from "../../src/cli/lib/paths.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
@@ -65,5 +71,71 @@ describe("asset copier platform-specific primitive transforms", () => {
 
         expect(rule).toContain("paths: ['**']");
         expect(rule).not.toContain("applyTo:");
+    });
+
+    it("installs Cursor-native agents, commands, rules, and shared skills", () => {
+        copyToCursor(REPO, targetPaths(workspace), { force: true, dryRun: false });
+
+        const agent = readFileSync(
+            resolve(workspace, ".cursor/agents/specky-orchestrator.md"),
+            "utf8",
+        );
+        const command = readFileSync(
+            resolve(workspace, ".cursor/commands/specky-orchestrate.md"),
+            "utf8",
+        );
+        const rule = readFileSync(
+            resolve(workspace, ".cursor/rules/copilot-instructions.mdc"),
+            "utf8",
+        );
+        const skill = readFileSync(
+            resolve(workspace, ".agents/skills/specky-onboarding/SKILL.md"),
+            "utf8",
+        );
+
+        expect(agent).toContain("tools: Read, Glob, Grep, Task, mcp__specky__sdd_get_status");
+        expect(agent).not.toContain("specky/sdd_get_status");
+        expect(command).not.toContain("agent: agent");
+        expect(rule).toContain("applyTo: '**'");
+        expect(skill).toContain("name: specky-onboarding");
+    });
+
+    it("installs OpenCode-native agents, commands, and shared skills", () => {
+        copyToOpenCode(REPO, targetPaths(workspace), { force: true, dryRun: false });
+
+        const agent = readFileSync(
+            resolve(workspace, ".opencode/agents/specky-orchestrator.md"),
+            "utf8",
+        );
+        const command = readFileSync(
+            resolve(workspace, ".opencode/commands/specky-orchestrate.md"),
+            "utf8",
+        );
+        const skill = readFileSync(
+            resolve(workspace, ".agents/skills/specky-onboarding/SKILL.md"),
+            "utf8",
+        );
+
+        expect(agent).toContain("tools: read, agent, specky/sdd_get_status");
+        expect(agent).not.toContain("mcp__specky__sdd_get_status");
+        expect(command).not.toContain("agent: agent");
+        expect(skill).toContain("name: specky-onboarding");
+    });
+
+    it("installs neutral Agent Skills only", () => {
+        copyToAgentSkills(REPO, targetPaths(workspace), { force: true, dryRun: false });
+
+        const skill = readFileSync(
+            resolve(workspace, ".agents/skills/specky-onboarding/SKILL.md"),
+            "utf8",
+        );
+
+        expect(skill).toContain("name: specky-onboarding");
+        expect(() =>
+            readFileSync(resolve(workspace, ".github/agents/specky-orchestrator.agent.md"), "utf8"),
+        ).toThrow();
+        expect(() =>
+            readFileSync(resolve(workspace, ".claude/agents/specky-orchestrator.md"), "utf8"),
+        ).toThrow();
     });
 });

@@ -227,6 +227,75 @@ export function copyToCopilot(
 }
 
 /**
+ * Copy assets to Cursor `.cursor/` layout.
+ */
+export function copyToCursor(
+  pkgRoot: string,
+  targets: Targets,
+  opts: CopyOptions,
+): CopyResult {
+  const src = sourcePaths(pkgRoot);
+  const result: CopyResult = { written: [], skipped: [] };
+  const cursor = getCompiler("cursor");
+
+  copyDir(src.agentsDir, targets.cursor.agents, opts, result, cursor.renameAgent, cursor.compileAgent);
+  copyDir(src.promptsDir, targets.cursor.commands, opts, result, cursor.renamePrompt, cursor.compilePrompt);
+  copyDir(src.skillsDir, targets.shared.agentSkills, opts, result);
+
+  const instructionSrc = resolve(
+    src.instructionsDir,
+    "copilot-instructions.instructions.md",
+  );
+  if (existsSync(instructionSrc)) {
+    copyFile(
+      instructionSrc,
+      resolve(targets.cursor.rules, "copilot-instructions.mdc"),
+      opts,
+      result,
+      cursor.compileInstruction,
+    );
+  }
+
+  return result;
+}
+
+/**
+ * Copy assets to OpenCode `.opencode/` layout. OpenCode has no hooks concept,
+ * so Specky hook primitives are intentionally skipped for this target.
+ */
+export function copyToOpenCode(
+  pkgRoot: string,
+  targets: Targets,
+  opts: CopyOptions,
+): CopyResult {
+  const src = sourcePaths(pkgRoot);
+  const result: CopyResult = { written: [], skipped: [] };
+  const opencode = getCompiler("opencode");
+
+  copyDir(src.agentsDir, targets.opencode.agents, opts, result, opencode.renameAgent, opencode.compileAgent);
+  copyDir(src.promptsDir, targets.opencode.commands, opts, result, opencode.renamePrompt, opencode.compilePrompt);
+  copyDir(src.skillsDir, targets.shared.agentSkills, opts, result);
+
+  return result;
+}
+
+/**
+ * Copy neutral Agent Skills to the cross-client `.agents/skills/` directory.
+ */
+export function copyToAgentSkills(
+  pkgRoot: string,
+  targets: Targets,
+  opts: CopyOptions,
+): CopyResult {
+  const src = sourcePaths(pkgRoot);
+  const result: CopyResult = { written: [], skipped: [] };
+
+  copyDir(src.skillsDir, targets.shared.agentSkills, opts, result);
+
+  return result;
+}
+
+/**
  * Compute SHA256 of every copied file so `specky doctor` can detect drift.
  */
 export function hashFile(path: string): string {
