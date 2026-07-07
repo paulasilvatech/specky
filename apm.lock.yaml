@@ -2,7 +2,7 @@
 schemaVersion: 1
 package:
   name: specky-sdd
-  version: 3.7.2
+  version: 3.7.3
 primitives:
   .apm/agents/design-architect.agent.md: sha256:b96b16fe04f68afb3b6c656a492603f143527ebe82089a9d4c0d2111f4446836
   .apm/agents/implementer.agent.md: sha256:f78ffbbb4c4a69abb8b0c0158aea914ababd0036c51d7ed77138c21cd3d40979
@@ -68,4 +68,4 @@ primitives:
   .apm/skills/specky-orchestrator/SKILL.md: sha256:66af8f8fb882f70e2484d74bff974942f346874e957bbee520994804a2edd734
   .apm/skills/test-verifier/SKILL.md: sha256:b0d3f66271508ab8015b6145dbc85906143662d2841685b55c177adbea7c2a78
   apm-policy.yml: sha256:c7af3a9a0f73dc7addd88f92df93d93f1726aceb1671b298d0e397919ac5bf19
-  apm.yml: sha256:280c0cc56f52227305d90a355dd70adca6540a041cee479f1fd80c41b1e19c87
+  apm.yml: sha256:270e785f7a586c9c3f5c9839cf8b5b40c120a9558acec2f880dfd21ef7962503
