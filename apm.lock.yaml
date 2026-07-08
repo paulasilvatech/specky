@@ -35,8 +35,9 @@ primitives:
   .apm/hooks/scripts/specky-task-tracer.sh: sha256:fe7bf1d20dc48f21b68b78b8540ce6c9bbeb6b1e299b3099579b7cc922fd3588
   .apm/hooks/sdd-hooks.json: sha256:ec018c950bfca25d9e67da9eb69bdaf6ca9d38ed7ebc5696f6bd06bffdec55f5
   .apm/hooks/specky-run.sh: sha256:0cb829414419cc05d5a592df130630045ef94d319f292815203b378b571bd721
-  .apm/instructions/copilot-instructions.instructions.md: sha256:5deefa455c7a3dbf08688bcbadbc5746583e1170dde358dbb3ed657d6cc0313b
-  .apm/instructions/cursor-instructions.instructions.md: sha256:3295d87fd496ab35051e93705b9dc1eab93e5b758abb8813e171d3404e476bb4
+  .apm/instructions/claude-instructions.instructions.md: sha256:9b3b77bb220950b3d087b0d5b5999bc60aa4a6d7a07b87fff914e4c1aa872982
+  .apm/instructions/copilot-instructions.instructions.md: sha256:9acf227bde8f64f18b15c174171fa148f6d08dec48f163ad4524da77b4a0c93c
+  .apm/instructions/cursor-instructions.instructions.md: sha256:f78a40113030173b91f36723a0b1f86ae5fdf93c19550d3cc0f0520b8f78f4e2
   .apm/prompts/specky-api.prompt.md: sha256:4a13ba39ba58773cbb0bf39c12e462a80d2348aa5fdc4ce612f924658f00c7ed
   .apm/prompts/specky-brownfield.prompt.md: sha256:0f66839cc82434fead66a7dd5e26934f385afc95a3537b414471f3603b31b4ec
   .apm/prompts/specky-check-drift.prompt.md: sha256:f3a04b00ef10167cbd1cdcf63f8b8595d3bc8196d107b48963f8b123f711f3af

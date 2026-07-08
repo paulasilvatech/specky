@@ -146,15 +146,20 @@ export function copyToClaude(
 
   chmodHookScripts(targets.claude.hooksScripts, opts);
 
-  // Copy copilot-instructions to .claude/rules/
-  const instructionSrc = resolve(
-    src.instructionsDir,
-    "copilot-instructions.instructions.md",
-  );
+  // Install the Specky rule to .claude/rules/. Prefer the dedicated Claude
+  // instruction primitive; fall back to the Copilot one only if it is absent.
+  const staleClaudeRule = resolve(targets.claude.rules, "copilot-instructions.md");
+  if (!opts.dryRun && existsSync(staleClaudeRule)) {
+    try { unlinkSync(staleClaudeRule); } catch { /* ignore — might be read-only */ }
+  }
+
+  const claudeInstructionSrc = resolve(src.instructionsDir, "claude-instructions.instructions.md");
+  const fallbackInstructionSrc = resolve(src.instructionsDir, "copilot-instructions.instructions.md");
+  const instructionSrc = existsSync(claudeInstructionSrc) ? claudeInstructionSrc : fallbackInstructionSrc;
   if (existsSync(instructionSrc)) {
     copyFile(
       instructionSrc,
-      resolve(targets.claude.rules, "copilot-instructions.md"),
+      resolve(targets.claude.rules, "specky-sdd.md"),
       opts,
       result,
       claude.compileInstruction,
@@ -204,7 +209,25 @@ export function copyToCopilot(
       );
     }
   }
-  copyDir(src.instructionsDir, targets.copilot.instructions, opts, result);
+  // Install ONLY the Copilot instruction primitive. Never copy the whole
+  // instructions dir — it also contains cursor/claude primitives that would
+  // leak non-Copilot naming (and stray applyTo files) into .github/instructions/.
+  for (const stale of ["cursor-instructions.instructions.md", "claude-instructions.instructions.md"]) {
+    const stalePath = resolve(targets.copilot.instructions, stale);
+    if (!opts.dryRun && existsSync(stalePath)) {
+      try { unlinkSync(stalePath); } catch { /* ignore — might be read-only */ }
+    }
+  }
+  const copilotInstruction = resolve(src.instructionsDir, "copilot-instructions.instructions.md");
+  if (existsSync(copilotInstruction)) {
+    copyFile(
+      copilotInstruction,
+      resolve(targets.copilot.instructions, "copilot-instructions.instructions.md"),
+      opts,
+      result,
+      copilot.compileInstruction,
+    );
+  }
 
   chmodHookScripts(targets.copilot.hooksScripts, opts);
 

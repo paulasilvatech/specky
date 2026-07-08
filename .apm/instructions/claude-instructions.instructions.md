@@ -2,7 +2,7 @@
 applyTo: '**'
 ---
 
-# Specky SDD — Copilot Instructions
+# Specky SDD
 
 This project uses Spec-Driven Development (SDD) via the Specky pipeline.
 
@@ -14,7 +14,7 @@ This project uses Spec-Driven Development (SDD) via the Specky pipeline.
 4. **Never skip hooks.** Blocking hooks (specky-security-scan, specky-release-gate) must pass before release.
 5. **Artifacts live in `.specs/NNN-feature/`.** CONSTITUTION.md, RESEARCH.md, SPECIFICATION.md, DESIGN.md, TASKS.md, VERIFICATION.md, ANALYSIS.md.
 6. **One branch per spec.** Create `spec/NNN-feature-name` from `develop` for all pipeline work (Phases 0-7). All `.specs/` artifacts are created on this branch. Merge to `develop` after verification, then `stage` for QA and release gates, then `main` for production. Never commit spec work directly to develop, stage, or main.
-7. **Load companion SKILL.md first.** Every agent reads its companion skill file (`.github/skills/{skill-name}/SKILL.md`) as the first workflow step. Phase agents have dedicated skills (specky-sdd-init, specky-spec-engineer, specky-sdd-clarify, specky-design-architect, specky-task-planner, specky-quality-reviewer); shared pipeline context lives in specky-sdd-pipeline.
+7. **Load companion SKILL.md first.** Every agent reads its companion skill file (`.claude/skills/{skill-name}/SKILL.md`) as the first workflow step. Phase agents have dedicated skills (specky-sdd-init, specky-spec-engineer, specky-sdd-clarify, specky-design-architect, specky-task-planner, specky-quality-reviewer); shared pipeline context lives in specky-sdd-pipeline.
 8. **Orchestrator is the single entry point.** When `.specs/` exists with an active pipeline (`.sdd-state.json` present), ALL work — code, branches, commits, PRs — MUST flow through `@specky-orchestrator`. Direct calls to phase agents, manual branch creation outside `spec/NNN-*`, or free-form edits bypass the quality gates and are pipeline violations. If unsure where to start, invoke `@specky-onboarding`. Starting in v3.5, `specky-pipeline-guard` hook enforces this automatically.
 
 ## Available Agents
@@ -33,18 +33,19 @@ This project uses Spec-Driven Development (SDD) via the Specky pipeline.
 - @specky-test-verifier — Coverage verification (Phase 8)
 - @specky-release-engineer — Release preparation (Phase 9)
 
-## Available Prompts
+## Available Commands
 
-Use slash commands in Copilot Chat (`/prompt-name`):
+Use slash commands in Claude Code (`/prompt-name`):
 
 **Quick Start:** /specky-onboarding, /specky-orchestrate, /specky-greenfield, /specky-brownfield, /specky-migration, /specky-api
 **Pipeline:** /specky-research, /specky-clarify, /specky-specify, /specky-design, /specky-tasks, /specky-implement, /specky-verify, /specky-release, /specky-deploy
 **Special:** /specky-from-figma, /specky-from-meeting, /specky-check-drift, /specky-resolve-conflict
 **Debug:** /specky-debug-hook, /specky-pipeline-status, /specky-reset-phase
 
-## Hook Enforcement
+## Quality Gates
 
-Hooks fire automatically on MCP tool calls:
+Claude Code enforces gates natively via `.claude/settings.json` hook registration and the scripts in `.claude/hooks/scripts/`:
+
 - **Pre-tool:** specky-artifact-validator (BLOCKING) + specky-branch-validator (advisory) before every phase tool
 - **Post-tool:** specky-phase-gate (BLOCKING) + specky-lgtm-gate (advisory) + quality hooks after artifact writes
 - **LGTM gates:** Phases 2 (Specify), 4 (Design), 5 (Tasks) pause for human review
@@ -59,7 +60,7 @@ Hooks fire automatically on MCP tool calls:
 
 ## MCP Server
 
-The specky-sdd MCP server (58 tools) is configured in .vscode/mcp.json and runs via npx.
+The specky-sdd MCP server (58 tools) is configured in .mcp.json and runs via npx.
 
 ## EARS Patterns
 

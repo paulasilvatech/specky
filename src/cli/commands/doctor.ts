@@ -217,18 +217,17 @@ function checkCursorRule(targets: Targets): Check {
   return { name: "Cursor rule", pass: ok, detail: details.join(", ") };
 }
 
-function checkNoCopilotLeak(targets: Targets, workspace: string): Check {
-  const cursorRoot = targets.cursor.root;
+function checkNoCopilotLeak(root: string, workspace: string, label: string): Check {
   const needles = ["applyTo", "@workspace", ".vscode/mcp.json", "Copilot Instructions"];
   const hits: string[] = [];
-  for (const file of walkFiles(cursorRoot)) {
+  for (const file of walkFiles(root)) {
     const text = readFileSync(file, "utf8");
     if (needles.some((needle) => text.includes(needle))) {
       hits.push(file.replace(workspace + "/", ""));
     }
   }
   return {
-    name: "Cursor leakage",
+    name: label,
     pass: hits.length === 0,
     detail: hits.length === 0 ? "no Copilot/.vscode tokens" : hits.slice(0, 3).join(", "),
   };
@@ -254,10 +253,35 @@ function checkCursorInstall(targets: Targets, workspace: string): Check[] {
     checkFileCount(targets.cursor.commands, 22, "Cursor commands", (name) => name.startsWith("specky-") && name.endsWith(".md")),
     checkFileCount(targets.shared.agentSkills, 14, "Cursor skills", (name, path) => name.startsWith("specky-") && statSync(path).isDirectory()),
     checkCursorRule(targets),
-    checkNoCopilotLeak(targets, workspace),
+    checkNoCopilotLeak(targets.cursor.root, workspace, "Cursor leakage"),
     checkCursorHooksManifest(targets),
     checkFileCount(targets.cursor.hooksScripts, 16, "Cursor hook scripts", (name) => name.endsWith(".sh") || name.endsWith(".mjs")),
     checkFileExists(targets.cursor.hooksRunner, "Cursor hook runner"),
+  ];
+}
+
+function checkCopilotInstall(targets: Targets, workspace: string): Check[] {
+  return [
+    checkMcpRegistration(targets.shared.vscodeMcp, ".vscode/mcp.json"),
+    checkVscodeSettings(workspace),
+    checkFileCount(targets.copilot.agents, 13, "Copilot agents", (name) => name.startsWith("specky-") && name.endsWith(".md")),
+    checkFileCount(targets.copilot.prompts, 22, "Copilot prompts", (name) => name.startsWith("specky-") && name.endsWith(".md")),
+    checkFileCount(targets.copilot.skills, 14, "Copilot skills", (name, path) => name.startsWith("specky-") && statSync(path).isDirectory()),
+    checkFileExists(resolve(targets.copilot.instructions, "copilot-instructions.instructions.md"), "Copilot instruction"),
+    checkFileCount(targets.copilot.hooksScripts, 16, "Copilot hook scripts", (name) => name.endsWith(".sh") || name.endsWith(".mjs")),
+  ];
+}
+
+function checkClaudeInstall(targets: Targets, workspace: string): Check[] {
+  return [
+    checkMcpRegistration(targets.shared.claudeMcp, ".mcp.json"),
+    checkClaudePermissions(targets),
+    checkFileCount(targets.claude.agents, 13, "Claude agents", (name) => name.startsWith("specky-") && name.endsWith(".md")),
+    checkFileCount(targets.claude.commands, 22, "Claude commands", (name) => name.startsWith("specky-") && name.endsWith(".md")),
+    checkFileCount(targets.claude.skills, 14, "Claude skills", (name, path) => name.startsWith("specky-") && statSync(path).isDirectory()),
+    checkFileExists(resolve(targets.claude.rules, "specky-sdd.md"), "Claude rule"),
+    checkNoCopilotLeak(targets.claude.root, workspace, "Claude leakage"),
+    checkFileCount(targets.claude.hooksScripts, 16, "Claude hook scripts", (name) => name.endsWith(".sh") || name.endsWith(".mjs")),
   ];
 }
 
@@ -315,13 +339,11 @@ function runConfigChecks(
   const checks: Check[] = [];
 
   if (installTargets.includes("claude")) {
-    checks.push(checkClaudePermissions(targets));
-    checks.push(checkMcpRegistration(targets.shared.claudeMcp, ".mcp.json"));
+    checks.push(...checkClaudeInstall(targets, workspace));
   }
 
   if (installTargets.includes("copilot")) {
-    checks.push(checkMcpRegistration(targets.shared.vscodeMcp, ".vscode/mcp.json"));
-    checks.push(checkVscodeSettings(workspace));
+    checks.push(...checkCopilotInstall(targets, workspace));
   }
 
   if (installTargets.includes("cursor")) {

@@ -50,7 +50,7 @@ When `--target=claude`:
 - `.claude/settings.json` — deep-merged:
   - `hooks` section (SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop)
   - `permissions.allow` auto-populated with native tools (`Read`, `Edit`, `Write`, `Bash(git:*)`, etc.) and all `mcp__specky__*` tools
-- `.claude/rules/copilot-instructions.md`
+- `.claude/rules/specky-sdd.md`
 - `.mcp.json` — MCP server registration
 
 The installed Claude agents use Claude-native tool identifiers such as `Read`, `Glob`, `Grep`, `Task`, and Specky MCP tools like `mcp__specky__sdd_get_status`. Claude slash commands omit Copilot-only `agent:` frontmatter.

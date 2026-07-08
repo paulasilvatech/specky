@@ -44,6 +44,20 @@ describe("asset copier platform-specific primitive transforms", () => {
 
         expect(prompt).toContain("agent: agent");
         expect(prompt).not.toContain("mode: agent");
+
+        // Only the Copilot instruction is installed — no cursor/claude leakage
+        const instruction = readFileSync(
+            resolve(workspace, ".github/instructions/copilot-instructions.instructions.md"),
+            "utf8",
+        );
+        expect(instruction).toContain("applyTo:");
+        expect(instruction).not.toContain("@workspace /prompt-name");
+        expect(() =>
+            readFileSync(resolve(workspace, ".github/instructions/cursor-instructions.instructions.md"), "utf8"),
+        ).toThrow();
+        expect(() =>
+            readFileSync(resolve(workspace, ".github/instructions/claude-instructions.instructions.md"), "utf8"),
+        ).toThrow();
     });
 
     it("installs Claude-native agents, commands, and rules", () => {
@@ -58,7 +72,7 @@ describe("asset copier platform-specific primitive transforms", () => {
             "utf8",
         );
         const rule = readFileSync(
-            resolve(workspace, ".claude/rules/copilot-instructions.md"),
+            resolve(workspace, ".claude/rules/specky-sdd.md"),
             "utf8",
         );
 
@@ -71,6 +85,13 @@ describe("asset copier platform-specific primitive transforms", () => {
 
         expect(rule).toContain("paths: ['**']");
         expect(rule).not.toContain("applyTo:");
+        expect(rule).not.toContain("@workspace");
+        expect(rule).not.toContain("Copilot Instructions");
+        expect(rule).toContain(".mcp.json");
+        // Stale Copilot-named rule must not be installed for Claude
+        expect(() =>
+            readFileSync(resolve(workspace, ".claude/rules/copilot-instructions.md"), "utf8"),
+        ).toThrow();
     });
 
     it("installs Cursor-native agents, commands, rules, and shared skills", () => {
