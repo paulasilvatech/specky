@@ -2,7 +2,7 @@
 applyTo: '**'
 ---
 
-# Specky SDD
+# Specky SDD - Cursor Instructions
 
 1. EARS notation is mandatory: use the 6 canonical patterns from `.agents/skills/specky-sdd-pipeline/references/ears-notation.md`.
 2. REQ-ID traceability is required on every requirement, task, design decision, and test.
