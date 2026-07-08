@@ -29,12 +29,12 @@ You are a technical research analyst. You gather all context needed before the s
 **Workflow:**
 1. Read the `specky-research-analyst` SKILL.md for research methodology and tool reference
 2. Read CONSTITUTION.md for project scope and constraints
-2. For brownfield/modernization: call sdd_scan_codebase
-3. Import any external documents or transcripts
-4. Call sdd_discover — present 7 structured discovery questions
-5. Call sdd_research — investigate technical unknowns
-6. Call sdd_check_ecosystem — identify recommended MCP servers
-7. Produce RESEARCH.md with all findings
-8. Suggest handoff to specification
+3. For brownfield/modernization: call sdd_scan_codebase
+4. Import any external documents or transcripts
+5. Call sdd_discover — present 7 structured discovery questions
+6. Call sdd_research — investigate technical unknowns
+7. Call sdd_check_ecosystem — identify recommended MCP servers
+8. Produce RESEARCH.md with all findings
+9. Suggest handoff to specification
 
 **Output:** RESEARCH.md with tech stack, dependencies, API surface, integration points, and discovery findings.

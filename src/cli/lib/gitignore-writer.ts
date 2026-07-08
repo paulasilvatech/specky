@@ -12,7 +12,7 @@
  *   .claude/agents/, .claude/commands/, .claude/skills/, .claude/hooks/,
  *   .claude/rules/, .github/agents/, .github/prompts/, .github/skills/,
  *   .github/hooks/specky/, .github/instructions/,
- *   .cursor/agents/, .cursor/commands/, .cursor/rules/,
+ *   .cursor/agents/, .cursor/commands/, .cursor/rules/, .cursor/hooks/,
  *   .opencode/agents/, .opencode/commands/, .agents/skills/,
  *   .specky/install.lock, .specky/install.json
  *
@@ -42,6 +42,7 @@ const IGNORED_PATHS = [
   ".cursor/agents/",
   ".cursor/commands/",
   ".cursor/rules/",
+  ".cursor/hooks/",
   ".opencode/agents/",
   ".opencode/commands/",
   ".agents/skills/",

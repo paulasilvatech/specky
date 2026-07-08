@@ -1,7 +1,7 @@
 {
   "name": "specky-sdd",
   "version": "3.8.0",
-  "description": "Specky — Spec-Driven Development CLI toolkit. 58 MCP tools, 13 agents, 22 prompts, 8 skills, 16 hooks. Unified `specky` CLI installs to Claude Code or GitHub Copilot on macOS, Linux, and Windows.",
+  "description": "Specky — Spec-Driven Development CLI toolkit. 58 MCP tools, 13 agents, 22 prompts, 14 skills, 16 hooks. Unified `specky` CLI installs to Claude Code, GitHub Copilot, Cursor, or OpenCode on macOS, Linux, and Windows.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -10,7 +10,7 @@
   },
   "scripts": {
     "audit": "node scripts/check-manifest-sync.mjs && node scripts/audit-agent-frontmatter.mjs",
-    "build": "node scripts/check-manifest-sync.mjs && node scripts/audit-agent-frontmatter.mjs && tsc && rm -rf dist/templates && cp -r templates dist/templates && node scripts/build-claude-hooks.mjs && node scripts/finalize-build.mjs",
+    "build": "node scripts/check-manifest-sync.mjs && node scripts/audit-agent-frontmatter.mjs && tsc && rm -rf dist/templates && cp -r templates dist/templates && node scripts/build-hook-manifests.mjs && node scripts/finalize-build.mjs",
     "start": "node dist/cli/index.js serve",
     "dev": "tsx watch src/index.ts",
     "clean": "rm -rf dist",
@@ -19,7 +19,7 @@
     "test:coverage": "vitest run --coverage",
     "smoke": "node scripts/release.mjs"
   },
-  "icon": "media/specky-icon-256.png",
+  "icon": "site/specky-icon.png",
   "files": [
     "dist/",
     ".apm/",
@@ -28,8 +28,7 @@
     "apm.lock.yaml",
     "apm-policy.yml",
     "config.yml",
-    "media/specky-icon-256.png",
-    "media/specky-icon-128.png",
+    "site/specky-icon.png",
     "README.md",
     "CHANGELOG.md",
     "SECURITY.md",

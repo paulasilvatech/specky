@@ -291,7 +291,7 @@ docker run --rm -p 127.0.0.1:3200:3200 \
 
 Publishing to GHCR (multi-arch build with cosign signature + CycloneDX SBOM) is
 wired in `.github/workflows/publish.yml` behind the `PUBLISH_DOCKER` repository
-variable. See [PUBLISH.md](../PUBLISH.md) for the maintainer publish + manual
+variable. See [PUBLISH.md](PUBLISH.md) for the maintainer publish + manual
 fallback workflow.
 
 ---

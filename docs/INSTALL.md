@@ -2,7 +2,7 @@
 
 > Works on macOS, Linux, Windows, and WSL. Requires Node.js ≥20.
 
-Specky is distributed as a single npm package (`specky-sdd`) that bundles both the MCP server and all assets (13 agents, 22 prompts, 8 skills, 16 hooks). A unified CLI (`specky`) handles install, validation, and upgrade.
+Specky is distributed as a single npm package (`specky-sdd`) that bundles both the MCP server and all assets (13 agents, 22 prompts, 14 skills, 16 hooks). A unified CLI (`specky`) handles install, validation, and upgrade.
 
 Specky includes its own APM governance commands (`specky apm ...`). Users do **not** need to install the Microsoft APM CLI to install or run Specky. See [Uso do APM pelo Specky](APM-USAGE.md) for the detailed package, CLI, MCP, and container model.
 
@@ -49,7 +49,7 @@ specky hooks list       # list hooks
 
 That's it. The `--target` flag determines which harness-native assets are written.
 
-**Next:** open VS Code and invoke `@specky-onboarding` (Copilot) or open Claude Code and use `/specky-onboarding` to start the pipeline.
+**Next:** open your target IDE and start with `@specky-onboarding` or `/specky-onboarding` depending on the chat surface.
 
 ### Container runtime (hosted deployments)
 
@@ -78,7 +78,7 @@ full container model, secrets layout, and private-package login guidance.
 | **Zero-install** | `npx -y specky-sdd@latest init` | One-shot bootstrap, no persistent install. Downloads fresh each time. |
 | **Offline** | `npm pack` + `npm install ./specky-sdd-*.tgz` | Air-gapped environments. |
 
-**Both modes produce the same workspace layout** (`.github/` for Copilot or `.claude/` for Claude Code, plus `.vscode/` and `.specky/`). The only difference is where the `specky` binary lives.
+**Both modes produce the same target-specific workspace layout** (`.github/`, `.claude/`, `.cursor/`, `.opencode/`, `.agents/skills/`, and `.specky/` as applicable). The only difference is where the `specky` binary lives.
 
 **Rule of thumb**:
 
@@ -217,10 +217,32 @@ If Copilot is part of the selected target set (`copilot`, `both`, or `all`), Spe
 | --- | --- | --- |
 | VS Code + Copilot | `specky install --target=copilot` | `.github/agents/`, `.github/prompts/`, `.github/skills/`, `.github/hooks/specky/`, `.vscode/` |
 | Claude Code | `specky install --target=claude` | `.claude/agents/`, `.claude/commands/`, `.claude/skills/`, `.claude/hooks/`, `.claude/settings.json` |
-| Cursor | `specky install --target=cursor` | `.cursor/agents/`, `.cursor/commands/`, `.cursor/rules/`, `.cursor/mcp.json`, `.agents/skills/` |
+| Cursor | `specky install --target=cursor` | `.cursor/agents/`, `.cursor/commands/`, `.cursor/rules/specky-sdd.mdc`, `.cursor/hooks.json`, `.cursor/hooks/`, `.cursor/mcp.json`, `.agents/skills/` |
 | OpenCode | `specky install --target=opencode` | `.opencode/agents/`, `.opencode/commands/`, `opencode.json`, `.agents/skills/` |
 | Agent Skills | `specky install --target=agent-skills` | `.agents/skills/` |
 | Legacy both | `specky install --target=both` | Copilot + Claude assets; Claude hooks are stripped for Copilot safety |
+
+### Cursor first run
+
+After `specky install --target=cursor`:
+
+1. Open Cursor Settings → MCP and confirm the `specky` server is enabled.
+2. Start an Agent chat and approve Specky MCP tools on first use, following your team policy.
+3. Run `/specky-onboarding` or invoke `@specky-onboarding`.
+4. Run `specky doctor` and confirm Cursor agents, commands, skills, rules, hooks, and MCP checks pass.
+
+Cursor project skills intentionally install to `.agents/skills/{skill-name}/SKILL.md`. Do not move them to `.cursor/skills/`; `.cursor/agents/` stores personas, while `.agents/skills/` stores reusable playbooks.
+
+### After clone for Cursor teams
+
+Every developer should run this after cloning a project that uses Cursor:
+
+```bash
+specky install --target=cursor
+specky doctor
+```
+
+This regenerates `.cursor/agents/`, `.cursor/commands/`, `.cursor/rules/`, `.cursor/hooks/`, and `.agents/skills/`. Keep `.specky/config.yml`, `.cursor/mcp.json`, and `.specs/` in git.
 
 ---
 
@@ -262,7 +284,7 @@ npm install -g specky-sdd@latest && specky upgrade
 npm install --save-dev specky-sdd@latest && npx specky upgrade
 ```
 
-`specky upgrade` refreshes the installed assets (agents, prompts, skills, hooks, configs) **and re-pins `.mcp.json` / `.vscode/mcp.json` to the new version** — updating the npm package alone leaves the MCP registration pointing at the old version. It preserves `.specs/` (your active pipeline artifacts) and `.specky/profile.json` (onboarding answers).
+`specky upgrade` refreshes the installed assets (agents, prompts, skills, hooks, configs) **and re-pins MCP registration files** (`.mcp.json`, `.vscode/mcp.json`, `.cursor/mcp.json`, or `opencode.json`) to the new version — updating the npm package alone leaves the MCP registration pointing at the old version. It preserves `.specs/` (your active pipeline artifacts) and `.specky/profile.json` (onboarding answers).
 
 ---
 
@@ -272,7 +294,9 @@ npm install --save-dev specky-sdd@latest && npx specky upgrade
 # Remove installed assets
 rm -rf .claude/agents .claude/commands .claude/skills .claude/hooks/scripts
 rm -rf .github/agents .github/prompts .github/skills .github/hooks/specky
-rm .mcp.json .vscode/mcp.json
+rm -rf .cursor/agents .cursor/commands .cursor/rules .cursor/hooks .cursor/hooks.json
+rm -rf .opencode/agents .opencode/commands .agents/skills
+rm .mcp.json .vscode/mcp.json .cursor/mcp.json opencode.json
 rm -rf .specky
 
 # Remove npm package

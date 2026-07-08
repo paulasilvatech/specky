@@ -11,7 +11,7 @@ coverage
 # Tests and docs are not needed to build or run the server
 tests
 docs
-media
+site
 
 # Local Specky working data
 .specs

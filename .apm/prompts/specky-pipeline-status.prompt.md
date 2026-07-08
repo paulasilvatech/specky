@@ -1,5 +1,6 @@
 ---
 description: Check SDD pipeline status
+argument-hint: <feature-number or all>
 agent: agent
 ---
 Check the SDD pipeline status for feature [FEATURE NUMBER or "all"].

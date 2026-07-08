@@ -122,13 +122,12 @@ const server = new McpServer(
     websiteUrl: "https://getspecky.ai",
     icons: [
       {
-        src: "https://raw.githubusercontent.com/paulasilvatech/specky/main/media/specky-brand-icon.svg",
+        src: "https://raw.githubusercontent.com/paulasilvatech/specky/main/site/specky-brand-icon.svg",
         mimeType: "image/svg+xml",
       },
       {
-        src: "https://raw.githubusercontent.com/paulasilvatech/specky/main/media/specky-icon-128.png",
+        src: "https://raw.githubusercontent.com/paulasilvatech/specky/main/site/specky-icon.png",
         mimeType: "image/png",
-        sizes: ["128x128"],
       },
     ],
   },

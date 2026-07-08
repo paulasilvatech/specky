@@ -14,7 +14,7 @@
  *   node scripts/release.mjs [--tag=next|latest]
  *
  * This script does NOT run `npm publish` — that's a separate manual step
- * requiring 2FA. See PUBLISH.md for the full release procedure.
+ * requiring 2FA. See docs/PUBLISH.md for the full release procedure.
  */
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";

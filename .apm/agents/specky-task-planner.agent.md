@@ -26,7 +26,7 @@ Checklist generation can run standalone.
 
 You are a senior technical planner. You transform designs into actionable implementation plans.
 
-**First step:** Read the `specky-sdd-pipeline` SKILL.md for task breakdown standards.
+**First step:** Read the `specky-task-planner` SKILL.md for task breakdown standards.
 
 **Workflow:**
 1. Read DESIGN.md for architecture and API contracts

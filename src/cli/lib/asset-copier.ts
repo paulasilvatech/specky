@@ -106,9 +106,23 @@ function copyDir(
     const st = statSync(srcPath);
     if (st.isDirectory()) {
       copyDir(srcPath, destPath, opts, result, renamer, transformer);
+    } else if (transformer) {
+      copyTextFile(srcPath, destPath, opts, result, transformer);
     } else {
-      if (transformer) copyTextFile(srcPath, destPath, opts, result, transformer);
-      else copyFile(srcPath, destPath, opts, result);
+      copyFile(srcPath, destPath, opts, result);
+    }
+  }
+}
+
+function chmodHookScripts(dir: string, opts: CopyOptions): void {
+  if (opts.dryRun || process.platform === "win32" || !existsSync(dir)) return;
+  for (const f of readdirSync(dir)) {
+    if (f.endsWith(".sh") || f.endsWith(".mjs")) {
+      try {
+        chmodSync(resolve(dir, f), 0o755);
+      } catch {
+        // ignore
+      }
     }
   }
 }
@@ -130,22 +144,7 @@ export function copyToClaude(
   copyDir(src.skillsDir, targets.claude.skills, opts, result);
   copyDir(src.hookScriptsDir, targets.claude.hooksScripts, opts, result);
 
-  // Make hook scripts executable (Unix only — Windows ignores mode)
-  if (
-    !opts.dryRun &&
-    process.platform !== "win32" &&
-    existsSync(targets.claude.hooksScripts)
-  ) {
-    for (const f of readdirSync(targets.claude.hooksScripts)) {
-      if (f.endsWith(".sh") || f.endsWith(".mjs")) {
-        try {
-          chmodSync(resolve(targets.claude.hooksScripts, f), 0o755);
-        } catch {
-          // ignore
-        }
-      }
-    }
-  }
+  chmodHookScripts(targets.claude.hooksScripts, opts);
 
   // Copy copilot-instructions to .claude/rules/
   const instructionSrc = resolve(
@@ -207,21 +206,7 @@ export function copyToCopilot(
   }
   copyDir(src.instructionsDir, targets.copilot.instructions, opts, result);
 
-  if (
-    !opts.dryRun &&
-    process.platform !== "win32" &&
-    existsSync(targets.copilot.hooksScripts)
-  ) {
-    for (const f of readdirSync(targets.copilot.hooksScripts)) {
-      if (f.endsWith(".sh") || f.endsWith(".mjs")) {
-        try {
-          chmodSync(resolve(targets.copilot.hooksScripts, f), 0o755);
-        } catch {
-          // ignore
-        }
-      }
-    }
-  }
+  chmodHookScripts(targets.copilot.hooksScripts, opts);
 
   return result;
 }
@@ -242,19 +227,42 @@ export function copyToCursor(
   copyDir(src.promptsDir, targets.cursor.commands, opts, result, cursor.renamePrompt, cursor.compilePrompt);
   copyDir(src.skillsDir, targets.shared.agentSkills, opts, result);
 
-  const instructionSrc = resolve(
-    src.instructionsDir,
-    "copilot-instructions.instructions.md",
-  );
+  const staleRule = resolve(targets.cursor.rules, "copilot-instructions.mdc");
+  if (!opts.dryRun && existsSync(staleRule)) {
+    try { unlinkSync(staleRule); } catch { /* ignore — might be read-only */ }
+  }
+
+  const cursorInstructionSrc = resolve(src.instructionsDir, "cursor-instructions.instructions.md");
+  const fallbackInstructionSrc = resolve(src.instructionsDir, "copilot-instructions.instructions.md");
+  const instructionSrc = existsSync(cursorInstructionSrc) ? cursorInstructionSrc : fallbackInstructionSrc;
   if (existsSync(instructionSrc)) {
     copyFile(
       instructionSrc,
-      resolve(targets.cursor.rules, "copilot-instructions.mdc"),
+      resolve(targets.cursor.rules, "specky-sdd.mdc"),
       opts,
       result,
       cursor.compileInstruction,
     );
   }
+
+  copyDir(src.hookScriptsDir, targets.cursor.hooksScripts, opts, result);
+  if (existsSync(src.speckyRunScript)) {
+    copyFile(src.speckyRunScript, targets.cursor.hooksRunner, opts, result);
+  }
+  if (existsSync(src.cursorHooksManifest)) {
+    copyFile(src.cursorHooksManifest, targets.cursor.hooksManifest, opts, result);
+  } else {
+    result.skipped.push(targets.cursor.hooksManifest);
+    if (!opts.dryRun) {
+      console.warn(
+        "[specky] Skipped Cursor hooks manifest: dist/cursor-hooks.json is missing. " +
+        "Run `npm run build` to generate it; Cursor hook automation stays disabled until then.",
+      );
+    }
+  }
+
+  chmodHookScripts(targets.cursor.hooksScripts, opts);
+  chmodHookScripts(resolve(targets.cursor.hooksRunner, ".."), opts);
 
   return result;
 }

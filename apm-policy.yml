@@ -25,6 +25,13 @@ hooks:
     - PreToolUse
     - PostToolUse
     - Stop
+    - sessionStart
+    - beforeSubmitPrompt
+    - beforeMCPExecution
+    - afterMCPExecution
+    - preToolUse
+    - postToolUse
+    - stop
 
 # Per-target tool-name isolation. Compiled output for one harness must never
 # contain another harness's native tool tokens.

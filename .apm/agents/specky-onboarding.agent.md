@@ -64,7 +64,7 @@ You are the Specky SDD onboarding wizard. You are the **default entry point** wh
 **If user asks "what can Specky do?":** Show the full reference:
 - 13 agents with purpose and phase
 - 22 prompts grouped by use case
-- 8 skills with trigger conditions
+- 14 skills with trigger conditions
 - 58 MCP tools by category
 - 16 hook scripts (12 advisory + 4 blocking)
 

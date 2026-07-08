@@ -7,7 +7,7 @@
  *  - .vscode/settings.json has Copilot MCP discovery enabled
  *  - .mcp.json / .vscode/mcp.json register the specky server
  */
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { VERSION } from "../../constants.js";
 import { hashFile } from "../lib/asset-copier.js";
@@ -155,6 +155,112 @@ function checkMcpRegistration(path: string, label: string): Check {
   };
 }
 
+function checkFileExists(path: string, label: string): Check {
+  return {
+    name: label,
+    pass: existsSync(path),
+    detail: existsSync(path) ? "present" : "missing",
+  };
+}
+
+function countEntries(dir: string, predicate: (name: string, path: string) => boolean): number {
+  if (!existsSync(dir)) return 0;
+  try {
+    return readdirSync(dir).filter((name) => predicate(name, resolve(dir, name))).length;
+  } catch {
+    return 0;
+  }
+}
+
+function checkFileCount(
+  dir: string,
+  minCount: number,
+  label: string,
+  predicate: (name: string, path: string) => boolean = (name) => name.length > 0,
+): Check {
+  const count = countEntries(dir, predicate);
+  return {
+    name: label,
+    pass: count >= minCount,
+    detail: `${count}/${minCount} present`,
+  };
+}
+
+function walkFiles(dir: string): string[] {
+  if (!existsSync(dir)) return [];
+  const files: string[] = [];
+  for (const name of readdirSync(dir)) {
+    const path = resolve(dir, name);
+    const st = statSync(path);
+    if (st.isDirectory()) files.push(...walkFiles(path));
+    else if (st.isFile()) files.push(path);
+  }
+  return files;
+}
+
+function checkCursorRule(targets: Targets): Check {
+  const path = resolve(targets.cursor.rules, "specky-sdd.mdc");
+  if (!existsSync(path)) {
+    return { name: "Cursor rule", pass: false, detail: "specky-sdd.mdc missing" };
+  }
+  const text = readFileSync(path, "utf8");
+  const ruleLines = text.trimEnd().split(/\r?\n/);
+  const hasDescription = ruleLines.some((line) => line.startsWith("description:") && line.trim() !== "description:");
+  const hasAlwaysApply = ruleLines.some((line) => line.trim() === "alwaysApply: true");
+  const lines = ruleLines.length;
+  const ok = hasDescription && hasAlwaysApply && lines <= 40;
+  const details = [
+    hasDescription ? "description" : "missing description",
+    hasAlwaysApply ? "alwaysApply" : "missing alwaysApply",
+    `${lines} lines`,
+  ];
+  return { name: "Cursor rule", pass: ok, detail: details.join(", ") };
+}
+
+function checkNoCopilotLeak(targets: Targets, workspace: string): Check {
+  const cursorRoot = targets.cursor.root;
+  const needles = ["applyTo", "@workspace", ".vscode/mcp.json", "Copilot Instructions"];
+  const hits: string[] = [];
+  for (const file of walkFiles(cursorRoot)) {
+    const text = readFileSync(file, "utf8");
+    if (needles.some((needle) => text.includes(needle))) {
+      hits.push(file.replace(workspace + "/", ""));
+    }
+  }
+  return {
+    name: "Cursor leakage",
+    pass: hits.length === 0,
+    detail: hits.length === 0 ? "no Copilot/.vscode tokens" : hits.slice(0, 3).join(", "),
+  };
+}
+
+function checkCursorHooksManifest(targets: Targets): Check {
+  const manifest = readJsonSafe<{ version?: number; hooks?: Record<string, unknown[]> }>(targets.cursor.hooksManifest);
+  if (!manifest) {
+    return { name: "Cursor hooks.json", pass: false, detail: "missing or unreadable" };
+  }
+  const hasMcpHooks = Boolean(manifest.hooks?.beforeMCPExecution?.length) && Boolean(manifest.hooks?.afterMCPExecution?.length);
+  return {
+    name: "Cursor hooks.json",
+    pass: manifest.version === 1 && hasMcpHooks,
+    detail: manifest.version === 1 && hasMcpHooks ? "version 1 with MCP hooks" : "missing version 1 or MCP hooks",
+  };
+}
+
+function checkCursorInstall(targets: Targets, workspace: string): Check[] {
+  return [
+    checkMcpRegistration(targets.cursor.mcp, ".cursor/mcp.json"),
+    checkFileCount(targets.cursor.agents, 13, "Cursor agents", (name) => name.startsWith("specky-") && name.endsWith(".md")),
+    checkFileCount(targets.cursor.commands, 22, "Cursor commands", (name) => name.startsWith("specky-") && name.endsWith(".md")),
+    checkFileCount(targets.shared.agentSkills, 14, "Cursor skills", (name, path) => name.startsWith("specky-") && statSync(path).isDirectory()),
+    checkCursorRule(targets),
+    checkNoCopilotLeak(targets, workspace),
+    checkCursorHooksManifest(targets),
+    checkFileCount(targets.cursor.hooksScripts, 16, "Cursor hook scripts", (name) => name.endsWith(".sh") || name.endsWith(".mjs")),
+    checkFileExists(targets.cursor.hooksRunner, "Cursor hook runner"),
+  ];
+}
+
 function loadInstallMeta(path: string): InstallMeta | null {
   return readJsonSafe<InstallMeta>(path);
 }
@@ -219,7 +325,7 @@ function runConfigChecks(
   }
 
   if (installTargets.includes("cursor")) {
-    checks.push(checkMcpRegistration(targets.cursor.mcp, ".cursor/mcp.json"));
+    checks.push(...checkCursorInstall(targets, workspace));
   }
 
   if (installTargets.includes("opencode")) {

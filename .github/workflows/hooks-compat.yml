@@ -4,13 +4,15 @@ on:
   push:
     branches: [main, develop]
     paths:
+      - '.apm/hooks/specky-run.sh'
       - '.apm/hooks/scripts/**'
-      - 'scripts/build-claude-hooks.mjs'
+      - 'scripts/build-hook-manifests.mjs'
       - '.github/workflows/hooks-compat.yml'
   pull_request:
     paths:
+      - '.apm/hooks/specky-run.sh'
       - '.apm/hooks/scripts/**'
-      - 'scripts/build-claude-hooks.mjs'
+      - 'scripts/build-hook-manifests.mjs'
       - '.github/workflows/hooks-compat.yml'
 
 permissions:
@@ -30,7 +32,7 @@ jobs:
           # Strip comment lines (lines starting with # after optional whitespace)
           # before linting, so documentation referencing banned patterns doesn't
           # trigger false positives.
-          SCAN=$(find .apm/hooks/scripts -name '*.sh' -print0 | xargs -0 grep -Hn -v '^[[:space:]]*#')
+          SCAN=$({ find .apm/hooks -maxdepth 1 -name '*.sh' -print0; find .apm/hooks/scripts -name '*.sh' -print0; } | xargs -0 grep -Hn -v '^[[:space:]]*#')
           check() {
             local pattern="$1" label="$2"
             if echo "$SCAN" | grep -E "$pattern" >/dev/null 2>&1; then
@@ -60,7 +62,7 @@ jobs:
         run: |
           set -e
           FAIL=0
-          for f in .apm/hooks/scripts/*.sh; do
+          for f in .apm/hooks/specky-run.sh .apm/hooks/scripts/*.sh; do
             if ! bash -n "$f"; then
               echo "::error file=$f::Syntax error"
               FAIL=1
@@ -110,8 +112,8 @@ jobs:
           done
           exit $FAIL
 
-  build-claude-hooks:
-    name: Generate claude-hooks.json
+  build-hook-manifests:
+    name: Generate hook manifests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -123,7 +125,7 @@ jobs:
       - name: Run generator
         run: |
           mkdir -p dist
-          node scripts/build-claude-hooks.mjs
+          node scripts/build-hook-manifests.mjs
 
       - name: Assert MCP matchers are prefixed
         run: |
@@ -143,5 +145,12 @@ jobs:
         run: |
           if ! grep -q '"matcher": "Write|Edit|MultiEdit"' dist/claude-hooks.json; then
             echo "::error::Native Claude tools were incorrectly prefixed"
+            exit 1
+          fi
+
+      - name: Assert Cursor hooks manifest is generated
+        run: |
+          if ! grep -q '"beforeMCPExecution"' dist/cursor-hooks.json; then
+            echo "::error::cursor-hooks.json missing beforeMCPExecution"
             exit 1
           fi

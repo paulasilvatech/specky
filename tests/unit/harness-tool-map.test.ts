@@ -132,5 +132,11 @@ describe("harness compiler registry", () => {
         expect(getCompiler("copilot").compileInstruction(instruction)).toContain(
             "applyTo: '**'",
         );
+        expect(getCompiler("cursor").compileInstruction(instruction)).toContain(
+            "alwaysApply: true",
+        );
+        expect(getCompiler("cursor").compileInstruction(instruction)).not.toContain(
+            "applyTo:",
+        );
     });
 });

@@ -16,8 +16,8 @@ export async function runHooks(opts: HooksOptions): Promise<number> {
   const workspace = opts.workspace ?? process.cwd();
   const t = targetPaths(workspace);
 
-  // Prefer .claude/hooks/scripts; fall back to .github/hooks/specky/scripts
-  const candidates = [t.claude.hooksScripts, t.copilot.hooksScripts];
+  // Prefer Cursor hooks for Cursor-only workspaces, then Claude/Copilot.
+  const candidates = [t.cursor.hooksScripts, t.claude.hooksScripts, t.copilot.hooksScripts];
   const hooksDir = candidates.find((d) => existsSync(d));
   if (!hooksDir) {
     console.error("[specky hooks] No hooks directory found. Run `npx specky init` first.");

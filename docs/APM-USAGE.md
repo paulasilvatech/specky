@@ -98,6 +98,8 @@ Camada 2: Governanca APM
 Camada 3: Compilacao por harness
   GitHub Copilot -> .github/*
   Claude Code    -> .claude/*
+  Cursor         -> .cursor/* + .agents/skills/*
+  OpenCode       -> .opencode/* + .agents/skills/*
 
 Camada 4: Runtime MCP
   npm stdio      -> npx -y specky-sdd@<versao> serve
@@ -172,6 +174,31 @@ tools: Read, Glob, Grep, Task, mcp__specky__sdd_get_status
 
 Os commands nao recebem `agent: agent`, porque isso e metadata do GitHub Copilot.
 
+### Cursor
+
+`specky install --target=cursor` gera:
+
+```text
+.cursor/agents/*.md
+.cursor/commands/*.md
+.cursor/rules/specky-sdd.mdc
+.cursor/hooks.json
+.cursor/hooks/specky-run.sh
+.cursor/hooks/scripts/*.sh
+.cursor/mcp.json
+.agents/skills/*/SKILL.md
+```
+
+Os agents usam nomes de ferramentas nativos do Cursor:
+
+```yaml
+tools: Read, Glob, Grep, Task, mcp__specky__sdd_get_status
+```
+
+As skills de projeto ficam em `.agents/skills/` de proposito. `.cursor/agents/` contem personas; `.agents/skills/` contem playbooks reutilizaveis descobertos pelo Cursor.
+
+O manifest `.cursor/hooks.json` e gerado a partir de `.apm/hooks/sdd-hooks.json` pelo build `scripts/build-hook-manifests.mjs`. Ele usa o adaptador `.cursor/hooks/specky-run.sh` para converter o JSON de hooks do Cursor para as variaveis esperadas pelos scripts Specky, como `SDD_TOOL_NAME`.
+
 ## 7. Integracao Com CLI
 
 O CLI `specky` e o ponto de entrada principal para usuarios. Nao e necessario instalar o Microsoft APM CLI para usar o Specky.
@@ -221,6 +248,19 @@ Para GitHub Copilot, o arquivo fica em `.vscode/mcp.json` e aponta para o pacote
 ```
 
 Para Claude Code, o arquivo `.mcp.json` usa o formato esperado pelo Claude:
+
+```json
+{
+  "mcpServers": {
+    "specky": {
+      "command": "npx",
+      "args": ["-y", "specky-sdd@<versao>", "serve"]
+    }
+  }
+}
+```
+
+Para Cursor, o arquivo `.cursor/mcp.json` usa o mesmo servidor `specky`:
 
 ```json
 {
@@ -328,6 +368,15 @@ cd your-project
 specky install --target=copilot
 ```
 
+Para Cursor:
+
+```bash
+specky install --target=cursor
+specky doctor
+```
+
+Depois, habilite o servidor `specky` em Cursor Settings -> MCP e inicie com `/specky-onboarding` ou `@specky-onboarding`.
+
 Instalacao versionada por projeto:
 
 ```bash
@@ -352,7 +401,7 @@ Ainda nao implementa, como instalador primario:
 - `apm install` como caminho principal
 - marketplaces APM
 - policy inheritance enterprise -> org -> repo
-- targets alem de GitHub Copilot e Claude Code
+- targets gerenciados pelo APM CLI externo; no Specky CLI, os targets Copilot, Claude, Cursor, OpenCode e Agent Skills ja existem
 
 Esses pontos podem ser adicionados em fases futuras sem mudar o runtime MCP.
 

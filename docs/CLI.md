@@ -32,7 +32,7 @@ specky install [--ide=<claude|copilot|both|auto>] [--force] [--dry-run]
 When `--target=copilot`:
 - `.github/agents/*.agent.md` (13 files)
 - `.github/prompts/*.prompt.md` (22)
-- `.github/skills/*/SKILL.md` (8)
+- `.github/skills/*/SKILL.md` (14)
 - `.github/hooks/specky/scripts/*.sh` (16 hook scripts)
 - `.github/hooks/specky/sdd-hooks.json` — Copilot-specific manifest (no `SessionStart`/`UserPromptSubmit`, only `sdd_*` PreToolUse matchers)
 - `.github/instructions/copilot-instructions.instructions.md`
@@ -45,7 +45,7 @@ The installed Copilot agents use GitHub Copilot-native tool identifiers such as 
 When `--target=claude`:
 - `.claude/agents/*.md` (13 files)
 - `.claude/commands/*.md` (22 slash commands)
-- `.claude/skills/*/SKILL.md` (8 skills)
+- `.claude/skills/*/SKILL.md` (14 skills)
 - `.claude/hooks/scripts/*.sh` (16 hook scripts)
 - `.claude/settings.json` — deep-merged:
   - `hooks` section (SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop)
@@ -58,10 +58,10 @@ The installed Claude agents use Claude-native tool identifiers such as `Read`, `
 When `--target=cursor`:
 - `.cursor/agents/*.md`
 - `.cursor/commands/*.md`
-- `.cursor/rules/copilot-instructions.mdc`
+- `.cursor/rules/specky-sdd.mdc`
+- `.cursor/hooks.json` and `.cursor/hooks/`
 - `.agents/skills/*/SKILL.md`
 - `.cursor/mcp.json` with `mcpServers.specky`
-- Cursor hooks are not enabled yet; the installer skips hook primitives for this target.
 
 When `--target=opencode`:
 - `.opencode/agents/*.md`

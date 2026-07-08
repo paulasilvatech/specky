@@ -29,27 +29,20 @@ The SDD pipeline consists of 10 sequential phases designed to transform feature 
 
 **Phase 9: Release** — Release gate execution, documentation generation, PR creation, work item export, and changelog preparation.
 
-## EARS Notation (Extended Requirements)
+## EARS Notation (Canonical 6 Patterns)
 
-EARS (Easy Approach to Requirements Syntax) provides five core patterns plus a complex pattern for unambiguous requirement capture:
+EARS (Easy Approach to Requirements Syntax) uses six requirement patterns. Should/May express priority or obligation level inside a requirement; they are not separate Specky EARS patterns.
 
-1. **Shall** — Mandatory requirements. Format: "The system shall [action]."
-   - Example: "The system shall validate email format before submission."
+| Pattern | Format |
+|---------|--------|
+| Ubiquitous | The system shall... |
+| Event-driven | When [event], the system shall... |
+| State-driven | While [state], the system shall... |
+| Optional | Where [condition], the system shall... |
+| Unwanted | If [condition], then the system shall... |
+| Complex | While [state], when [event], the system shall... |
 
-2. **Should** — Desired but not mandatory. Format: "The system should [action]."
-   - Example: "The system should display results within 2 seconds."
-
-3. **May** — Optional enhancements. Format: "The system may [action]."
-   - Example: "The system may support bulk import operations."
-
-4. **If...Then...** — Conditional requirements. Format: "If [condition] then [action]."
-   - Example: "If user is admin then system shall grant access to configuration panel."
-
-5. **When...Then...** — Trigger-based requirements. Format: "When [event] then [action]."
-   - Example: "When form is submitted then system shall validate all required fields."
-
-6. **Complex** — Combination patterns for intricate business logic.
-   - Example: "If user role is editor, when publish button is clicked, then system shall validate content and if valid shall queue for approval."
+See `references/ears-notation.md` for examples and validation guidance.
 
 ## Model Recommendation Table
 
@@ -132,7 +125,7 @@ Hooks are configured in `sdd-hooks.json` with PreToolUse and PostToolUse matcher
 @specky-implementer                   (Phase 7 — scaffold code + tests)
 ```
 
-See [copilot-instructions.instructions.md](../../instructions/copilot-instructions.instructions.md) for the full agent catalog.
+See the target-specific instruction rule for the full runtime entry point guidance.
 
 ## Workflow Entry Points
 

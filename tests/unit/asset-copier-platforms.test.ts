@@ -85,7 +85,15 @@ describe("asset copier platform-specific primitive transforms", () => {
             "utf8",
         );
         const rule = readFileSync(
-            resolve(workspace, ".cursor/rules/copilot-instructions.mdc"),
+            resolve(workspace, ".cursor/rules/specky-sdd.mdc"),
+            "utf8",
+        );
+        const hooks = readFileSync(
+            resolve(workspace, ".cursor/hooks.json"),
+            "utf8",
+        );
+        const runner = readFileSync(
+            resolve(workspace, ".cursor/hooks/specky-run.sh"),
             "utf8",
         );
         const skill = readFileSync(
@@ -96,7 +104,9 @@ describe("asset copier platform-specific primitive transforms", () => {
         expect(agent).toContain("tools: Read, Glob, Grep, Task, mcp__specky__sdd_get_status");
         expect(agent).not.toContain("specky/sdd_get_status");
         expect(command).not.toContain("agent: agent");
-        expect(rule).toContain("applyTo: '**'");
+        expect(rule).toContain("alwaysApply: true");
+        expect(hooks).toContain("beforeMCPExecution");
+        expect(runner).toContain("specky-run.sh");
         expect(skill).toContain("name: specky-onboarding");
     });
 

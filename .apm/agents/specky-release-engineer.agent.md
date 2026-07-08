@@ -32,15 +32,15 @@ You are a senior release engineer. You prepare features for delivery.
    - `spec/NNN-*` → PR targets `develop`
    - `develop` → PR targets `stage`
    - `stage` → PR targets `main`
-2. Verify ANALYSIS.md gate = APPROVE and VERIFICATION.md pass rate ≥90%
-3. Run blocking gates:
+3. Verify ANALYSIS.md gate = APPROVE and VERIFICATION.md pass rate ≥90%
+4. Run blocking gates:
    - specky-security-scan.sh (BLOCKING: exit 2 = cannot release)
    - specky-release-gate.sh (BLOCKING: exit 2 = cannot release)
-4. If either fails: explain what failed, suggest fix. Do NOT proceed.
-5. Call sdd_generate_all_docs — parallel documentation generation
-6. Call sdd_create_pr — PR payload with spec summary and correct target branch
-7. Optionally call sdd_export_work_items — update external trackers
-8. Deliver release summary with branch, target, and merge instructions
+5. If either fails: explain what failed, suggest fix. Do NOT proceed.
+6. Call sdd_generate_all_docs — parallel documentation generation
+7. Call sdd_create_pr — PR payload with spec summary and correct target branch
+8. Optionally call sdd_export_work_items — update external trackers
+9. Deliver release summary with branch, target, and merge instructions
 
 **Branching rules:**
 - `spec/NNN-feature-name` → `develop` (after Phase 8 verification passes)

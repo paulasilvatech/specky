@@ -24,7 +24,11 @@ describe("specky install target selection", () => {
 
         expect(existsSync(resolve(workspace, ".cursor/agents/specky-orchestrator.md"))).toBe(true);
         expect(existsSync(resolve(workspace, ".cursor/commands/specky-orchestrate.md"))).toBe(true);
-        expect(existsSync(resolve(workspace, ".cursor/rules/copilot-instructions.mdc"))).toBe(true);
+        expect(existsSync(resolve(workspace, ".cursor/rules/specky-sdd.mdc"))).toBe(true);
+        expect(existsSync(resolve(workspace, ".cursor/hooks/specky-run.sh"))).toBe(true);
+        expect(existsSync(resolve(workspace, ".cursor/hooks.json"))).toBe(true);
+        expect(existsSync(resolve(workspace, ".cursor/hooks/scripts/specky-phase-gate.sh"))).toBe(true);
+        expect(existsSync(resolve(workspace, ".agents/skills/specky-quality-reviewer/SKILL.md"))).toBe(true);
         expect(existsSync(resolve(workspace, ".agents/skills/specky-onboarding/SKILL.md"))).toBe(true);
 
         const mcp = readJson<{ mcpServers?: Record<string, unknown> }>(

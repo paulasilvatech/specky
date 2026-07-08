@@ -44,7 +44,7 @@ describe("enterprise documentation baseline", () => {
   });
 
   it("keeps dependency count aligned in public docs", () => {
-    expect(read("README.md")).toContain("dependencies-3-green");
+    expect(read("README.md")).toContain("dependencies-3-9ca3af");
     expect(read("README.md")).toContain("3 runtime dependencies");
     expect(read("SECURITY.md")).toContain("Specky has only **3 runtime dependencies**");
   });

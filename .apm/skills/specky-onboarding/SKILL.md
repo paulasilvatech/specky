@@ -7,7 +7,7 @@ description: "This skill should be used when the user asks 'help me with specky'
 
 ## Overview
 
-Specky SDD is a Spec-Driven Development CLI toolkit with 58 MCP tools, 13 agents, 22 prompts, 8 skills, and 16 hook scripts. It enforces a 10-phase pipeline from requirements through release.
+Specky SDD is a Spec-Driven Development CLI toolkit with 58 MCP tools, 13 agents, 22 prompts, 14 skills, and 16 hook scripts. It enforces a 10-phase pipeline from requirements through release.
 
 ## 5-Step Wizard Flow
 
@@ -91,13 +91,19 @@ Check for:
 - /specky-pipeline-status — Check pipeline status
 - /specky-reset-phase — Reset a pipeline phase
 
-## All 8 Skills
+## All 14 Skills
 
 | Skill | Triggers On |
 |-------|-------------|
 | specky-sdd-pipeline | "specky", "SDD pipeline", "EARS notation", "pipeline phases" |
 | specky-orchestrator | "orchestrate", "run full pipeline", "advance phase" |
 | specky-onboarding | "help", "get started", "what is specky" |
+| specky-sdd-init | "initialize", "greenfield", "new feature bootstrap" |
+| specky-spec-engineer | "write specification", "EARS", "REQ-ID" |
+| specky-sdd-clarify | "clarify", "ambiguous requirements", "EARS validation" |
+| specky-design-architect | "design", "architecture", "Mermaid diagrams" |
+| specky-task-planner | "tasks", "checklist", "implementation plan" |
+| specky-quality-reviewer | "analysis", "quality review", "compliance" |
 | implementer | "implementation plan", "test stubs", "IaC generation" |
 | test-verifier | "verify tests", "check coverage", "phantom detection" |
 | release-engineer | "prepare release", "create PR", "release gates" |

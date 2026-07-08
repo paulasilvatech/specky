@@ -61,16 +61,14 @@ apm.lock.yaml
 
 # Internal build tooling — not needed at runtime
 scripts/
-PUBLISH.md
+docs/PUBLISH.md
 ONBOARDING.md
 CONTRIBUTING.md
 
-# Brand assets not included in published package
-media/specky-brand-logo.svg
-media/specky-brand-icon.svg
+# Brand/site assets not included in published package by default
+site/*
+!site/specky-icon.png
 *.svg
-!media/specky-icon-256.png
-!media/specky-icon-128.png
 
 # Repo admin files
 zip/

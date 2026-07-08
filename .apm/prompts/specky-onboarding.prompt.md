@@ -1,5 +1,6 @@
 ---
 description: Get started with Specky SDD — interactive wizard
+argument-hint: <project context or goal>
 agent: agent
 ---
 Help me get started with Specky SDD.

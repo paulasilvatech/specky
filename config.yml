@@ -28,8 +28,10 @@ pipeline:
     9: "specky-release-engineer"
   lgtm_gates: [2, 4, 5]
 hooks:
-  # Source scripts ship at .apm/hooks/scripts and are installed per IDE to
-  # .claude/hooks/scripts (Claude Code) or .github/hooks/specky/scripts (Copilot).
+  # Source scripts ship at .apm/hooks/scripts and are installed per IDE:
+  #   claude  -> .claude/hooks/scripts
+  #   copilot -> .github/hooks/specky/scripts
+  #   cursor  -> .cursor/hooks.json + .cursor/hooks/scripts
   shared_path: ".apm/hooks/scripts"
   blocking:
     - "specky-artifact-validator"

@@ -21,7 +21,8 @@ export const cursorCompiler: HarnessCompiler = {
     },
 
     compileInstruction(content) {
-        return content;
+        const body = content.replace(/^---[\s\S]*?---\n/, "");
+        return `---\ndescription: Specky SDD pipeline rules\nalwaysApply: true\n---\n${body}`;
     },
 
     renameAgent(fileName) {

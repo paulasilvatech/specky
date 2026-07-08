@@ -6,13 +6,13 @@
 
 ## What is Specky?
 
-Specky is a CLI toolkit that installs specialized agents, prompts, skills, hooks, and an MCP engine into your project — for **GitHub Copilot** (VS Code) or **Claude Code**.
+Specky is a CLI toolkit that installs specialized agents, prompts, skills, hooks, and an MCP engine into your project — for **GitHub Copilot** (VS Code), **Claude Code**, **Cursor**, or **OpenCode**.
 
 | What you get | What it does |
 |-------------|-------------|
 | **13 Agents** | Specialized AI personas — `@specky-orchestrator` runs the full pipeline, `@specky-onboarding` guides setup, `@specky-spec-engineer` writes specs, etc. |
 | **22 Prompts** | Slash commands — `/specky-greenfield`, `/specky-specify`, `/specky-release`. One command activates the right agent. |
-| **8 Skills** | Domain knowledge loaded into agents — EARS patterns, implementation rules, test criteria, release gate protocol. |
+| **14 Skills** | Domain knowledge loaded into agents — phase playbooks, EARS patterns, implementation rules, test criteria, release gate protocol. |
 | **16 Hooks** | Pre/post validation scripts + `specky-pipeline-guard` (UserPromptSubmit) + `specky-session-banner` (SessionStart) — check artifacts, validate branch, enforce gates, block out-of-flow prompts. |
 | **58 MCP Tools** | The engine underneath — validates, generates, and enforces. Agents call it; hooks guard it. |
 
@@ -20,7 +20,7 @@ Specky is a CLI toolkit that installs specialized agents, prompts, skills, hooks
 
 ## Installation
 
-The `specky` CLI bundles everything: 13 agents, 22 prompts, 8 skills, 16 hooks, and the MCP server (58 tools) — installed into your project for your chosen IDE.
+The `specky` CLI bundles everything: 13 agents, 22 prompts, 14 skills, 16 hooks, and the MCP server (58 tools) — installed into your project for your chosen IDE.
 
 ### One-time CLI install (recommended)
 

@@ -1,33 +1,33 @@
 <div align="center">
   <br>
-  <img src="media/specky-brand-logo.svg" alt="Specky" height="80">
+  <img src="site/specky-brand-logo.svg" alt="Specky" height="80">
   <br><br>
   <p><strong>13 agents. 58 MCP tools. 10-phase pipeline. One CLI.</strong></p>
   <p>Agentic Spec-Driven Development</p>
 
   <p>
-    <img src="https://img.shields.io/badge/agents-13-7c3aed?style=flat-square" alt="13 Agents"/>
-    <img src="https://img.shields.io/badge/tools-58_MCP-6d28d9?style=flat-square" alt="58 Tools"/>
-    <img src="https://img.shields.io/badge/phases-10_enforced-5b21b6?style=flat-square" alt="10 Phases"/>
-    <img src="https://img.shields.io/badge/hooks-16-4c1d95?style=flat-square" alt="16 Hooks"/>
-    <img src="https://img.shields.io/badge/license-MIT-a78bfa?style=flat-square" alt="MIT"/>
+    <img src="https://img.shields.io/badge/agents-13-374151?style=flat-square" alt="13 Agents"/>
+    <img src="https://img.shields.io/badge/tools-58_MCP-4b5563?style=flat-square" alt="58 Tools"/>
+    <img src="https://img.shields.io/badge/phases-10_enforced-6b7280?style=flat-square" alt="10 Phases"/>
+    <img src="https://img.shields.io/badge/hooks-16-9ca3af?style=flat-square" alt="16 Hooks"/>
+    <img src="https://img.shields.io/badge/license-MIT-d1d5db?style=flat-square" alt="MIT"/>
   </p>
 
   <p>
-    <a href="https://www.npmjs.com/package/specky-sdd"><img src="https://img.shields.io/npm/v/specky-sdd?style=flat-square&color=7c3aed" alt="npm"/></a>
-    <a href="https://www.npmjs.com/package/specky-sdd"><img src="https://img.shields.io/npm/dm/specky-sdd?style=flat-square&color=6d28d9" alt="npm downloads"/></a>
+    <a href="https://www.npmjs.com/package/specky-sdd"><img src="https://img.shields.io/npm/v/specky-sdd?style=flat-square&color=4b5563" alt="npm"/></a>
+    <a href="https://www.npmjs.com/package/specky-sdd"><img src="https://img.shields.io/npm/dm/specky-sdd?style=flat-square&color=6b7280" alt="npm downloads"/></a>
     <a href="https://github.com/paulasilvatech/specky/actions/workflows/ci.yml"><img src="https://github.com/paulasilvatech/specky/actions/workflows/ci.yml/badge.svg" alt="CI"/></a>
     <a href="https://securityscorecards.dev/viewer/?uri=github.com/paulasilvatech/specky"><img src="https://api.securityscorecards.dev/projects/github.com/paulasilvatech/specky/badge" alt="OpenSSF Scorecard"/></a>
-    <a href="https://github.com/paulasilvatech/specky"><img src="https://img.shields.io/github/stars/paulasilvatech/specky?style=flat-square&color=6d28d9" alt="Stars"/></a>
+    <a href="https://github.com/paulasilvatech/specky"><img src="https://img.shields.io/github/stars/paulasilvatech/specky?style=flat-square&color=6b7280" alt="Stars"/></a>
   </p>
 
   <p>
-    <img src="https://img.shields.io/badge/TypeScript-strict-3178c6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript Strict"/>
-    <img src="https://img.shields.io/badge/dependencies-3-green?style=flat-square" alt="3 Dependencies"/>
-    <img src="https://img.shields.io/badge/CLI-specky-7c3aed?style=flat-square" alt="CLI"/>
-    <img src="https://img.shields.io/badge/OWASP_MCP-Top_10-green?style=flat-square" alt="OWASP MCP Top 10"/>
-    <img src="https://img.shields.io/node/v/specky-sdd?style=flat-square&color=5b21b6" alt="Node.js"/>
-    <a href="https://github.com/paulasilvatech/specky/issues"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs Welcome"/></a>
+    <img src="https://img.shields.io/badge/TypeScript-strict-374151?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript Strict"/>
+    <img src="https://img.shields.io/badge/dependencies-3-9ca3af?style=flat-square" alt="3 Dependencies"/>
+    <img src="https://img.shields.io/badge/CLI-specky-4b5563?style=flat-square" alt="CLI"/>
+    <img src="https://img.shields.io/badge/OWASP_MCP-Top_10-6b7280?style=flat-square" alt="OWASP MCP Top 10"/>
+    <img src="https://img.shields.io/node/v/specky-sdd?style=flat-square&color=374151" alt="Node.js"/>
+    <a href="https://github.com/paulasilvatech/specky/issues"><img src="https://img.shields.io/badge/PRs-welcome-9ca3af?style=flat-square" alt="PRs Welcome"/></a>
   </p>
 
   <p>
@@ -37,7 +37,6 @@
     <a href="SECURITY.md">Security</a>
   </p>
 </div>
-
 
 ## Table of Contents
 
@@ -60,13 +59,11 @@
 | **Platform** | [The SDD Platform](#the-spec-driven-development-platform) | Built on Spec-Kit, everything included |
 | | [Roadmap](#roadmap) | v3.7 current, v3.8+ planned |
 
-
 ## What is Specky?
 
-Specky is a **CLI toolkit for Spec-Driven Development** — 13 specialized agents, 58 MCP tools, 22 prompts, 8 skills, and 16 automation hooks — that enforces a deterministic 10-phase pipeline from **any input** (meeting transcripts, documents, Figma designs, or natural language prompts) through specifications, architecture, infrastructure as code, implementation, and deployment.
+Specky is a **CLI toolkit for Spec-Driven Development** — 13 specialized agents, 58 MCP tools, 22 prompts, 14 skills, and 16 automation hooks — that enforces a deterministic 10-phase pipeline from **any input** (meeting transcripts, documents, Figma designs, or natural language prompts) through specifications, architecture, infrastructure as code, implementation, and deployment.
 
-Powered by the [Spec-Kit](https://github.com/paulasilvatech/spec-kit) methodology. Install the `specky` CLI and it places agents, prompts, skills, hooks, and the MCP server registration into your project — for **GitHub Copilot** (VS Code), **Claude Code**, or both.
-
+Powered by the [Spec-Kit](https://github.com/paulasilvatech/spec-kit) methodology. Install the `specky` CLI and it places agents, prompts, skills, hooks, and the MCP server registration into your project — for **GitHub Copilot** (VS Code), **Claude Code**, **Cursor**, or **OpenCode**.
 
 ## What's Included
 
@@ -76,7 +73,7 @@ Specky is a **complete AI development toolkit** — not just an MCP server. The 
 |-----------|-----------|------------------|
 | **Agents** | Specialized AI personas with defined roles, tools, and guardrails | 13 agents — @specky-orchestrator (full pipeline), @specky-onboarding (wizard), @specky-spec-engineer, @specky-design-architect, @specky-task-planner, @specky-quality-reviewer, and 7 more |
 | **Prompts** | Slash commands that activate the right agent for a task | 22 prompts — `/specky-greenfield`, `/specky-specify`, `/specky-release`, `/specky-orchestrate`, etc. |
-| **Skills** | Domain knowledge files loaded into agent context automatically | 8 skills — SDD pipeline rules, EARS patterns, implementation patterns, test criteria, release gate protocol |
+| **Skills** | Domain knowledge files loaded into agent context automatically | 14 skills — SDD pipeline rules, phase playbooks, EARS patterns, implementation patterns, test criteria, release gate protocol |
 | **Hooks** | Scripts that run before/after every tool call for validation | 16 hooks — specky-artifact-validator, specky-branch-validator, specky-phase-gate, specky-lgtm-gate, specky-security-scan, etc. |
 | **MCP Server** | The tool engine that validates, generates, and enforces | 58 tools via Model Context Protocol (the runtime underneath) |
 
@@ -116,7 +113,7 @@ npm install --save-dev specky-sdd@latest
 npx specky install --target=copilot
 ```
 
-The CLI installs 13 agents, 22 prompts, 8 skills, 16 hooks, the MCP server registration (`.mcp.json` + `.vscode/mcp.json`, pinned to the installed version), and pre-authorizes a **least-privilege** set of tools — the Specky MCP tools plus scoped `git`/`npm`/`npx` and file editing. It does **not** pre-authorize arbitrary shell, `rm`, or network access; those still prompt. Run `specky doctor` anytime to validate integrity and config.
+The CLI installs 13 agents, 22 prompts, 14 skills, 16 hooks, the target MCP server registration (pinned to the installed version), and pre-authorizes or scopes tools according to the selected harness. It does **not** pre-authorize arbitrary shell, `rm`, or network access; those still prompt. Run `specky doctor` anytime to validate integrity and config.
 
 Generated assets are platform-native. `specky install --target=copilot` writes GitHub Copilot agents/prompts with VS Code tool names such as `search`, `agent`, and `specky/sdd_get_status`, plus prompt `agent: agent` frontmatter. `specky install --target=claude` writes Claude Code agents/commands with `Read`, `Glob`, `Grep`, `Task`, and `mcp__specky__sdd_get_status`, with Copilot-only prompt metadata removed. Wave 1 APM targets also include Cursor, OpenCode, and the neutral `agent-skills` target.
 
@@ -124,12 +121,24 @@ Specky also has an APM governance layer for enterprise package control. `apm.yml
 
 Full walkthroughs per OS, offline install, and CLI reference: [docs/INSTALL.md](docs/INSTALL.md) · [docs/CLI.md](docs/CLI.md).
 
-
 ## Why Specifications Matter in the AI Era
 
-<p align="center">
-  <img src="media/why-specifications-matter.svg" alt="Why Specifications Matter, From Vibe Coding to Deterministic Development" width="100%"/>
-</p>
+```mermaid
+%%{init: {"theme":"base","themeVariables":{"background":"#ffffff","primaryColor":"#f8fafc","primaryBorderColor":"#9ca3af","primaryTextColor":"#111827","secondaryColor":"#f3f4f6","tertiaryColor":"#e5e7eb","lineColor":"#6b7280","fontFamily":"Segoe UI, Arial, sans-serif"}}}%%
+flowchart LR
+  A["Raw intent"] --> B["Vibe coding<br/>direct prompt to code"]
+  B --> C["Guessing<br/>implicit requirements"]
+  C --> D["Rework<br/>drift and missing acceptance criteria"]
+
+  A --> E["Specky SDD<br/>validated specification first"]
+  E --> F["EARS requirements<br/>measurable acceptance criteria"]
+  F --> G["Deterministic delivery<br/>traceable design, tasks, tests, release"]
+
+  classDef node fill:#f8fafc,stroke:#9ca3af,color:#111827,stroke-width:1px;
+  classDef risk fill:#f3f4f6,stroke:#6b7280,color:#111827,stroke-width:1px;
+  class A,E,F,G node;
+  class B,C,D risk;
+```
 
 ### The Problem: Vibe Coding
 
@@ -148,7 +157,7 @@ The result? Teams spend 40% of their time on rework because requirements were ne
 | **Markdown** | The universal language that both humans and AI read fluently | All spec artifacts are `.md` files in your repo, versioned with Git |
 | **MCP** | Model Context Protocol — an open standard that lets AI assistants call external tools | Specky is an MCP server; any AI IDE can connect to it |
 | **EARS Notation** | A method for writing requirements that forces precision with 6 patterns | Eliminates vague statements like "the system should be fast" |
-| **Agents and Skills** | Specialized AI roles that invoke Specky tools with domain expertise | 13 agents + 8 skills orchestrate the full pipeline |
+| **Agents and Skills** | Specialized AI roles that invoke Specky tools with domain expertise | 13 agents + 14 skills orchestrate the full pipeline |
 | **CLI Toolkit** | A complete AI development package: agents + prompts + skills + hooks + MCP server | Installed via npm: `npm install -g specky-sdd` |
 
 ### How Specky Enforces Determinism
@@ -166,7 +175,7 @@ Specky adds a **deterministic engine** between your intent and your code:
 
 | Capability | Specky |
 |---|---|
-| Complete CLI toolkit | 13 agents, 22 prompts, 8 skills, 16 hooks + 58 MCP tools |
+| Complete CLI toolkit | 13 agents, 22 prompts, 14 skills, 16 hooks + 58 MCP tools |
 | Pipeline orchestrator | @specky-orchestrator coordinates all 10 phases end-to-end |
 | Onboarding wizard | @specky-onboarding detects context and guides setup |
 | Any input (PDF, DOCX, PPTX, transcript, Figma) to spec | 58 MCP tools handle all input formats |
@@ -183,7 +192,6 @@ Specky adds a **deterministic engine** between your intent and your code:
 | First-class harness targets | VS Code + Copilot, Claude Code, Cursor, OpenCode, plus shared `.agents/skills` |
 | Zero outbound calls from the MCP server | Air-gap friendly; code never leaves your machine. The CLI's once-daily update check is [opt-out](#staying-up-to-date) |
 | MIT open source | Fork it, extend it, audit it. No vendor lock, no seat pricing |
-
 
 ## Quick Start
 
@@ -207,7 +215,7 @@ cd your-project
 specky install
 ```
 
-That's it. The CLI auto-detects Claude Code and/or GitHub Copilot and installs the 13 agents, 22 prompts, 8 skills, 16 hooks, the MCP server registration, and pre-authorizes a least-privilege set of tools (the Specky MCP tools plus scoped `git`/`npm`/`npx` and file editing — not arbitrary shell or network).
+That's it. The CLI auto-detects supported harnesses or uses the explicit target and installs the 13 agents, 22 prompts, 14 skills, 16 hooks, and MCP server registration with least-privilege tool scope for the selected harness.
 
 **Other install modes:**
 
@@ -255,7 +263,6 @@ The orchestrator coordinates all 10 phases: Init → Discover → Specify → Cl
 
 > **Tip:** **New to Spec-Driven Development?** Specky already includes all the SDD methodology from [Spec-Kit](https://github.com/paulasilvatech/spec-kit). Just install Specky and the pipeline guides you through every phase with [educative outputs](#educative-outputs) that explain the concepts as you work.
 
-
 ## Where Specifications Live
 
 Every feature gets its own numbered directory inside `.specs/`. This keeps specifications, design documents, and quality reports together as a self-contained package.
@@ -284,12 +291,27 @@ your-project/
 
 **Naming convention:** `NNN-feature-name`, zero-padded number + kebab-case name. Each directory is independent; you can work on multiple features simultaneously.
 
-
 ## Input Methods: 6 Ways to Start
 
-<p align="center">
-  <img src="media/input-methods.svg" alt="Specky 6 Input Methods" width="100%"/>
-</p>
+```mermaid
+%%{init: {"theme":"base","themeVariables":{"background":"#ffffff","primaryColor":"#f8fafc","primaryBorderColor":"#9ca3af","primaryTextColor":"#111827","secondaryColor":"#f3f4f6","tertiaryColor":"#e5e7eb","lineColor":"#6b7280","fontFamily":"Segoe UI, Arial, sans-serif"}}}%%
+flowchart TB
+  P["Natural language prompt"] --> I["Specky input layer"]
+  T["Meeting transcript"] --> I
+  D["Documents<br/>PDF, DOCX, PPTX, MD"] --> I
+  F["Figma or FigJam"] --> I
+  C["Existing codebase"] --> I
+  R["Raw pasted text"] --> I
+  I --> S["sdd_init + sdd_discover"]
+  S --> A[".specs/NNN-feature<br/>research, requirements, design, tasks"]
+
+  classDef input fill:#ffffff,stroke:#9ca3af,color:#111827,stroke-width:1px;
+  classDef engine fill:#f3f4f6,stroke:#6b7280,color:#111827,stroke-width:1px;
+  classDef output fill:#f8fafc,stroke:#374151,color:#111827,stroke-width:1px;
+  class P,T,D,F,C,R input;
+  class I,S engine;
+  class A output;
+```
 
 Specky accepts multiple input types. Choose the one that matches your starting point:
 
@@ -315,6 +337,7 @@ Import a transcript from Teams, Zoom, or Google Meet. Specky extracts topics, de
 ```
 
 The AI calls `sdd_import_transcript` → extracts:
+
 - Participants and speakers
 - Topics discussed with summaries
 - Decisions made
@@ -409,15 +432,23 @@ No file? Just paste the content directly. Every import tool accepts a `raw_text`
   Import this and create a specification.
 ```
 
-
 ## Three Project Types, One Pipeline
 
-<p align="center">
-  <img src="media/project-workflows.svg" alt="Greenfield, Brownfield, and Modernization Workflows" width="100%"/>
-</p>
+```mermaid
+%%{init: {"theme":"base","themeVariables":{"background":"#ffffff","primaryColor":"#f8fafc","primaryBorderColor":"#9ca3af","primaryTextColor":"#111827","secondaryColor":"#f3f4f6","tertiaryColor":"#e5e7eb","lineColor":"#6b7280","fontFamily":"Segoe UI, Arial, sans-serif"}}}%%
+flowchart LR
+  G["Greenfield<br/>new product idea"] --> D["Discover"]
+  B["Brownfield<br/>existing codebase"] --> D
+  M["Modernization<br/>legacy migration"] --> D
+  D --> S["Specify"] --> A["Analyze"] --> I["Implement"] --> V["Verify"] --> R["Release"]
+
+  classDef start fill:#ffffff,stroke:#9ca3af,color:#111827,stroke-width:1px;
+  classDef phase fill:#f8fafc,stroke:#6b7280,color:#111827,stroke-width:1px;
+  class G,B,M start;
+  class D,S,A,I,V,R phase;
+```
 
 Specky adapts to any project type. The pipeline is the same; the **starting point** is what changes.
-
 
 ## Greenfield Project: Start from Scratch
 
@@ -475,6 +506,7 @@ system shall return a 400 status with a descriptive error message.
 ```
 
 The AI calls `sdd_write_design` → creates `DESIGN.md` with:
+
 - System architecture diagram (Mermaid)
 - Data model / ER diagram
 - API contracts with endpoints, request/response schemas
@@ -498,6 +530,7 @@ The AI calls `sdd_write_tasks` → creates `TASKS.md` with implementation tasks 
 ```
 
 The AI calls:
+
 - `sdd_run_analysis` → completeness audit, orphaned criteria detection
 - `sdd_compliance_check` → SOC2 controls validation
 - `sdd_generate_all_diagrams` → architecture, sequence, ER, flow, dependency, traceability diagrams
@@ -509,6 +542,7 @@ The AI calls:
 ```
 
 The AI calls:
+
 - `sdd_generate_iac` → Terraform configuration
 - `sdd_generate_dockerfile` → Dockerfile + docker-compose
 - `sdd_generate_tests` → Test stubs with acceptance criteria mapped to test cases
@@ -522,7 +556,6 @@ The AI calls:
 The AI calls `sdd_export_work_items` + `sdd_create_pr` → generates work item payloads and PR body with full spec traceability.
 
 > **Next:** Learn about [EARS notation](#ears-notation) to understand the requirement patterns, or see [All 58 Tools](#all-58-tools) for a complete reference.
-
 
 ## Brownfield Project: Add Features to Existing Code
 
@@ -594,7 +627,6 @@ The AI calls `sdd_cross_analyze` → checks for contradictions, shared dependenc
 
 > **Next:** **Next:** See [compliance frameworks](#compliance-frameworks) for regulatory validation, or [MCP integration](#mcp-integration-architecture) for routing to external tools.
 
-
 ## Modernization Project: Assess and Upgrade Legacy Systems
 
 **Scenario:** You have a legacy system that needs assessment, documentation, and incremental modernization.
@@ -636,6 +668,7 @@ The AI calls `sdd_batch_transcripts` → extracts decisions, requirements, const
 ```
 
 The specification accounts for:
+
 - Current system behavior (from codebase scan)
 - Existing documentation (from imported docs)
 - Stakeholder decisions (from meeting transcripts)
@@ -659,6 +692,7 @@ The AI calls `sdd_compliance_check` → validates the specification against regu
 ```
 
 The AI calls:
+
 - `sdd_implement` → phased implementation plan with checkpoints
 - `sdd_generate_iac` → infrastructure configuration for the target environment
 - `sdd_generate_runbook` → operational runbook with rollback procedures
@@ -671,14 +705,27 @@ The AI calls:
 
 The AI calls `sdd_generate_onboarding` → creates a guide covering architecture decisions, codebase navigation, development workflow, and testing strategy.
 
-> **Next:** **Next:** See [compliance frameworks](#compliance-frameworks) for regulatory validation during modernization, or [project configuration](#project-configuration) to customize Specky for your team.
-
+> **Next:** See [compliance frameworks](#compliance-frameworks) for regulatory validation during modernization, or [project configuration](#project-configuration) to customize Specky for your team.
 
 ## Pipeline and LGTM Gates
 
-<p align="center">
-  <img src="media/pipeline-lgtm-gates.svg" alt="Pipeline with LGTM Quality Gates" width="100%"/>
-</p>
+```mermaid
+%%{init: {"theme":"base","themeVariables":{"background":"#ffffff","primaryColor":"#f8fafc","primaryBorderColor":"#9ca3af","primaryTextColor":"#111827","secondaryColor":"#f3f4f6","tertiaryColor":"#e5e7eb","lineColor":"#6b7280","fontFamily":"Segoe UI, Arial, sans-serif"}}}%%
+flowchart LR
+  I["Init"] --> D["Discover"] --> S["Specify"] --> G1{"LGTM gate"}
+  G1 -->|approved| C["Clarify"] --> A["Design"] --> G2{"LGTM gate"}
+  G2 -->|approved| T["Tasks"] --> G3{"LGTM gate"}
+  G3 -->|approved| N["Analyze"] --> P["Implement"] --> V["Verify"] --> R["Release"]
+  G1 -->|changes requested| S
+  G2 -->|changes requested| A
+  G3 -->|changes requested| T
+  V -->|drift detected| S
+
+  classDef phase fill:#f8fafc,stroke:#6b7280,color:#111827,stroke-width:1px;
+  classDef gate fill:#f3f4f6,stroke:#374151,color:#111827,stroke-width:1px;
+  class I,D,S,C,A,T,N,P,V,R phase;
+  class G1,G2,G3 gate;
+```
 
 Every Specky project follows the same 10-phase pipeline. The state machine **blocks phase-skipping**. You cannot jump from Init to Design without completing Specify first.
 
@@ -694,9 +741,14 @@ Every Specky project follows the same 10-phase pipeline. The state machine **blo
 
 The AI calls `sdd_advance_phase` → moves the pipeline forward if all prerequisites are met.
 
-<p align="center">
-  <img src="media/pipeline-10-phases.svg" alt="Specky 10-Phase Pipeline" width="100%"/>
-</p>
+```mermaid
+%%{init: {"theme":"base","themeVariables":{"background":"#ffffff","primaryColor":"#f8fafc","primaryBorderColor":"#9ca3af","primaryTextColor":"#111827","secondaryColor":"#f3f4f6","tertiaryColor":"#e5e7eb","lineColor":"#6b7280","fontFamily":"Segoe UI, Arial, sans-serif"}}}%%
+flowchart LR
+  P0["0 Init"] --> P1["1 Discover"] --> P2["2 Specify"] --> P3["3 Clarify"] --> P4["4 Design"] --> P5["5 Tasks"] --> P6["6 Analyze"] --> P7["7 Implement"] --> P8["8 Verify"] --> P9["9 Release"]
+
+  classDef phase fill:#ffffff,stroke:#9ca3af,color:#111827,stroke-width:1px;
+  class P0,P1,P2,P3,P4,P5,P6,P7,P8,P9 phase;
+```
 
 | Phase | What Happens | Required Output |
 |-------|-------------|----------------|
@@ -712,7 +764,6 @@ The AI calls `sdd_advance_phase` → moves the pipeline forward if all prerequis
 | **Release** | PR generation, work item export, documentation | Complete package |
 
 All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). See [Input Methods](#input-methods-6-ways-to-start) for how to feed data into the pipeline.
-
 
 ## All 58 Tools
 
@@ -849,22 +900,40 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 |------|-------------|
 | `sdd_verify_audit` | Verify the hash-chained audit trail (`.audit.jsonl`) for tamper evidence and report chain integrity |
 
-
 ## The Spec-Driven Development Platform
 
-<p align="center">
-  <img src="media/specky-speckit-integration.svg" alt="How Spec-Kit and Specky Work Together in the GitHub + Microsoft Ecosystem" width="100%"/>
-</p>
+```mermaid
+%%{init: {"theme":"base","themeVariables":{"background":"#ffffff","primaryColor":"#f8fafc","primaryBorderColor":"#9ca3af","primaryTextColor":"#111827","secondaryColor":"#f3f4f6","tertiaryColor":"#e5e7eb","lineColor":"#6b7280","fontFamily":"Segoe UI, Arial, sans-serif"}}}%%
+C4Context
+title Specky C4 Context
+Person(dev, "Developer / AI operator", "Uses an AI IDE to deliver features through SDD")
+System_Boundary(specky, "Specky SDD Platform") {
+  System(cli, "specky CLI", "Installs target-native agents, prompts, skills, hooks, and MCP registration")
+  System(mcp, "Specky MCP Server", "Executes 58 validated SDD tools and the 10-phase state machine")
+  System(apm, "APM Primitive Source", "Canonical .apm agents, prompts, skills, instructions, and hooks")
+}
+System_Ext(specKit, "Spec-Kit", "Methodology and prompt patterns")
+System_Ext(aiIde, "AI IDE", "GitHub Copilot, Claude Code, Cursor, OpenCode")
+System_Ext(externalMcp, "External MCP ecosystem", "GitHub, Azure DevOps, Jira, Terraform, Figma, Docker")
+
+Rel(dev, aiIde, "asks for feature delivery")
+Rel(aiIde, cli, "installs assets with")
+Rel(cli, apm, "compiles from")
+Rel(aiIde, mcp, "calls SDD tools through MCP")
+Rel(mcp, externalMcp, "returns routing payloads for")
+Rel(specKit, apm, "informs methodology encoded in")
+UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
+```
 
 ### How Spec-Kit and Specky Complement Each Other
 
 **Spec-Kit** — the open-source SDD methodology from [github/spec-kit](https://github.com/github/spec-kit), extended in [paulasilvatech/spec-kit](https://github.com/paulasilvatech/spec-kit) — provides a constitution model, gated workflow phases expressed as prompt templates, and broad coding-assistant support. It defines **what** to do. (Upstream Spec-Kit's phases are advisory prompts; the **EARS** requirements notation and programmatic enforcement below are Specky's additions — EARS was popularized for AI specs by AWS Kiro and originates in the Mavin/Rolls-Royce EARS approach.)
 
-**Specky** is the CLI toolkit that reimplements that methodology as 58 enforceable MCP tools with 13 agents, 22 prompts, 8 skills, and 16 hooks. It enforces **how** to do it.
+**Specky** is the CLI toolkit that reimplements that methodology as 58 enforceable MCP tools with 13 agents, 22 prompts, 14 skills, and 16 hooks. It enforces **how** to do it.
 
 | | Spec-Kit (Methodology) | Specky (Plugin) |
 |--|------------------------|-----------------|
-| **What it is** | Prompt templates + agent definitions | CLI toolkit: 13 agents + 58 MCP tools + 22 prompts + 8 skills + 16 hooks |
+| **What it is** | Prompt templates + agent definitions | CLI toolkit: 13 agents + 58 MCP tools + 22 prompts + 14 skills + 16 hooks |
 | **How it works** | AI reads `.md` templates and follows instructions | AI calls agents that orchestrate tools with hook validation |
 | **Validation** | AI tries to follow the prompts | State machine, EARS regex, Zod schemas, pre/post hooks |
 | **Install** | Copy `.github/agents/` and `.claude/commands/` | `npm install -g specky-sdd && specky install` |
@@ -913,7 +982,6 @@ pipeline:
 
 When `templates_path` is set, Specky uses your custom templates instead of the built-in ones. When `audit_enabled` is true, tool invocations are logged locally. `profile: enterprise` turns audit, RBAC, rate limiting, and fail-closed auditing on by default (explicit values win) — see [docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md). With `pipeline.require_lgtm: true`, the LGTM quality gates become server-enforced instead of an agent convention: advancing past Specify/Design/Tasks requires the explicit `lgtm: true` input on `sdd_advance_phase`.
 
-
 ## Staying up to date
 
 Specky tells you about new versions in two ways:
@@ -933,12 +1001,30 @@ Teams pinning per-project (`npm install --save-dev specky-sdd`) should let [Reno
 
 **Opt out** of the registry check with `SPECKY_NO_UPDATE_CHECK=1` in the environment or `update_check: false` in `.specky/config.yml`. The drift warning stays on — it never touches the network.
 
-
 ## MCP Integration Architecture
 
-<p align="center">
-  <img src="media/architecture-mcp-ecosystem.svg" alt="Specky MCP Ecosystem Architecture" width="100%"/>
-</p>
+```mermaid
+%%{init: {"theme":"base","themeVariables":{"background":"#ffffff","primaryColor":"#f8fafc","primaryBorderColor":"#9ca3af","primaryTextColor":"#111827","secondaryColor":"#f3f4f6","tertiaryColor":"#e5e7eb","lineColor":"#6b7280","fontFamily":"Segoe UI, Arial, sans-serif"}}}%%
+flowchart TB
+  User["Developer / AI operator"] --> Client["AI client<br/>Copilot, Claude, Cursor, OpenCode"]
+  Client --> Specky["Specky MCP Server<br/>58 SDD tools"]
+  Specky --> Payload["Structured routing payload<br/>JSON, artifacts, next actions"]
+  Payload --> Client
+
+  Client --> GitHub["GitHub MCP<br/>issues, PRs, repos"]
+  Client --> AzureBoards["Azure DevOps MCP<br/>work items, boards"]
+  Client --> Jira["Jira MCP<br/>issues, projects"]
+  Client --> Terraform["Terraform MCP<br/>plan, validate, apply"]
+  Client --> Figma["Figma MCP<br/>design context"]
+  Client --> Docker["Docker MCP<br/>local dev environments"]
+
+  classDef core fill:#f8fafc,stroke:#374151,color:#111827,stroke-width:1px;
+  classDef mcp fill:#ffffff,stroke:#9ca3af,color:#111827,stroke-width:1px;
+  classDef payload fill:#f3f4f6,stroke:#6b7280,color:#111827,stroke-width:1px;
+  class User,Client,Specky core;
+  class Payload payload;
+  class GitHub,AzureBoards,Jira,Terraform,Figma,Docker mcp;
+```
 
 Specky outputs structured JSON with routing instructions. Your AI client calls the appropriate external MCP server:
 
@@ -965,7 +1051,6 @@ Specky --> sdd_figma_to_spec(file_key: "abc123") --> Figma request
 | **Figma MCP** | Design context, FigJam diagrams |
 | **Docker MCP** | Local dev environments |
 
-
 ## EARS Notation
 
 Every requirement in Specky follows EARS (Easy Approach to Requirements Syntax):
@@ -981,7 +1066,6 @@ Every requirement in Specky follows EARS (Easy Approach to Requirements Syntax):
 
 The EARS validator programmatically checks every requirement against these 6 patterns. Vague terms like "fast", "good", "easy" are flagged automatically.
 
-
 ## Compliance Frameworks
 
 Built-in compliance checking against:
@@ -991,7 +1075,6 @@ Built-in compliance checking against:
 - **GDPR**: Lawful processing, right to erasure, data portability, breach notification
 - **PCI-DSS**: Firewall, stored data protection, encryption, user identification
 - **ISO 27001**: Security policies, access control, cryptography, incident management
-
 
 ## Educative Outputs
 
@@ -1006,15 +1089,28 @@ Every tool response includes structured guidance:
 }
 ```
 
-
 ## Complete Pipeline Flow
 
-<p align="center">
-  <img src="media/end-to-end-flow.svg" alt="Specky Complete Pipeline Development Flow" width="100%"/>
-</p>
+```mermaid
+%%{init: {"theme":"base","themeVariables":{"background":"#ffffff","primaryColor":"#f8fafc","primaryBorderColor":"#9ca3af","primaryTextColor":"#111827","secondaryColor":"#f3f4f6","tertiaryColor":"#e5e7eb","lineColor":"#6b7280","fontFamily":"Segoe UI, Arial, sans-serif"}}}%%
+flowchart LR
+  Input["Any input"] --> Research["Discover<br/>research and constraints"]
+  Research --> Spec["Specify<br/>EARS requirements"]
+  Spec --> Design["Design<br/>architecture, APIs, data"]
+  Design --> Tasks["Tasks<br/>dependency-ordered work"]
+  Tasks --> Build["Implement<br/>code, IaC, tests"]
+  Build --> Verify["Verify<br/>drift and phantom task checks"]
+  Verify --> Release["Release<br/>PR, work items, runbook"]
+  Release --> Ops["Production-ready package"]
+  Verify -->|drift found| Spec
+
+  classDef step fill:#ffffff,stroke:#9ca3af,color:#111827,stroke-width:1px;
+  classDef terminal fill:#f3f4f6,stroke:#374151,color:#111827,stroke-width:1px;
+  class Input,Research,Spec,Design,Tasks,Build,Verify,Release step;
+  class Ops terminal;
+```
 
 From any [input](#input-methods-6-ways-to-start) to production -- fully automated, [MCP-orchestrated](#mcp-integration-architecture), with artifacts and diagrams generated at every step. All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live).
-
 
 ## Enterprise Ready
 
@@ -1098,7 +1194,6 @@ Every pipeline phase produces a traceable artifact in `.specs/NNN-feature/`. The
 - **Phase Enforcement** — state machine blocks phase-skipping; required files gate advancement
 - **Unit tests** — CI enforces thresholds on every push
 
-
 ## Development
 
 ```bash
@@ -1138,7 +1233,6 @@ and serves an unauthenticated `GET /health`. For hardened/authenticated
 deployments (enterprise profile, token auth, TLS proxy, private packages) see
 [docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md).
 
-
 ## Roadmap
 
 ### v3.7 (current)
@@ -1163,7 +1257,7 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 | Test traceability: REQ-ID → test coverage mapping | Stable |
 | Intent drift detection with amendment suggestions | Stable |
 | 16 automation hooks (advisory-default, strict opt-in via SPECKY_GUARD) | Stable |
-| 13 specialized agents + 22 prompts + 8 skills | Stable |
+| 13 specialized agents + 22 prompts + 14 skills | Stable |
 | 6 compliance frameworks (HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001) | Stable |
 | 6 input types (transcript, PDF, DOCX, Figma, codebase, raw text) | Stable |
 | Test generation for 6 frameworks (vitest, jest, playwright, pytest, junit, xunit) | Stable |
@@ -1191,7 +1285,6 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 
 Have a feature request? [Open an issue](https://github.com/paulasilvatech/specky/issues).
 
-
 ## Examples
 
 See [`examples/`](examples/) for a complete, real spec package generated by
@@ -1200,11 +1293,9 @@ is a greenfield REST API taken from `sdd_init` all the way to an `APPROVE`
 quality gate at 100% traceability. `examples/specky-verify.example.yml` is a
 drop-in GitHub Action that verifies EARS + the quality gate on every PR.
 
-
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture details and how to add tools, templates, or services.
-
 
 ## Links
 
@@ -1213,7 +1304,6 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture details and how to add t
 - [CONTRIBUTING.md](CONTRIBUTING.md): How to add tools, templates, or services
 - [Spec-Kit](https://github.com/paulasilvatech/spec-kit): The SDD methodology foundation
 - [npm package](https://www.npmjs.com/package/specky-sdd): `specky-sdd` on npm
-
 
 ## License
 

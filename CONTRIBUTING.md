@@ -124,7 +124,7 @@ specky/
 ├── .apm/                        ← Asset source (agents, prompts, skills, hooks, instructions)
 ├── .claude-plugin/              ← Claude Code native plugin manifest (legacy)
 ├── config.yml                   ← Pipeline configuration
-├── scripts/                     ← Build tooling (build-claude-hooks.mjs, finalize-build.mjs, release.mjs)
+├── scripts/                     ← Build tooling (build-hook-manifests.mjs, finalize-build.mjs, release.mjs)
 ├── src/                         ← MCP engine + CLI (TypeScript, published to npm)
 │   ├── cli/                     ← Unified `specky` CLI (install, doctor, status, upgrade, hooks, serve)
 │   ├── services/                ← 28 services
@@ -133,9 +133,9 @@ specky/
 └── package.json                 ← npm package config
 ```
 
-**Source of truth**: everything lives under `.apm/` (agents, prompts, skills, hooks, instructions). The build step (`npm run build`) produces `dist/claude-hooks.json` and `dist/copilot-hooks.json` with IDE-specific path resolution and event filtering (Copilot manifests strip `SessionStart`/`UserPromptSubmit`/`Write|Edit|MultiEdit`). The `specky install` CLI copies `.apm/` assets into the user's workspace under `.claude/` (Claude Code) or `.github/` (GitHub Copilot) based on the `--ide` flag.
+**Source of truth**: everything lives under `.apm/` (agents, prompts, skills, hooks, instructions). The build step (`npm run build`) produces `dist/claude-hooks.json`, `dist/copilot-hooks.json`, and `dist/cursor-hooks.json` with IDE-specific path resolution and event filtering. The `specky install` CLI copies `.apm/` assets into the user's workspace under the requested `--target` layout.
 
-**Distribution**: as of v3.4, the primary (and only recommended) channel is `npm install -g specky-sdd@latest` + `specky install --ide=copilot` (or `--ide=claude`). Always specify the target IDE explicitly to avoid cross-read conflicts.
+**Distribution**: use `npm install -g specky-sdd@latest` + `specky install --target=<claude|copilot|cursor|opencode>`. Always specify the target IDE explicitly to avoid cross-read conflicts.
 
 ### Service Layer
 

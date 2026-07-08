@@ -148,7 +148,7 @@ function installCursor(ctx: Ctx): CopyResult {
     serverName: "specky",
   });
   console.log(`  .cursor/mcp.json: ${mcp.action}`);
-  console.log("  hooks: skipped (Cursor hook schema support is not enabled yet)");
+  console.log(`  .cursor/hooks.json: ${existsSync(ctx.targets.cursor.hooksManifest) ? "installed" : "skipped"}`);
   console.log("");
   return r;
 }
@@ -232,11 +232,14 @@ function printHeader(opts: InitOptions, workspace: string, resolvedTargets: Harn
   console.log("");
 }
 
-function printFooter(): void {
+function printFooter(resolvedTargets: HarnessTarget[]): void {
   console.log("");
   console.log("[specky init] ✅ Done. Next steps:");
-  console.log("  • In Claude Code or VS Code: restart the session to activate MCP + hooks");
-  console.log("  • Start the pipeline: invoke @specky-onboarding (Copilot) or /specky-onboarding (Claude)");
+  console.log("  • Restart or reload your target IDE session to activate MCP + hooks");
+  if (resolvedTargets.includes("cursor")) {
+    console.log("  • Cursor: confirm the specky MCP server is enabled in Settings → MCP");
+  }
+  console.log("  • Start the pipeline: invoke @specky-onboarding or /specky-onboarding");
   console.log("  • Run `npx specky doctor` anytime to validate install integrity");
 }
 
@@ -302,6 +305,6 @@ export async function runInit(opts: InitOptions): Promise<number> {
   const lockPath = writeInstallLock(ctx.targets, results, VERSION, ctx.copyOpts);
   console.log(`[specky init] Integrity manifest: ${lockPath}`);
 
-  printFooter();
+  printFooter(resolvedTargets);
   return 0;
 }

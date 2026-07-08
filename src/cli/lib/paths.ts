@@ -39,6 +39,8 @@ export function sourcePaths(pkgRoot: string): {
   templatesDir: string;
   claudeHooksManifest: string;
   copilotHooksManifest: string;
+  cursorHooksManifest: string;
+  speckyRunScript: string;
   configYml: string;
   apmYml: string;
   apmPolicyYml: string;
@@ -54,6 +56,8 @@ export function sourcePaths(pkgRoot: string): {
     templatesDir: resolve(pkgRoot, "templates"),
     claudeHooksManifest: resolve(pkgRoot, "dist/claude-hooks.json"),
     copilotHooksManifest: resolve(pkgRoot, "dist/copilot-hooks.json"),
+    cursorHooksManifest: resolve(pkgRoot, "dist/cursor-hooks.json"),
+    speckyRunScript: resolve(pkgRoot, ".apm/hooks/specky-run.sh"),
     configYml: resolve(pkgRoot, "config.yml"),
     apmYml: resolve(pkgRoot, "apm.yml"),
     apmPolicyYml: resolve(pkgRoot, "apm-policy.yml"),
@@ -84,6 +88,8 @@ export interface Targets {
     agents: string;
     commands: string;
     rules: string;
+    hooksScripts: string;
+    hooksRunner: string;
     hooksManifest: string;
     mcp: string;
   };
@@ -131,6 +137,8 @@ export function targetPaths(workspace: string): Targets {
       agents: resolve(cursor, "agents"),
       commands: resolve(cursor, "commands"),
       rules: resolve(cursor, "rules"),
+      hooksScripts: resolve(cursor, "hooks/scripts"),
+      hooksRunner: resolve(cursor, "hooks/specky-run.sh"),
       hooksManifest: resolve(cursor, "hooks.json"),
       mcp: resolve(cursor, "mcp.json"),
     },
