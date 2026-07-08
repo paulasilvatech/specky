@@ -147,13 +147,13 @@ step("fresh-install smoke test", () => {
     runSilent("npx", ["specky", "init", "--ide=both"], { cwd: fresh });
 
     const counts = {
-      ".claude/agents":               { expected: EXPECTED.agents,   got: countFiles(resolve(fresh, ".claude/agents")) },
-      ".claude/commands":             { expected: EXPECTED.prompts,  got: countFiles(resolve(fresh, ".claude/commands")) },
-      ".claude/skills":               { expected: EXPECTED.skills,   got: countDirs(resolve(fresh, ".claude/skills")) },
-      ".claude/hooks/scripts":        { expected: EXPECTED.hooks,    got: countFiles(resolve(fresh, ".claude/hooks/scripts")) },
-      ".github/agents":               { expected: EXPECTED.agents,   got: countFiles(resolve(fresh, ".github/agents")) },
-      ".github/prompts":              { expected: EXPECTED.prompts,  got: countFiles(resolve(fresh, ".github/prompts")) },
-      ".github/hooks/specky/scripts": { expected: EXPECTED.hooks,    got: countFiles(resolve(fresh, ".github/hooks/specky/scripts")) },
+      ".claude/agents": { expected: EXPECTED.agents, got: countFiles(resolve(fresh, ".claude/agents")) },
+      ".claude/commands": { expected: EXPECTED.prompts, got: countFiles(resolve(fresh, ".claude/commands")) },
+      ".claude/skills": { expected: EXPECTED.skills, got: countDirs(resolve(fresh, ".claude/skills")) },
+      ".claude/hooks/scripts": { expected: EXPECTED.hooks, got: countFiles(resolve(fresh, ".claude/hooks/scripts")) },
+      ".github/agents": { expected: EXPECTED.agents, got: countFiles(resolve(fresh, ".github/agents")) },
+      ".github/prompts": { expected: EXPECTED.prompts, got: countFiles(resolve(fresh, ".github/prompts")) },
+      ".github/hooks/specky/scripts": { expected: EXPECTED.hooks, got: countFiles(resolve(fresh, ".github/hooks/specky/scripts")) },
     };
     for (const [dir, { expected, got }] of Object.entries(counts)) {
       if (got !== expected) throw new Error(`${dir}: ${got} ≠ ${expected}`);

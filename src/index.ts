@@ -289,9 +289,9 @@ async function main(): Promise<void> {
     // Rate limiter — only active in HTTP mode when enabled in config
     const rateLimiter = config.rate_limit.enabled
       ? new RateLimiter(
-          config.rate_limit.max_requests_per_minute ?? 60,
-          config.rate_limit.burst ?? 10,
-        )
+        config.rate_limit.max_requests_per_minute ?? 60,
+        config.rate_limit.burst ?? 10,
+      )
       : null;
 
     if (rateLimiter) {
