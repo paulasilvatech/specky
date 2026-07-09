@@ -10,6 +10,7 @@ project whose `.mcp.json` pinned an old server stayed old even after
 ## Highlights
 
 ### 🔔 Version-drift advisory (always on, zero network)
+
 `specky doctor`, `specky status`, and the **MCP server at startup** compare the
 workspace's installed assets (`.specky/install.json`) against the running
 version and nudge:
@@ -23,6 +24,7 @@ This catches the most common case: the global CLI was updated but the project's
 pinned server/assets were not.
 
 ### 📬 Once-daily update banner (CLI only, opt-out)
+
 After `install`, `doctor`, `status`, `upgrade`, or `--version`, the CLI checks
 the npm registry at most once per day (2s timeout, silent offline) and prints:
 
@@ -31,6 +33,7 @@ Update available: specky-sdd v3.6.0 → v3.7.0  →  npm install -g specky-sdd@l
 ```
 
 **Honesty rules, enforced in code:**
+
 - **Never runs in `specky serve`** — the MCP server keeps making **zero
   outbound calls**, as promised.
 - Disabled automatically in CI (`CI=true`).
@@ -39,12 +42,14 @@ Update available: specky-sdd v3.6.0 → v3.7.0  →  npm install -g specky-sdd@l
 - No telemetry — nothing is sent beyond the single HTTP GET.
 
 ### 📚 "Staying up to date" docs
+
 README now covers the full menu: the banner, the one-command upgrade (and why
 `specky upgrade` matters — it re-pins `.mcp.json`), **Renovate/Dependabot** for
 teams pinning per-project, and **GitHub Watch → Custom → Releases** for release
 e-mails. SECURITY.md discloses the exact network behavior.
 
 ## Why not silent auto-update?
+
 Deliberate choice: a floating `@latest` server would run any compromised
 release instantly on every machine. Specky pins the server version per project
 (supply-chain safety) and **notifies loudly + upgrades in one command** instead

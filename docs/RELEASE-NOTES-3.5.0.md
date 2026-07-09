@@ -11,16 +11,19 @@ behaves exactly like 3.4.0.
 ## Highlights
 
 ### 🏢 Enterprise profile
+
 ```yaml
 # .specky/config.yml
 profile: enterprise
 ```
+
 …or `SPECKY_PROFILE=enterprise` / `SPECKY_ENTERPRISE=1` / `specky serve --profile=enterprise`.
 Flips the **defaults** of `audit_enabled`, `rbac.enabled`, `rate_limit.enabled`,
 and the new `audit.fail_closed` to ON. Explicit config values always win, and
 the server prints the resolved posture at startup.
 
 ### 🪪 Identity-based RBAC over HTTP
+
 `SDD_HTTP_TOKENS_FILE=/etc/specky/tokens.yml` maps each bearer token (plaintext
 or `token_sha256`) to a named **principal** and **role**. Constant-time
 compares, fail-closed loading, and strict precedence: **token role >
@@ -29,6 +32,7 @@ Denials and audit entries record *who*, not just which role. The shared
 `SDD_HTTP_TOKEN` keeps working unchanged.
 
 ### 🔏 Tamper-evident audit trail
+
 Set `SDD_AUDIT_HMAC_KEY[_FILE]` (key held **outside** the workspace) and every
 audit entry is HMAC-SHA256-signed with chained signatures. `sdd_verify_audit`
 now checks both the hash chain and the signatures (`hmac_checked`,
@@ -37,6 +41,7 @@ plain chain is detected. With `audit.fail_closed: true` (enterprise default),
 a tool call is refused if its pre-execution audit entry cannot be written.
 
 ### 📘 New guide: docs/ENTERPRISE-DEPLOYMENT.md
+
 Profiles · token table setup with hash generation · HMAC audit + external
 anchoring · hosted `serve --http` behind TLS (systemd/container examples) ·
 air-gapped tarball + private-registry installs · CI enforcement · full env-var

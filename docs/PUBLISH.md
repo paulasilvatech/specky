@@ -127,7 +127,7 @@ The container is opt-in. The `docker-publish` job in `publish.yml` runs only
 when the repo variable `PUBLISH_DOCKER=true` and pushes a **multi-arch**
 (`linux/amd64` + `linux/arm64`) image
 `ghcr.io/paulasilvatech/specky:{latest,X.Y.Z}` (cosign-signed + CycloneDX SBOM).
-See [docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md) for the
+See [ENTERPRISE-DEPLOYMENT.md](ENTERPRISE-DEPLOYMENT.md) for the
 container deployment model.
 
 **CI setup (recommended):**

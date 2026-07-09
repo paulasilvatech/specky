@@ -3,7 +3,7 @@
 > Generated from the live MCP server by `scripts/generate-api-reference.mjs`.
 > Do not edit by hand — run `node scripts/generate-api-reference.mjs` after changing tools.
 
-**Total tools: 58**
+Total tools: **58**
 
 | Tool | Title | Description | Required inputs |
 |------|-------|-------------|-----------------|

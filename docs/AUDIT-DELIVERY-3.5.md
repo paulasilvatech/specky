@@ -44,6 +44,7 @@ Reading the table honestly: the **engine, CLI, and plumbing are real** — phase
 ## 3. Delivered promises (30)
 
 ### Tool registry & pipeline engine
+
 - **58 MCP tools** — `tools/list` over MCP HTTP returns exactly 58 tools, `sdd_init` through `sdd_verify_audit`.
 - **Phase gating blocks out-of-phase tools** — in a fresh workspace, `sdd_write_design`, `sdd_run_analysis`, and `sdd_write_tasks` all return structured `phase_validation_failed` errors naming the current phase, allowed phases, and a fix hint; nothing is written to disk by blocked calls.
 - **Each phase produces its real artifact on disk** — the full pipeline driven over MCP produced substantive (non-scaffold) CONSTITUTION.md, SPECIFICATION.md (with the auditor's EARS text and acceptance-criteria table), DESIGN.md (with the supplied Mermaid and ADR), TASKS.md, and ANALYSIS.md (real traceability matrix), plus the 7-file companion spec package.
@@ -51,23 +52,28 @@ Reading the table honestly: the **engine, CLI, and plumbing are real** — phase
 - **The quality gate is computed, not asserted** — `sdd_run_analysis` returned BLOCK at 50% coverage with per-requirement gaps on an untraced package, hard-blocked `sdd_advance_phase`, then recomputed to APPROVE/100% after real mappings were added to DESIGN.md and TASKS.md on disk.
 
 ### Diagrams & visualization
+
 - **The `sdd_generate_diagram` schema enumerates 17 diagram types** covering every advertised category, including all 4 C4 levels, DFD, deployment, and network topology, plus a `source` enum of spec/design/tasks/constitution.
 - **All 17 types execute successfully** — 34 calls (17 types × 2 sources) against a driven pipeline all returned non-empty `mermaid_code` with the correct Mermaid header per type.
 
 ### Documentation generation & checkpoints
+
 - **The pipeline is drivable to Verify for the docs tools** — init through analyze (gate APPROVE, 100% coverage) to implement and verify, all over MCP, with every intermediate artifact verified on disk.
 - **The SDD Journey document is genuinely data-driven** — `docs/journey-001.md` contains real per-phase ISO timestamps for the 9 traversed phases, the actual APPROVE/100% gate decision with its `decided_at`, true requirement/task counts (3/4), artifact sizes, and the two real ADR titles from the design.
 - **Checkpoints give a true roundtrip restore** — `sdd_checkpoint` snapshotted 6 artifacts with full contents; after tampering two artifacts, `sdd_restore` restored both byte-identically (verified by byte-compare) and created a CP-AUTO-BACKUP capturing the tampered state.
 
 ### Test generation & environments
+
 - **`sdd_generate_dockerfile` works as advertised** — correct tech-stack detection from DESIGN.md (TypeScript/Express/node22), a genuine multi-stage `node:22-slim` Dockerfile (npm ci, build, slim runtime, EXPOSE, CMD), a valid docker-compose.yml, and a sensible .dockerignore.
 
 ### Quality, compliance & intelligence
+
 - **Intent drift detection with amendment suggestions** — drift scores computed from real artifact text moved with input (100 → 67 as spec coverage of constitutional principles changed), orphaned-principle lists named the exact injected headings, drift history persisted, and `sdd_amend` returned concrete, principle-specific amendment actions.
 - **Model routing decision table** — `sdd_model_routing` returns a coherent table covering exactly the 10 pipeline phases with per-phase model, fallback chain, thinking flag, rationale, and a cost analysis that scales linearly with team size (49% savings vs. opus-only in abstract premium units, as documented).
 - **Context tiering with computed token savings** — `sdd_context_status` assigns all 10 artifacts to hot/domain/cold tiers with token numbers verified to derive from actual file bytes (a 317-byte CONSTITUTION.md reported exactly ceil(317/4) = 80 hot tokens); totals and savings moved across workspaces with content.
 
 ### CLI toolkit & installed assets
+
 - **`specky install --ide=copilot`** installs exactly 13 agents / 22 prompts / 8 skills / 16 hooks with substantive (non-stub) content, plus `.vscode/mcp.json` and an install manifest.
 - **`specky install --ide=claude`** installs 13 agents / 22 commands / 8 skills / 16 hook scripts; `.mcp.json` pins `specky-sdd@3.5.0` — version-pinned, no `@latest`.
 - **`.claude/settings.json` permissions are least-privilege** — 11 allow rules; no `Bash(rm:*)`, no `WebFetch`, no bare `Bash(bash:*)` or `Bash(*)`.
@@ -80,6 +86,7 @@ Reading the table honestly: the **engine, CLI, and plumbing are real** — phase
 - **The npm tarball ships everything** — `npm pack --dry-run`: 488 files including `.apm/` (63), `templates/` (22), `dist/` (396), matching the installer's source assets exactly.
 
 ### Input formats & MCP-to-MCP integration
+
 - **Meeting transcripts (VTT and SRT)** — `sdd_import_transcript` genuinely extracted participants, decisions, requirements, and constraints from crafted Teams-style VTT and Zoom-style SRT content, and is correctly phase-gated.
 - **Markdown/plain-text/raw-text documents** — `sdd_import_document` returned correct format detection, word counts, and verbatim content; `sdd_batch_import` processed a directory of 8 files with per-file metadata.
 - **Codebase scan (brownfield)** — `sdd_scan_codebase` returned an accurate recursive file tree and correct tech-stack detection (TypeScript/Express/npm/Node.js) from a seeded project.

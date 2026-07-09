@@ -45,10 +45,10 @@
   <rect width="1200" height="630" fill="url(#glow1)"/>
   <rect width="1200" height="630" fill="url(#glow2)"/>
 
-  <!-- Badge: Open Source · MIT License · v3.3 -->
+  <!-- Badge: Open Source · MIT License · v3.9 -->
   <rect x="410" y="80" width="380" height="32" rx="16" fill="#7c3aed" fill-opacity="0.12" stroke="#7c3aed" stroke-opacity="0.25" stroke-width="1"/>
   <circle cx="434" cy="96" r="4" fill="#a78bfa"/>
-  <text x="600" y="101" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#c4b5fd" letter-spacing="0.3">Open Source · MIT License · v3.3</text>
+  <text x="600" y="101" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#c4b5fd" letter-spacing="0.3">Open Source · MIT License · v3.9</text>
 
   <!-- Title: Stop vibe coding. -->
   <text x="600" y="178" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="64" font-weight="900" fill="#ffffff" letter-spacing="-2.5">Stop vibe coding.</text>
@@ -58,9 +58,9 @@
 
   <!-- Subtitle -->
   <text x="600" y="300" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="17" fill="rgba(255,255,255,0.55)" letter-spacing="0.2">
-    <tspan font-weight="600" fill="rgba(255,255,255,0.85)">The complete SDD plugin</tspan> that keeps your requirements, code, and tests in sync.
+    <tspan font-weight="600" fill="rgba(255,255,255,0.85)">The complete SDD toolkit</tspan> that keeps your requirements, code, and tests in sync.
   </text>
-  <text x="600" y="326" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="17" fill="rgba(255,255,255,0.55)">13 agents, 57 MCP tools, 22 prompts, 14 hooks, 10-phase enforced pipeline.</text>
+  <text x="600" y="326" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="17" fill="rgba(255,255,255,0.55)">13 agents, 58 MCP tools, 22 prompts, 14 skills, 16 hooks.</text>
   <text x="600" y="352" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="17" fill="rgba(255,255,255,0.55)">Six compliance frameworks. One install, everything works.</text>
 
   <!-- CTA Button -->
@@ -72,7 +72,7 @@
   <!-- Install command bar -->
   <rect x="370" y="455" width="460" height="44" rx="10" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
   <text x="394" y="482" font-family="SF Mono, Fira Code, monospace" font-size="14" fill="#a78bfa">$</text>
-  <text x="414" y="482" font-family="SF Mono, Fira Code, monospace" font-size="14" fill="rgba(255,255,255,0.5)">apm install paulasilvatech/specky</text>
+  <text x="414" y="482" font-family="SF Mono, Fira Code, monospace" font-size="14" fill="rgba(255,255,255,0.5)">npm install -g specky-sdd@latest</text>
 
   <!-- Stats bar at bottom -->
   <rect x="0" y="530" width="1200" height="100" fill="rgba(255,255,255,0.02)"/>
@@ -84,8 +84,8 @@
     <text x="130" y="568" font-size="28" font-weight="800" fill="#7c3aed">13</text>
     <text x="130" y="590" font-size="10" font-weight="500" fill="rgba(255,255,255,0.35)" letter-spacing="1.5" text-transform="uppercase">AGENTS</text>
 
-    <!-- 57 MCP Tools -->
-    <text x="330" y="568" font-size="28" font-weight="800" fill="#7c3aed">57</text>
+    <!-- 58 MCP Tools -->
+    <text x="330" y="568" font-size="28" font-weight="800" fill="#7c3aed">58</text>
     <text x="330" y="590" font-size="10" font-weight="500" fill="rgba(255,255,255,0.35)" letter-spacing="1.5">MCP TOOLS</text>
 
     <!-- 10 Phases -->
@@ -96,8 +96,8 @@
     <text x="690" y="568" font-size="28" font-weight="800" fill="#7c3aed">22</text>
     <text x="690" y="590" font-size="10" font-weight="500" fill="rgba(255,255,255,0.35)" letter-spacing="1.5">PROMPTS</text>
 
-    <!-- 14 Hooks -->
-    <text x="870" y="568" font-size="28" font-weight="800" fill="#7c3aed">14</text>
+    <!-- 16 Hooks -->
+    <text x="870" y="568" font-size="28" font-weight="800" fill="#7c3aed">16</text>
     <text x="870" y="590" font-size="10" font-weight="500" fill="rgba(255,255,255,0.35)" letter-spacing="1.5">HOOKS</text>
 
     <!-- 6 Compliance -->

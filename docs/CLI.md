@@ -30,6 +30,7 @@ specky install [--ide=<claude|copilot|both|auto>] [--force] [--dry-run]
 **What it writes (depends on `--target`):**
 
 When `--target=copilot`:
+
 - `.github/agents/*.agent.md` (13 files)
 - `.github/prompts/*.prompt.md` (22)
 - `.github/skills/*/SKILL.md` (14)
@@ -43,6 +44,7 @@ When `--target=copilot`:
 The installed Copilot agents use GitHub Copilot-native tool identifiers such as `search`, `agent`, and namespaced Specky MCP tools like `specky/sdd_get_status`. Prompt files use `agent: agent` frontmatter so VS Code runs them with agent-mode tool access.
 
 When `--target=claude`:
+
 - `.claude/agents/*.md` (13 files)
 - `.claude/commands/*.md` (22 slash commands)
 - `.claude/skills/*/SKILL.md` (14 skills)
@@ -56,6 +58,7 @@ When `--target=claude`:
 The installed Claude agents use Claude-native tool identifiers such as `Read`, `Glob`, `Grep`, `Task`, and Specky MCP tools like `mcp__specky__sdd_get_status`. Claude slash commands omit Copilot-only `agent:` frontmatter.
 
 When `--target=cursor`:
+
 - `.cursor/agents/*.md`
 - `.cursor/commands/*.md`
 - `.cursor/rules/specky-sdd.mdc`
@@ -64,6 +67,7 @@ When `--target=cursor`:
 - `.cursor/mcp.json` with `mcpServers.specky`
 
 When `--target=opencode`:
+
 - `.opencode/agents/*.md`
 - `.opencode/commands/*.md`
 - `.agents/skills/*/SKILL.md`
@@ -71,11 +75,13 @@ When `--target=opencode`:
 - OpenCode has no hooks concept, so hook primitives are skipped.
 
 When `--target=agent-skills`:
+
 - `.agents/skills/*/SKILL.md` only.
 
 If Copilot is part of the target set (`copilot`, `both`, or `all`), Specky strips `hooks` from `.claude/settings.json` to prevent VS Code Copilot from cross-reading Claude lifecycle hooks and blocking tool calls.
 
 Both modes also write:
+
 - `.specky/config.yml` — project pipeline config
 - `.specky/install.lock` — SHA256 manifest of every installed file
 - `.specky/install.json` — install metadata (version, ide, timestamp)
@@ -124,6 +130,7 @@ specky doctor [--fix] [--verbose]
 | `--verbose` | List every tracked file (not just failures) |
 
 **Exit codes:**
+
 - `0` — healthy install (all checksums match)
 - `1` — drift detected (user may have modified files); non-destructive
 - `2` — install missing or lockfile absent

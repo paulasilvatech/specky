@@ -44,7 +44,7 @@ function render(tools) {
     "> Generated from the live MCP server by `scripts/generate-api-reference.mjs`.",
     "> Do not edit by hand — run `node scripts/generate-api-reference.mjs` after changing tools.",
     "",
-    `**Total tools: ${sorted.length}**`,
+    `Total tools: **${sorted.length}**`,
     "",
     "| Tool | Title | Description | Required inputs |",
     "|------|-------|-------------|-----------------|",

@@ -108,6 +108,7 @@ The APM commands validate the package that feeds `specky install`. They do not r
 ## How to Invoke Specky
 
 ### VS Code + GitHub Copilot (@ agents + /prompts)
+
 ```
 @specky-onboarding        → Interactive wizard (default entry point)
 @specky-orchestrator      → Full pipeline coordinator
@@ -125,6 +126,7 @@ The APM commands validate the package that feeds `specky install`. They do not r
 ```
 
 Ready-to-use prompts (slash commands):
+
 ```
 /specky-greenfield        → New project from scratch
 /specky-brownfield        → New feature in existing system
@@ -134,6 +136,7 @@ Ready-to-use prompts (slash commands):
 ```
 
 ### Claude Code (slash commands)
+
 ```
 /specky:greenfield        → New project from scratch
 /specky:brownfield        → New feature in existing system
@@ -193,6 +196,7 @@ Copy, fill in the fields between `[brackets]`, and submit.
 ### Starting a Project
 
 #### Greenfield — New project from scratch
+
 **When to use:** You have an idea or brief and want to build from scratch.
 **Prompt:** `/specky-greenfield`
 
@@ -204,11 +208,13 @@ Expected stack: Node.js + PostgreSQL + React
 Timeline: MVP in 8 weeks
 Compliance: GDPR
 ```
+
 **What happens:** `specky-requirements-engineer` → `specky-sdd-init` → pipeline ready for research.
 
 ---
 
 #### Brownfield — Feature in an existing system
+
 **When to use:** You have a running system and want to add a new feature without breaking anything.
 **Prompt:** `/specky-brownfield`
 
@@ -218,11 +224,13 @@ Existing system: Django ERP + PostgreSQL in production
 Why now: Enterprise clients requesting it
 Constraints: Must not impact the existing v2 API
 ```
+
 **What happens:** `sdd_scan_codebase` detects stack → `specky-requirements-engineer` considers legacy constraints → `specky-sdd-init` initializes with `project_type: brownfield`.
 
 ---
 
 #### Migration / Modernization
+
 **When to use:** You need to migrate technologies or rewrite a legacy system.
 **Prompt:** `/specky-migration`
 
@@ -236,6 +244,7 @@ Zero-downtime: yes
 ---
 
 #### API Design
+
 **When to use:** You're building or redesigning a public or internal API.
 **Prompt:** `/specky-api`
 
@@ -252,9 +261,11 @@ SLA: 99.99%
 ### Per Pipeline Phase
 
 #### Phase 1 — Discover
+
 **Prompt:** `/specky-research`
 
 Example with external documents:
+
 ```
 Feature ID: 002-payment-gateway
 Documents to import: docs/vendor/stripe-integration-guide.pdf, transcripts/discovery-call.vtt
@@ -264,9 +275,11 @@ Open questions: "Do we need to support ACH besides credit cards?"
 ---
 
 #### Phase 2 — Specify
+
 **Prompt:** `/specky-specify`
 
 Example when the spec has known ambiguities:
+
 ```
 Feature ID: 002-payment-gateway
 Concerns: REQ-002-PAY-003 mentions "immediate confirmation" but
@@ -276,9 +289,11 @@ async payment can take minutes. This needs clarification.
 ---
 
 #### Phase 3 — Clarify
+
 **Prompt:** `/specky-clarify`
 
 Example:
+
 ```
 Domains that MUST be covered: Checkout, Refunds, Notifications, Audit
 Out of scope: Recurring subscription management (deferred to v2)
@@ -287,9 +302,11 @@ Out of scope: Recurring subscription management (deferred to v2)
 ---
 
 #### Phase 4 — Design
+
 **Prompt:** `/specky-design`
 
 Example:
+
 ```
 Constraints: Must use existing Redis for sessions, deploy on AWS ECS
 Preferred patterns: Hexagonal Architecture
@@ -298,9 +315,11 @@ Preferred patterns: Hexagonal Architecture
 ---
 
 #### Phase 5 — Tasks
+
 **Prompt:** `/specky-tasks`
 
 Example:
+
 ```
 Team: 3 devs
 Sprint: 2 weeks
@@ -311,9 +330,11 @@ P0 (MVP): basic checkout with credit card. ACH is P1.
 ---
 
 #### Phase 7 — Implement
+
 **Prompt:** `/specky-implement`
 
 Example:
+
 ```
 Task: TASK-006-3: Implement POST /payments endpoint
 Environment: devcontainer with local PostgreSQL and Stripe test mode
@@ -322,9 +343,11 @@ Environment: devcontainer with local PostgreSQL and Stripe test mode
 ---
 
 #### Phase 8 — Verify
+
 **Prompt:** `/specky-verify`
 
 Example:
+
 ```
 Current coverage: 71% unit
 Criteria that concern me: gateway timeout scenario (REQ-002-PAY-009)
@@ -333,9 +356,11 @@ Criteria that concern me: gateway timeout scenario (REQ-002-PAY-009)
 ---
 
 #### Phase 9 — Release
+
 **Prompt:** `/specky-release`
 
 Example:
+
 ```
 Branch: spec/002-payment-gateway
 Target: develop (then stage → main after gates pass)
@@ -348,6 +373,7 @@ Observability: Grafana dashboards already configured
 ### Special Cases
 
 #### Extract requirements from a Figma design
+
 **When to use:** The designer delivered a Figma and you want to turn the flows into EARS requirements.
 **Prompt:** `/specky-from-figma`
 
@@ -362,6 +388,7 @@ Still needs defining: shipping rules, session timeout, API error states
 ---
 
 #### Turn a meeting transcript into requirements
+
 **When to use:** You had a discovery meeting and want to extract requirements from the discussion.
 **Prompt:** `/specky-from-meeting`
 
@@ -377,6 +404,7 @@ Decisions I remember: "ACH is P1, not MVP" and "must integrate with existing Str
 ---
 
 #### Check drift between code and spec
+
 **When to use:** A few weeks have passed, scope changed, and you want to know if the code still aligns with the spec.
 **Prompt:** `/specky-check-drift`
 
@@ -389,6 +417,7 @@ Files that changed: src/auth/middleware.ts, src/auth/session.ts
 ---
 
 #### Resolve a conflict between two requirements
+
 **When to use:** Two requirements contradict each other and you need a documented decision.
 **Prompt:** `/specky-resolve-conflict`
 
@@ -403,9 +432,11 @@ Hypothesis: Perhaps these apply to different roles (admin vs. regular user)?
 ### Troubleshooting
 
 #### Hook blocking the workflow
+
 **Prompt:** `/specky-debug-hook`
 
 Most common issues:
+
 | Symptom | Likely cause | Quick fix |
 |---------|-------------|-----------|
 | `specky-security-scan.sh` blocking | String "api_key" in example spec | Rename to `API_KEY_EXAMPLE` or move to a comment |
@@ -416,6 +447,7 @@ Most common issues:
 ---
 
 #### Check pipeline status
+
 **Prompt:** `/specky-pipeline-status`
 
 Use when: You came back from vacation and don't know where a feature was. Or you want to see all active features for a team.
@@ -423,6 +455,7 @@ Use when: You came back from vacation and don't know where a feature was. Or you
 ---
 
 #### Return to a previous phase
+
 **Prompt:** `/specky-reset-phase`
 
 **When to use:** Requirements changed mid-implementation. Specky creates a git snapshot before any rollback so you don't lose work.
@@ -472,6 +505,7 @@ A: No. For small features, you can move quickly through the core phases (Init �
 
 **Q: What is EARS notation?**
 A: Easy Approach to Requirements Syntax — 6 patterns for writing requirements that eliminate ambiguity:
+
 - *Ubiquitous:* "The system shall..."
 - *Event-driven:* "When [trigger], the system shall..."
 - *State-driven:* "While [state], the system shall..."

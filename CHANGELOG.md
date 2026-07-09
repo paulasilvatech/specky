@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Audited public documentation and website assets: corrected stale 8-skill/v3.5 counts, regenerated the v3.9 social image, repaired relative documentation links, and brought the public Markdown set to zero lint errors.
+- Added regression coverage for documentation links, local website assets, public primitive counts, and social-image version/count consistency.
+
 ## [3.9.0] - 2026-07-09
 
 Cursor-native hook automation, six dedicated phase skills, full `specky doctor` install parity across harnesses, and cross-target instruction isolation fixes.
