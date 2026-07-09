@@ -285,6 +285,16 @@ function checkClaudeInstall(targets: Targets, workspace: string): Check[] {
   ];
 }
 
+function checkOpenCodeInstall(targets: Targets, workspace: string): Check[] {
+  return [
+    checkMcpRegistration(targets.opencode.mcp, "opencode.json"),
+    checkFileCount(targets.opencode.agents, 13, "OpenCode agents", (name) => name.startsWith("specky-") && name.endsWith(".md")),
+    checkFileCount(targets.opencode.commands, 22, "OpenCode commands", (name) => name.startsWith("specky-") && name.endsWith(".md")),
+    checkFileCount(targets.shared.agentSkills, 14, "OpenCode skills", (name, path) => name.startsWith("specky-") && statSync(path).isDirectory()),
+    checkNoCopilotLeak(targets.opencode.root, workspace, "OpenCode leakage"),
+  ];
+}
+
 function loadInstallMeta(path: string): InstallMeta | null {
   return readJsonSafe<InstallMeta>(path);
 }
@@ -351,7 +361,7 @@ function runConfigChecks(
   }
 
   if (installTargets.includes("opencode")) {
-    checks.push(checkMcpRegistration(targets.opencode.mcp, "opencode.json"));
+    checks.push(...checkOpenCodeInstall(targets, workspace));
   }
 
   return checks;
