@@ -1,6 +1,6 @@
 # Contributing to Specky
 
-Thank you for your interest in contributing to Specky. This guide covers the v3.7.x architecture, development patterns, and submission process.
+Thank you for your interest in contributing to Specky. This guide covers the v3.9.x architecture, development patterns, and submission process.
 
 ---
 
@@ -22,7 +22,7 @@ Thank you for your interest in contributing to Specky. This guide covers the v3.
 
 ## Architecture Overview
 
-Specky v3.7.0 is an MCP server that exposes **58 tools** organized into a 10-phase Spec-Driven Development pipeline. The codebase comprises **93 source files**, **22 templates**, and is structured as follows:
+Specky v3.9.0 is an MCP server that exposes **58 tools** organized into a 10-phase Spec-Driven Development pipeline. The codebase comprises **108 source files**, **22 templates**, and is structured as follows:
 
 ```
 src/

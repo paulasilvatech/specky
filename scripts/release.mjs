@@ -27,7 +27,7 @@ const REPO = resolve(fileURLToPath(import.meta.url), "../..");
 const EXPECTED = {
   agents: 13,
   prompts: 22,
-  skills: 8,
+  skills: 14,
   hooks: 16,
   templates: 22,
 };

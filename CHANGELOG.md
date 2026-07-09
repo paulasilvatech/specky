@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.9.0] - 2026-07-09
+
+Cursor-native hook automation, six dedicated phase skills, full `specky doctor` install parity across harnesses, and cross-target instruction isolation fixes.
+
+### Added
+
+- **Cursor-native hook automation.** `specky install --target=cursor` now installs `.cursor/hooks.json` (Cursor schema v1), the `.cursor/hooks/specky-run.sh` stdin adapter, and `.cursor/hooks/scripts/` (16 scripts). Blocking gates (artifact validation, phase gate, security scan, release gate) deny unsafe actions with `failClosed`; advisory gates warn without blocking.
+- **Six dedicated phase companion skills** (14 total): `specky-sdd-init`, `specky-spec-engineer`, `specky-sdd-clarify`, `specky-design-architect`, `specky-task-planner`, and `specky-quality-reviewer`. Each phase agent loads its dedicated skill first; `specky-sdd-pipeline` remains the shared cross-phase overview.
+- **Dedicated Cursor instruction primitive** compiled to `.cursor/rules/specky-sdd.mdc` with `alwaysApply` and a neutral title.
+- **Dedicated Claude instruction primitive** compiled to `.claude/rules/specky-sdd.md` with neutral naming (no Copilot title or `@workspace` references).
+- **Full `specky doctor` install parity** for Cursor (11 checks), Claude (10), Copilot (9), and OpenCode (7): agent/prompt/skill/hook-script counts, rule format, MCP registration, and a cross-target leakage scan.
+- Regression suites: `cursor-target`, `copilot-target`, `claude-target`, and `opencode-target`.
+- APM policy now allows the Cursor-native hook events (`sessionStart`, `beforeSubmitPrompt`, `beforeMCPExecution`, `afterMCPExecution`, `preToolUse`, `postToolUse`, `stop`).
+
+### Changed
+
+- Renamed the hook-manifest generator `scripts/build-claude-hooks.mjs` → `scripts/build-hook-manifests.mjs`; it now emits Claude, Copilot, **and** Cursor manifests from the single `.apm/hooks/sdd-hooks.json` source of truth.
+- `specky compile` is now target-aware: each target renders only its own instruction primitive (with the Copilot primitive as the neutral fallback) instead of concatenating every primitive into each root context file.
+- EARS notation is unified to the canonical six patterns (Ubiquitous, Event-driven, State-driven, Optional, Unwanted, Complex) across the rule, phase agents, and the `specky-sdd-pipeline` skill.
+- All slash-command prompts now carry an `argument-hint`.
+
+### Fixed
+
+- Copilot installs no longer copy the Cursor/Claude instruction primitives into `.github/instructions/` (cross-target leak); only the Copilot instruction is installed and stale primitives are removed.
+- Claude installs no longer receive the Copilot-named rule (`copilot-instructions.md`) or `@workspace`/`applyTo` leakage; the stale file is removed on install.
+- Copilot instruction content: merged the orphaned `## Rule #7`/`## Rule #8` headings back into the Key Rules list and replaced the outdated `@workspace /prompt-name` invocation with `/prompt-name`.
+- Corrected duplicated workflow step numbering in phase agents.
+
 ## [3.8.0] - 2026-07-07
 
 Wave 1 multi-harness APM targets (Cursor, OpenCode, Agent Skills) plus a multi-feature phase-advancement fix.
