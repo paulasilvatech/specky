@@ -140,3 +140,6 @@ jobs:
           output-file: sbom.cyclonedx.json
           upload-artifact: true
           artifact-name: sbom-${{ steps.pkg.outputs.version }}
+          # Repository releases are immutable; attaching assets after publish
+          # returns HTTP 422. Keep the SBOM as a workflow artifact instead.
+          upload-release-assets: false
