@@ -2591,7 +2591,7 @@
           <div class="feat">
             <div class="fi">🧩</div>
             <h3 data-i18n="feat.complete_h">Complete Toolkit</h3>
-            <p data-i18n="feat.complete_p">13 agents orchestrate the pipeline, 22 prompts cover common workflows, 8
+            <p data-i18n="feat.complete_p">13 agents orchestrate the pipeline, 22 prompts cover common workflows, 14
               skills carry domain knowledge, and 16 hooks guard transitions. One install.</p>
           </div>
           <div class="feat">
@@ -2644,10 +2644,10 @@
             <span class="ti">⚡</span> <span class="tb-label">Claude Code</span>
           </button>
           <button class="tab-btn" onclick="switchTab('cursor')" role="tab">
-            <span class="ti">🎯</span> <span class="tb-label">Cursor / Windsurf</span>
+            <span class="ti">🎯</span> <span class="tb-label">Cursor</span>
           </button>
-          <button class="tab-btn" onclick="switchTab('vscode')" role="tab">
-            <span class="ti">💻</span> <span class="tb-label">VS Code</span>
+          <button class="tab-btn" onclick="switchTab('opencode')" role="tab">
+            <span class="ti">⌨️</span> <span class="tb-label">OpenCode</span>
           </button>
           <button class="tab-btn" onclick="switchTab('airgap')" role="tab">
             <span class="ti">🔒</span> <span class="tb-label">Air-Gapped</span>
@@ -2669,14 +2669,14 @@
             <div class="code-block-header">
               <span class="code-block-title">Terminal</span>
               <button class="code-copy-btn" data-copy="npm install -g specky-sdd@latest
-        specky install --ide=copilot
+        specky install --target=copilot
         specky doctor">Copy</button>
             </div>
             <pre><span class="cm"># Install the CLI globally once</span>
         <span class="dk">$</span> npm install -g specky-sdd@latest
 
         <span class="cm"># Bootstrap this project for VS Code + GitHub Copilot</span>
-        <span class="dk">$</span> specky install --ide=copilot
+        <span class="dk">$</span> specky install --target=copilot
 
         <span class="cm"># Verify integrity and configuration</span>
         <span class="dk">$</span> specky doctor</pre>
@@ -2691,7 +2691,8 @@
               <div class="step-content">
                 <h4>Use Specky's 13 agents and 22 prompts</h4>
                 <p>Open Copilot Chat → Agent mode → type <code>@specky-onboarding</code>,
-                  <code>@specky-orchestrator</code>, <code>@sdd-init</code>, <code>@implementer</code>, or use prompts
+                  <code>@specky-orchestrator</code>, <code>@specky-sdd-init</code>, <code>@specky-implementer</code>, or
+                  use prompts
                   like <code>/specky-onboarding</code>.
                 </p>
               </div>
@@ -2706,9 +2707,10 @@
           <div class="code-block" style="margin-top:12px">
             <div class="code-block-header">
               <span class="code-block-title">Copilot Chat — Agent Mode</span>
-              <button class="code-copy-btn" data-copy="@sdd-init initialize spec for user authentication">Copy</button>
+              <button class="code-copy-btn"
+                data-copy="@specky-sdd-init initialize spec for user authentication">Copy</button>
             </div>
-            <pre><span class="kw">@sdd-init</span> initialize spec for user authentication</pre>
+            <pre><span class="kw">@specky-sdd-init</span> initialize spec for user authentication</pre>
           </div>
           <div class="install-note">
             <span class="in-icon">💡</span>
@@ -2733,14 +2735,14 @@
             <div class="code-block-header">
               <span class="code-block-title">Terminal</span>
               <button class="code-copy-btn" data-copy="npm install -g specky-sdd@latest
-        specky install --ide=claude
+        specky install --target=claude
         specky doctor">Copy</button>
             </div>
             <pre><span class="cm"># Install the CLI globally once</span>
         <span class="dk">$</span> npm install -g specky-sdd@latest
 
         <span class="cm"># Bootstrap this project for Claude Code</span>
-        <span class="dk">$</span> specky install --ide=claude
+        <span class="dk">$</span> specky install --target=claude
 
         <span class="cm"># Verify integrity and configuration</span>
         <span class="dk">$</span> specky doctor</pre>
@@ -2763,9 +2765,9 @@
               <span class="code-block-title">Claude Code CLI</span>
               <button class="code-copy-btn" data-copy-id="c-claude-cmds">Copy</button>
             </div>
-            <pre id="c-claude-cmds"><span class="kw">/sdd:spec</span> write a spec for user auth
-<span class="kw">/sdd:design</span> design the auth architecture
-<span class="kw">/sdd:review</span> check traceability</pre>
+            <pre id="c-claude-cmds"><span class="kw">/specky-specify</span> write a spec for user auth
+<span class="kw">/specky-design</span> design the auth architecture
+<span class="kw">/specky-verify</span> check traceability</pre>
           </div>
           <div class="install-note">
             <span class="in-icon">💡</span>
@@ -2775,14 +2777,13 @@
           </div>
         </div>
 
-        <!-- Cursor / Windsurf -->
+        <!-- Cursor -->
         <div class="tab-panel" id="tab-cursor">
           <ol class="install-steps">
             <li>
               <div class="step-content">
-                <h4>Install Specky for an MCP-compatible host</h4>
-                <p>Install the CLI and use the generated MCP registration with any host that supports stdio MCP servers.
-                </p>
+                <h4>Install Specky for Cursor</h4>
+                <p>Install Cursor-native agents, commands, rules, hooks, skills, and MCP registration.</p>
               </div>
             </li>
           </ol>
@@ -2790,22 +2791,23 @@
             <div class="code-block-header">
               <span class="code-block-title">Terminal</span>
               <button class="code-copy-btn" data-copy="npm install -g specky-sdd@latest
-        specky install --ide=copilot
+        specky install --target=cursor
         specky doctor">Copy</button>
             </div>
             <pre><span class="cm"># Install the CLI globally once</span>
         <span class="dk">$</span> npm install -g specky-sdd@latest
 
-        <span class="cm"># Generate project MCP registration</span>
-        <span class="dk">$</span> specky install --ide=copilot
+        <span class="cm"># Bootstrap this project for Cursor</span>
+        <span class="dk">$</span> specky install --target=cursor
 
         <span class="cm"># Verify the server and generated config</span>
         <span class="dk">$</span> specky doctor</pre>
           </div>
           <div class="install-note" style="margin-top:12px">
             <span class="in-icon">💡</span>
-            <p><strong>Everything is project-scoped.</strong> The generated MCP configuration can be reviewed,
-              committed, and adapted for your host.</p>
+            <p><strong>Everything is project-scoped.</strong> Specky writes <code>.cursor/mcp.json</code>,
+              <code>.cursor/rules/specky-sdd.mdc</code>, native hooks, agents, commands, and shared skills.
+            </p>
           </div>
           <ol class="install-steps" style="margin-top:16px">
             <li>
@@ -2818,13 +2820,13 @@
           </ol>
         </div>
 
-        <!-- VS Code -->
-        <div class="tab-panel" id="tab-vscode">
+        <!-- OpenCode -->
+        <div class="tab-panel" id="tab-opencode">
           <ol class="install-steps">
             <li>
               <div class="step-content">
                 <h4>Install the Specky CLI from npm</h4>
-                <p>One command installs the MCP server, agents, prompts, skills, and hooks for VS Code.</p>
+                <p>One command installs OpenCode-native agents, commands, shared skills, and MCP registration.</p>
               </div>
             </li>
           </ol>
@@ -2832,29 +2834,30 @@
             <div class="code-block-header">
               <span class="code-block-title">Terminal</span>
               <button class="code-copy-btn" data-copy="npm install -g specky-sdd@latest
-        specky install --ide=copilot
+        specky install --target=opencode
         specky doctor">Copy</button>
             </div>
             <pre><span class="cm"># Install the CLI globally once</span>
         <span class="dk">$</span> npm install -g specky-sdd@latest
 
-        <span class="cm"># Bootstrap this project for VS Code + GitHub Copilot</span>
-        <span class="dk">$</span> specky install --ide=copilot
+        <span class="cm"># Bootstrap this project for OpenCode</span>
+        <span class="dk">$</span> specky install --target=opencode
 
         <span class="cm"># Verify integrity and configuration</span>
         <span class="dk">$</span> specky doctor</pre>
           </div>
           <div class="install-note" style="margin-top:12px">
             <span class="in-icon">💡</span>
-            <p><strong>Everything is auto-configured.</strong> Specky creates <code>.vscode/mcp.json</code>
-              automatically. Requires VS Code with GitHub Copilot extension.</p>
+            <p><strong>Everything is auto-configured.</strong> Specky creates <code>opencode.json</code>,
+              <code>.opencode/agents/</code>, <code>.opencode/commands/</code>, and <code>.agents/skills/</code>.
+            </p>
           </div>
           <ol class="install-steps" style="margin-top:16px">
             <li>
               <div class="step-content">
                 <h4>Verify installation</h4>
-                <p>Open Copilot Chat → Agent mode → type <code>@specky list tools</code> to confirm 58 tools are
-                  registered.</p>
+                <p>Open OpenCode and ask it to use the Specky MCP server, or run <code>specky doctor</code> to
+                  verify all generated assets.</p>
               </div>
             </li>
           </ol>
@@ -2880,7 +2883,7 @@
               <button class="code-copy-btn" data-copy-id="c-airgap-pack">Copy</button>
             </div>
             <pre id="c-airgap-pack"><span class="dk">$</span> npm pack specky-sdd
-<span class="cm"># produces: specky-sdd-3.5.0.tgz</span></pre>
+<span class="cm"># produces: specky-sdd-3.9.0.tgz</span></pre>
           </div>
           <ol class="install-steps" style="margin-top:16px">
             <li>
@@ -2892,9 +2895,9 @@
           <div class="code-block" style="margin-top:12px">
             <div class="code-block-header">
               <span class="code-block-title">Terminal (air-gapped machine)</span>
-              <button class="code-copy-btn" data-copy="npm install -g ./specky-sdd-3.5.0.tgz">Copy</button>
+              <button class="code-copy-btn" data-copy="npm install -g ./specky-sdd-3.9.0.tgz">Copy</button>
             </div>
-            <pre><span class="dk">$</span> npm install -g ./specky-sdd-3.5.0.tgz</pre>
+            <pre><span class="dk">$</span> npm install -g ./specky-sdd-3.9.0.tgz</pre>
           </div>
           <ol class="install-steps" style="margin-top:16px">
             <li>
@@ -3042,7 +3045,7 @@
             <div class="ii">🧠</div>
             <h3>GitHub Copilot</h3>
             <p data-i18n="ide.copilot_p">13 agents + 22 prompts</p>
-            <div class="ib">@specky-onboarding @specky-orchestrator @sdd-init +10</div>
+            <div class="ib">@specky-onboarding @specky-orchestrator @specky-sdd-init +10</div>
           </div>
           <div class="ide">
             <div class="ii">⚡</div>
@@ -3052,15 +3055,15 @@
           </div>
           <div class="ide">
             <div class="ii">🎯</div>
-            <h3>Cursor / Windsurf</h3>
+            <h3>Cursor</h3>
             <p data-i18n="ide.cursor_p">58 tools via MCP</p>
             <div class="ib">stdio transport</div>
           </div>
           <div class="ide">
             <div class="ii">🌐</div>
-            <h3>Any MCP Host</h3>
-            <p data-i18n="ide.any_p">stdio + HTTP transport</p>
-            <div class="ib">Future proof</div>
+            <h3>OpenCode</h3>
+            <p data-i18n="ide.opencode_p">Native agents + MCP</p>
+            <div class="ib">opencode.json</div>
           </div>
         </div>
       </div>
@@ -3185,9 +3188,9 @@
           </div>
           <div class="feat">
             <div class="fi">🔏</div>
-            <h3 data-i18n="enterprise.sbom_h">SBOM + Cosign Signed</h3>
-            <p data-i18n="enterprise.sbom_p">Every published image ships a CycloneDX SBOM and a cosign signature you
-              can verify before deploying it.</p>
+            <h3 data-i18n="enterprise.sbom_h">SBOM + Optional Cosign Signing</h3>
+            <p data-i18n="enterprise.sbom_p">Every image build produces a CycloneDX SBOM workflow artifact; Cosign
+              signatures are added when signing secrets are configured.</p>
           </div>
           <div class="feat">
             <div class="fi">🔐</div>
@@ -3209,10 +3212,10 @@
             <button class="code-copy-btn" data-copy-id="c-enterprise-pull">Copy</button>
           </div>
           <pre id="c-enterprise-pull"><span class="cm"># Public image, no login needed. Multi-arch: linux/amd64 + linux/arm64.</span>
-<span class="dk">$</span> docker pull ghcr.io/paulasilvatech/specky:3.5.0        <span class="cm"># or :latest</span>
-<span class="dk">$</span> docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:3.5.0
+<span class="dk">$</span> docker pull ghcr.io/paulasilvatech/specky:3.9.0        <span class="cm"># or :latest</span>
+<span class="dk">$</span> docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:3.9.0
 <span class="dk">$</span> curl -s http://localhost:3200/health
-<span class="cm"># -&gt; {"status":"ok","version":"3.5.0"}</span></pre>
+<span class="cm"># -&gt; {"status":"ok","version":"3.9.0"}</span></pre>
         </div>
 
         <div class="code-block" style="margin-bottom:16px">
@@ -3228,7 +3231,7 @@
     -e SDD_AUDIT_HMAC_KEY_FILE=/run/secrets/audit.key \
     -v "$PWD/workspace:/workspace" \
     -v /etc/specky:/run/secrets:ro \
-    ghcr.io/paulasilvatech/specky:3.5.0</pre>
+    ghcr.io/paulasilvatech/specky:3.9.0</pre>
         </div>
 
         <div class="install-note">
@@ -3431,7 +3434,7 @@
           'ide.copilot_p': '13 agents + 22 prompts',
           'ide.claude_p': '22 prompts + hooks',
           'ide.cursor_p': '58 tools via MCP',
-          'ide.any_p': 'stdio + HTTP transport',
+          'ide.opencode_p': 'Native agents + MCP',
           // Diff
           'diff.label': 'What makes it different',
           'diff.title': 'Built different on purpose',
@@ -3454,8 +3457,8 @@
           'enterprise.sub': 'The same open-source package publishes a multi-arch container image and an opt-in enterprise profile for teams that need a hosted, governed deployment.',
           'enterprise.image_h': 'Multi-Arch GHCR Image',
           'enterprise.image_p': 'linux/amd64 and linux/arm64, built from the hardened Dockerfile (multi-stage, non-root, healthcheck on /health).',
-          'enterprise.sbom_h': 'SBOM + Cosign Signed',
-          'enterprise.sbom_p': 'Every published image ships a CycloneDX SBOM and a cosign signature you can verify before deploying it.',
+          'enterprise.sbom_h': 'SBOM + Optional Cosign Signing',
+          'enterprise.sbom_p': 'Every image build produces a CycloneDX SBOM workflow artifact; Cosign signatures are added when signing secrets are configured.',
           'enterprise.profile_h': 'Enterprise Profile at Runtime',
           'enterprise.profile_p': 'Set <code>SPECKY_PROFILE=enterprise</code> to turn on identity-based RBAC, rate limiting, and a HMAC-signed, fail-closed audit trail.',
           'enterprise.tls_h': 'Bring Your Own TLS',
@@ -3563,7 +3566,7 @@
           'ide.copilot_p': '13 agents + 22 prompts',
           'ide.claude_p': '22 prompts + hooks',
           'ide.cursor_p': '58 ferramentas via MCP',
-          'ide.any_p': 'transporte stdio + HTTP',
+          'ide.opencode_p': 'Agents nativos + MCP',
           // Diff
           'diff.label': 'O que o diferencia',
           'diff.title': 'Constru\u00eddo diferente por prop\u00f3sito',
@@ -3586,8 +3589,8 @@
           'enterprise.sub': 'O mesmo pacote open-source publica uma imagem de container multi-arquitetura e um perfil enterprise opt-in para times que precisam de um deployment hospedado e governado.',
           'enterprise.image_h': 'Imagem GHCR Multi-Arquitetura',
           'enterprise.image_p': 'linux/amd64 e linux/arm64, constru\u00edda a partir do Dockerfile refor\u00e7ado (multi-stage, non-root, healthcheck em /health).',
-          'enterprise.sbom_h': 'SBOM + Assinatura Cosign',
-          'enterprise.sbom_p': 'Toda imagem publicada traz um SBOM CycloneDX e uma assinatura cosign que voc\u00ea pode verificar antes de fazer o deploy.',
+          'enterprise.sbom_h': 'SBOM + Assinatura Cosign Opcional',
+          'enterprise.sbom_p': 'Todo build de imagem produz um SBOM CycloneDX como artifact do workflow; assinaturas Cosign s\u00e3o adicionadas quando os secrets est\u00e3o configurados.',
           'enterprise.profile_h': 'Perfil Enterprise em Runtime',
           'enterprise.profile_p': 'Defina <code>SPECKY_PROFILE=enterprise</code> para ativar RBAC por identidade, rate limiting e uma trilha de auditoria assinada com HMAC e fail-closed.',
           'enterprise.tls_h': 'Traga seu Pr\u00f3prio TLS',
@@ -3695,7 +3698,7 @@
           'ide.copilot_p': '13 agents + 22 prompts',
           'ide.claude_p': '22 prompts + hooks',
           'ide.cursor_p': '58 herramientas v\u00eda MCP',
-          'ide.any_p': 'transporte stdio + HTTP',
+          'ide.opencode_p': 'Agents nativos + MCP',
           // Diff
           'diff.label': 'Qu\u00e9 lo hace diferente',
           'diff.title': 'Construido diferente a prop\u00f3sito',
@@ -3718,8 +3721,8 @@
           'enterprise.sub': 'El mismo paquete open-source publica una imagen de contenedor multi-arquitectura y un perfil enterprise opt-in para equipos que necesitan un despliegue hospedado y gobernado.',
           'enterprise.image_h': 'Imagen GHCR Multi-Arquitectura',
           'enterprise.image_p': 'linux/amd64 y linux/arm64, construida a partir del Dockerfile reforzado (multi-stage, non-root, healthcheck en /health).',
-          'enterprise.sbom_h': 'SBOM + Firmado con Cosign',
-          'enterprise.sbom_p': 'Cada imagen publicada incluye un SBOM CycloneDX y una firma cosign que puedes verificar antes de desplegarla.',
+          'enterprise.sbom_h': 'SBOM + Firma Cosign Opcional',
+          'enterprise.sbom_p': 'Cada build de imagen produce un SBOM CycloneDX como artifact del workflow; las firmas Cosign se agregan cuando los secrets est\u00e1n configurados.',
           'enterprise.profile_h': 'Perfil Enterprise en Runtime',
           'enterprise.profile_p': 'Configura <code>SPECKY_PROFILE=enterprise</code> para activar RBAC por identidad, rate limiting y una auditoría firmada con HMAC en modo fail-closed.',
           'enterprise.tls_h': 'Trae tu Propio TLS',
@@ -3848,7 +3851,7 @@
       if (heroCmd) {
         heroCmd.addEventListener('click', function () {
           const cp = heroCmd.querySelector('.cp');
-          navigator.clipboard.writeText('npm install -g specky-sdd@latest\nspecky install --ide=copilot\nspecky doctor').then(() => {
+          navigator.clipboard.writeText('npm install -g specky-sdd@latest\nspecky install --target=copilot\nspecky doctor').then(() => {
             if (cp) { cp.textContent = window._copiedText || 'copied!'; setTimeout(() => { cp.textContent = 'copy'; }, 1800); }
           });
         });

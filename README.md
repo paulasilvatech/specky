@@ -1262,7 +1262,7 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 | 6 input types (transcript, PDF, DOCX, Figma, codebase, raw text) | Stable |
 | Test generation for 6 frameworks (vitest, jest, playwright, pytest, junit, xunit) | Stable |
 | MCP-to-MCP routing (GitHub, Azure DevOps, Jira, Terraform, Figma, Docker) | Stable |
-| SBOM + cosign signing on Docker image | Stable |
+| CycloneDX SBOM artifact + optional Cosign signing on Docker image | Stable |
 | JSONL audit logger (optional) | Stable |
 | RBAC foundation (opt-in role-based access control) | Stable |
 | Rate limiting for HTTP transport (opt-in) | Stable |

@@ -126,7 +126,9 @@ npm dist-tag add specky-sdd@X.Y.Z-rc.N latest
 The container is opt-in. The `docker-publish` job in `publish.yml` runs only
 when the repo variable `PUBLISH_DOCKER=true` and pushes a **multi-arch**
 (`linux/amd64` + `linux/arm64`) image
-`ghcr.io/paulasilvatech/specky:{latest,X.Y.Z}` (cosign-signed + CycloneDX SBOM).
+`ghcr.io/paulasilvatech/specky:{latest,X.Y.Z}`. Every image build produces a
+CycloneDX SBOM workflow artifact; Cosign signatures are added only when the
+signing secrets are configured.
 See [ENTERPRISE-DEPLOYMENT.md](ENTERPRISE-DEPLOYMENT.md) for the
 container deployment model.
 

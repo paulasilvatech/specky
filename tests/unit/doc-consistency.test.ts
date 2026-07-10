@@ -11,9 +11,22 @@ import { dirname, resolve } from "node:path";
 import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
 import { PHASE_ORDER, TOTAL_TOOLS, TEMPLATE_NAMES } from "../../src/constants.js";
+import { SPECKY_REQUIRED_ALLOWS } from "../../src/cli/lib/settings-merger.js";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const read = (p: string): string => readFileSync(resolve(ROOT, p), "utf8");
+const countFiles = (dir: string, suffix: string): number =>
+  readdirSync(resolve(ROOT, dir)).filter((name) => name.endsWith(suffix)).length;
+const countDirs = (dir: string): number =>
+  readdirSync(resolve(ROOT, dir), { withFileTypes: true }).filter((entry) => entry.isDirectory()).length;
+
+const PUBLIC_COUNTS = {
+  agents: countFiles(".apm/agents", ".agent.md"),
+  tools: TOTAL_TOOLS,
+  prompts: countFiles(".apm/prompts", ".prompt.md"),
+  skills: countDirs(".apm/skills"),
+  hooks: countFiles(".apm/hooks/scripts", ".sh"),
+};
 
 describe("config.yml is consistent with the shipped assets", () => {
   const config = parse(read("config.yml")) as {
@@ -117,15 +130,57 @@ describe("public documentation links and website assets", () => {
     const majorMinor = packageJson.version.split(".").slice(0, 2).join(".");
     const site = read("site/index.html");
     const socialImage = read("site/og-image.svg");
+    const summary = `${PUBLIC_COUNTS.agents} agents, ${PUBLIC_COUNTS.tools} MCP tools, ${PUBLIC_COUNTS.prompts} prompts, ${PUBLIC_COUNTS.skills} skills, ${PUBLIC_COUNTS.hooks} hooks`;
 
-    expect(site).toContain("13 agents, 58 MCP tools, 22 prompts, 14 skills, 16 hooks");
+    expect(site).toContain(summary);
     expect(site).not.toContain("8 skills");
     expect(site).toContain(`Open Source · MIT License · v${majorMinor}`);
-    expect(site).toMatch(/toolkit-stat-num">14<\/div>\s*<div class="toolkit-stat-label">Skills/);
+    expect(site).toMatch(new RegExp(`toolkit-stat-num">${PUBLIC_COUNTS.skills}<\\/div>\\s*<div class="toolkit-stat-label">Skills`));
     expect(socialImage).toContain(`MIT License · v${majorMinor}`);
-    expect(socialImage).toContain("13 agents, 58 MCP tools, 22 prompts, 14 skills, 16 hooks");
+    expect(socialImage).toContain(summary);
     expect(socialImage).toContain("npm install -g specky-sdd@latest");
     expect(socialImage).not.toContain("57 MCP tools");
     expect(socialImage).not.toContain("14 hooks");
+  });
+
+  it("uses canonical target, agent, and prompt names on the website", () => {
+    const site = read("site/index.html");
+    const packageJson = JSON.parse(read("package.json")) as { version: string };
+
+    for (const target of ["copilot", "claude", "cursor", "opencode"]) {
+      expect(site).toContain(`specky install --target=${target}`);
+    }
+    expect(site).toContain("@specky-sdd-init");
+    expect(site).toContain("/specky-specify");
+    expect(site).toContain("/specky-design");
+    expect(site).toContain("/specky-verify");
+    expect(site).toContain(`specky-sdd-${packageJson.version}.tgz`);
+    expect(site).toContain(`ghcr.io/paulasilvatech/specky:${packageJson.version}`);
+    expect(site).toContain("SBOM + Optional Cosign Signing");
+
+    expect(site).not.toContain("--ide=");
+    expect(site).not.toContain("@sdd-");
+    expect(site).not.toContain("@implementer");
+    expect(site).not.toContain("/sdd:");
+    expect(site).not.toContain("Cursor / Windsurf");
+    expect(site).not.toContain("Every published image ships a CycloneDX SBOM and a cosign signature");
+  });
+
+  it("keeps the getting-started install inventory aligned with source", () => {
+    const guide = read("GETTING-STARTED.md");
+    expect(guide).toContain(`.github/skills/*/SKILL.md\` (${PUBLIC_COUNTS.skills})`);
+    expect(guide).toContain(`.claude/skills/*/SKILL.md\` (${PUBLIC_COUNTS.skills})`);
+    expect(guide).toContain(`Hooks + ${SPECKY_REQUIRED_ALLOWS.length} permission rules`);
+  });
+
+  it("documents image signing as optional when Cosign secrets are configured", () => {
+    const publishGuide = read("docs/PUBLISH.md");
+    const enterpriseGuide = read("docs/ENTERPRISE-DEPLOYMENT.md");
+    const readme = read("README.md");
+
+    expect(publishGuide).toMatch(/Cosign signatures are added only when the\s+signing secrets are configured/);
+    expect(enterpriseGuide).toMatch(/optional Cosign signatures when signing secrets are configured/);
+    expect(readme).toContain("CycloneDX SBOM artifact + optional Cosign signing");
+    expect(publishGuide).not.toContain("(cosign-signed + CycloneDX SBOM)");
   });
 });

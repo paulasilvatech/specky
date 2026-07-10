@@ -289,10 +289,10 @@ docker run --rm -p 127.0.0.1:3200:3200 \
 > `SDD_HTTP_TOKEN`/`SDD_HTTP_TOKENS_FILE`. A non-loopback bind without a token
 > prints a loud warning.
 
-Publishing to GHCR (multi-arch build with cosign signature + CycloneDX SBOM) is
-wired in `.github/workflows/publish.yml` behind the `PUBLISH_DOCKER` repository
-variable. See [PUBLISH.md](PUBLISH.md) for the maintainer publish + manual
-fallback workflow.
+Publishing to GHCR (multi-arch build with a CycloneDX SBOM workflow artifact and
+optional Cosign signatures when signing secrets are configured) is wired in
+`.github/workflows/publish.yml` behind the `PUBLISH_DOCKER` repository variable.
+See [PUBLISH.md](PUBLISH.md) for the maintainer publish + manual fallback workflow.
 
 ---
 

@@ -60,7 +60,7 @@ npx -y specky-sdd@latest install --target=copilot
 |---|---|---|
 | `.github/agents/*.agent.md` (13) | GitHub Copilot agents | ❌ gitignored |
 | `.github/prompts/*.prompt.md` (22) | Copilot slash prompts | ❌ gitignored |
-| `.github/skills/*/SKILL.md` (8) | Copilot skills | ❌ gitignored |
+| `.github/skills/*/SKILL.md` (14) | Copilot skills | ❌ gitignored |
 | `.github/hooks/specky/scripts/*.sh` (16) | Copilot hook scripts | ❌ gitignored |
 | `.github/hooks/specky/sdd-hooks.json` | Copilot hook manifest | ❌ gitignored |
 | `.mcp.json`, `.vscode/mcp.json` | MCP server registration | ✅ **commit** |
@@ -77,9 +77,9 @@ Copilot agents and prompts are generated with GitHub Copilot-native frontmatter.
 |---|---|---|
 | `.claude/agents/*.md` (13) | Claude Code agents | ❌ gitignored (regenerated) |
 | `.claude/commands/*.md` (22) | Claude slash commands | ❌ gitignored |
-| `.claude/skills/*/SKILL.md` (8) | Claude skills | ❌ gitignored |
+| `.claude/skills/*/SKILL.md` (14) | Claude skills | ❌ gitignored |
 | `.claude/hooks/scripts/*.sh` (16) | Claude hook scripts | ❌ gitignored |
-| `.claude/settings.json` | Hooks + 37 permission rules | ✅ **commit** (team-shared) |
+| `.claude/settings.json` | Hooks + 11 permission rules | ✅ **commit** (team-shared) |
 | `.mcp.json` | MCP server registration | ✅ **commit** |
 | `.specky/config.yml` | Pipeline config | ✅ **commit** |
 | `.specky/install.lock` | SHA256 integrity manifest | ❌ gitignored |
