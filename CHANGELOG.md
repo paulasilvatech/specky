@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Audited public documentation and website assets: corrected stale 8-skill/v3.5 counts, regenerated the v3.9 social image, repaired relative documentation links, and brought the public Markdown set to zero lint errors.
-- Added regression coverage for documentation links, local website assets, public primitive counts, and social-image version/count consistency.
+- Audited public documentation and website assets: corrected stale skill/version/permission counts, canonicalized `--target` install commands and `specky-*` primitive names, documented Cursor/OpenCode as first-class targets, refreshed v3.9 tarball/container examples, repaired relative links, and brought the public Markdown set to zero lint errors.
+- Aligned container security claims with the workflow: every image build produces a CycloneDX SBOM artifact, while Cosign signatures are optional and require configured signing secrets.
+- Added regression coverage for documentation links, local website assets, source-derived primitive counts, canonical targets/commands, social-image consistency, current container tags, and optional signing language.
 
 ## [3.9.0] - 2026-07-09
 
