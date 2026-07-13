@@ -10,6 +10,14 @@ export function unique(values: string[]): string[] {
     return [...new Set(values.filter(Boolean))];
 }
 
+export function normalizeNewlines(text: string): string {
+    return text.replace(/\r\n/g, "\n");
+}
+
+export function stripYamlFrontmatter(content: string): string {
+    return normalizeNewlines(content).replace(/^---\n[\s\S]*?\n---\n/, "");
+}
+
 /** Parse a frontmatter `tools:` value that is a JSON array or a comma list. */
 export function parseToolArray(tools: string): string[] {
     const trimmed = tools.trim();

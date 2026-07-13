@@ -17,7 +17,7 @@ import {
   chmodSync,
   unlinkSync,
 } from "node:fs";
-import { basename, resolve, relative } from "node:path";
+import { basename, resolve, relative, sep } from "node:path";
 import type { Targets } from "./paths.js";
 import { sourcePaths } from "./paths.js";
 import { getCompiler } from "./harness/index.js";
@@ -345,7 +345,7 @@ export function writeInstallLock(
     for (const p of r.written) {
       try {
         if (statSync(p).isFile()) {
-          entries[relative(targets.shared.specky, p)] = hashFile(p);
+          entries[relative(targets.shared.specky, p).split(sep).join("/")] = hashFile(p);
         }
       } catch {
         // ignore

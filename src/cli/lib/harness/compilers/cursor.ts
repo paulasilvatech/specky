@@ -5,7 +5,7 @@
  */
 
 import type { HarnessCompiler } from "../types.js";
-import { transformToolsLine } from "./common.js";
+import { transformToolsLine, stripYamlFrontmatter } from "./common.js";
 
 export const cursorCompiler: HarnessCompiler = {
     target: "cursor",
@@ -21,7 +21,7 @@ export const cursorCompiler: HarnessCompiler = {
     },
 
     compileInstruction(content) {
-        const body = content.replace(/^---[\s\S]*?---\n/, "");
+        const body = stripYamlFrontmatter(content);
         return `---\ndescription: Specky SDD pipeline rules\nalwaysApply: true\n---\n${body}`;
     },
 
