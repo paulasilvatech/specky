@@ -12,7 +12,8 @@
  */
 import type { FileManager } from "./file-manager.js";
 import type { WorkItemMetadata, WorkItemPlatform, RoutingInstructions } from "../types.js";
-import { extractRequirementIds, normalizeTaskId, TASK_LINE_PATTERN } from "../utils/id-contracts.js";
+import { extractRequirementIds } from "../utils/id-contracts.js";
+import { parseTasksFromMarkdown } from "../utils/task-parser.js";
 import { currentTimestamp } from "../utils/runtime-context.js";
 
 /** A task parsed from TASKS.md, including any indented subtask bullets. */
@@ -81,9 +82,7 @@ export interface PlatformWorkItemExportResult {
   routing_instructions: RoutingInstructions;
 }
 
-/** Per-line (non-global, non-stateful) variant of the shared task-line pattern. */
-const TASK_LINE = new RegExp(TASK_LINE_PATTERN.source);
-const SUBTASK_LINE = /^\s{2,}-\s+(?:\[[ x]\]\s+)?(.+)/;
+/** Trailing REQ suffix strip for display titles. */
 const TRAILING_TRACE_SUFFIX =
   /\s*[(\[]?\s*(?:traces?(?:_to)?\s*:\s*)?REQ-[A-Z]+-\d{3}(?:\s*,\s*REQ-[A-Z]+-\d{3})*\s*[)\]]?\s*$/i;
 
@@ -216,35 +215,17 @@ export class WorkItemExporter {
     return task.traces_to.length > 0 ? task.traces_to.join(", ") : "(no requirement reference)";
   }
 
-  private parseTasks(tasksContent: string, specContent: string): ParsedTask[] {
-    const tasks: ParsedTask[] = [];
-    for (const line of tasksContent.split("\n")) {
-      const match = TASK_LINE.exec(line);
-      if (match) {
-        const id = normalizeTaskId(match[1]);
-        const story = match[2] || "";
-        const rawTitle = match[3].trim();
-        // Extract REQ IDs referenced in the task or linked story
-        const reqIds: string[] = extractRequirementIds(rawTitle);
-        // If no direct REQ ref, look in spec for the story
-        if (reqIds.length === 0 && story) {
-          const storySection = specContent.match(new RegExp(`${story}[\\s\\S]*?(?=##|$)`));
-          if (storySection) {
-            reqIds.push(...extractRequirementIds(storySection[0]));
-          }
-        }
-        // Titles should not repeat the traces_to suffix ("… (REQ-CORE-001)")
-        const title = rawTitle.replace(TRAILING_TRACE_SUFFIX, "").trim() || rawTitle;
-        tasks.push({ id, title, description: rawTitle, traces_to: reqIds, subtasks: [] });
-        continue;
-      }
-      // Indented bullets under a task line become its subtasks
-      const sub = SUBTASK_LINE.exec(line);
-      if (sub && tasks.length > 0) {
-        tasks[tasks.length - 1].subtasks.push(sub[1].trim());
-      }
-    }
-    return tasks;
+  private parseTasks(tasksContent: string, _specContent: string): ParsedTask[] {
+    return parseTasksFromMarkdown(tasksContent).map((task) => {
+      const title = task.title.replace(TRAILING_TRACE_SUFFIX, "").trim() || task.title;
+      return {
+        id: task.id,
+        title,
+        description: task.title,
+        traces_to: task.traces_to.length > 0 ? task.traces_to : extractRequirementIds(task.title),
+        subtasks: task.subtasks,
+      };
+    });
   }
 
   private getRoutingInstructions(platform: WorkItemPlatform): RoutingInstructions {

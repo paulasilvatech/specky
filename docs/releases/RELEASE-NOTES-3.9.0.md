@@ -74,4 +74,4 @@ npx specky upgrade
 
 Cursor users gain native hooks on upgrade; enable the `specky` MCP server in Cursor Settings → MCP, then run `specky doctor` to confirm the install.
 
-Full details: [CHANGELOG.md](../CHANGELOG.md)
+Full details: [CHANGELOG.md](../../CHANGELOG.md)

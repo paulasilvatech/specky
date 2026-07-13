@@ -64,6 +64,18 @@ describe("DiagramGenerator", () => {
     const code = gen.generateUserStoryFlow("Login", ["enter credentials", "submit", "receive token"]);
     expect(code).toContain("flowchart");
   });
+
+  it("gantt diagram accepts canonical TASKS.md table rows", () => {
+    const tasksTable = [
+      "| ID | Title | Parallel | Effort | Depends On | Traces To |",
+      "|----|-------|----------|--------|------------|-----------|",
+      "| T-001 | Scaffold API | | S | — | REQ-TODO-001 |",
+      "| T-002 | Add auth | [P] | M | T-001 | REQ-TODO-002 |",
+    ].join("\n");
+    const gantt = gen.generateDiagram(tasksTable, "gantt", "Timeline");
+    expect(gantt.mermaid_code).toContain("gantt");
+    expect(gantt.mermaid_code).toMatch(/Scaffold API|T-001/);
+  });
 });
 
 describe("IacGenerator", () => {

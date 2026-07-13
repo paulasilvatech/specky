@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.10.1] - 2026-07-13
+
+Patch release: dual TASKS.md parser (table + checkbox), honest COMPLIANCE/VERIFICATION persistence, Analyze-phase remediation for blocked gates, and generation quality fixes.
+
+### Added
+
+- **Shared `parseTasksFromMarkdown`** (`src/utils/task-parser.ts`) — reads canonical task tables and legacy checkbox lines, merges by task id.
+- **`deriveDesignStubs`** — minimal DESIGN.md section content from SPECIFICATION.md when optional write_design fields are omitted.
+- Regression coverage for table→verify/export round-trip, remediation phase rules, user-story titles, and design stubs.
+
+### Fixed
+
+- **TASKS.md mismatch** — `sdd_verify_tasks`, `sdd_implement`, `sdd_export_work_items`, git progress, and Gantt diagrams no longer fail or return empty results on table-format TASKS.md.
+- **COMPLIANCE.md / VERIFICATION.md** — persisted reports use pre-rendered table rows (no `[TODO:` placeholders).
+- **Analyze dead-end** — `sdd_write_spec` / `sdd_write_design` / `sdd_write_tasks` allowed in Analyze when gate is absent, `BLOCK`, or `CHANGES_NEEDED` (implement remains gated).
+- **User story titles** — use EARS prose instead of the `(event_driven)` heading label.
+- **Spec FN/NFR split** and design stubs derived from requirements in write_spec / write_design / auto-pipeline.
+
+### Changed
+
+- `extractRequirementIds` unified via `id-contracts.ts` in pipeline writers.
+- **Documentation layout** — `GETTING-STARTED.md` and `CONTRIBUTING.md` moved under `docs/`; release notes and audit reports organized into `docs/releases/` and `docs/audits/`; root keeps only essential public files.
+
 ## [3.10.0] - 2026-07-13
 
 Pipeline MCP hardening and harness completeness: server-enforced analysis gates, strict phase bookkeeping, and expanded per-target doctor/install coverage.

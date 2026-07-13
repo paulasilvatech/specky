@@ -885,10 +885,16 @@ export class DiagramGenerator {
         currentSection = sectionMatch[1].trim();
         continue;
       }
-      const taskMatch = line.match(/^-\s+\[[ x]\]\s+(?:T\d+\s+)?(?:\[P\]\s+)?(?:\[US\d+\]\s+)?(.+)/i);
-      if (taskMatch) {
+      const checkboxMatch = line.match(/^-\s+\[[ x]\]\s+(?:T-?\d{3}\s*:?\s*)?(?:\[P\]\s+)?(?:\[US\d+\]\s+)?(.+)/i);
+      if (checkboxMatch) {
         const parallel = /\[P\]/i.test(line);
-        tasks.push({ name: taskMatch[1].trim(), parallel, section: currentSection });
+        tasks.push({ name: checkboxMatch[1].trim(), parallel, section: currentSection });
+        continue;
+      }
+      const tableMatch = line.match(/^\|\s*(T-?\d{3})\s*\|\s*([^|]+?)\s*\|\s*([^|]*?)\s*\|/i);
+      if (tableMatch && !/^\|\s*ID\s*\|/i.test(line) && !/^\|\s*[-:| ]+\s*\|$/.test(line.trim())) {
+        const parallel = /\[P\]/i.test(tableMatch[3] ?? "") || /\[P\]/i.test(tableMatch[2]);
+        tasks.push({ name: tableMatch[2].trim(), parallel, section: currentSection });
       }
     }
     return tasks;

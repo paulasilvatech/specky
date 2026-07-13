@@ -5,7 +5,7 @@
 **We audited ourselves and published the results.** A black-box audit executed
 all **65 public product promises** against the real 3.5.0 server — no claim was
 accepted from docs or source reading. Verdict: 30 delivered, 29 partial, 6 not
-delivered ([full record](AUDIT-DELIVERY-3.5.md)). **3.6.0 fixes every
+delivered ([full record](../audits/AUDIT-DELIVERY-3.5.md)). **3.6.0 fixes every
 finding.** Specky now does what it says — and says what it does.
 
 ## Highlights
@@ -73,4 +73,4 @@ npm install -g specky-sdd@latest   # 3.6.0
 cd your-project && specky upgrade  # refreshes assets, preserves .specs/
 ```
 
-Full details: [CHANGELOG.md](../CHANGELOG.md) · [docs/AUDIT-DELIVERY-3.5.md](AUDIT-DELIVERY-3.5.md)
+Full details: [CHANGELOG.md](../../CHANGELOG.md) · [AUDIT-DELIVERY-3.5.md](../audits/AUDIT-DELIVERY-3.5.md)

@@ -16,7 +16,7 @@ import type { EarsValidator } from "../services/ears-validator.js";
 import type { ChecklistDomain } from "../constants.js";
 import type { ChecklistItem, VerificationResult } from "../types.js";
 import { enrichResponse } from "./response-builder.js";
-import { normalizeTaskId, TASK_LINE_PATTERN } from "../utils/id-contracts.js";
+import { parseTasksFromMarkdown } from "../utils/task-parser.js";
 import { currentDateString } from "../utils/runtime-context.js";
 import {
   checklistInputSchema,
@@ -278,20 +278,17 @@ export function registerQualityTools(
           );
         }
 
-        // Parse task entries: accepts canonical T-001 and legacy T001 formats.
-        let match;
-        const tasks: Array<{ id: string; description: string; claimed_done: boolean }> = [];
-        while ((match = TASK_LINE_PATTERN.exec(tasksContent)) !== null) {
-          tasks.push({
-            id: normalizeTaskId(match[1]),
-            description: match[3].trim(),
-            claimed_done: /^-\s+\[x\]/i.test(match[0]),
-          });
-        }
+        // Parse task entries: table rows (canonical) and checkbox bullets (legacy).
+        const parsedTasks = parseTasksFromMarkdown(tasksContent);
+        const tasks = parsedTasks.map((t) => ({
+          id: t.id,
+          description: t.title,
+          claimed_done: t.claimed_done,
+        }));
 
         if (tasks.length === 0) {
           throw new Error(
-            `No tasks found in TASKS.md. Expected format: "- [x] T-001: Description".\n→ Fix: Ensure TASKS.md uses the standard task format.`
+            `No tasks found in TASKS.md. Expected a Task Breakdown table (| T-001 | … |) or checkbox lines ("- [ ] T-001: Description").\n→ Fix: Run sdd_write_tasks first.`
           );
         }
 
@@ -335,6 +332,7 @@ export function registerQualityTools(
         const verifiedCount = results.filter((r) => r.verified_status === "verified").length;
         const phantomCount = results.filter((r) => r.phantom).length;
         const passRate = tasks.length > 0 ? Math.round((verifiedCount / tasks.length) * 100) : 0;
+        const gateDecision = phantomCount > 0 ? "CHANGES_NEEDED" : passRate >= 80 ? "APPROVE" : "CHANGES_NEEDED";
 
         // Generate verification diagram
         const diagramLines = ["flowchart TD"];
@@ -347,16 +345,22 @@ export function registerQualityTools(
         diagramLines.push("  classDef pending fill:#ff9800,stroke:#333");
         const diagram = diagramLines.join("\n");
 
+        const resultRows = results.map((r) =>
+          `| ${r.task_id} | ${r.claimed_status} | ${r.verified_status} | ${r.phantom ? "Yes" : "No"} | ${escapeTableCell(r.evidence.join("; "))} |`
+        );
+
         // Write VERIFICATION.md
         const content = await templateEngine.renderWithFrontmatter("verification", {
           title: "Task Verification Report",
           feature_id: feature_number,
-          results: JSON.stringify(results, null, 2),
+          date: currentDateString(),
+          results: resultRows,
           total_tasks: String(tasks.length),
           verified_count: String(verifiedCount),
           phantom_count: String(phantomCount),
           pass_rate: String(passRate),
           diagram,
+          gate_decision: gateDecision,
         });
 
         await fileManager.writeSpecFile(featureDir, "VERIFICATION.md", content, true);
@@ -432,17 +436,27 @@ export function registerQualityTools(
         // Run compliance check
         const complianceResult = complianceEngine.checkCompliance(framework, specContent, designContent);
 
-        // Write COMPLIANCE.md
+        // Write COMPLIANCE.md — pre-render table rows (template engine only iterates string arrays).
+        const findingRows = complianceResult.findings.map((f) =>
+          `| ${escapeTableCell(f.control_id)} | ${escapeTableCell(f.control_name)} | ${f.status} | ${escapeTableCell(f.evidence ?? "—")} | ${escapeTableCell(f.remediation ?? "—")} |`
+        );
+        const recommendation =
+          complianceResult.controls_failed > 0
+            ? `Address ${complianceResult.controls_failed} failing ${framework.toUpperCase()} control(s) in SPECIFICATION.md / DESIGN.md, then re-run sdd_compliance_check.`
+            : `All checked ${framework.toUpperCase()} controls passed or were marked N/A.`;
+
         const content = await templateEngine.renderWithFrontmatter("compliance", {
           title: `${framework.toUpperCase()} Compliance Report`,
           feature_id: feature_number,
           framework,
+          date: currentDateString(),
           controls_checked: String(complianceResult.controls_checked),
           controls_passed: String(complianceResult.controls_passed),
           controls_failed: String(complianceResult.controls_failed),
           controls_na: String(complianceResult.controls_na),
-          findings: JSON.stringify(complianceResult.findings, null, 2),
+          findings: findingRows,
           overall_status: complianceResult.overall_status,
+          recommendation,
         });
 
         await fileManager.writeSpecFile(featureDir, "COMPLIANCE.md", content, true);

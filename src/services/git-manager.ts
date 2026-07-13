@@ -4,6 +4,8 @@
  */
 import type { FileManager } from "./file-manager.js";
 import type { BranchInfo, PrPayload } from "../types.js";
+import { extractRequirementIds } from "../utils/id-contracts.js";
+import { parseTasksFromMarkdown } from "../utils/task-parser.js";
 
 export class GitManager {
   constructor(private fileManager: FileManager) {}
@@ -26,18 +28,19 @@ export class GitManager {
     let reqsCovered: string[] = [];
     try {
       const spec = await this.fileManager.readSpecFile(featureDir, "SPECIFICATION.md");
-      const reqRegex = /### (REQ-[A-Z]+-\d{3})/g;
-      let match;
-      while ((match = reqRegex.exec(spec)) !== null) reqsCovered.push(match[1]);
+      reqsCovered = extractRequirementIds(spec);
       specSummary = spec.split("\n").slice(0, 20).join("\n");
     } catch { /* no spec found */ }
 
     let tasksSummary = "";
     try {
-      const tasks = await this.fileManager.readSpecFile(featureDir, "TASKS.md");
-      const totalTasks = (tasks.match(/- \[[ x]\]/g) || []).length;
-      const completedTasks = (tasks.match(/- \[x\]/gi) || []).length;
-      tasksSummary = `Tasks: ${completedTasks}/${totalTasks} completed`;
+      const tasksMd = await this.fileManager.readSpecFile(featureDir, "TASKS.md");
+      const tasks = parseTasksFromMarkdown(tasksMd);
+      const totalTasks = tasks.length;
+      const completedTasks = tasks.filter((t) => t.claimed_done).length;
+      tasksSummary = totalTasks > 0
+        ? `Tasks: ${completedTasks}/${totalTasks} completed`
+        : "Tasks: none parsed";
     } catch { /* no tasks found */ }
 
     const body = [

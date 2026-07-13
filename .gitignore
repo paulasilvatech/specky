@@ -2,8 +2,7 @@
 # Specky .gitignore — APM Package
 # ============================================================
 # TRACKED: apm.yml, apm.lock.yaml, apm-policy.yml, .apm/, src/, package.json, config.yml,
-#          README, LICENSE, CHANGELOG, SECURITY,
-#          CONTRIBUTING, GETTING-STARTED, .github/workflows,
+#          README, LICENSE, CHANGELOG, SECURITY, docs/, .github/workflows,
 #          .github/ISSUE_TEMPLATE, .github/dependabot.yml,
 #          index.html (site), templates/, tests/, docs/
 # ============================================================

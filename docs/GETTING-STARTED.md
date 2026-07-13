@@ -552,4 +552,4 @@ A: The `@specky-implementer` (Phase 7) generates detailed implementation plans, 
 5. Use `/specky-greenfield` (new project) or `/specky-brownfield` (existing feature) to begin
 6. Refer to this guide whenever you're unsure which prompt to use
 
-CLI documentation: [`GETTING-STARTED.md`](GETTING-STARTED.md) | Changelog: [`CHANGELOG.md`](CHANGELOG.md) | Security: [`SECURITY.md`](SECURITY.md)
+CLI documentation: [`GETTING-STARTED.md`](GETTING-STARTED.md) | Changelog: [`CHANGELOG.md`](../CHANGELOG.md) | Security: [`SECURITY.md`](../SECURITY.md)

@@ -2284,7 +2284,7 @@
           <li><a href="#install" data-i18n="nav.install">Install</a></li>
           <li><a href="#pipeline" data-i18n="nav.pipeline">Pipeline</a></li>
           <li><a href="#integrations" data-i18n="nav.ides">Integrations</a></li>
-          <li><a href="https://github.com/paulasilvatech/specky/blob/main/GETTING-STARTED.md" target="_blank"
+          <li><a href="https://github.com/paulasilvatech/specky/blob/main/docs/GETTING-STARTED.md" target="_blank"
               data-i18n="nav.docs">Docs</a></li>
         </ul>
 
@@ -2314,7 +2314,7 @@
         onclick="document.getElementById('mobileNav').classList.remove('open')">Pipeline</a>
       <a href="#integrations" data-i18n="nav.ides"
         onclick="document.getElementById('mobileNav').classList.remove('open')">Integrations</a>
-      <a href="https://github.com/paulasilvatech/specky/blob/main/GETTING-STARTED.md" target="_blank"
+      <a href="https://github.com/paulasilvatech/specky/blob/main/docs/GETTING-STARTED.md" target="_blank"
         data-i18n="nav.docs">Docs</a>
     </div>
 
@@ -2716,7 +2716,7 @@
             <span class="in-icon">💡</span>
             <p><strong>Tip:</strong> Specky auto-detects your stack (TypeScript, Python, Java, Go…) and applies the
               right EARS patterns. No configuration needed for most projects. <a
-                href="https://github.com/paulasilvatech/specky/blob/main/GETTING-STARTED.md" target="_blank">Full docs
+                href="https://github.com/paulasilvatech/specky/blob/main/docs/GETTING-STARTED.md" target="_blank">Full docs
                 →</a></p>
           </div>
         </div>
@@ -2886,7 +2886,7 @@
               <button class="code-copy-btn" data-copy-id="c-airgap-pack">Copy</button>
             </div>
             <pre id="c-airgap-pack"><span class="dk">$</span> npm pack specky-sdd
-<span class="cm"># produces: specky-sdd-3.10.0.tgz</span></pre>
+<span class="cm"># produces: specky-sdd-3.10.1.tgz</span></pre>
           </div>
           <ol class="install-steps" style="margin-top:16px">
             <li>
@@ -2898,9 +2898,9 @@
           <div class="code-block" style="margin-top:12px">
             <div class="code-block-header">
               <span class="code-block-title">Terminal (air-gapped machine)</span>
-              <button class="code-copy-btn" data-copy="npm install -g ./specky-sdd-3.10.0.tgz">Copy</button>
+              <button class="code-copy-btn" data-copy="npm install -g ./specky-sdd-3.10.1.tgz">Copy</button>
             </div>
-            <pre><span class="dk">$</span> npm install -g ./specky-sdd-3.10.0.tgz
+            <pre><span class="dk">$</span> npm install -g ./specky-sdd-3.10.1.tgz
 <span class="dk">$</span> specky install --target=cursor   <span class="cm"># or copilot, claude, opencode</span></pre>
           </div>
           <ol class="install-steps" style="margin-top:16px">
@@ -3259,10 +3259,10 @@
             <button class="code-copy-btn" data-copy-id="c-enterprise-pull">Copy</button>
           </div>
           <pre id="c-enterprise-pull"><span class="cm"># Public image, no login needed. Multi-arch: linux/amd64 + linux/arm64.</span>
-<span class="dk">$</span> docker pull ghcr.io/paulasilvatech/specky:3.10.0        <span class="cm"># or :latest</span>
-<span class="dk">$</span> docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:3.10.0
+<span class="dk">$</span> docker pull ghcr.io/paulasilvatech/specky:3.10.1        <span class="cm"># or :latest</span>
+<span class="dk">$</span> docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:3.10.1
 <span class="dk">$</span> curl -s http://localhost:3200/health
-<span class="cm"># -&gt; {"status":"ok","version":"3.10.0"}</span></pre>
+<span class="cm"># -&gt; {"status":"ok","version":"3.10.1"}</span></pre>
         </div>
 
         <div class="code-block" style="margin-bottom:16px">
@@ -3278,7 +3278,7 @@
     -e SDD_AUDIT_HMAC_KEY_FILE=/run/secrets/audit.key \
     -v "$PWD/workspace:/workspace" \
     -v /etc/specky:/run/secrets:ro \
-    ghcr.io/paulasilvatech/specky:3.10.0</pre>
+    ghcr.io/paulasilvatech/specky:3.10.1</pre>
         </div>
 
         <div class="install-note">
@@ -3318,9 +3318,9 @@
       <div class="footer-links">
         <a href="https://github.com/paulasilvatech/specky" target="_blank">GitHub</a>
         <a href="https://www.npmjs.com/package/specky-sdd" target="_blank">npm</a>
-        <a href="https://github.com/paulasilvatech/specky/blob/main/GETTING-STARTED.md" target="_blank">Docs</a>
+        <a href="https://github.com/paulasilvatech/specky/blob/main/docs/GETTING-STARTED.md" target="_blank">Docs</a>
         <a href="https://github.com/paulasilvatech/specky#ears-notation" target="_blank">EARS Guide</a>
-        <a href="https://github.com/paulasilvatech/specky/blob/main/CONTRIBUTING.md" target="_blank">Contribute</a>
+        <a href="https://github.com/paulasilvatech/specky/blob/main/docs/CONTRIBUTING.md" target="_blank">Contribute</a>
         <a href="https://github.com/paulasilvatech/specky/blob/main/LICENSE" target="_blank">MIT License</a>
       </div>
       <div class="footer-copy"><span data-i18n="footer.copy">Created by</span> Paula Silva · <a

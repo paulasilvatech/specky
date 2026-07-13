@@ -11,8 +11,7 @@
 
 | Task | Claimed | Verified | Phantom? | Evidence |
 |------|---------|----------|----------|----------|
-{{#each results}}
-| {{task_id}} | {{claimed_status}} | {{verified_status}} | {{phantom}} | {{evidence}} |
+{{#each results}}{{this}}
 {{/each}}
 
 ## Summary

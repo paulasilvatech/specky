@@ -62,4 +62,4 @@ npm install -g specky-sdd@latest   # 3.7.0
 cd your-project && specky upgrade  # refreshes assets, re-pins the server
 ```
 
-Full details: [CHANGELOG.md](../CHANGELOG.md)
+Full details: [CHANGELOG.md](../../CHANGELOG.md)

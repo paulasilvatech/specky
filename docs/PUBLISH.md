@@ -67,7 +67,7 @@ VERSION=$(node -p "require('./package.json').version")
 gh release create "v$VERSION" \
   --target main \
   --title "v$VERSION" \
-  --notes-file docs/RELEASE-NOTES-$VERSION.md   # or CHANGELOG.md
+  --notes-file docs/releases/RELEASE-NOTES-$VERSION.md   # or CHANGELOG.md
 ```
 
 Or via the UI: **Releases → Draft a new release** → tag `vX.Y.Z` (create on
