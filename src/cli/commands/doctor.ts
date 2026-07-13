@@ -249,7 +249,15 @@ function checkCopilotHooksManifest(targets: Targets): Check {
   };
 }
 
-function checkClaudeHooksInSettings(targets: Targets): Check {
+function checkClaudeHooksInSettings(targets: Targets, installTargets: HarnessTarget[]): Check {
+  if (installTargets.includes("copilot")) {
+    return {
+      name: "Claude hooks in settings",
+      pass: true,
+      detail: "intentionally omitted (Copilot co-install strips .claude hooks)",
+    };
+  }
+
   const settings = readJsonSafe<{ hooks?: Record<string, unknown> }>(targets.claude.settingsJson);
   if (!settings?.hooks) {
     return { name: "Claude hooks in settings", pass: false, detail: "no hooks key in .claude/settings.json" };
@@ -342,7 +350,11 @@ function checkCopilotInstall(targets: Targets, workspace: string): Check[] {
   ];
 }
 
-function checkClaudeInstall(targets: Targets, workspace: string): Check[] {
+function checkClaudeInstall(
+  targets: Targets,
+  workspace: string,
+  installTargets: HarnessTarget[],
+): Check[] {
   return [
     checkMcpRegistration(targets.shared.claudeMcp, ".mcp.json"),
     checkClaudePermissions(targets),
@@ -352,7 +364,7 @@ function checkClaudeInstall(targets: Targets, workspace: string): Check[] {
     checkFileExists(resolve(targets.claude.rules, "specky-sdd.md"), "Claude rule"),
     checkNoCopilotLeak(targets.claude.root, workspace, "Claude leakage"),
     checkFileCount(targets.claude.hooksScripts, 16, "Claude hook scripts", (name) => name.endsWith(".sh") || name.endsWith(".mjs")),
-    checkClaudeHooksInSettings(targets),
+    checkClaudeHooksInSettings(targets, installTargets),
   ];
 }
 
@@ -422,7 +434,7 @@ function runConfigChecks(
   const checks: Check[] = [];
 
   if (installTargets.includes("claude")) {
-    checks.push(...checkClaudeInstall(targets, workspace));
+    checks.push(...checkClaudeInstall(targets, workspace, installTargets));
   }
 
   if (installTargets.includes("copilot")) {
