@@ -64,7 +64,13 @@ async function driveSequence(cwd: string, calls: Array<{ name: string; args: Rec
     }
     return out;
   } finally {
-    server.kill();
+    if (server.exitCode === null && server.signalCode === null) {
+      await new Promise<void>((resolveClose) => {
+        server.once("close", () => resolveClose());
+        server.stdin.end();
+        server.kill();
+      });
+    }
   }
 }
 
