@@ -2,7 +2,7 @@
 schemaVersion: 1
 package:
   name: specky-sdd
-  version: 3.9.0
+  version: 3.10.0
 primitives:
   .apm/agents/specky-design-architect.agent.md: sha256:a9411a98bd2fe4c4aa1e6eab66e84eaf9a010897d408e1737a279fe58f7023b2
   .apm/agents/specky-implementer.agent.md: sha256:76c546fe70fe3f5399ba25f0e6de3d9b280880fe7c12d88f093cee55c0b02ece
@@ -37,7 +37,8 @@ primitives:
   .apm/hooks/specky-run.sh: sha256:0cb829414419cc05d5a592df130630045ef94d319f292815203b378b571bd721
   .apm/instructions/claude-instructions.instructions.md: sha256:9b3b77bb220950b3d087b0d5b5999bc60aa4a6d7a07b87fff914e4c1aa872982
   .apm/instructions/copilot-instructions.instructions.md: sha256:9acf227bde8f64f18b15c174171fa148f6d08dec48f163ad4524da77b4a0c93c
-  .apm/instructions/cursor-instructions.instructions.md: sha256:f78a40113030173b91f36723a0b1f86ae5fdf93c19550d3cc0f0520b8f78f4e2
+  .apm/instructions/cursor-instructions.instructions.md: sha256:ee58c87b29de0c58f373834ebee31c469943821f655153febec6bd1f6c649051
+  .apm/instructions/opencode-instructions.instructions.md: sha256:a93d80cef598d99ea4d5116aa64c1e5c8c392316dea31b0448975677a9aac450
   .apm/prompts/specky-api.prompt.md: sha256:4a13ba39ba58773cbb0bf39c12e462a80d2348aa5fdc4ce612f924658f00c7ed
   .apm/prompts/specky-brownfield.prompt.md: sha256:0f66839cc82434fead66a7dd5e26934f385afc95a3537b414471f3603b31b4ec
   .apm/prompts/specky-check-drift.prompt.md: sha256:f3a04b00ef10167cbd1cdcf63f8b8595d3bc8196d107b48963f8b123f711f3af
@@ -72,9 +73,9 @@ primitives:
   .apm/skills/specky-sdd-markdown-standard/SKILL.md: sha256:ca74b956fa30cc40f2223e6692797f3d7048ddf5b3e082835476fa3e0de1af66
   .apm/skills/specky-sdd-pipeline/references/ears-notation.md: sha256:580dc051802750904ef409b9f89873ad250326bc17c992bd53366b3b1a04f1c5
   .apm/skills/specky-sdd-pipeline/references/model-routing.md: sha256:6ca9bd5cde2a8d227c795d37c4d43b712dd183c10d5d87b987514b494f7c28f3
-  .apm/skills/specky-sdd-pipeline/SKILL.md: sha256:1d3eeeb14120ee9a4f8424f4ac013d3a74f4be249891203960195578a8b0309f
+  .apm/skills/specky-sdd-pipeline/SKILL.md: sha256:a056e76afcc13964ace69f5fdca001d02870c83e171286b0763919048bbd1027
   .apm/skills/specky-spec-engineer/SKILL.md: sha256:b5722dacc513a69b54a2d474e1dfa4a25029c5f6f2a930fae3b0ed8f3c9eb49e
   .apm/skills/specky-task-planner/SKILL.md: sha256:bf391eaa0541ae507f99eacd18a8747b597bcde4ff84d9a389fdc4aad5e76ed7
   .apm/skills/specky-test-verifier/SKILL.md: sha256:7e663a68f597f409a7209e07830b90b467052583bde8557eed389848baaa8609
   apm-policy.yml: sha256:421910c17b1a7431f1336d8374538c111245c0c1de58adc6d8eddc185010a639
-  apm.yml: sha256:7b0da15a6684b1494d2061ed1c648fdbf1347131e6e63c5812081092378bbc17
+  apm.yml: sha256:cb3ef9774dc99859582549a6670702e68c0bbc176e9acdc18919cc47d6fb7b32

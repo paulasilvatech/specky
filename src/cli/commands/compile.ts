@@ -53,8 +53,9 @@ function instructionFileForTarget(target: HarnessTarget): string {
         case "claude":
             return "claude-instructions.instructions.md";
         case "cursor":
-        case "opencode":
             return "cursor-instructions.instructions.md";
+        case "opencode":
+            return "opencode-instructions.instructions.md";
         default:
             return "copilot-instructions.instructions.md";
     }

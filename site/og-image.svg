@@ -45,10 +45,10 @@
   <rect width="1200" height="630" fill="url(#glow1)"/>
   <rect width="1200" height="630" fill="url(#glow2)"/>
 
-  <!-- Badge: Open Source · MIT License · v3.9 -->
+  <!-- Badge: Open Source · MIT License · v3.10 -->
   <rect x="410" y="80" width="380" height="32" rx="16" fill="#7c3aed" fill-opacity="0.12" stroke="#7c3aed" stroke-opacity="0.25" stroke-width="1"/>
   <circle cx="434" cy="96" r="4" fill="#a78bfa"/>
-  <text x="600" y="101" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#c4b5fd" letter-spacing="0.3">Open Source · MIT License · v3.9</text>
+  <text x="600" y="101" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="13" font-weight="600" fill="#c4b5fd" letter-spacing="0.3">Open Source · MIT License · v3.10</text>
 
   <!-- Title: Stop vibe coding. -->
   <text x="600" y="178" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="64" font-weight="900" fill="#ffffff" letter-spacing="-2.5">Stop vibe coding.</text>

@@ -13,6 +13,32 @@ import { SPECKY_SCAFFOLD_MARKER } from "./feature-package-generator.js";
 
 const SIG_FILE = ".sdd-state.json.sig";
 
+/** Phases whose completion requires explicit LGTM when pipeline.require_lgtm is enabled. */
+const LGTM_GATE_PHASES: readonly Phase[] = [Phase.Specify, Phase.Design, Phase.Tasks];
+
+/** Tools that require an APPROVE gate decision once the pipeline reaches Analyze. */
+export const GATE_SENSITIVE_TOOLS = new Set([
+  "sdd_implement",
+  "sdd_generate_iac",
+  "sdd_validate_iac",
+  "sdd_generate_dockerfile",
+  "sdd_setup_local_env",
+  "sdd_setup_codespaces",
+  "sdd_generate_devcontainer",
+  "sdd_create_branch",
+  "sdd_verify_tasks",
+  "sdd_generate_tests",
+  "sdd_verify_tests",
+  "sdd_generate_pbt",
+  "sdd_create_pr",
+  "sdd_export_work_items",
+  "sdd_generate_docs",
+  "sdd_generate_api_docs",
+  "sdd_generate_runbook",
+  "sdd_generate_onboarding",
+  "sdd_generate_all_docs",
+]);
+
 /**
  * GateHistoryEntry extended with the server-side LGTM approval flag.
  * `lgtm` records whether the caller passed lgtm:true on sdd_advance_phase —
@@ -221,10 +247,84 @@ export class StateMachine {
 
   private resolveFeatureDir(state: SddState, featureNumber?: string): string | undefined {
     if (!featureNumber) return state.features[0];
-    return state.features.find((featureDir) => {
+    const found = state.features.find((featureDir) => {
       const name = basename(featureDir);
       return name === featureNumber || name.startsWith(`${featureNumber}-`);
-    }) ?? state.features[0];
+    });
+    if (!found) {
+      const registered = state.features.map((d) => basename(d)).join(", ") || "(none)";
+      throw new Error(
+        `Feature ${featureNumber} not found. Registered features: ${registered}`,
+      );
+    }
+    return found;
+  }
+
+  /**
+   * Mark all phases before targetPhase as completed when a downstream write-tool
+   * runs without intermediate sdd_advance_phase calls (prevents orphan phases).
+   */
+  async ensurePhasesThrough(specDir: string, targetPhase: Phase): Promise<void> {
+    await this.withLock(specDir, async () => {
+      const state = await this.loadState(specDir);
+      const targetIndex = PHASE_ORDER.indexOf(targetPhase);
+      const now = new Date().toISOString();
+      for (let i = 0; i < targetIndex; i++) {
+        const phase = PHASE_ORDER[i];
+        const current = state.phases[phase];
+        if (current.status === "pending" || current.status === "in_progress") {
+          state.phases[phase] = {
+            ...current,
+            status: "completed",
+            started_at: current.started_at ?? now,
+            completed_at: now,
+          };
+        }
+      }
+      await this.saveState(specDir, state);
+    });
+  }
+
+  /** Clear a stale analysis gate after upstream artifacts are rewritten. */
+  async invalidateGateDecision(specDir: string): Promise<void> {
+    await this.mutateState(specDir, (state) => {
+      state.gate_decision = null;
+    });
+  }
+
+  /**
+   * Block implement/verify/release tools until sdd_run_analysis records APPROVE.
+   * Enforced centrally from tool-enforcement.ts for all gate-sensitive tools.
+   */
+  async validateGateForTool(specDir: string, toolName: string): Promise<{
+    allowed: boolean;
+    error_message?: string;
+    gate_decision?: string | null;
+  }> {
+    if (!GATE_SENSITIVE_TOOLS.has(toolName)) {
+      return { allowed: true };
+    }
+
+    const state = await this.loadState(specDir);
+    const phaseIndex = PHASE_ORDER.indexOf(state.current_phase);
+    const analyzeIndex = PHASE_ORDER.indexOf(Phase.Analyze);
+
+    if (phaseIndex < analyzeIndex) {
+      return { allowed: true };
+    }
+
+    if (!state.gate_decision || state.gate_decision.decision !== "APPROVE") {
+      const decision = state.gate_decision?.decision ?? null;
+      return {
+        allowed: false,
+        gate_decision: decision,
+        error_message: decision
+          ? `Gate decision is ${decision}. Address gaps and re-run sdd_run_analysis before invoking ${toolName}.`
+          : `No APPROVE gate decision recorded. Run sdd_run_analysis before invoking ${toolName}.`,
+      };
+    }
+
+    return { allowed: true };
   }
 
   private async checkRequiredArtifacts(state: SddState, featureNumber?: string): Promise<{
@@ -264,12 +364,31 @@ export class StateMachine {
   /**
    * Advance to the next phase. Validates prerequisites first.
    */
-  async advancePhase(specDir: string, featureNumber: string): Promise<SddState> {
-    return this.withLock(specDir, () => this._advancePhase(specDir, featureNumber));
+  async advancePhase(
+    specDir: string,
+    featureNumber?: string,
+    options?: { lgtm?: boolean; requireLgtm?: boolean },
+  ): Promise<SddState> {
+    return this.withLock(specDir, () => this._advancePhase(specDir, featureNumber, options));
   }
 
-  private async _advancePhase(specDir: string, featureNumber?: string): Promise<SddState> {
+  private async _advancePhase(
+    specDir: string,
+    featureNumber?: string,
+    options?: { lgtm?: boolean; requireLgtm?: boolean },
+  ): Promise<SddState> {
     const state = await this.loadState(specDir);
+
+    if (
+      options?.requireLgtm &&
+      LGTM_GATE_PHASES.includes(state.current_phase) &&
+      options.lgtm !== true
+    ) {
+      throw new Error(
+        `Cannot advance: completing the "${state.current_phase}" phase is an LGTM quality gate and pipeline.require_lgtm is enabled. Pass lgtm: true after human review.`,
+      );
+    }
+
     const currentIndex = PHASE_ORDER.indexOf(state.current_phase);
 
     if (currentIndex >= PHASE_ORDER.length - 1) {

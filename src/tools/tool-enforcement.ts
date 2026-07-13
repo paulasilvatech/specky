@@ -257,6 +257,23 @@ function wrapToolHandler(
       });
     }
 
+    const gateCheck = await options.stateMachine.validateGateForTool(specDir, toolName);
+    if (!gateCheck.allowed) {
+      const message = gateCheck.error_message ?? `Tool ${toolName} blocked by analysis gate.`;
+      await auditBestEffort(
+        auditError(options.auditLogger, context, message, phaseCheck.current_phase),
+        toolName,
+      );
+      return buildDeniedResponse({
+        error: "gate_blocked",
+        tool: toolName,
+        current_phase: phaseCheck.current_phase,
+        gate_decision: gateCheck.gate_decision ?? null,
+        message,
+        fix: "Run sdd_run_analysis and obtain APPROVE before proceeding to implementation.",
+      });
+    }
+
     // Fail-closed gate: if the pre-execution audit entry cannot be written,
     // the tool does not run (no unaudited actions in enterprise mode).
     try {

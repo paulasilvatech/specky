@@ -169,6 +169,54 @@ describe("StateMachine — state file integrity (HMAC-SHA256)", () => {
     expect(advanced.current_phase).toBe(Phase.Discover);
   });
 
+  it("throws when feature_number does not match any registered feature", async () => {
+    const featureDir = `${specDir}/001-only`;
+    mkdirSync(join(tempDir, featureDir), { recursive: true });
+    writeFileSync(join(tempDir, featureDir, "CONSTITUTION.md"), "# Constitution\n");
+
+    const state = stateMachine.createDefaultState("single-feature");
+    state.features = [featureDir];
+    await stateMachine.saveState(specDir, state);
+
+    await expect(stateMachine.advancePhase(specDir, "003")).rejects.toThrow(
+      /Feature 003 not found/,
+    );
+  });
+
+  it("validateGateForTool denies gate-sensitive tools without APPROVE", async () => {
+    const state = stateMachine.createDefaultState("gate");
+    state.current_phase = Phase.Analyze;
+    state.gate_decision = {
+      decision: "BLOCK",
+      reasons: ["incomplete"],
+      coverage_percent: 50,
+      gaps: ["missing tests"],
+      decided_at: new Date().toISOString(),
+    };
+    await stateMachine.saveState(specDir, state);
+
+    const blocked = await stateMachine.validateGateForTool(specDir, "sdd_implement");
+    expect(blocked.allowed).toBe(false);
+
+    const allowed = await stateMachine.validateGateForTool(specDir, "sdd_get_status");
+    expect(allowed.allowed).toBe(true);
+  });
+
+  it("invalidateGateDecision clears stale approval", async () => {
+    const state = stateMachine.createDefaultState("stale");
+    state.gate_decision = {
+      decision: "APPROVE",
+      reasons: [],
+      coverage_percent: 100,
+      gaps: [],
+      decided_at: new Date().toISOString(),
+    };
+    await stateMachine.saveState(specDir, state);
+    await stateMachine.invalidateGateDecision(specDir);
+    const loaded = await stateMachine.loadState(specDir);
+    expect(loaded.gate_decision).toBeNull();
+  });
+
   it("recordGateEvent resolves workspace-relative artifact paths against the workspace root, not cwd", async () => {
     // Audit finding (cognitive debt): recordGateEvent stat'ed the
     // workspace-RELATIVE artifact path against process.cwd(). In hosted mode

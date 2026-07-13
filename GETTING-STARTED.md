@@ -101,6 +101,24 @@ specky apm verify-lock # Primitive hash lock verification
 
 The APM commands validate the package that feeds `specky install`. They do not replace the installer: `specky install --target=copilot` and `specky install --target=claude` still generate the harness-native assets consumed by each target.
 
+### OpenCode two-step bootstrap
+
+OpenCode has no native hook runtime. After install, compile root context:
+
+```bash
+specky install --target=opencode
+specky compile --target=opencode   # writes AGENTS.md
+specky doctor
+```
+
+### Server-enforced analysis gates (v3.10+)
+
+The MCP server blocks implement and release tools until Phase 6 (Analyze) returns `APPROVE`:
+
+- `sdd_run_analysis` with `BLOCK` or `CHANGES_NEEDED` keeps Analyze **in progress** — it does not advance to Implement.
+- Tools such as `sdd_implement`, `sdd_generate_iac`, and `sdd_create_branch` return `gate_blocked` until analysis approves.
+- Rewriting `SPECIFICATION.md`, `DESIGN.md`, or `TASKS.md` after analysis **invalidates** the prior gate — re-run `sdd_run_analysis` before implementing.
+
 > **Why CLI instead of APM?** Versions 3.4+ ship a unified CLI that works cross-platform (macOS/Linux/Windows/WSL) with no external tooling. The `--target` flag ensures clean separation between the supported harness assets (`copilot`, `claude`, `cursor`, `opencode`, `agent-skills`).
 
 ---
@@ -441,6 +459,7 @@ Most common issues:
 |---------|-------------|-----------|
 | `specky-security-scan.sh` blocking | String "api_key" in example spec | Rename to `API_KEY_EXAMPLE` or move to a comment |
 | `specky-release-gate.sh` blocking | Missing DESIGN.md | Complete Phase 4 before release |
+| MCP `gate_blocked` on implement | Analyze not APPROVE or stale gate after rewrite | Re-run `sdd_run_analysis`; fix BLOCK/CHANGES_NEEDED findings first |
 | Hook not firing | Invalid JSON in settings.json | `cat .vscode/settings.json \| python3 -m json.tool` |
 | Hook not firing in VS Code | Settings not reloaded | Ctrl+Shift+P → "Reload Window" |
 

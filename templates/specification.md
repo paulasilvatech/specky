@@ -14,6 +14,8 @@
 
 ---
 
+{{discovery_context}}
+
 ## 1. Core Requirements
 
 {{requirements_core}}
