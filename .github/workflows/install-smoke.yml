@@ -81,16 +81,9 @@ jobs:
         shell: bash
         run: cd fresh && npx specky status
 
-      - name: Assert Claude hooks use mcp__specky__ prefix (when not stripped for Copilot)
+      - name: Assert Claude hook scripts present (co-install strips settings hooks)
         shell: bash
         run: |
           cd fresh
-          if node -e "const s=require('./.claude/settings.json'); process.exit(s.hooks && Object.keys(s.hooks).length ? 0 : 1)"; then
-            if ! grep -q 'mcp__specky__' .claude/settings.json; then
-              echo "::error::settings.json hooks missing mcp__specky__ prefix"
-              exit 1
-            fi
-          else
-            echo "Claude hooks stripped for Copilot co-install — hook scripts remain on disk"
-            test -f .claude/hooks/scripts/specky-run.sh
-          fi
+          test -f .claude/hooks/scripts/specky-run.sh
+          test -f .claude/hooks/scripts/specky-pipeline-guard.sh
