@@ -85,5 +85,5 @@ jobs:
         shell: bash
         run: |
           cd fresh
-          test -f .claude/hooks/scripts/specky-run.sh
           test -f .claude/hooks/scripts/specky-pipeline-guard.sh
+          test -f .claude/hooks/scripts/specky-artifact-validator.sh
