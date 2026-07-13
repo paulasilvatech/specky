@@ -41,4 +41,4 @@ npm install --save-dev specky-sdd@latest
 npx specky upgrade
 ```
 
-Full details: [CHANGELOG.md](../CHANGELOG.md)
+Full details: [CHANGELOG.md](../../CHANGELOG.md)

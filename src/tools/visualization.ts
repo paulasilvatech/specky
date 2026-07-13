@@ -433,14 +433,16 @@ interface ParsedRequirement {
 
 function extractRequirements(specContent: string): ParsedRequirement[] {
   const requirements: ParsedRequirement[] = [];
-  // Match EARS-style requirement sections: ### REQ-XXX-NNN ...
+  // Match EARS-style requirement sections: ### REQ-XXX-NNN: (pattern) or ### REQ-XXX-NNN — Title
   const reqRegex = /^###\s+(REQ-\w+-\d{3})\s*[:\-—]\s*(.+)$/gm;
   let match;
   let index = 0;
 
   while ((match = reqRegex.exec(specContent)) !== null) {
     const id = match[1];
-    const title = match[2].trim();
+    const headingRest = match[2].trim();
+    // Specky write_spec uses "(ears_pattern)" as the heading suffix — that is not a title.
+    const headingIsPatternOnly = /^\([^)]+\)$/.test(headingRest);
 
     // Extract the body text until the next heading
     const startPos = match.index + match[0].length;
@@ -448,6 +450,24 @@ function extractRequirements(specContent: string): ParsedRequirement[] {
     const body = nextHeading > -1
       ? specContent.slice(startPos, nextHeading).trim()
       : specContent.slice(startPos).trim();
+
+    const prose =
+      body
+        .split("\n")
+        .map((l) => l.trim())
+        .find(
+          (l) =>
+            l.length > 12 &&
+            !l.startsWith("#") &&
+            !l.startsWith("|") &&
+            !l.startsWith("---") &&
+            !(l.startsWith("**") && l.endsWith(":**")) &&
+            (!l.startsWith("- ") || /\bshall\b/i.test(l)),
+        )?.replace(/^[-*]\s+/, "") ?? body.slice(0, 160);
+
+    const title = headingIsPatternOnly
+      ? prose.replace(/\bshall\b/i, "").trim().slice(0, 80) || id
+      : headingRest;
 
     // Determine priority from content
     const priorityMatch = body.match(/\b(P[1-4])\b/) || title.match(/\b(P[1-4])\b/);
@@ -457,7 +477,7 @@ function extractRequirements(specContent: string): ParsedRequirement[] {
     const rationaleMatch = body.match(/(?:rationale|so that|because|in order to)[:\s]+(.+?)(?:\.|$)/i);
     const rationale = rationaleMatch?.[1]?.trim();
 
-    requirements.push({ id, title, text: body, priority, rationale });
+    requirements.push({ id, title, text: prose || body, priority, rationale });
     index++;
   }
 

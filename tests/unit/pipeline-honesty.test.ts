@@ -418,6 +418,36 @@ describe("pipeline honesty regressions", () => {
     expect(state.phases.analyze.status).not.toBe("completed");
   });
 
+  it("Analyze+BLOCK allows write_design remediation but still gates implement", async () => {
+    const ws = makeWorkspace("specky-honesty-remediate-");
+    const h = await buildHarness(ws);
+    cleanups.push(h.close);
+
+    await h.stateMachine.mutateState(".specs", (state) => {
+      state.current_phase = Phase.Analyze;
+      state.gate_decision = {
+        decision: "BLOCK",
+        reasons: ["gaps"],
+        coverage_percent: 40,
+        gaps: ["REQ-001 untested"],
+        decided_at: new Date().toISOString(),
+      };
+    });
+
+    const writeDesign = await h.stateMachine.validatePhaseForTool(".specs", "sdd_write_design");
+    expect(writeDesign.allowed).toBe(true);
+
+    const writeSpec = await h.stateMachine.validatePhaseForTool(".specs", "sdd_write_spec");
+    expect(writeSpec.allowed).toBe(true);
+
+    const writeTasks = await h.stateMachine.validatePhaseForTool(".specs", "sdd_write_tasks");
+    expect(writeTasks.allowed).toBe(true);
+
+    const gate = await h.stateMachine.validateGateForTool(".specs", "sdd_implement");
+    expect(gate.allowed).toBe(false);
+    expect(gate.error_message).toContain("BLOCK");
+  });
+
   it("validateGateForTool blocks implement-phase tools when gate is BLOCK", async () => {
     const ws = makeWorkspace("specky-honesty-gate-");
     const h = await buildHarness(ws);

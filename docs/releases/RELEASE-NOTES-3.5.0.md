@@ -71,4 +71,4 @@ npm install -g specky-sdd@latest   # 3.5.0
 cd your-project && specky upgrade  # refreshes assets, preserves .specs/
 ```
 
-Full details: [CHANGELOG.md](../CHANGELOG.md) · [docs/ENTERPRISE-DEPLOYMENT.md](ENTERPRISE-DEPLOYMENT.md)
+Full details: [CHANGELOG.md](../../CHANGELOG.md) · [ENTERPRISE-DEPLOYMENT.md](../ENTERPRISE-DEPLOYMENT.md)

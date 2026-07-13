@@ -46,4 +46,4 @@ specky install --target=opencode
 specky compile --target=opencode
 ```
 
-Full details: [CHANGELOG.md](../CHANGELOG.md)
+Full details: [CHANGELOG.md](../../CHANGELOG.md)

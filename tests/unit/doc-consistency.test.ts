@@ -15,6 +15,23 @@ import { SPECKY_REQUIRED_ALLOWS } from "../../src/cli/lib/settings-merger.js";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const read = (p: string): string => readFileSync(resolve(ROOT, p), "utf8");
+
+function listMarkdownFiles(dir: string): string[] {
+  const files: string[] = [];
+  const walk = (currentDir: string, relFromDocs: string): void => {
+    for (const entry of readdirSync(currentDir, { withFileTypes: true })) {
+      const rel = relFromDocs ? `${relFromDocs}/${entry.name}` : entry.name;
+      const absolute = resolve(currentDir, entry.name);
+      if (entry.isDirectory()) {
+        walk(absolute, rel);
+      } else if (entry.name.endsWith(".md")) {
+        files.push(`${dir}/${rel}`);
+      }
+    }
+  };
+  walk(resolve(ROOT, dir), "");
+  return files;
+}
 const countFiles = (dir: string, suffix: string): number =>
   readdirSync(resolve(ROOT, dir)).filter((name) => name.endsWith(suffix)).length;
 const countDirs = (dir: string): number =>
@@ -87,11 +104,7 @@ describe("README public counts match the source of truth", () => {
 describe("public documentation links and website assets", () => {
   const publicDocs = [
     "README.md",
-    "GETTING-STARTED.md",
-    "CONTRIBUTING.md",
-    ...readdirSync(resolve(ROOT, "docs"))
-      .filter((name) => name.endsWith(".md"))
-      .map((name) => `docs/${name}`),
+    ...listMarkdownFiles("docs"),
   ];
 
   it("has no missing relative Markdown file links", () => {
@@ -167,7 +180,7 @@ describe("public documentation links and website assets", () => {
   });
 
   it("keeps the getting-started install inventory aligned with source", () => {
-    const guide = read("GETTING-STARTED.md");
+    const guide = read("docs/GETTING-STARTED.md");
     expect(guide).toContain(`.github/skills/*/SKILL.md\` (${PUBLIC_COUNTS.skills})`);
     expect(guide).toContain(`.claude/skills/*/SKILL.md\` (${PUBLIC_COUNTS.skills})`);
     expect(guide).toContain(`Hooks + ${SPECKY_REQUIRED_ALLOWS.length} permission rules`);

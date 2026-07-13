@@ -389,7 +389,7 @@ Following the initial `v3.4.0-rc.15` publication, a consistency audit found that
 
 ## Audit remediation (2026-07)
 
-Remediation of `docs/AUDIT-2026-07.md` on `develop`. See that report's
+Remediation of `docs/audits/AUDIT-2026-07.md` on `develop`. See that report's
 remediation-status table and the `CHANGELOG` for detail.
 
 | Area | Change |

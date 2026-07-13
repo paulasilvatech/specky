@@ -24,6 +24,15 @@ import {
 import { enrichResponse } from "./response-builder.js";
 import { FeaturePackageGenerator } from "../services/feature-package-generator.js";
 import { AnalysisEngine } from "../services/analysis-engine.js";
+import { deriveDesignStubs } from "../utils/design-stubs.js";
+
+function syntheticSpecFromRequirements(
+  requirements: Array<{ id: string; text: string }>,
+): string {
+  return requirements
+    .map((r) => `### ${r.id}: (ubiquitous)\n\n${r.text}\n`)
+    .join("\n");
+}
 
 export function registerTranscriptTools(
   server: McpServer,
@@ -259,6 +268,7 @@ export function registerTranscriptTools(
         // ── Step 5: Write DESIGN.md ──
         console.error(`[specky] Auto-pipeline: writing DESIGN.md...`);
         const topicList = analysis.topics.map((t) => t.name);
+        const designStubs = deriveDesignStubs(syntheticSpecFromRequirements(earsRequirements));
         const designContent = await templateEngine.renderWithFrontmatter("design", {
           title: `${project_name} — Design`,
           feature_id: `001-${project_name}`,
@@ -268,10 +278,14 @@ export function registerTranscriptTools(
           adrs: analysis.decisions.length > 0
             ? analysis.decisions.map((d, i) => `ADR-${String(i + 1).padStart(3, "0")}: ${d.slice(0, 80)}`)
             : ["No decisions recorded in transcript"],
-          api_contracts: "[TODO: Define API contracts based on requirements]",
-          data_models: "[TODO: Define data models based on requirements]",
-          error_handling: "[TODO: Define error handling strategy]",
-          requirement_references: earsRequirements.map((r) => r.id).join(", "),
+          api_contracts: designStubs.api_contracts_stub,
+          data_models: designStubs.data_models,
+          error_handling: designStubs.error_handling,
+          component_design: designStubs.component_design,
+          security_architecture: designStubs.security_architecture,
+          infrastructure: designStubs.infrastructure,
+          cross_cutting: designStubs.cross_cutting,
+          requirement_references: designStubs.requirement_references,
         });
 
         await fileManager.writeSpecFile(featureDir, "DESIGN.md", designContent, force);
@@ -593,6 +607,7 @@ export function registerTranscriptTools(
             await fileManager.writeSpecFile(featureDir, "SPECIFICATION.md", specContent, force);
 
             // DESIGN.md
+            const batchStubs = deriveDesignStubs(syntheticSpecFromRequirements(earsRequirements));
             const designContent = await templateEngine.renderWithFrontmatter("design", {
               title: `${projectName} — Design`,
               feature_id: `${featureNum}-${projectName}`,
@@ -602,10 +617,14 @@ export function registerTranscriptTools(
               adrs: analysis.decisions.length > 0
                 ? analysis.decisions.map((d, i) => `ADR-${String(i+1).padStart(3,"0")}: ${d.slice(0,80)}`)
                 : ["No decisions in transcript"],
-              api_contracts: "[TODO: Define API contracts]",
-              data_models: "[TODO: Define data models]",
-              error_handling: "[TODO: Define error handling]",
-              requirement_references: earsRequirements.map((r) => r.id).join(", "),
+              api_contracts: batchStubs.api_contracts_stub,
+              data_models: batchStubs.data_models,
+              error_handling: batchStubs.error_handling,
+              component_design: batchStubs.component_design,
+              security_architecture: batchStubs.security_architecture,
+              infrastructure: batchStubs.infrastructure,
+              cross_cutting: batchStubs.cross_cutting,
+              requirement_references: batchStubs.requirement_references,
             });
             await fileManager.writeSpecFile(featureDir, "DESIGN.md", designContent, force);
 

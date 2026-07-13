@@ -119,6 +119,17 @@ const TASKS_MD = `# Tasks
 - [x] T-002: Persist orders (REQ-CORE-002)
 `;
 
+/** Canonical Specky write_tasks table format (writers emit this). */
+const TASKS_TABLE_MD = `# Tasks: Checkout
+
+## Task Breakdown
+
+| ID | Title | Parallel | Effort | Depends On | Traces To |
+|----|-------|----------|--------|------------|-----------|
+| T-001 | Build payment form | | M | — | REQ-CORE-001 |
+| T-002 | Persist orders | [P] | S | T-001 | REQ-CORE-002 |
+`;
+
 function seedFeature(workspace: string, featureDir: string, files: Record<string, string>): void {
   const dir = join(workspace, featureDir);
   mkdirSync(dir, { recursive: true });
@@ -204,6 +215,22 @@ describe("export & quality-report regressions", () => {
       expect(item.traces_to).toEqual(["REQ-CORE-001"]);
       // include_subtasks=true renders the indented bullets.
       expect(item.body).toContain("Add card number validation");
+    });
+
+    it("exports work items from canonical TASKS.md table rows (not only checkboxes)", async () => {
+      const ws = makeWorkspace("specky-export-table-");
+      seedFeature(ws, ".specs/001-checkout-service", {
+        "SPECIFICATION.md": SPEC_MD,
+        "TASKS.md": TASKS_TABLE_MD,
+      });
+      const exporter = new WorkItemExporter(new FileManager(ws));
+      const result = await exporter.export("github", ".specs", ".specs/001-checkout-service", false);
+
+      expect(result.items).toHaveLength(2);
+      expect((result.items[0] as GitHubWorkItem).title).toBe("[T-001] Build payment form");
+      expect((result.items[0] as GitHubWorkItem).traces_to).toEqual(["REQ-CORE-001"]);
+      expect((result.items[1] as GitHubWorkItem).title).toBe("[T-002] Persist orders");
+      expect((result.items[1] as GitHubWorkItem).traces_to).toEqual(["REQ-CORE-002"]);
     });
 
     it("jira items use {fields: {project.key, summary, description, issuetype.name}} honoring project_key", async () => {
@@ -315,6 +342,55 @@ describe("export & quality-report regressions", () => {
     expect(persisted).toMatch(/## Gate Decision\r?\n\r?\n(APPROVE|CHANGES_NEEDED)/); // \r?\n: Windows checkouts render templates with CRLF
     // The response mirrors the persisted gate decision.
     expect(String(res.payload["gate_decision"])).toMatch(/^(APPROVE|CHANGES_NEEDED)/);
+  });
+
+  // ── Fix: persisted COMPLIANCE.md / VERIFICATION.md carry real tables, not [TODO: …] ──
+  it("sdd_compliance_check persists COMPLIANCE.md without [TODO: placeholders", async () => {
+    const ws = makeWorkspace("specky-compliance-");
+    seedFeature(ws, ".specs/001-checkout-service", {
+      "SPECIFICATION.md": SPEC_MD,
+      "DESIGN.md": "# Design\n\nAccess control, encryption, audit logging, and monitoring.\n",
+    });
+    const h = await buildHarness(ws);
+    cleanups.push(h.close);
+
+    const res = await callTool(h.client, "sdd_compliance_check", {
+      framework: "soc2",
+      feature_number: "001",
+      spec_dir: ".specs",
+    });
+    expect(res.isError).toBe(false);
+
+    const persisted = readFileSync(join(ws, ".specs/001-checkout-service/COMPLIANCE.md"), "utf8");
+    expect(persisted).not.toContain("[TODO:");
+    expect(persisted).toContain("| SOC2-");
+    expect(persisted).toMatch(/\*\*Date\*\*: \d{4}-\d{2}-\d{2}/);
+    expect(persisted).toMatch(/## Recommendation\r?\n\r?\n.+/);
+  });
+
+  it("sdd_verify_tasks parses table TASKS.md and persists VERIFICATION.md without [TODO:", async () => {
+    const ws = makeWorkspace("specky-verify-table-");
+    seedFeature(ws, ".specs/001-checkout-service", {
+      "SPECIFICATION.md": SPEC_MD,
+      "TASKS.md": TASKS_TABLE_MD,
+    });
+    writeFileSync(join(ws, "payment.ts"), "// T-001 Build payment form\n", "utf8");
+    const h = await buildHarness(ws);
+    cleanups.push(h.close);
+
+    const res = await callTool(h.client, "sdd_verify_tasks", {
+      feature_number: "001",
+      spec_dir: ".specs",
+      code_paths: ["payment.ts"],
+    });
+    expect(res.isError).toBe(false);
+    expect(res.payload["total_tasks"]).toBe(2);
+    expect(res.raw).not.toContain("No tasks found");
+
+    const persisted = readFileSync(join(ws, ".specs/001-checkout-service/VERIFICATION.md"), "utf8");
+    expect(persisted).not.toContain("[TODO:");
+    expect(persisted).toContain("| T-001 |");
+    expect(persisted).toContain("| T-002 |");
   });
 
   // ── Fix: persisted CROSS_ANALYSIS.md carries alignment tables + recommendation ──

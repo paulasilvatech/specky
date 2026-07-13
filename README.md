@@ -32,7 +32,7 @@
 
   <p>
     <a href="https://getspecky.ai">Website</a> ·
-    <a href="GETTING-STARTED.md">Getting Started</a> ·
+    <a href="docs/GETTING-STARTED.md">Getting Started</a> ·
     <a href="https://www.npmjs.com/package/specky-sdd">npm</a> ·
     <a href="SECURITY.md">Security</a>
   </p>
@@ -45,7 +45,7 @@
 | **Start** | [What is Specky?](#what-is-specky) | Overview and ecosystem |
 | | [What's Included](#whats-included) | Agents, prompts, skills, hooks, and MCP tools |
 | | [Why Specifications Matter](#why-specifications-matter-in-the-ai-era) | Vibe coding vs deterministic development |
-| | [Getting Started](GETTING-STARTED.md) | Complete educational guide |
+| | [Getting Started](docs/GETTING-STARTED.md) | Complete educational guide |
 | **Use** | [Quick Start](#quick-start) | Install via npm CLI |
 | | [Where Specifications Live](#where-specifications-live) | File structure and naming conventions |
 | | [Input Methods](#input-methods-6-ways-to-start) | 6 ways to feed Specky |
@@ -169,7 +169,7 @@ Specky adds a **deterministic engine** between your intent and your code:
 - **Cross-Artifact Analysis**: Automatic alignment checking between spec, design, and tasks. Orphaned requirements are flagged instantly.
 - **MCP-to-MCP Architecture**: Specky outputs structured JSON that your AI client routes to GitHub, Azure DevOps, Jira, Terraform, Figma, and Docker MCP servers. No vendor lock-in.
 
-> **The AI is the operator; Specky is the engine.** The AI's creativity is channeled through a validated pipeline instead of producing unstructured guesswork. For a complete educational walkthrough, see [GETTING-STARTED.md](GETTING-STARTED.md).
+> **The AI is the operator; Specky is the engine.** The AI's creativity is channeled through a validated pipeline instead of producing unstructured guesswork. For a complete educational walkthrough, see [GETTING-STARTED.md](docs/GETTING-STARTED.md).
 
 ### What Makes Specky Different
 
@@ -1218,9 +1218,9 @@ npm run dev
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | node dist/index.js 2>/dev/null
 
 # Run the published image from GHCR (multi-arch: linux/amd64 + linux/arm64)
-docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.10.0
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.10.1
 docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
-curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.10.0"}
+curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.10.1"}
 
 # Or build and run locally from source
 docker build -t specky-sdd:dev .
@@ -1300,13 +1300,15 @@ drop-in GitHub Action that verifies EARS + the quality gate on every PR.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture details and how to add tools, templates, or services.
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for architecture details and how to add tools, templates, or services.
 
 ## Links
 
+- [docs/README.md](docs/README.md): Documentation index
+- [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md): Complete educational guide
 - [CHANGELOG.md](CHANGELOG.md): Version history and release notes
 - [SECURITY.md](SECURITY.md): Vulnerability disclosure policy and OWASP Top 10 coverage
-- [CONTRIBUTING.md](CONTRIBUTING.md): How to add tools, templates, or services
+- [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md): How to add tools, templates, or services
 - [Spec-Kit](https://github.com/paulasilvatech/spec-kit): The SDD methodology foundation
 - [npm package](https://www.npmjs.com/package/specky-sdd): `specky-sdd` on npm
 

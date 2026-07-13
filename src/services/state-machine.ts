@@ -652,6 +652,20 @@ export class StateMachine {
       };
     }
 
+    // Analyze remediation: when the quality gate is absent / BLOCK / CHANGES_NEEDED,
+    // allow rewriting spec/design/tasks so authors can fix findings and re-run analysis.
+    const REMEDIATION_TOOLS = new Set(["sdd_write_spec", "sdd_write_design", "sdd_write_tasks"]);
+    if (currentPhase === Phase.Analyze && REMEDIATION_TOOLS.has(toolName)) {
+      const gate = state.gate_decision?.decision;
+      if (!gate || gate === "BLOCK" || gate === "CHANGES_NEEDED") {
+        return {
+          allowed: true,
+          current_phase: currentPhase,
+          expected_phases: [...allowedPhases, Phase.Analyze],
+        };
+      }
+    }
+
     return {
       allowed: false,
       current_phase: currentPhase,

@@ -18,6 +18,11 @@ import { AnalysisEngine } from "../services/analysis-engine.js";
 import { enrichResponse } from "./response-builder.js";
 import { routingEngine } from "../utils/routing-helper.js";
 import { slugify } from "../utils/slug.js";
+import { extractRequirementIds } from "../utils/id-contracts.js";
+import {
+  deriveDesignStubs,
+  partitionFunctionalNonFunctional,
+} from "../utils/design-stubs.js";
 import {
   initInputSchema,
   discoverInputSchema,
@@ -66,14 +71,26 @@ function formatDiscoveryContext(answers: Record<string, string>): string {
   return `## Discovery Context\n\nAnswers from the structured discovery phase:\n\n${rows}\n\n---\n`;
 }
 
-function extractRequirementIds(specContent: string): string[] {
-  const ids: string[] = [];
-  const re = /### (REQ-[A-Z]+-\d{3}):/g;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(specContent)) !== null) {
-    ids.push(m[1]);
-  }
-  return ids;
+function renderRequirementSections(
+  requirements: Array<{ id: string; text: string; acceptance_criteria: string[] }>,
+  earsValidator: EarsValidator,
+): string {
+  return requirements
+    .map((req) => {
+      const pattern = earsValidator.detectPattern(req.text);
+      return [
+        `### ${req.id}: (${pattern})`,
+        "",
+        req.text,
+        "",
+        "**Acceptance Criteria:**",
+        ...req.acceptance_criteria.map((ac) => `- ${ac}`),
+        "",
+        "---",
+        "",
+      ].join("\n");
+    })
+    .join("\n");
 }
 
 async function shouldOverwriteScaffold(
@@ -356,21 +373,10 @@ export function registerPipelineTools(
         const scores = computeEarsScores(requirements, validationIssues.length);
         const discoveryContext = formatDiscoveryContext(discovery_answers);
 
-        // Build requirement sections
-        const reqSections = requirements.map((req) => {
-          const pattern = earsValidator.detectPattern(req.text);
-          return [
-            `### ${req.id}: (${pattern})`,
-            "",
-            req.text,
-            "",
-            "**Acceptance Criteria:**",
-            ...req.acceptance_criteria.map((ac) => `- ${ac}`),
-            "",
-            "---",
-            "",
-          ].join("\n");
-        });
+        const { functional, nonfunctional } = partitionFunctionalNonFunctional(requirements);
+        const requirementsCore = renderRequirementSections(requirements, earsValidator);
+        const requirementsFunctional = renderRequirementSections(functional, earsValidator);
+        const requirementsNonfunctional = renderRequirementSections(nonfunctional, earsValidator);
 
         // Build acceptance criteria table
         const acTable = requirements
@@ -386,9 +392,9 @@ export function registerPipelineTools(
           feature_id: featureId,
           project_name: feature_name,
           discovery_context: discoveryContext,
-          requirements_core: reqSections.join("\n"),
-          requirements_functional: "",
-          requirements_nonfunctional: "",
+          requirements_core: requirementsCore,
+          requirements_functional: requirementsFunctional,
+          requirements_nonfunctional: requirementsNonfunctional,
           acceptance_criteria_table: acTable,
           ...scores,
         });
@@ -594,13 +600,11 @@ export function registerPipelineTools(
           throw new Error(`Feature ${feature_number} not found in ${spec_dir}`);
         }
 
-        let reqRefs = "[TODO: requirement_references]";
+        let stubs = deriveDesignStubs("");
+        let specContent = "";
         try {
-          const specContent = await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md");
-          const reqIds = extractRequirementIds(specContent);
-          if (reqIds.length > 0) {
-            reqRefs = reqIds.map((id) => `- ${id}`).join("\n");
-          }
+          specContent = await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md");
+          stubs = deriveDesignStubs(specContent);
         } catch {
           // SPECIFICATION.md may not exist yet
         }
@@ -631,7 +635,7 @@ export function registerPipelineTools(
                   `### ${c.method} ${c.endpoint}\n\n${c.description}\n\n**Request:** ${c.request || "N/A"}\n\n**Response:** ${c.response || "N/A"}\n`
               )
               .join("\n---\n\n")
-          : "[TODO: Add API contracts if applicable]";
+          : stubs.api_contracts_stub;
 
         await stateMachine.ensurePhasesThrough(spec_dir, Phase.Design);
         await stateMachine.recordPhaseStart(spec_dir, Phase.Design);
@@ -644,17 +648,17 @@ export function registerPipelineTools(
           architecture_overview,
           system_context: system_context || architecture_overview,
           container_architecture: container_architecture || architecture_overview,
-          component_design: component_design || "[TODO: component_design]",
-          code_level_design: code_level_design || "[TODO: code_level_design]",
+          component_design: component_design || stubs.component_design,
+          code_level_design: code_level_design || stubs.code_level_design,
           diagrams: mermaid_diagrams.map((d) => d.title),
-          data_models: data_models || "[TODO: data_models]",
+          data_models: data_models || stubs.data_models,
           api_contracts: apiContent,
-          infrastructure: infrastructure || "[TODO: infrastructure]",
-          security_architecture: security_architecture || "[TODO: security_architecture]",
+          infrastructure: infrastructure || stubs.infrastructure,
+          security_architecture: security_architecture || stubs.security_architecture,
           adrs: adrs ? adrs.map((a) => a.title) : [],
-          error_handling: error_handling || "[TODO: error_handling]",
-          cross_cutting: cross_cutting || "[TODO: cross_cutting]",
-          requirement_references: reqRefs,
+          error_handling: error_handling || stubs.error_handling,
+          cross_cutting: cross_cutting || stubs.cross_cutting,
+          requirement_references: stubs.requirement_references,
         });
 
         // Replace the template diagram/ADR placeholders with actual content

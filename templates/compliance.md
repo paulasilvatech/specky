@@ -12,8 +12,7 @@
 
 | Control ID | Name | Status | Evidence | Remediation |
 |-----------|------|--------|----------|-------------|
-{{#each findings}}
-| {{control_id}} | {{control_name}} | {{status}} | {{evidence}} | {{remediation}} |
+{{#each findings}}{{this}}
 {{/each}}
 
 ## Summary

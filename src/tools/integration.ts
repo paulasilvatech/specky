@@ -20,7 +20,7 @@ import {
   researchInputSchema,
 } from "../schemas/integration.js";
 import { enrichResponse } from "./response-builder.js";
-import { extractRequirementIds, normalizeTaskId, TASK_ID_PATTERN, TASK_LINE_PATTERN } from "../utils/id-contracts.js";
+import { parseTasksFromMarkdown } from "../utils/task-parser.js";
 
 export function registerIntegrationTools(
   server: McpServer,
@@ -237,8 +237,15 @@ export function registerIntegrationTools(
 
         const tasksContent = await fileManager.readSpecFile(feature.directory, "TASKS.md");
 
-        // Parse tasks from TASKS.md
-        const allTasks = parseTasks(tasksContent);
+        // Parse tasks from TASKS.md (table + checkbox)
+        const allTasks = parseTasksFromMarkdown(tasksContent).map((t) => ({
+          id: t.id,
+          title: t.title,
+          dependencies: t.dependencies,
+          traces_to: t.traces_to,
+          parallel: t.parallel,
+          file_path: undefined as string | undefined,
+        }));
 
         // Filter to requested task_ids if provided
         const targetTasks = task_ids
@@ -246,7 +253,9 @@ export function registerIntegrationTools(
           : allTasks;
 
         if (targetTasks.length === 0) {
-          throw new Error("No tasks found. Ensure TASKS.md contains tasks in the format: - [ ] T001 Task title");
+          throw new Error(
+            "No tasks found. Ensure TASKS.md contains a Task Breakdown table (| T-001 | … |) or checkbox lines (- [ ] T-001: Title)."
+          );
         }
 
         // Build dependency graph and sort into phases
@@ -369,26 +378,8 @@ interface ParsedTask {
   title: string;
   dependencies: string[];
   traces_to: string[];
+  parallel?: boolean;
   file_path?: string;
-}
-
-function parseTasks(tasksContent: string): ParsedTask[] {
-  const tasks: ParsedTask[] = [];
-  let match;
-  while ((match = TASK_LINE_PATTERN.exec(tasksContent)) !== null) {
-    const id = normalizeTaskId(match[1]);
-    const title = match[3].trim();
-
-    // Extract dependency references like "depends: T-001, T002"
-    const dependencySection = /depends?:\s*([^;.)]+)/i.exec(title)?.[1] ?? "";
-    const dependencies = [...dependencySection.matchAll(TASK_ID_PATTERN)].map((dep) => normalizeTaskId(dep[0]));
-
-    // Extract REQ references
-    const reqIds = extractRequirementIds(title);
-
-    tasks.push({ id, title, dependencies, traces_to: reqIds });
-  }
-  return tasks;
 }
 
 function buildPhases(tasks: ParsedTask[], includeCheckpoints: boolean): ImplementationPhase[] {
