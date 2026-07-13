@@ -31,8 +31,12 @@ function listFiles(dir, suffix) {
     .sort((a, b) => a.localeCompare(b));
 }
 
+function normalizeNewlines(text) {
+  return text.replace(/\r\n/g, "\n");
+}
+
 function readFrontmatter(text) {
-  const match = text.match(/^---\n([\s\S]*?)\n---/);
+  const match = normalizeNewlines(text).match(/^---\n([\s\S]*?)\n---/);
   return match ? match[1] : "";
 }
 

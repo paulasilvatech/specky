@@ -9,7 +9,7 @@
  */
 import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
-import { relative, resolve } from "node:path";
+import { relative, resolve, sep } from "node:path";
 import { parse, stringify } from "yaml";
 import { sourcePaths } from "../paths.js";
 
@@ -45,7 +45,7 @@ export function hashPrimitives(pkgRoot: string): Record<string, string> {
 
     const map: Record<string, string> = {};
     for (const file of files.sort((a, b) => a.localeCompare(b))) {
-        map[relative(pkgRoot, file)] = sha256(file);
+        map[relative(pkgRoot, file).split(sep).join("/")] = sha256(file);
     }
     return map;
 }

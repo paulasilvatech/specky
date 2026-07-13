@@ -65,6 +65,8 @@ export function writeMcpRegistration(
   } else if (opts.useVscodeSchema) {
     existing.servers = existing.servers ?? {};
     existing.servers[name] = DEFAULT_SERVER;
+    existing.mcpServers = existing.mcpServers ?? {};
+    existing.mcpServers[name] = DEFAULT_SERVER;
   } else {
     existing.mcpServers = existing.mcpServers ?? {};
     existing.mcpServers[name] = DEFAULT_SERVER;

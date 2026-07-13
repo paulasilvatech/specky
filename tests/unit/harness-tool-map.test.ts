@@ -41,6 +41,11 @@ describe("harness tool-map", () => {
             "Glob",
             "Grep",
         ]);
+        expect(logicalToNative("workspace.edit", "claude")).toEqual([
+            "Edit",
+            "Write",
+            "MultiEdit",
+        ]);
         expect(logicalToNative("agent.delegate", "claude")).toEqual(["Task"]);
         expect(logicalToNative("mcp.specky.sdd_get_status", "claude")).toEqual([
             "mcp__specky__sdd_get_status",

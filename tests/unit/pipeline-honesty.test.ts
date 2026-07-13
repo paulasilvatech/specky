@@ -21,6 +21,7 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } f
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
+import { Phase } from "../../src/constants.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
@@ -332,5 +333,109 @@ describe("pipeline honesty regressions", () => {
       | undefined;
     expect(lastGate?.phase).toBe("specify");
     expect(lastGate?.lgtm).toBe(false);
+  });
+
+  it("ensurePhasesThrough completes discover when write_spec runs without advance", async () => {
+    const ws = makeWorkspace("specky-honesty-orphan-");
+    const h = await buildHarness(ws);
+    cleanups.push(h.close);
+
+    await callTool(h.client, "sdd_init", { project_name: "orphan-phase" });
+    await callTool(h.client, "sdd_discover", { project_idea: "orphan probe" });
+    await callTool(h.client, "sdd_write_spec", {
+      feature_name: "orphan-phase",
+      discovery_answers: { Q1: "scope answer" },
+      requirements: [
+        {
+          id: "REQ-CORE-001",
+          ears_pattern: "ubiquitous",
+          text: "The system shall expose a health endpoint.",
+          acceptance_criteria: ["GET /health returns 200"],
+        },
+      ],
+    });
+
+    const state = await h.stateMachine.loadState(".specs");
+    expect(state.phases.discover.status).toBe("completed");
+    expect(state.phases.specify.status).toBe("completed");
+  });
+
+  it("discovery_answers are persisted in SPECIFICATION.md", async () => {
+    const ws = makeWorkspace("specky-honesty-discovery-");
+    const h = await buildHarness(ws);
+    cleanups.push(h.close);
+
+    await callTool(h.client, "sdd_init", { project_name: "discovery-ctx" });
+    await callTool(h.client, "sdd_discover", { project_idea: "discovery context" });
+    await callTool(h.client, "sdd_write_spec", {
+      feature_name: "discovery-ctx",
+      discovery_answers: { Q1: "Users are developers", Q2: "Must use TypeScript" },
+      requirements: [
+        {
+          id: "REQ-CORE-001",
+          ears_pattern: "ubiquitous",
+          text: "The system shall provide a REST API.",
+          acceptance_criteria: ["API responds to requests"],
+        },
+      ],
+    });
+
+    const spec = readFileSync(join(ws, ".specs/001-discovery-ctx/SPECIFICATION.md"), "utf8");
+    expect(spec).toContain("## Discovery Context");
+    expect(spec).toContain("Users are developers");
+    expect(spec).toContain("Must use TypeScript");
+  });
+
+  it("sdd_run_analysis with BLOCK does not mark analyze phase completed", async () => {
+    const ws = makeWorkspace("specky-honesty-block-");
+    const h = await buildHarness(ws);
+    cleanups.push(h.close);
+
+    await callTool(h.client, "sdd_init", { project_name: "block-gate" });
+    const featureDir = join(ws, ".specs/001-block-gate");
+    writeFileSync(join(featureDir, "SPECIFICATION.md"), [
+      "### REQ-CORE-001: (ubiquitous)",
+      "",
+      "The system shall be fast and user-friendly.",
+      "",
+      "**Acceptance Criteria:**",
+      "- It works well",
+      "",
+    ].join("\n"));
+    writeFileSync(join(featureDir, "DESIGN.md"), "# Design\n");
+    writeFileSync(join(featureDir, "TASKS.md"), "# Tasks\n| T-001 | Do thing | | 1h | | REQ-CORE-001 |\n");
+
+    await h.stateMachine.mutateState(".specs", (state) => {
+      state.current_phase = Phase.Tasks;
+      state.phases[Phase.Tasks] = { status: "completed", completed_at: new Date().toISOString() };
+    });
+
+    const analysis = await callTool(h.client, "sdd_run_analysis", { feature_number: "001" });
+    expect(analysis.isError).toBe(false);
+    expect((analysis.payload["gate_decision"] as { decision: string }).decision).not.toBe("APPROVE");
+
+    const state = await h.stateMachine.loadState(".specs");
+    expect(state.phases.analyze.status).not.toBe("completed");
+  });
+
+  it("validateGateForTool blocks implement-phase tools when gate is BLOCK", async () => {
+    const ws = makeWorkspace("specky-honesty-gate-");
+    const h = await buildHarness(ws);
+    cleanups.push(h.close);
+
+    await h.stateMachine.mutateState(".specs", (state) => {
+      state.current_phase = Phase.Analyze;
+      state.gate_decision = {
+        decision: "BLOCK",
+        reasons: ["gaps"],
+        coverage_percent: 40,
+        gaps: ["REQ-001 untested"],
+        decided_at: new Date().toISOString(),
+      };
+    });
+
+    const gate = await h.stateMachine.validateGateForTool(".specs", "sdd_implement");
+    expect(gate.allowed).toBe(false);
+    expect(gate.error_message).toContain("BLOCK");
   });
 });

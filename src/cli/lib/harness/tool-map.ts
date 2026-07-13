@@ -67,8 +67,8 @@ const NATIVE: Record<PlainLogicalTool, Record<HarnessTarget, string[]>> = {
     },
     "workspace.edit": {
         copilot: ["edit"],
-        claude: ["Edit", "Write"],
-        cursor: ["Edit", "Write"],
+        claude: ["Edit", "Write", "MultiEdit"],
+        cursor: ["Edit", "Write", "MultiEdit"],
         opencode: ["edit"],
         "agent-skills": ["workspace.edit"],
     },

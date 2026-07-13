@@ -91,6 +91,14 @@ The pipeline includes 16 automation hooks for customization:
 
 Hooks are configured in `sdd-hooks.json` with PreToolUse and PostToolUse matchers.
 
+## Server-Enforced Analysis Gate (v3.10+)
+
+Once the pipeline reaches **Analyze**, implement/verify/release MCP tools require `gate_decision: APPROVE` from `sdd_run_analysis`. The server blocks tools such as `sdd_implement`, `sdd_generate_iac`, and `sdd_create_pr` centrally via `validateGateForTool` — not only when calling `sdd_advance_phase`.
+
+Rewriting SPECIFICATION.md, DESIGN.md, or TASKS.md invalidates the gate; re-run analysis before implementation.
+
+Phase bookkeeping: write-tools call `ensurePhasesThrough` so skipping `sdd_advance_phase` does not leave orphan phases (e.g. Discover stuck in `in_progress`).
+
 ## Key Artifacts per Phase
 
 - **CONSTITUTION.md** (Phase 0 — Init) — Project charter, scope boundaries, success criteria, stakeholder register

@@ -61,10 +61,11 @@ jobs:
           assert_eq() { actual="$1"; expected="$2"; label="$3"; if [ "$actual" != "$expected" ]; then echo "::error::$label: expected $expected, got $actual"; fail=1; fi; }
           assert_eq "$(count .claude/agents)"        13 "claude agents"
           assert_eq "$(count .claude/commands)"      22 "claude commands"
-          assert_eq "$(countd .claude/skills)"       8  "claude skills"
+          assert_eq "$(countd .claude/skills)"       14 "claude skills"
           assert_eq "$(count .claude/hooks/scripts)" 16 "claude hooks"
           assert_eq "$(count .github/agents)"        13 "copilot agents"
           assert_eq "$(count .github/prompts)"       22 "copilot prompts"
+          assert_eq "$(countd .github/skills)"       14 "copilot skills"
           assert_eq "$(count .github/hooks/specky/scripts)" 16 "copilot hooks"
           test -f .claude/settings.json || { echo "::error::missing .claude/settings.json"; fail=1; }
           test -f .mcp.json || { echo "::error::missing .mcp.json"; fail=1; }
@@ -80,11 +81,9 @@ jobs:
         shell: bash
         run: cd fresh && npx specky status
 
-      - name: Assert Claude hooks use mcp__specky__ prefix
+      - name: Assert Claude hook scripts present (co-install strips settings hooks)
         shell: bash
         run: |
           cd fresh
-          if ! grep -q 'mcp__specky__sdd_init' .claude/settings.json; then
-            echo "::error::settings.json missing mcp__specky__ prefix"
-            exit 1
-          fi
+          test -f .claude/hooks/scripts/specky-pipeline-guard.sh
+          test -f .claude/hooks/scripts/specky-artifact-validator.sh

@@ -36,6 +36,46 @@ import {
  */
 const LGTM_GATE_PHASES: readonly Phase[] = [Phase.Specify, Phase.Design, Phase.Tasks];
 
+function computeEarsScores(
+  requirements: Array<{ id: string; acceptance_criteria: string[] }>,
+  validationIssueCount: number,
+): {
+  ears_compliance: string;
+  testability_score: string;
+  traceability_score: string;
+  uniqueness_score: string;
+} {
+  const total = requirements.length;
+  const validCount = Math.max(0, total - validationIssueCount);
+  const testableCount = requirements.filter((r) => r.acceptance_criteria.length > 0).length;
+  const ids = requirements.map((r) => r.id);
+  const uniqueIds = new Set(ids).size;
+  const traceableCount = ids.filter((id) => /^REQ-[A-Z]+-\d{3}$/.test(id)).length;
+  return {
+    ears_compliance: `${validCount}/${total}`,
+    testability_score: `${testableCount}/${total}`,
+    traceability_score: `${traceableCount}/${total}`,
+    uniqueness_score: `${uniqueIds}/${total}`,
+  };
+}
+
+function formatDiscoveryContext(answers: Record<string, string>): string {
+  const entries = Object.entries(answers);
+  if (entries.length === 0) return "";
+  const rows = entries.map(([q, a]) => `- **${q}:** ${a}`).join("\n");
+  return `## Discovery Context\n\nAnswers from the structured discovery phase:\n\n${rows}\n\n---\n`;
+}
+
+function extractRequirementIds(specContent: string): string[] {
+  const ids: string[] = [];
+  const re = /### (REQ-[A-Z]+-\d{3}):/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(specContent)) !== null) {
+    ids.push(m[1]);
+  }
+  return ids;
+}
+
 async function shouldOverwriteScaffold(
   fileManager: FileManager,
   featureDir: string,
@@ -60,10 +100,6 @@ export function registerPipelineTools(
 ): void {
   const featurePackageGenerator = new FeaturePackageGenerator(fileManager);
   const analysisEngine = new AnalysisEngine(earsValidator);
-  // Project config (.specky/config.yml) — read from the same workspace root
-  // the server resolved, so pipeline gating (pipeline.require_lgtm) works
-  // without changing the registration signature in index.ts.
-  const config = loadConfig(fileManager.workspaceRoot);
 
   // ─── sdd_init ───
   server.registerTool(
@@ -149,7 +185,7 @@ export function registerPipelineTools(
         "Returns 7 structured discovery questions tailored to your project idea. Covers: scope, users, constraints, integrations, performance, security, and deployment.",
       inputSchema: discoverInputSchema,
       annotations: {
-        readOnlyHint: true,
+        readOnlyHint: false,
         destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
@@ -231,6 +267,7 @@ export function registerPipelineTools(
 
         // Record discover phase
         await stateMachine.recordPhaseStart(spec_dir, Phase.Discover);
+        await stateMachine.recordPhaseComplete(spec_dir, Phase.Discover);
 
         const result = {
           project_idea,
@@ -264,7 +301,7 @@ export function registerPipelineTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_name, feature_number, requirements, spec_dir, force }) => {
+    async ({ feature_name, feature_number, discovery_answers, requirements, spec_dir, force }) => {
       try {
         // Phase validation
         const phaseCheck = await stateMachine.validatePhaseForTool(spec_dir, "sdd_write_spec");
@@ -304,6 +341,21 @@ export function registerPipelineTools(
           }
         }
 
+        if (validationIssues.length > 0 && !force) {
+          return {
+            content: [{ type: "text" as const, text: JSON.stringify({
+              error: "ears_validation_failed",
+              tool: "sdd_write_spec",
+              validation_issues: validationIssues,
+              message: "One or more requirements failed EARS validation. Fix them or pass force: true to write anyway.",
+            }, null, 2) }],
+            isError: true,
+          };
+        }
+
+        const scores = computeEarsScores(requirements, validationIssues.length);
+        const discoveryContext = formatDiscoveryContext(discovery_answers);
+
         // Build requirement sections
         const reqSections = requirements.map((req) => {
           const pattern = earsValidator.detectPattern(req.text);
@@ -325,18 +377,20 @@ export function registerPipelineTools(
           .map((req) => `| ${req.id} | ${req.text.slice(0, 60)}... | Acceptance test |`)
           .join("\n");
 
+        await stateMachine.ensurePhasesThrough(spec_dir, Phase.Specify);
+        await stateMachine.recordPhaseStart(spec_dir, Phase.Specify);
+        await stateMachine.invalidateGateDecision(spec_dir);
+
         const content = await templateEngine.renderWithFrontmatter("specification", {
           title: `${feature_name} — Specification`,
           feature_id: featureId,
           project_name: feature_name,
+          discovery_context: discoveryContext,
           requirements_core: reqSections.join("\n"),
           requirements_functional: "",
           requirements_nonfunctional: "",
           acceptance_criteria_table: acTable,
-          ears_compliance: `${requirements.length}/${requirements.length}`,
-          testability_score: `${requirements.length}/${requirements.length}`,
-          traceability_score: `${requirements.length}/${requirements.length}`,
-          uniqueness_score: `${requirements.length}/${requirements.length}`,
+          ...scores,
         });
 
         const filePath = await fileManager.writeSpecFile(featureDir, "SPECIFICATION.md", content, force);
@@ -356,8 +410,6 @@ export function registerPipelineTools(
           });
         }
 
-        // Update state
-        await stateMachine.recordPhaseStart(spec_dir, Phase.Specify);
         await stateMachine.recordPhaseComplete(spec_dir, Phase.Specify);
 
         const result = {
@@ -394,7 +446,7 @@ export function registerPipelineTools(
         "Reads SPECIFICATION.md and returns up to 5 disambiguation questions targeting ambiguous or incomplete requirements.",
       inputSchema: clarifyInputSchema,
       annotations: {
-        readOnlyHint: true,
+        readOnlyHint: false,
         destructiveHint: false,
         idempotentHint: true,
         openWorldHint: false,
@@ -482,7 +534,6 @@ export function registerPipelineTools(
         }
 
         await stateMachine.recordPhaseStart(spec_dir, Phase.Clarify);
-        await stateMachine.recordPhaseComplete(spec_dir, Phase.Clarify);
 
         const result = {
           status: "clarification_questions",
@@ -492,7 +543,6 @@ export function registerPipelineTools(
         };
 
         const enriched = await enrichResponse("sdd_clarify", result, stateMachine, spec_dir, {
-          completedPhase: Phase.Clarify,
           nextPhase: Phase.Design,
         });
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
@@ -544,6 +594,17 @@ export function registerPipelineTools(
           throw new Error(`Feature ${feature_number} not found in ${spec_dir}`);
         }
 
+        let reqRefs = "[TODO: requirement_references]";
+        try {
+          const specContent = await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md");
+          const reqIds = extractRequirementIds(specContent);
+          if (reqIds.length > 0) {
+            reqRefs = reqIds.map((id) => `- ${id}`).join("\n");
+          }
+        } catch {
+          // SPECIFICATION.md may not exist yet
+        }
+
         // Build diagrams section
         const diagramsContent = mermaid_diagrams
           .map(
@@ -572,6 +633,10 @@ export function registerPipelineTools(
               .join("\n---\n\n")
           : "[TODO: Add API contracts if applicable]";
 
+        await stateMachine.ensurePhasesThrough(spec_dir, Phase.Design);
+        await stateMachine.recordPhaseStart(spec_dir, Phase.Design);
+        await stateMachine.invalidateGateDecision(spec_dir);
+
         const content = await templateEngine.renderWithFrontmatter("design", {
           title: `${feature.name} — Design`,
           feature_id: `${feature_number}-${feature.name}`,
@@ -589,7 +654,7 @@ export function registerPipelineTools(
           adrs: adrs ? adrs.map((a) => a.title) : [],
           error_handling: error_handling || "[TODO: error_handling]",
           cross_cutting: cross_cutting || "[TODO: cross_cutting]",
-          requirement_references: "[TODO: requirement_references]",
+          requirement_references: reqRefs,
         });
 
         // Replace the template diagram/ADR placeholders with actual content
@@ -611,7 +676,6 @@ export function registerPipelineTools(
         const overwriteDesign = await shouldOverwriteScaffold(fileManager, feature.directory, "DESIGN.md", force);
         const filePath = await fileManager.writeSpecFile(feature.directory, "DESIGN.md", finalContent, overwriteDesign);
 
-        await stateMachine.recordPhaseStart(spec_dir, Phase.Design);
         await stateMachine.recordPhaseComplete(spec_dir, Phase.Design);
 
         const result = {
@@ -705,10 +769,13 @@ export function registerPipelineTools(
           total_effort: `${tasks.length} tasks`,
         });
 
+        await stateMachine.ensurePhasesThrough(spec_dir, Phase.Tasks);
+        await stateMachine.recordPhaseStart(spec_dir, Phase.Tasks);
+        await stateMachine.invalidateGateDecision(spec_dir);
+
         const overwriteTasks = await shouldOverwriteScaffold(fileManager, feature.directory, "TASKS.md", force);
         const filePath = await fileManager.writeSpecFile(feature.directory, "TASKS.md", content, overwriteTasks);
 
-        await stateMachine.recordPhaseStart(spec_dir, Phase.Tasks);
         await stateMachine.recordPhaseComplete(spec_dir, Phase.Tasks);
 
         const result = {
@@ -825,25 +892,30 @@ export function registerPipelineTools(
 
         const filePath = await fileManager.writeSpecFile(feature.directory, "ANALYSIS.md", content, force);
 
+        await stateMachine.ensurePhasesThrough(spec_dir, Phase.Analyze);
+        await stateMachine.recordPhaseStart(spec_dir, Phase.Analyze);
+
         // Update state with gate decision
         await stateMachine.mutateState(spec_dir, (state) => {
           state.gate_decision = gateDecision;
         });
-        await stateMachine.recordPhaseStart(spec_dir, Phase.Analyze);
-        await stateMachine.recordPhaseComplete(spec_dir, Phase.Analyze);
+
+        if (decision === "APPROVE") {
+          await stateMachine.recordPhaseComplete(spec_dir, Phase.Analyze);
+        }
 
         const result = {
           status: "analysis_complete",
           file: filePath,
           gate_decision: gateDecision,
           next_action: decision === "APPROVE"
-            ? "Pipeline complete! Proceed to implementation."
+            ? "Gate APPROVE recorded. Proceed to implementation."
             : `Address the following gaps: ${gaps.join(", ")}`,
         };
 
         const enriched = await enrichResponse("sdd_run_analysis", result, stateMachine, spec_dir, {
-          completedPhase: Phase.Analyze,
-          nextPhase: Phase.Implement,
+          completedPhase: decision === "APPROVE" ? Phase.Analyze : undefined,
+          nextPhase: decision === "APPROVE" ? Phase.Implement : Phase.Analyze,
           artifactsProduced: ["ANALYSIS.md"],
           summaryOfWork: `Analysis complete: ${decision}`,
         });
@@ -881,31 +953,14 @@ export function registerPipelineTools(
     },
     async ({ spec_dir, feature_number, lgtm }) => {
       try {
-        // Capture phase before advancing for gate instrumentation
+        const config = loadConfig(fileManager.workspaceRoot);
         const priorState = await stateMachine.loadState(spec_dir);
         const completedPhase = priorState.current_phase;
 
-        // Server-side LGTM gate (opt-in): with pipeline.require_lgtm enabled,
-        // completing a review-gated phase demands explicit human approval
-        // instead of relying on the agent-layer "reply LGTM" convention.
-        if (
-          config.pipeline.require_lgtm &&
-          LGTM_GATE_PHASES.includes(completedPhase) &&
-          lgtm !== true
-        ) {
-          return {
-            content: [{ type: "text" as const, text: JSON.stringify({
-              error: "lgtm_required",
-              tool: "sdd_advance_phase",
-              phase: completedPhase,
-              message: `Cannot advance: completing the "${completedPhase}" phase is an LGTM quality gate and pipeline.require_lgtm is enabled. Explicit human approval is required.`,
-              fix: "Review the phase artifact, then call sdd_advance_phase again with lgtm: true to record the approval.",
-            }, null, 2) }],
-            isError: true,
-          };
-        }
-
-        const state = await stateMachine.advancePhase(spec_dir, feature_number);
+        const state = await stateMachine.advancePhase(spec_dir, feature_number, {
+          lgtm,
+          requireLgtm: config.pipeline.require_lgtm,
+        });
         const currentIndex = PHASE_ORDER.indexOf(state.current_phase);
         const nextPhase = currentIndex < PHASE_ORDER.length - 1
           ? PHASE_ORDER[currentIndex + 1]
@@ -947,6 +1002,19 @@ export function registerPipelineTools(
         const enriched = await enrichResponse("sdd_advance_phase", result, stateMachine, spec_dir);
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes("LGTM quality gate") && message.includes("pipeline.require_lgtm")) {
+          return {
+            content: [{ type: "text" as const, text: JSON.stringify({
+              error: "lgtm_required",
+              tool: "sdd_advance_phase",
+              message,
+              fix: "Review the phase artifact, then call sdd_advance_phase again with lgtm: true to record the approval.",
+              require_lgtm: true,
+            }, null, 2) }],
+            isError: true,
+          };
+        }
         return {
           content: [{ type: "text" as const, text: formatError("sdd_advance_phase", error as Error) }],
           isError: true,

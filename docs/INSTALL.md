@@ -58,9 +58,9 @@ deployments, use the published GHCR image instead of installing Node/npm on the
 host:
 
 ```bash
-docker pull ghcr.io/paulasilvatech/specky:latest        # or pin: :3.9.0
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin: :3.10.0
 docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
-curl -s http://localhost:3200/health                    # -> {"status":"ok","version":"3.9.0"}
+curl -s http://localhost:3200/health                    # -> {"status":"ok","version":"3.10.0"}
 ```
 
 Production deployments should pin an explicit version tag and enable token auth
@@ -221,6 +221,22 @@ If Copilot is part of the selected target set (`copilot`, `both`, or `all`), Spe
 | OpenCode | `specky install --target=opencode` | `.opencode/agents/`, `.opencode/commands/`, `opencode.json`, `.agents/skills/` |
 | Agent Skills | `specky install --target=agent-skills` | `.agents/skills/` |
 | Legacy both | `specky install --target=both` | Copilot + Claude assets; Claude hooks are stripped for Copilot safety |
+
+### OpenCode two-step bootstrap
+
+OpenCode has no native hook runtime. After install, compile root context:
+
+```bash
+specky install --target=opencode
+specky compile --target=opencode   # writes AGENTS.md
+specky doctor
+```
+
+`doctor` treats missing `AGENTS.md` as a recommendation, not a hard failure.
+
+### Copilot hook limitations
+
+GitHub Copilot maps all hooks to `PreToolUse`, so Specky strips lifecycle events (`SessionStart`, `UserPromptSubmit`) and native-write matchers from the Copilot manifest to avoid spurious blocks. Pipeline guard, session banner, and branch-validator therefore run only for MCP tool calls — not for native Copilot edits. Use MCP phase tools for enforced writes.
 
 ### Cursor first run
 

@@ -1218,9 +1218,9 @@ npm run dev
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | node dist/index.js 2>/dev/null
 
 # Run the published image from GHCR (multi-arch: linux/amd64 + linux/arm64)
-docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.9.0
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.10.0
 docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
-curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.9.0"}
+curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.10.0"}
 
 # Or build and run locally from source
 docker build -t specky-sdd:dev .
@@ -1235,7 +1235,7 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 
 ## Roadmap
 
-### v3.7 (current)
+### v3.10 (current)
 
 | Capability | Status |
 |------------|--------|
@@ -1270,7 +1270,12 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 | Enterprise profile (`profile: enterprise` — audit/RBAC/rate-limit defaults ON, opt-in) | Stable |
 | Identity-based RBAC over HTTP (`SDD_HTTP_TOKENS_FILE`: token → principal + role) | Stable |
 | Tamper-evident audit trail (HMAC-signed entries, fail-closed mode, `sdd_verify_audit`) | Stable |
-| Server-enforced LGTM gates (opt-in `pipeline.require_lgtm`) | Stable |
+| Server-enforced analysis gate on implement tools | Stable |
+| Strict phase bookkeeping (`ensurePhasesThrough`) | Stable |
+| Stale gate invalidation on artifact rewrite | Stable |
+| Strict multi-feature resolution | Stable |
+| OpenCode two-step bootstrap (`install` + `compile`) | Stable |
+| VS Code MCP dual schema (`servers` + `mcpServers`) | Stable |
 
 ### v3.8+ (planned)
 

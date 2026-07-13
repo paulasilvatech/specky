@@ -207,12 +207,14 @@ function checkCursorRule(targets: Targets): Check {
   const ruleLines = text.trimEnd().split(/\r?\n/);
   const hasDescription = ruleLines.some((line) => line.startsWith("description:") && line.trim() !== "description:");
   const hasAlwaysApply = ruleLines.some((line) => line.trim() === "alwaysApply: true");
-  const lines = ruleLines.length;
-  const ok = hasDescription && hasAlwaysApply && lines <= 40;
+  const hasSpeckyTitle = text.includes("Specky SDD");
+  const noWorkspaceLeak = !text.includes("@workspace");
+  const ok = hasDescription && hasAlwaysApply && hasSpeckyTitle && noWorkspaceLeak;
   const details = [
     hasDescription ? "description" : "missing description",
     hasAlwaysApply ? "alwaysApply" : "missing alwaysApply",
-    `${lines} lines`,
+    hasSpeckyTitle ? "specky-sdd" : "missing title",
+    noWorkspaceLeak ? "no @workspace" : "has @workspace leak",
   ];
   return { name: "Cursor rule", pass: ok, detail: details.join(", ") };
 }
@@ -231,6 +233,81 @@ function checkNoCopilotLeak(root: string, workspace: string, label: string): Che
     pass: hits.length === 0,
     detail: hits.length === 0 ? "no Copilot/.vscode tokens" : hits.slice(0, 3).join(", "),
   };
+}
+
+function checkCopilotHooksManifest(targets: Targets): Check {
+  const manifest = readJsonSafe<Record<string, unknown>>(targets.copilot.hooksManifest);
+  if (!manifest) {
+    return { name: "Copilot hooks manifest", pass: false, detail: "sdd-hooks.json missing" };
+  }
+  const serialized = JSON.stringify(manifest);
+  const hasSddMatcher = serialized.includes("sdd_");
+  return {
+    name: "Copilot hooks manifest",
+    pass: hasSddMatcher,
+    detail: hasSddMatcher ? "sdd-hooks.json with sdd_* matchers" : "no sdd_* matchers in manifest",
+  };
+}
+
+function checkClaudeHooksInSettings(targets: Targets, installTargets: HarnessTarget[]): Check {
+  if (installTargets.includes("copilot")) {
+    return {
+      name: "Claude hooks in settings",
+      pass: true,
+      detail: "intentionally omitted (Copilot co-install strips .claude hooks)",
+    };
+  }
+
+  const settings = readJsonSafe<{ hooks?: Record<string, unknown> }>(targets.claude.settingsJson);
+  if (!settings?.hooks) {
+    return { name: "Claude hooks in settings", pass: false, detail: "no hooks key in .claude/settings.json" };
+  }
+  const serialized = JSON.stringify(settings.hooks);
+  const hasSpecky = serialized.includes("specky");
+  const hasLifecycle = serialized.includes("PreToolUse") || serialized.includes("preToolUse");
+  return {
+    name: "Claude hooks in settings",
+    pass: hasSpecky && hasLifecycle,
+    detail: hasSpecky && hasLifecycle ? "Specky hooks registered" : "Specky hooks missing from settings",
+  };
+}
+
+function checkAgentsMd(workspace: string): Check {
+  const path = resolve(workspace, "AGENTS.md");
+  if (!existsSync(path)) {
+    return {
+      name: "AGENTS.md context",
+      pass: true,
+      detail: "recommended: run specky compile --target=opencode",
+    };
+  }
+  const text = readFileSync(path, "utf8");
+  const ok = text.includes("Specky SDD");
+  return {
+    name: "AGENTS.md context",
+    pass: ok,
+    detail: ok ? "contains Specky SDD guidance" : "missing Specky SDD section",
+  };
+}
+
+function detectWorkspaceHarnessTargets(workspace: string): HarnessTarget[] {
+  const found: HarnessTarget[] = [];
+  if (existsSync(resolve(workspace, ".cursor/mcp.json")) || existsSync(resolve(workspace, ".cursor/rules"))) {
+    found.push("cursor");
+  }
+  if (existsSync(resolve(workspace, "opencode.json"))) {
+    found.push("opencode");
+  }
+  if (existsSync(resolve(workspace, ".agents/skills"))) {
+    const skills = readdirSync(resolve(workspace, ".agents/skills"));
+    if (skills.some((name) => name.startsWith("specky-"))) {
+      found.push("agent-skills");
+    }
+  }
+  const detected = detectIde(workspace);
+  if (detected.claudeCode) found.push("claude");
+  if (detected.copilot) found.push("copilot");
+  return [...new Set(found)];
 }
 
 function checkCursorHooksManifest(targets: Targets): Check {
@@ -269,10 +346,15 @@ function checkCopilotInstall(targets: Targets, workspace: string): Check[] {
     checkFileCount(targets.copilot.skills, 14, "Copilot skills", (name, path) => name.startsWith("specky-") && statSync(path).isDirectory()),
     checkFileExists(resolve(targets.copilot.instructions, "copilot-instructions.instructions.md"), "Copilot instruction"),
     checkFileCount(targets.copilot.hooksScripts, 16, "Copilot hook scripts", (name) => name.endsWith(".sh") || name.endsWith(".mjs")),
+    checkCopilotHooksManifest(targets),
   ];
 }
 
-function checkClaudeInstall(targets: Targets, workspace: string): Check[] {
+function checkClaudeInstall(
+  targets: Targets,
+  workspace: string,
+  installTargets: HarnessTarget[],
+): Check[] {
   return [
     checkMcpRegistration(targets.shared.claudeMcp, ".mcp.json"),
     checkClaudePermissions(targets),
@@ -282,6 +364,7 @@ function checkClaudeInstall(targets: Targets, workspace: string): Check[] {
     checkFileExists(resolve(targets.claude.rules, "specky-sdd.md"), "Claude rule"),
     checkNoCopilotLeak(targets.claude.root, workspace, "Claude leakage"),
     checkFileCount(targets.claude.hooksScripts, 16, "Claude hook scripts", (name) => name.endsWith(".sh") || name.endsWith(".mjs")),
+    checkClaudeHooksInSettings(targets, installTargets),
   ];
 }
 
@@ -292,6 +375,7 @@ function checkOpenCodeInstall(targets: Targets, workspace: string): Check[] {
     checkFileCount(targets.opencode.commands, 22, "OpenCode commands", (name) => name.startsWith("specky-") && name.endsWith(".md")),
     checkFileCount(targets.shared.agentSkills, 14, "OpenCode skills", (name, path) => name.startsWith("specky-") && statSync(path).isDirectory()),
     checkNoCopilotLeak(targets.opencode.root, workspace, "OpenCode leakage"),
+    checkAgentsMd(workspace),
   ];
 }
 
@@ -326,18 +410,19 @@ function resolveInstalledTargets(
   }
 
   const detected = detectIde(workspace);
-  if (detected.signals.length > 0) {
+  const harnessTargets = detectWorkspaceHarnessTargets(workspace);
+  if (harnessTargets.length > 0) {
     return {
-      targets: targetsFromIde(detected.recommendation),
+      targets: harnessTargets,
       source: "workspace-signals",
-      detail: `inferred from workspace signals: ${detected.signals.join(", ")}`,
+      detail: `inferred from workspace signals: ${detected.signals.join(", ") || harnessTargets.join(", ")}`,
     };
   }
 
   return {
-    targets: ["claude", "copilot"],
+    targets: [],
     source: "default",
-    detail: "no install metadata or IDE signals found; validating shared defaults only",
+    detail: "no install metadata or IDE signals found; run specky install --target=<harness>",
   };
 }
 
@@ -349,7 +434,7 @@ function runConfigChecks(
   const checks: Check[] = [];
 
   if (installTargets.includes("claude")) {
-    checks.push(...checkClaudeInstall(targets, workspace));
+    checks.push(...checkClaudeInstall(targets, workspace, installTargets));
   }
 
   if (installTargets.includes("copilot")) {
@@ -362,6 +447,17 @@ function runConfigChecks(
 
   if (installTargets.includes("opencode")) {
     checks.push(...checkOpenCodeInstall(targets, workspace));
+  }
+
+  if (installTargets.includes("agent-skills")) {
+    checks.push(
+      checkFileCount(
+        targets.shared.agentSkills,
+        14,
+        "Agent skills bundle",
+        (name, path) => name.startsWith("specky-") && statSync(path).isDirectory(),
+      ),
+    );
   }
 
   return checks;

@@ -7,7 +7,7 @@
  */
 
 import type { HarnessCompiler } from "../types.js";
-import { transformToolsLine } from "./common.js";
+import { transformToolsLine, normalizeNewlines } from "./common.js";
 
 export const claudeCompiler: HarnessCompiler = {
     target: "claude",
@@ -23,7 +23,10 @@ export const claudeCompiler: HarnessCompiler = {
     },
 
     compileInstruction(content) {
-        return content.replace(/^applyTo:\s*['"]?\*\*['"]?\s*$/m, "paths: ['**']");
+        return normalizeNewlines(content).replace(
+            /^applyTo:\s*['"]?\*\*['"]?\s*$/m,
+            "paths: ['**']",
+        );
     },
 
     renameAgent(fileName) {

@@ -7,11 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.10.0] - 2026-07-13
+
+Pipeline MCP hardening and harness completeness: server-enforced analysis gates, strict phase bookkeeping, and expanded per-target doctor/install coverage.
+
+### Added
+
+- **Central analysis gate enforcement** via `validateGateForTool` in tool-enforcement — implement/verify/release tools require `gate_decision: APPROVE` once the pipeline reaches Analyze.
+- **`ensurePhasesThrough`** closes orphan phase states when write-tools run without intermediate `sdd_advance_phase` calls.
+- **`invalidateGateDecision`** clears stale approvals when SPEC/DESIGN/TASKS are rewritten.
+- **Strict feature resolution** — wrong `feature_number` throws instead of silently falling back to `features[0]`.
+- **OpenCode instruction primitive** (`.apm/instructions/opencode-instructions.instructions.md`) and target-aware `specky compile --target=opencode`.
+- **Expanded Cursor instructions** with full agent/command/gate documentation.
+- **Doctor checks:** Copilot hooks manifest, Claude hooks-in-settings, agent-skills skill count, OpenCode AGENTS.md advisory, improved workspace target inference (Cursor/OpenCode/agent-skills).
+- **Regression tests:** pipeline gate MCP integration, Cursor full install, mcp-writer dual VS Code schema, expanded pipeline-honesty and state-integrity coverage.
+
+### Changed
+
+- **`sdd_write_spec`** persists `discovery_answers` in SPECIFICATION.md, computes real EARS scores, blocks invalid EARS without `force: true`, and reorders phase recording (start-before-write).
+- **`sdd_run_analysis`** marks Analyze completed only on APPROVE; BLOCK/CHANGES_NEEDED leave Analyze in progress.
+- **`sdd_clarify`** no longer auto-completes Clarify — only starts the phase.
+- **`sdd_discover`** completes Discover phase and uses correct MCP `readOnlyHint`.
+- **`sdd_advance_phase`** loads `pipeline.require_lgtm` dynamically; LGTM check runs inside the state-machine lock.
+- **VS Code MCP registration** writes both `servers` and `mcpServers` for legacy compatibility.
+- **Claude/Cursor tool map** includes `MultiEdit` for `workspace.edit` parity with hook permissions.
+- **Doctor default targets** returns empty scope with guidance when no install metadata or signals are found (no more silent claude+copilot default).
+
 ### Fixed
 
-- Audited public documentation and website assets: corrected stale skill/version/permission counts, canonicalized `--target` install commands and `specky-*` primitive names, documented Cursor/OpenCode as first-class targets, refreshed v3.9 tarball/container examples, repaired relative links, and brought the public Markdown set to zero lint errors.
-- Aligned container security claims with the workflow: every image build produces a CycloneDX SBOM artifact, while Cosign signatures are optional and require configured signing secrets.
-- Added regression coverage for documentation links, local website assets, source-derived primitive counts, canonical targets/commands, social-image consistency, current container tags, and optional signing language.
+- Analysis gate was only enforced on `sdd_advance_phase`, not on downstream implement tools.
+- Phase state could become inconsistent when skipping `advance_phase` between discover and specify.
+- Stale `gate_decision` survived artifact rewrites.
+- Multi-feature silent fallback to the wrong feature directory.
+- Cognitive-debt timing improved via start-before-write phase recording on write tools.
+- Audited public documentation and website assets (carried from unreleased work).
+- Aligned container security claims with the workflow (SBOM always; Cosign optional).
 
 ## [3.9.0] - 2026-07-09
 
