@@ -57,7 +57,7 @@
 | **Enterprise** | [Compliance Frameworks](#compliance-frameworks) | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 |
 | | [Enterprise Ready](#enterprise-ready) | Security, audit trail, quality gates |
 | **Platform** | [The SDD Platform](#the-spec-driven-development-platform) | Built on Spec-Kit, everything included |
-| | [Roadmap](#roadmap) | v3.7 current, v3.8+ planned |
+| | [Roadmap](#roadmap) | v3.10 current, v3.11+ planned |
 
 ## What is Specky?
 
@@ -1277,7 +1277,7 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 | OpenCode two-step bootstrap (`install` + `compile`) | Stable |
 | VS Code MCP dual schema (`servers` + `mcpServers`) | Stable |
 
-### v3.8+ (planned)
+### v3.11+ (planned)
 
 | Feature | Description |
 |---------|-------------|
