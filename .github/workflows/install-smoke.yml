@@ -85,9 +85,9 @@ jobs:
         shell: bash
         run: |
           cd fresh
-          if grep -q '"hooks"' .claude/settings.json 2>/dev/null; then
-            if ! grep -q 'mcp__specky__sdd_init' .claude/settings.json; then
-              echo "::error::settings.json missing mcp__specky__ prefix"
+          if node -e "const s=require('./.claude/settings.json'); process.exit(s.hooks && Object.keys(s.hooks).length ? 0 : 1)"; then
+            if ! grep -q 'mcp__specky__' .claude/settings.json; then
+              echo "::error::settings.json hooks missing mcp__specky__ prefix"
               exit 1
             fi
           else
