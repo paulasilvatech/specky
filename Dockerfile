@@ -13,7 +13,7 @@ RUN npm ci --no-audit --no-fund
 # Sources consumed by `npm run build`: manifest sync, tsc, then the hook/finalize scripts.
 # check-manifest-sync.mjs reads apm.yml; build-claude-hooks.mjs reads .apm/hooks/sdd-hooks.json.
 COPY tsconfig.json ./
-COPY apm.yml config.yml apm.lock.yaml apm-policy.yml ./
+COPY apm.yml config.yml mcp.json apm.lock.yaml apm-policy.yml ./
 COPY src ./src
 COPY templates ./templates
 COPY scripts ./scripts
