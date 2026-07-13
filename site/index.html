@@ -2867,8 +2867,11 @@
         <div class="tab-panel" id="tab-airgap">
           <div class="install-note" style="margin-bottom:20px">
             <span class="in-icon">🔒</span>
-            <p><strong>Air-gapped mode:</strong> Specky makes <strong>zero outbound network calls</strong>. It runs
-              entirely on localhost via stdio. No telemetry, no cloud sync, no external dependencies beyond Node.js.</p>
+            <p><strong>Air-gapped mode:</strong> The MCP server (<code>specky serve</code>) makes <strong>zero outbound
+              network calls</strong> — stdio or localhost HTTP only. No telemetry, no cloud sync. Three runtime npm
+              dependencies (<code>@modelcontextprotocol/sdk</code>, <code>zod</code>, <code>yaml</code>). The CLI may
+              optionally check the npm registry once per day for update banners; disable that for a strict offline
+              posture (see step 3).</p>
           </div>
           <ol class="install-steps">
             <li>
@@ -2897,14 +2900,58 @@
               <span class="code-block-title">Terminal (air-gapped machine)</span>
               <button class="code-copy-btn" data-copy="npm install -g ./specky-sdd-3.10.0.tgz">Copy</button>
             </div>
-            <pre><span class="dk">$</span> npm install -g ./specky-sdd-3.10.0.tgz</pre>
+            <pre><span class="dk">$</span> npm install -g ./specky-sdd-3.10.0.tgz
+<span class="dk">$</span> specky install --target=cursor   <span class="cm"># or copilot, claude, opencode</span></pre>
           </div>
           <ol class="install-steps" style="margin-top:16px">
             <li>
               <div class="step-content">
-                <h4>Configure your MCP host as usual</h4>
-                <p>The stdio transport works identically on air-gapped machines. Use the same <code>mcp.json</code>
-                  config as any other environment.</p>
+                <h4>Disable the optional CLI update check</h4>
+                <p>By default the CLI may perform one GET per day to <code>registry.npmjs.org</code> after
+                  <code>doctor</code>/<code>status</code> — not telemetry, but not air-gapped. Turn it off:</p>
+              </div>
+            </li>
+          </ol>
+          <div class="code-block" style="margin-top:12px">
+            <div class="code-block-header">
+              <span class="code-block-title">Terminal (air-gapped machine)</span>
+              <button class="code-copy-btn" data-copy="export SPECKY_NO_UPDATE_CHECK=1">Copy</button>
+            </div>
+            <pre><span class="cm"># environment (session or shell profile)</span>
+<span class="dk">$</span> export SPECKY_NO_UPDATE_CHECK=1
+
+<span class="cm"># or persist in .specky/config.yml:</span>
+<span class="cm"># update_check: false</span></pre>
+          </div>
+          <ol class="install-steps" style="margin-top:16px">
+            <li>
+              <div class="step-content">
+                <h4>Point MCP at the global binary (avoid <code>npx</code>)</h4>
+                <p>Installed <code>mcp.json</code> files use <code>npx -y specky-sdd@… serve</code>, which can reach the
+                  network if the package is not cached. On air-gapped hosts, use the global CLI directly:</p>
+              </div>
+            </li>
+          </ol>
+          <div class="code-block" style="margin-top:12px">
+            <div class="code-block-header">
+              <span class="code-block-title">.mcp.json / .vscode/mcp.json (air-gapped)</span>
+              <button class="code-copy-btn" data-copy='{"mcpServers":{"specky":{"command":"specky","args":["serve"]}}}'>Copy</button>
+            </div>
+            <pre>{
+  "mcpServers": {
+    "specky": {
+      "command": "specky",
+      "args": ["serve"]
+    }
+  }
+}</pre>
+          </div>
+          <ol class="install-steps" style="margin-top:16px">
+            <li>
+              <div class="step-content">
+                <h4>Reload your IDE and verify</h4>
+                <p>Stdio transport works identically offline. Run <code>specky doctor</code> to confirm asset integrity
+                  (with <code>SPECKY_NO_UPDATE_CHECK=1</code> set).</p>
               </div>
             </li>
             <li>
@@ -3401,7 +3448,7 @@
           'feat.compliance_h': 'Six Compliance Frameworks',
           'feat.compliance_p': 'HIPAA, SOC 2, GDPR, PCI DSS, ISO 27001, and general controls. Validate specs before writing code.',
           'feat.offline_h': 'Nothing Leaves Your Machine',
-          'feat.offline_p': 'Zero outbound calls from the runtime. Three dependencies. No eval(). Works fully offline and in air-gapped environments.',
+          'feat.offline_p': 'MCP server (specky serve) makes zero outbound calls. CLI update check is opt-out. Three runtime deps. No eval(). Works fully offline and in air-gapped environments.',
           'feat.routing_h': 'MCP to MCP Routing',
           'feat.routing_p': 'Push to GitHub, Terraform, Docker, Jira, Azure DevOps, Figma. Specky generates payloads, your client delivers.',
           'feat.ears_h': 'EARS Notation',
@@ -3442,7 +3489,7 @@
           'diff.open_h': 'Open source, MIT license', 'diff.open_p': 'Fork it, extend it, audit it. No vendor lock, no seat pricing.',
           'diff.phases_h': '10 enforced pipeline phases', 'diff.phases_p': 'Not suggestions. Actual gates that prevent skipping steps.',
           'diff.mcp_h': 'Works in any MCP host', 'diff.mcp_p': 'No proprietary IDE. Use VS Code, Copilot, Claude Code, Cursor, or any MCP-compatible client.',
-          'diff.offline_h': 'Fully offline capable', 'diff.offline_p': 'Code never leaves your machine. Air-gapped environments fully supported.',
+          'diff.offline_h': 'Fully offline capable', 'diff.offline_p': 'MCP server stays local; CLI registry check is optional (SPECKY_NO_UPDATE_CHECK=1). Air-gapped installs supported.',
           'diff.diagrams_h': '17 diagram types', 'diff.diagrams_p': 'Sequence, class, ERD, state, C4, deployment and more from your specs.',
           'diff.tests_h': 'Tests for 6 frameworks', 'diff.tests_p': 'Vitest, Jest, Playwright, Pytest, JUnit, xUnit. Plus property-based testing.',
           'diff.iac_h': 'Infrastructure as Code', 'diff.iac_p': 'Terraform, Bicep, Dockerfiles generated from your design docs.',
@@ -3533,7 +3580,7 @@
           'feat.compliance_h': 'Seis Frameworks de Compliance',
           'feat.compliance_p': 'HIPAA, SOC 2, GDPR, PCI DSS, ISO 27001 e controles gerais. Valide specs antes de escrever c\u00f3digo.',
           'feat.offline_h': 'Nada Sai da Sua M\u00e1quina',
-          'feat.offline_p': 'Zero chamadas externas no runtime. Tr\u00eas depend\u00eancias. Sem eval(). Funciona totalmente offline e em ambientes air-gapped.',
+          'feat.offline_p': 'O MCP server (specky serve) n\u00e3o faz chamadas externas. O check de update da CLI \u00e9 opt-out. Tr\u00eas deps de runtime. Sem eval(). Funciona offline e em ambientes air-gapped.',
           'feat.routing_h': 'Roteamento MCP para MCP',
           'feat.routing_p': 'Envie para GitHub, Terraform, Docker, Jira, Azure DevOps, Figma. Specky gera os payloads, seu client entrega.',
           'feat.ears_h': 'EARS Notation',
@@ -3574,7 +3621,7 @@
           'diff.open_h': 'Open source, licen\u00e7a MIT', 'diff.open_p': 'Fa\u00e7a fork, estenda, audite. Sem vendor lock, sem pre\u00e7o por usu\u00e1rio.',
           'diff.phases_h': '10 fases de pipeline obrigat\u00f3rias', 'diff.phases_p': 'N\u00e3o s\u00e3o sugest\u00f5es. Gates reais que impedem pular etapas.',
           'diff.mcp_h': 'Funciona em qualquer MCP host', 'diff.mcp_p': 'Sem IDE propriet\u00e1ria. Use VS Code, Copilot, Claude Code, Cursor, ou qualquer client compat\u00edvel com MCP.',
-          'diff.offline_h': 'Totalmente offline', 'diff.offline_p': 'O c\u00f3digo nunca sai da sua m\u00e1quina. Ambientes air-gapped totalmente suportados.',
+          'diff.offline_h': 'Totalmente offline', 'diff.offline_p': 'MCP server local; check do registry na CLI \u00e9 opcional (SPECKY_NO_UPDATE_CHECK=1). Instala\u00e7\u00f5es air-gapped suportadas.',
           'diff.diagrams_h': '17 tipos de diagrama', 'diff.diagrams_p': 'Sequ\u00eancia, classe, ERD, estado, C4, deploy e mais a partir das suas specs.',
           'diff.tests_h': 'Testes para 6 frameworks', 'diff.tests_p': 'Vitest, Jest, Playwright, Pytest, JUnit, xUnit. Mais testes property-based.',
           'diff.iac_h': 'Infrastructure as Code', 'diff.iac_p': 'Terraform, Bicep, Dockerfiles gerados a partir dos seus design docs.',
@@ -3665,7 +3712,7 @@
           'feat.compliance_h': 'Seis Frameworks de Compliance',
           'feat.compliance_p': 'HIPAA, SOC 2, GDPR, PCI DSS, ISO 27001 y controles generales. Valida specs antes de escribir c\u00f3digo.',
           'feat.offline_h': 'Nada Sale de Tu M\u00e1quina',
-          'feat.offline_p': 'Cero llamadas externas desde el runtime. Tres dependencias. Sin eval(). Funciona totalmente offline y en entornos air-gapped.',
+          'feat.offline_p': 'El MCP server (specky serve) no hace llamadas externas. El check de update de la CLI es opt-out. Tres deps de runtime. Sin eval(). Funciona offline y en entornos air-gapped.',
           'feat.routing_h': 'Ruteo MCP a MCP',
           'feat.routing_p': 'Env\u00eda a GitHub, Terraform, Docker, Jira, Azure DevOps, Figma. Specky genera los payloads, tu client entrega.',
           'feat.ears_h': 'EARS Notation',
@@ -3706,7 +3753,7 @@
           'diff.open_h': 'Open source, licencia MIT', 'diff.open_p': 'Haz fork, exti\u00e9ndelo, aud\u00edtalo. Sin vendor lock, sin precio por usuario.',
           'diff.phases_h': '10 fases de pipeline obligatorias', 'diff.phases_p': 'No son sugerencias. Gates reales que impiden saltarse pasos.',
           'diff.mcp_h': 'Funciona en cualquier MCP host', 'diff.mcp_p': 'Sin IDE propietario. Usa VS Code, Copilot, Claude Code, Cursor, o cualquier client compatible con MCP.',
-          'diff.offline_h': 'Totalmente offline', 'diff.offline_p': 'El c\u00f3digo nunca sale de tu m\u00e1quina. Entornos air-gapped totalmente soportados.',
+          'diff.offline_h': 'Totalmente offline', 'diff.offline_p': 'MCP server local; el check del registry en la CLI es opcional (SPECKY_NO_UPDATE_CHECK=1). Instalaciones air-gapped soportadas.',
           'diff.diagrams_h': '17 tipos de diagrama', 'diff.diagrams_p': 'Secuencia, clase, ERD, estado, C4, deploy y m\u00e1s a partir de tus specs.',
           'diff.tests_h': 'Tests para 6 frameworks', 'diff.tests_p': 'Vitest, Jest, Playwright, Pytest, JUnit, xUnit. M\u00e1s tests property-based.',
           'diff.iac_h': 'Infrastructure as Code', 'diff.iac_p': 'Terraform, Bicep, Dockerfiles generados a partir de tus design docs.',

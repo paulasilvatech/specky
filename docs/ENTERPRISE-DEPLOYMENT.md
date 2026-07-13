@@ -298,8 +298,10 @@ See [PUBLISH.md](PUBLISH.md) for the maintainer publish + manual fallback workfl
 
 ## 5. Air-gapped and mirrored installs
 
-Specky's runtime makes **zero outbound network calls**, so it works fully
-offline once installed.
+Specky's MCP server (`specky serve`) makes **zero outbound network calls** once
+running. The CLI may optionally check the npm registry once per day for update
+banners — disable with `SPECKY_NO_UPDATE_CHECK=1` or `update_check: false` in
+`.specky/config.yml` for a strict air-gapped posture.
 
 **Tarball transfer (fully air-gapped):**
 
@@ -309,9 +311,20 @@ npm pack specky-sdd@latest        # → specky-sdd-<version>.tgz
 npm audit signatures              # verify npm provenance before transferring
 
 # Air-gapped machine
-npm install ./specky-sdd-<version>.tgz
-npx specky install --ide=copilot   # or --ide=claude
+npm install -g ./specky-sdd-<version>.tgz
+export SPECKY_NO_UPDATE_CHECK=1
+specky install --target=cursor     # or copilot, claude, opencode
 ```
+
+**MCP registration (avoid `npx` on air-gapped hosts):** point
+`.mcp.json` / `.vscode/mcp.json` at the global binary:
+
+```json
+{ "mcpServers": { "specky": { "command": "specky", "args": ["serve"] } } }
+```
+
+The default installer writes `npx -y specky-sdd@<version> serve`, which can
+reach the network if the package is not cached.
 
 **Private registry mirror (Artifactory, Nexus, Verdaccio):**
 
