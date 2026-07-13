@@ -2282,6 +2282,7 @@
         <ul class="topbar-nav">
           <li><a href="#features" data-i18n="nav.features">Features</a></li>
           <li><a href="#install" data-i18n="nav.install">Install</a></li>
+          <li><a href="#upgrade" data-i18n="nav.upgrade">Upgrade</a></li>
           <li><a href="#pipeline" data-i18n="nav.pipeline">Pipeline</a></li>
           <li><a href="#integrations" data-i18n="nav.ides">Integrations</a></li>
           <li><a href="https://github.com/paulasilvatech/specky/blob/main/docs/GETTING-STARTED.md" target="_blank"
@@ -2310,6 +2311,8 @@
         onclick="document.getElementById('mobileNav').classList.remove('open')">Features</a>
       <a href="#install" data-i18n="nav.install"
         onclick="document.getElementById('mobileNav').classList.remove('open')">Install</a>
+      <a href="#upgrade" data-i18n="nav.upgrade"
+        onclick="document.getElementById('mobileNav').classList.remove('open')">Upgrade</a>
       <a href="#pipeline" data-i18n="nav.pipeline"
         onclick="document.getElementById('mobileNav').classList.remove('open')">Pipeline</a>
       <a href="#integrations" data-i18n="nav.ides"
@@ -2981,6 +2984,45 @@
       </div>
     </section>
 
+    <!-- ===== UPGRADE SECTION ===== -->
+    <section class="install-section" id="upgrade">
+      <div class="sec-inner">
+        <div class="sec-label" data-i18n="upgrade.label">Stay Current</div>
+        <div class="sec-title" data-i18n="upgrade.title">Upgrade Specky</div>
+        <div class="sec-sub" data-i18n="upgrade.sub_html">Bump the npm package, then refresh project assets. No <code>--target</code> on upgrade — Specky reuses the harness recorded in <code>.specky/install.json</code>.</div>
+
+        <div class="code-block" style="margin-top:16px">
+          <div class="code-block-header">
+            <span class="code-block-title" data-i18n="upgrade.code_global">Global CLI</span>
+            <button class="code-copy-btn" data-copy="npm install -g specky-sdd@latest
+cd your-project
+specky upgrade">Copy</button>
+          </div>
+          <pre><span class="cm"># 1. Update the CLI on your machine</span>
+<span class="dk">$</span> npm install -g specky-sdd@latest
+
+<span class="cm"># 2. Refresh agents, hooks, skills, and MCP pins in the project</span>
+<span class="dk">$</span> cd your-project
+<span class="dk">$</span> specky upgrade</pre>
+        </div>
+
+        <div class="code-block" style="margin-top:12px">
+          <div class="code-block-header">
+            <span class="code-block-title" data-i18n="upgrade.code_project">Per-project pin (teams)</span>
+            <button class="code-copy-btn" data-copy="npm install --save-dev specky-sdd@latest
+npx specky upgrade">Copy</button>
+          </div>
+          <pre><span class="dk">$</span> npm install --save-dev specky-sdd@latest
+<span class="dk">$</span> npx specky upgrade</pre>
+        </div>
+
+        <div class="install-note" style="margin-top:16px;max-width:720px">
+          <span class="in-icon">🔄</span>
+          <p data-i18n="upgrade.note_p"><strong>No <code>--target</code> on upgrade.</strong> <code>specky upgrade</code> reads your previous install from <code>.specky/install.json</code> and refreshes the same harness. It preserves <code>.specs/</code> and re-pins MCP registration — updating npm alone leaves the old server pinned. Use <code>specky install --target=...</code> only for a first install or when switching IDE (e.g. Copilot → Cursor).</p>
+        </div>
+      </div>
+    </section>
+
     <!-- ===== PIPELINE SECTION ===== -->
     <section class="pipeline-section" id="pipeline">
       <div class="sec-inner">
@@ -3408,6 +3450,7 @@
           // Nav
           'nav.features': 'Features',
           'nav.install': 'Install',
+          'nav.upgrade': 'Upgrade',
           'nav.pipeline': 'Pipeline',
           'nav.ides': 'Integrations',
           'nav.docs': 'Docs',
@@ -3459,6 +3502,13 @@
           'install.label': 'Get Started',
           'install.title': 'Install Specky in 60 seconds',
           'install.sub': 'One npm package installs the CLI, agents, prompts, skills, hooks, and MCP registration. No signup. No new IDE.',
+          // Upgrade
+          'upgrade.label': 'Stay Current',
+          'upgrade.title': 'Upgrade Specky',
+          'upgrade.sub_html': 'Bump the npm package, then refresh project assets. No <code>--target</code> on upgrade \u2014 Specky reuses the harness recorded in <code>.specky/install.json</code>.',
+          'upgrade.code_global': 'Global CLI',
+          'upgrade.code_project': 'Per-project pin (teams)',
+          'upgrade.note_p': '<strong>No <code>--target</code> on upgrade.</strong> <code>specky upgrade</code> reads your previous install from <code>.specky/install.json</code> and refreshes the same harness. It preserves <code>.specs/</code> and re-pins MCP registration \u2014 updating npm alone leaves the old server pinned. Use <code>specky install --target=...</code> only for a first install or when switching IDE (e.g. Copilot \u2192 Cursor).',
           // Pipeline
           'pipeline.label': '10-Phase Pipeline',
           'pipeline.title': 'Enforced. Not suggested.',
@@ -3540,6 +3590,7 @@
           // Nav
           'nav.features': 'Recursos',
           'nav.install': 'Instala\u00e7\u00e3o',
+          'nav.upgrade': 'Atualizar',
           'nav.pipeline': 'Pipeline',
           'nav.ides': 'Integra\u00e7\u00f5es',
           'nav.docs': 'Docs',
@@ -3591,6 +3642,13 @@
           'install.label': 'Primeiros Passos',
           'install.title': 'Instale o Specky em 60 segundos',
           'install.sub': 'Um pacote npm instala a CLI, agents, prompts, skills, hooks e o registro MCP. Sem cadastro. Sem nova IDE.',
+          // Upgrade
+          'upgrade.label': 'Mantenha-se atualizado',
+          'upgrade.title': 'Atualize o Specky',
+          'upgrade.sub_html': 'Atualize o pacote npm e depois refresque os assets do projeto. Sem <code>--target</code> no upgrade \u2014 o Specky reutiliza o harness gravado em <code>.specky/install.json</code>.',
+          'upgrade.code_global': 'CLI global',
+          'upgrade.code_project': 'Pin por projeto (times)',
+          'upgrade.note_p': '<strong>Sem <code>--target</code> no upgrade.</strong> <code>specky upgrade</code> l\u00ea a instala\u00e7\u00e3o anterior em <code>.specky/install.json</code> e refresca o mesmo harness. Preserva <code>.specs/</code> e re-pina o MCP \u2014 atualizar s\u00f3 o npm deixa o servidor antigo pinado. Use <code>specky install --target=...</code> apenas na primeira instala\u00e7\u00e3o ou ao trocar de IDE (ex.: Copilot \u2192 Cursor).',
           // Pipeline
           'pipeline.label': 'Pipeline de 10 Fases',
           'pipeline.title': 'Obrigat\u00f3rio. N\u00e3o sugerido.',
@@ -3672,6 +3730,7 @@
           // Nav
           'nav.features': 'Caracter\u00edsticas',
           'nav.install': 'Instalaci\u00f3n',
+          'nav.upgrade': 'Actualizar',
           'nav.pipeline': 'Pipeline',
           'nav.ides': 'Integraciones',
           'nav.docs': 'Docs',
@@ -3723,6 +3782,13 @@
           'install.label': 'Comenzar',
           'install.title': 'Instala Specky en 60 segundos',
           'install.sub': 'Un paquete npm instala la CLI, agents, prompts, skills, hooks y el registro MCP. Sin registro. Sin nuevo IDE.',
+          // Upgrade
+          'upgrade.label': 'Mantente al d\u00eda',
+          'upgrade.title': 'Actualiza Specky',
+          'upgrade.sub_html': 'Sube el paquete npm y luego refresca los assets del proyecto. Sin <code>--target</code> en el upgrade \u2014 Specky reutiliza el harness guardado en <code>.specky/install.json</code>.',
+          'upgrade.code_global': 'CLI global',
+          'upgrade.code_project': 'Pin por proyecto (equipos)',
+          'upgrade.note_p': '<strong>Sin <code>--target</code> en el upgrade.</strong> <code>specky upgrade</code> lee la instalaci\u00f3n previa en <code>.specky/install.json</code> y refresca el mismo harness. Preserva <code>.specs/</code> y re-fija el MCP \u2014 actualizar solo npm deja el servidor antiguo fijado. Usa <code>specky install --target=...</code> solo en la primera instalaci\u00f3n o al cambiar de IDE (p. ej. Copilot \u2192 Cursor).',
           // Pipeline
           'pipeline.label': 'Pipeline de 10 Fases',
           'pipeline.title': 'Obligatorio. No sugerido.',

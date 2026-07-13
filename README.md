@@ -50,7 +50,8 @@
 | | [Where Specifications Live](#where-specifications-live) | File structure and naming conventions |
 | | [Input Methods](#input-methods-6-ways-to-start) | 6 ways to feed Specky |
 | | [Three Project Types](#three-project-types-one-pipeline) | Greenfield, Brownfield, Modernization |
-| | [Staying up to date](#staying-up-to-date) | Update notifications and one-command upgrade |
+| | [How to upgrade](#how-to-upgrade) | Bump npm + refresh project assets (no `--target` needed) |
+| | [Staying up to date](#staying-up-to-date) | Update notifications and opt-out |
 | **Pipeline** | [Pipeline and LGTM Gates](#pipeline-and-lgtm-gates) | 10 phases with human review gates |
 | | [All 58 Tools](#all-58-tools) | Complete tool reference by category |
 | | [EARS Notation](#ears-notation) | The 6 requirement patterns |
@@ -120,6 +121,36 @@ Generated assets are platform-native. `specky install --target=copilot` writes G
 Specky also has an APM governance layer for enterprise package control. `apm.yml` declares the package primitives, targets, and MCP runtime; `apm.lock.yaml` pins primitive hashes; `apm-policy.yml` enforces MCP and tool-name policy. Maintainers and CI can run `specky apm validate`, `specky apm policy`, `specky apm verify-lock`, and `specky apm sbom` before publishing or installing. See [Uso do APM pelo Specky](docs/APM-USAGE.md) for the detailed model, including why APM is not a runtime proxy and why users do not need to install the Microsoft APM CLI.
 
 Full walkthroughs per OS, offline install, and CLI reference: [docs/INSTALL.md](docs/INSTALL.md) · [docs/CLI.md](docs/CLI.md).
+
+### How to upgrade
+
+When a new Specky version is out (banner from `specky doctor` / `specky status`, or [GitHub Releases](https://github.com/paulasilvatech/specky/releases)):
+
+```bash
+# Global CLI (most users)
+npm install -g specky-sdd@latest
+cd your-project
+specky upgrade
+```
+
+```bash
+# Per-project pin (teams)
+npm install --save-dev specky-sdd@latest
+npx specky upgrade
+```
+
+**You do not need `--target` on upgrade.** `specky upgrade` reads the harness you already installed from `.specky/install.json` and refreshes the same targets — agents, prompts, skills, hooks, and MCP registration (`.mcp.json`, `.vscode/mcp.json`, `.cursor/mcp.json`, or `opencode.json`). It preserves `.specs/` (pipeline artifacts) and `.specky/profile.json` (onboarding answers).
+
+Updating only the npm package is not enough: without `specky upgrade`, MCP pins can still point at the old server version.
+
+Use `--target` only for a **first install** or when **switching harness** (e.g. Copilot → Cursor):
+
+```bash
+specky install --target=cursor          # new target set
+specky install --force --target=copilot   # reinstall / repair one target
+```
+
+See also [Staying up to date](#staying-up-to-date) for update notifications and opt-out.
 
 ## Why Specifications Matter in the AI Era
 
@@ -989,11 +1020,15 @@ Specky tells you about new versions in two ways:
 - **Version drift warning (always on, zero network):** `specky doctor` and `specky status` warn when the assets installed in your project differ from the version of the CLI running them, and suggest `specky upgrade`. The MCP server prints the same warning at startup. This is a local file comparison — no network involved.
 - **Update banner (once daily):** after `install`, `doctor`, `status`, `upgrade`, or `--version`, the CLI checks the npm registry at most once per day and prints `Update available: vX → vY` when a newer release exists. This is a single GET to `registry.npmjs.org` — no telemetry, nothing sent beyond the request itself. It fails silently offline, is disabled in CI (`CI=true`), and **never runs in `specky serve`** — the MCP server itself never phones home.
 
-Upgrading is one command:
+Upgrading is two steps — bump the package, then refresh the project:
 
 ```bash
-npm install -g specky-sdd@latest && specky upgrade
+npm install -g specky-sdd@latest && cd your-project && specky upgrade
 ```
+
+Per-project installs: `npm install --save-dev specky-sdd@latest && npx specky upgrade`.
+
+**No `--target` on upgrade** — Specky reuses the targets recorded in `.specky/install.json`. See [How to upgrade](#how-to-upgrade) for the full flow and when `--target` is still required (first install or harness switch).
 
 `specky upgrade` matters: it refreshes the installed agents, prompts, skills, and hooks **and re-pins `.mcp.json` / `.vscode/mcp.json` to the new version** — updating the npm package alone leaves the MCP registration pointing at the old pinned server.
 

@@ -157,7 +157,9 @@ Refresh installed assets to the current package version while preserving `.specs
 specky upgrade
 ```
 
-Internally runs `init --force` with the IDE target read from `.specky/install.json`. This also re-pins `.mcp.json` / `.vscode/mcp.json` to the new version — updating the npm package alone leaves the MCP registration pointing at the old pinned server.
+Reads the harness target(s) from `.specky/install.json` — **no `--target` flag**. Refreshes installed assets to the current CLI version while preserving `.specs/` and `.specky/profile.json`. To switch harness (e.g. Copilot → Cursor), use `specky install --target=...` instead.
+
+Internally runs `init --force` with the stored target(s). This also re-pins `.mcp.json` / `.vscode/mcp.json` to the new version — updating the npm package alone leaves the MCP registration pointing at the old pinned server.
 
 ---
 
