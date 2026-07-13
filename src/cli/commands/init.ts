@@ -1,9 +1,10 @@
 /**
  * init.ts — `specky init` — install Specky assets into the current workspace.
  */
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { VERSION } from "../../constants.js";
+import { loadConfig } from "../../config.js";
 import {
   copyToAgentSkills,
   copyToClaude,
@@ -16,8 +17,10 @@ import {
 } from "../lib/asset-copier.js";
 import { detectIde, type IdeTarget } from "../lib/ide-detect.js";
 import { SUPPORTED_TARGETS, type HarnessTarget } from "../lib/harness/index.js";
+import { agentCapabilities } from "../lib/harness/compilers/common.js";
+import type { AgentCapability } from "../lib/harness/types.js";
 import { packageRoot, sourcePaths, targetPaths, type Targets } from "../lib/paths.js";
-import { loadClaudeHooksManifest, mergeClaudeHooks } from "../lib/settings-merger.js";
+import { loadClaudeHooksManifest, mergeClaudeHooks, type PermissionProfile } from "../lib/settings-merger.js";
 import { writeMcpRegistration } from "../lib/mcp-writer.js";
 import { writeCursorPluginManifest } from "../lib/cursor-plugin-writer.js";
 import { writeVscodeSettings } from "../lib/vscode-settings-writer.js";
@@ -28,15 +31,22 @@ export interface InitOptions {
   target?: string;
   force: boolean;
   dryRun: boolean;
+  permissionProfile?: string;
+  integration?: string;
   workspace?: string;
 }
+
+type Integration = "github";
 
 interface Ctx {
   workspace: string;
   pkg: string;
   targets: Targets;
   src: ReturnType<typeof sourcePaths>;
-  copyOpts: { force: boolean; dryRun: boolean };
+  copyOpts: { force: boolean; dryRun: boolean; integrations?: readonly string[] };
+  capabilities: AgentCapability[];
+  integrations: Integration[];
+  permissionProfile: PermissionProfile;
   dryRun: boolean;
 }
 
@@ -82,6 +92,52 @@ function resolveInstallTargets(opts: InitOptions, detected: ReturnType<typeof de
   return targetsFromLegacyIde(opts.ide ?? "auto", detected);
 }
 
+function resolvePermissionProfile(profile: string | undefined): PermissionProfile {
+  if (profile === undefined || profile === "scoped") return "scoped";
+  if (profile === "prompt") return "prompt";
+  throw new Error(`[specky init] Unknown permission profile "${profile}". Use scoped or prompt.`);
+}
+
+function resolveIntegrations(integration: string | undefined): Integration[] {
+  if (!integration) return [];
+  const requested = integration.split(",").map((value) => value.trim()).filter(Boolean);
+  const unknown = requested.filter((value) => value !== "github");
+  if (unknown.length > 0) {
+    throw new Error(`[specky init] Unknown integration(s): ${unknown.join(", ")}. Supported: github`);
+  }
+  return [...new Set(requested)] as Integration[];
+}
+
+function collectAgentCapabilities(agentsDir: string): AgentCapability[] {
+  const capabilities = new Set<AgentCapability>();
+  for (const name of readdirSync(agentsDir)) {
+    if (!name.endsWith(".agent.md")) continue;
+    for (const capability of agentCapabilities(readFileSync(resolve(agentsDir, name), "utf8"))) {
+      capabilities.add(capability);
+    }
+  }
+  return [...capabilities];
+}
+
+function hasGithubIntegration(ctx: Ctx): boolean {
+  return ctx.integrations.includes("github");
+}
+
+function resolveInstallationConfiguration(
+  opts: InitOptions,
+  workspace: string,
+): { permissionProfile: PermissionProfile; integrations: Integration[] } {
+  const workspaceConfig = loadConfig(workspace);
+  return {
+    permissionProfile: resolvePermissionProfile(
+      opts.permissionProfile ?? workspaceConfig.installation.permission_profile,
+    ),
+    integrations: opts.integration === undefined
+      ? workspaceConfig.installation.integrations
+      : resolveIntegrations(opts.integration),
+  };
+}
+
 function legacyIdeFromTargets(targets: HarnessTarget[]): IdeTarget | "auto" {
   const set = new Set(targets);
   if (set.size === 1 && set.has("claude")) return "claude";
@@ -97,7 +153,13 @@ function installClaude(ctx: Ctx): CopyResult {
 
   try {
     const hooks = loadClaudeHooksManifest(ctx.src.claudeHooksManifest);
-    const merge = mergeClaudeHooks(ctx.targets, hooks, { dryRun: ctx.dryRun });
+    const merge = mergeClaudeHooks(ctx.targets, hooks, {
+      dryRun: ctx.dryRun,
+      capabilities: ctx.capabilities,
+      integrations: ctx.integrations,
+      permissionProfile: ctx.permissionProfile,
+      workspace: ctx.workspace,
+    });
     console.log(`  settings.json: ${merge.written ? "merged" : "dry-run"} at ${merge.path}`);
     if (merge.addedPermissions > 0) {
       console.log(`  permissions:   ${merge.addedPermissions} allow rules added (specky MCP + native tools)`);
@@ -112,6 +174,13 @@ function installClaude(ctx: Ctx): CopyResult {
     useVscodeSchema: false,
   });
   console.log(`  .mcp.json: ${mcp.action}`);
+  if (hasGithubIntegration(ctx)) {
+    const github = writeMcpRegistration(ctx.targets.shared.claudeMcp, {
+      dryRun: ctx.dryRun,
+      serverName: "github",
+    });
+    console.log(`  GitHub MCP: ${github.action} (authentication is managed by Claude Code)`);
+  }
   console.log("");
   return r;
 }
@@ -127,6 +196,14 @@ function installCopilot(ctx: Ctx): CopyResult {
     useVscodeSchema: true,
   });
   console.log(`  .vscode/mcp.json: ${mcp.action}`);
+  if (hasGithubIntegration(ctx)) {
+    const github = writeMcpRegistration(ctx.targets.shared.vscodeMcp, {
+      dryRun: ctx.dryRun,
+      serverName: "github",
+      useVscodeSchema: true,
+    });
+    console.log(`  GitHub MCP: ${github.action} (authentication is managed by VS Code)`);
+  }
 
   const vscodeSettingsPath = resolve(ctx.workspace, ".vscode/settings.json");
   const vs = writeVscodeSettings(vscodeSettingsPath, { dryRun: ctx.dryRun });
@@ -149,6 +226,13 @@ function installCursor(ctx: Ctx): CopyResult {
     serverName: "specky",
   });
   console.log(`  .cursor/mcp.json: ${mcp.action}`);
+  if (hasGithubIntegration(ctx)) {
+    const github = writeMcpRegistration(ctx.targets.cursor.mcp, {
+      dryRun: ctx.dryRun,
+      serverName: "github",
+    });
+    console.log(`  GitHub MCP: ${github.action} (authentication is managed by Cursor)`);
+  }
 
   const plugin = writeCursorPluginManifest(ctx.workspace, ctx.pkg, { dryRun: ctx.dryRun });
   console.log(`  .cursor-plugin/plugin.json: ${plugin.action}`);
@@ -169,6 +253,14 @@ function installOpenCode(ctx: Ctx): CopyResult {
     useOpenCodeSchema: true,
   });
   console.log(`  opencode.json: ${mcp.action}`);
+  if (hasGithubIntegration(ctx)) {
+    const github = writeMcpRegistration(ctx.targets.opencode.mcp, {
+      dryRun: ctx.dryRun,
+      serverName: "github",
+      useOpenCodeSchema: true,
+    });
+    console.log(`  GitHub MCP: ${github.action} (authentication is managed by OpenCode)`);
+  }
   console.log("  hooks: skipped (OpenCode has no hooks concept)");
   console.log("");
   return r;
@@ -196,6 +288,9 @@ function writeSpeckyMeta(ctx: Ctx, resolvedIde: IdeTarget | "auto", resolvedTarg
     version: VERSION,
     ide: resolvedIde,
     targets: resolvedTargets,
+    permission_profile: ctx.permissionProfile,
+    integrations: ctx.integrations,
+    capabilities: ctx.capabilities,
     installed_at: new Date().toISOString(),
   };
   writeFileSync(
@@ -221,11 +316,21 @@ function ensureGitignore(ctx: Ctx): void {
   console.log(`[specky init] .gitignore: ${verb} (${suffix})`);
 }
 
-function printHeader(opts: InitOptions, workspace: string, resolvedTargets: HarnessTarget[], resolvedIde: IdeTarget | "auto", detected: ReturnType<typeof detectIde>): void {
+function printHeader(
+  opts: InitOptions,
+  workspace: string,
+  resolvedTargets: HarnessTarget[],
+  resolvedIde: IdeTarget | "auto",
+  detected: ReturnType<typeof detectIde>,
+  permissionProfile: PermissionProfile,
+  integrations: Integration[],
+): void {
   const autoNote = !opts.target && (opts.ide === "auto" || !opts.ide) ? " (auto-detected)" : "";
   console.log(`[specky init] Version ${VERSION}`);
   console.log(`[specky init] Workspace: ${workspace}`);
   console.log(`[specky init] Target(s): ${resolvedTargets.join(", ")}${autoNote}`);
+  console.log(`[specky init] Permission profile: ${permissionProfile}`);
+  if (integrations.length > 0) console.log(`[specky init] Integration(s): ${integrations.join(", ")}`);
   if (opts.ide && opts.ide !== "auto") {
     console.log(`[specky init] --ide is deprecated; prefer --target=${resolvedTargets.join(",")}`);
   }
@@ -251,12 +356,19 @@ function printFooter(resolvedTargets: HarnessTarget[]): void {
 export async function runInit(opts: InitOptions): Promise<number> {
   const workspace = opts.workspace ?? process.cwd();
   const pkg = packageRoot();
+  const { permissionProfile, integrations } = resolveInstallationConfiguration(
+    opts,
+    workspace,
+  );
   const ctx: Ctx = {
     workspace,
     pkg,
     targets: targetPaths(workspace),
     src: sourcePaths(pkg),
-    copyOpts: { force: opts.force, dryRun: opts.dryRun },
+    copyOpts: { force: opts.force, dryRun: opts.dryRun, integrations },
+    capabilities: collectAgentCapabilities(sourcePaths(pkg).agentsDir),
+    integrations,
+    permissionProfile,
     dryRun: opts.dryRun,
   };
 
@@ -264,7 +376,15 @@ export async function runInit(opts: InitOptions): Promise<number> {
   const resolvedTargets = resolveInstallTargets(opts, detected);
   const resolvedIde = legacyIdeFromTargets(resolvedTargets);
 
-  printHeader(opts, workspace, resolvedTargets, resolvedIde, detected);
+  printHeader(
+    opts,
+    workspace,
+    resolvedTargets,
+    resolvedIde,
+    detected,
+    permissionProfile,
+    integrations,
+  );
 
   const results: CopyResult[] = [];
   if (resolvedTargets.includes("claude")) {

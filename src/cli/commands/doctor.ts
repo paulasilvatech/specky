@@ -13,8 +13,13 @@ import { VERSION } from "../../constants.js";
 import { hashFile } from "../lib/asset-copier.js";
 import { detectIde } from "../lib/ide-detect.js";
 import type { HarnessTarget } from "../lib/harness/index.js";
+import type { AgentCapability } from "../lib/harness/types.js";
 import { targetPaths, type Targets } from "../lib/paths.js";
-import { SPECKY_REQUIRED_ALLOWS } from "../lib/settings-merger.js";
+import {
+  requiredClaudeAllows,
+  SPECKY_REQUIRED_ALLOWS,
+  type PermissionProfile,
+} from "../lib/settings-merger.js";
 import { SPECKY_VSCODE_SETTINGS } from "../lib/vscode-settings-writer.js";
 
 export interface DoctorOptions {
@@ -41,6 +46,9 @@ interface InstallMeta {
   version: string;
   ide?: InstalledIde;
   targets?: HarnessTarget[];
+  capabilities?: AgentCapability[];
+  integrations?: string[];
+  permission_profile?: PermissionProfile;
   installed_at: string;
 }
 
@@ -91,7 +99,11 @@ function readJsonSafe<T>(path: string): T | null {
   }
 }
 
-function checkClaudePermissions(targets: Targets): Check {
+function checkClaudePermissions(
+  targets: Targets,
+  workspace: string,
+  installMeta: InstallMeta | null,
+): Check {
   const settings = readJsonSafe<{ permissions?: { allow?: string[] } }>(
     targets.claude.settingsJson,
   );
@@ -102,8 +114,23 @@ function checkClaudePermissions(targets: Targets): Check {
       detail: "settings.json missing or unreadable",
     };
   }
+  const profile = installMeta?.permission_profile ?? "scoped";
+  if (profile === "prompt") {
+    return {
+      name: "Claude permissions",
+      pass: true,
+      detail: "prompt profile: Claude Code manages confirmation for every action",
+    };
+  }
+  const requiredAllows = installMeta?.capabilities
+    ? requiredClaudeAllows(installMeta.capabilities, {
+      profile,
+      workspace,
+      integrations: installMeta.integrations,
+    })
+    : SPECKY_REQUIRED_ALLOWS;
   const allow = new Set(settings.permissions?.allow ?? []);
-  const missing = SPECKY_REQUIRED_ALLOWS.filter((a) => !allow.has(a));
+  const missing = requiredAllows.filter((a) => !allow.has(a));
   return {
     name: "Claude permissions",
     pass: missing.length === 0,
@@ -137,7 +164,11 @@ function checkVscodeSettings(workspace: string): Check {
   };
 }
 
-function checkMcpRegistration(path: string, label: string): Check {
+function checkMcpRegistration(
+  path: string,
+  label: string,
+  serverName: "specky" | "github" = "specky",
+): Check {
   const cfg = readJsonSafe<{
     mcpServers?: Record<string, unknown>;
     servers?: Record<string, unknown>;
@@ -145,14 +176,30 @@ function checkMcpRegistration(path: string, label: string): Check {
   }>(path);
   if (!cfg) return { name: label, pass: false, detail: "file missing" };
   const hasServer =
-    Boolean(cfg.mcpServers?.["specky"]) ||
-    Boolean(cfg.servers?.["specky"]) ||
-    Boolean(cfg.mcp?.["specky"]);
+    Boolean(cfg.mcpServers?.[serverName]) ||
+    Boolean(cfg.servers?.[serverName]) ||
+    Boolean(cfg.mcp?.[serverName]);
+  let detail = `${serverName} entry missing`;
+  if (hasServer) {
+    detail = serverName === "github"
+      ? "GitHub MCP registered; authentication is managed by the target runtime"
+      : "specky server registered";
+  }
   return {
     name: label,
     pass: hasServer,
-    detail: hasServer ? "specky server registered" : "specky entry missing",
+    detail,
   };
+}
+
+function githubIntegrationCheck(
+  path: string,
+  installMeta: InstallMeta | null,
+  label: string,
+): Check[] {
+  return installMeta?.integrations?.includes("github")
+    ? [checkMcpRegistration(path, label, "github")]
+    : [];
 }
 
 function checkFileExists(path: string, label: string): Check {
@@ -323,9 +370,10 @@ function checkCursorHooksManifest(targets: Targets): Check {
   };
 }
 
-function checkCursorInstall(targets: Targets, workspace: string): Check[] {
+function checkCursorInstall(targets: Targets, workspace: string, installMeta: InstallMeta | null): Check[] {
   return [
     checkMcpRegistration(targets.cursor.mcp, ".cursor/mcp.json"),
+    ...githubIntegrationCheck(targets.cursor.mcp, installMeta, "Cursor GitHub MCP"),
     checkFileCount(targets.cursor.agents, 13, "Cursor agents", (name) => name.startsWith("specky-") && name.endsWith(".md")),
     checkFileCount(targets.cursor.commands, 22, "Cursor commands", (name) => name.startsWith("specky-") && name.endsWith(".md")),
     checkFileCount(targets.shared.agentSkills, 14, "Cursor skills", (name, path) => name.startsWith("specky-") && statSync(path).isDirectory()),
@@ -337,9 +385,10 @@ function checkCursorInstall(targets: Targets, workspace: string): Check[] {
   ];
 }
 
-function checkCopilotInstall(targets: Targets, workspace: string): Check[] {
+function checkCopilotInstall(targets: Targets, workspace: string, installMeta: InstallMeta | null): Check[] {
   return [
     checkMcpRegistration(targets.shared.vscodeMcp, ".vscode/mcp.json"),
+    ...githubIntegrationCheck(targets.shared.vscodeMcp, installMeta, "Copilot GitHub MCP"),
     checkVscodeSettings(workspace),
     checkFileCount(targets.copilot.agents, 13, "Copilot agents", (name) => name.startsWith("specky-") && name.endsWith(".md")),
     checkFileCount(targets.copilot.prompts, 22, "Copilot prompts", (name) => name.startsWith("specky-") && name.endsWith(".md")),
@@ -354,10 +403,12 @@ function checkClaudeInstall(
   targets: Targets,
   workspace: string,
   installTargets: HarnessTarget[],
+  installMeta: InstallMeta | null,
 ): Check[] {
   return [
     checkMcpRegistration(targets.shared.claudeMcp, ".mcp.json"),
-    checkClaudePermissions(targets),
+    ...githubIntegrationCheck(targets.shared.claudeMcp, installMeta, "Claude GitHub MCP"),
+    checkClaudePermissions(targets, workspace, installMeta),
     checkFileCount(targets.claude.agents, 13, "Claude agents", (name) => name.startsWith("specky-") && name.endsWith(".md")),
     checkFileCount(targets.claude.commands, 22, "Claude commands", (name) => name.startsWith("specky-") && name.endsWith(".md")),
     checkFileCount(targets.claude.skills, 14, "Claude skills", (name, path) => name.startsWith("specky-") && statSync(path).isDirectory()),
@@ -368,9 +419,10 @@ function checkClaudeInstall(
   ];
 }
 
-function checkOpenCodeInstall(targets: Targets, workspace: string): Check[] {
+function checkOpenCodeInstall(targets: Targets, workspace: string, installMeta: InstallMeta | null): Check[] {
   return [
     checkMcpRegistration(targets.opencode.mcp, "opencode.json"),
+    ...githubIntegrationCheck(targets.opencode.mcp, installMeta, "OpenCode GitHub MCP"),
     checkFileCount(targets.opencode.agents, 13, "OpenCode agents", (name) => name.startsWith("specky-") && name.endsWith(".md")),
     checkFileCount(targets.opencode.commands, 22, "OpenCode commands", (name) => name.startsWith("specky-") && name.endsWith(".md")),
     checkFileCount(targets.shared.agentSkills, 14, "OpenCode skills", (name, path) => name.startsWith("specky-") && statSync(path).isDirectory()),
@@ -430,23 +482,24 @@ function runConfigChecks(
   targets: Targets,
   workspace: string,
   installTargets: HarnessTarget[],
+  installMeta: InstallMeta | null,
 ): Check[] {
   const checks: Check[] = [];
 
   if (installTargets.includes("claude")) {
-    checks.push(...checkClaudeInstall(targets, workspace, installTargets));
+    checks.push(...checkClaudeInstall(targets, workspace, installTargets, installMeta));
   }
 
   if (installTargets.includes("copilot")) {
-    checks.push(...checkCopilotInstall(targets, workspace));
+    checks.push(...checkCopilotInstall(targets, workspace, installMeta));
   }
 
   if (installTargets.includes("cursor")) {
-    checks.push(...checkCursorInstall(targets, workspace));
+    checks.push(...checkCursorInstall(targets, workspace, installMeta));
   }
 
   if (installTargets.includes("opencode")) {
-    checks.push(...checkOpenCodeInstall(targets, workspace));
+    checks.push(...checkOpenCodeInstall(targets, workspace, installMeta));
   }
 
   if (installTargets.includes("agent-skills")) {
@@ -528,7 +581,12 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
   const integrity = verifyIntegrity(lock, targets.shared.specky);
   printIntegrity(integrity, opts.verbose);
 
-  const checks = runConfigChecks(targets, workspace, resolvedTargets.targets);
+  const checks = runConfigChecks(
+    targets,
+    workspace,
+    resolvedTargets.targets,
+    installMeta,
+  );
   printChecks(checks);
 
   const integrityOk =

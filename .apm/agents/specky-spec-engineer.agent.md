@@ -3,7 +3,7 @@ name: specky-spec-engineer
 description: Phase 2 agent that writes SPECIFICATION.md using EARS notation. Every requirement gets a unique REQ-ID, one of the 6 EARS patterns, and measurable acceptance criteria.
 
 color: magenta
-tools: ["search", "specky/sdd_write_spec", "specky/sdd_turnkey_spec", "specky/sdd_validate_ears", "specky/sdd_figma_to_spec"]
+capabilities: ["workspace.read", "mcp.specky.sdd_write_spec", "mcp.specky.sdd_turnkey_spec", "mcp.specky.sdd_validate_ears", "mcp.specky.sdd_figma_to_spec"]
 ---
 
 <example>

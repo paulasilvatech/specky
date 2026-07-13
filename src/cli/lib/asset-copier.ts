@@ -30,6 +30,7 @@ export interface CopyResult {
 export interface CopyOptions {
   force: boolean;
   dryRun: boolean;
+  integrations?: readonly string[];
 }
 
 function ensureDir(dir: string): void {
@@ -139,7 +140,14 @@ export function copyToClaude(
   const result: CopyResult = { written: [], skipped: [] };
   const claude = getCompiler("claude");
 
-  copyDir(src.agentsDir, targets.claude.agents, opts, result, claude.renameAgent, claude.compileAgent);
+  copyDir(
+    src.agentsDir,
+    targets.claude.agents,
+    opts,
+    result,
+    claude.renameAgent,
+    (content) => claude.compileAgent(content, { integrations: opts.integrations }),
+  );
   copyDir(src.promptsDir, targets.claude.commands, opts, result, claude.renamePrompt, claude.compilePrompt);
   copyDir(src.skillsDir, targets.claude.skills, opts, result);
   copyDir(src.hookScriptsDir, targets.claude.hooksScripts, opts, result);
@@ -181,7 +189,14 @@ export function copyToCopilot(
   const result: CopyResult = { written: [], skipped: [] };
   const copilot = getCompiler("copilot");
 
-  copyDir(src.agentsDir, targets.copilot.agents, opts, result, copilot.renameAgent, copilot.compileAgent);
+  copyDir(
+    src.agentsDir,
+    targets.copilot.agents,
+    opts,
+    result,
+    copilot.renameAgent,
+    (content) => copilot.compileAgent(content, { integrations: opts.integrations }),
+  );
   copyDir(src.promptsDir, targets.copilot.prompts, opts, result, copilot.renamePrompt, copilot.compilePrompt);
   copyDir(src.skillsDir, targets.copilot.skills, opts, result);
   copyDir(src.hookScriptsDir, targets.copilot.hooksScripts, opts, result);
@@ -246,7 +261,14 @@ export function copyToCursor(
   const result: CopyResult = { written: [], skipped: [] };
   const cursor = getCompiler("cursor");
 
-  copyDir(src.agentsDir, targets.cursor.agents, opts, result, cursor.renameAgent, cursor.compileAgent);
+  copyDir(
+    src.agentsDir,
+    targets.cursor.agents,
+    opts,
+    result,
+    cursor.renameAgent,
+    (content) => cursor.compileAgent(content, { integrations: opts.integrations }),
+  );
   copyDir(src.promptsDir, targets.cursor.commands, opts, result, cursor.renamePrompt, cursor.compilePrompt);
   copyDir(src.skillsDir, targets.shared.agentSkills, opts, result);
 
@@ -303,7 +325,14 @@ export function copyToOpenCode(
   const result: CopyResult = { written: [], skipped: [] };
   const opencode = getCompiler("opencode");
 
-  copyDir(src.agentsDir, targets.opencode.agents, opts, result, opencode.renameAgent, opencode.compileAgent);
+  copyDir(
+    src.agentsDir,
+    targets.opencode.agents,
+    opts,
+    result,
+    opencode.renameAgent,
+    (content) => opencode.compileAgent(content, { integrations: opts.integrations }),
+  );
   copyDir(src.promptsDir, targets.opencode.commands, opts, result, opencode.renamePrompt, opencode.compilePrompt);
   copyDir(src.skillsDir, targets.shared.agentSkills, opts, result);
 

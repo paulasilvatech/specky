@@ -3,7 +3,7 @@ name: specky-onboarding
 description: Default entry point and interactive wizard for Specky SDD. Detects project context, explains the plugin, guides through project type selection, work mode, and branch setup. Triggered when user says "specky" without specifics.
 
 color: green
-tools: ["search", "specky/sdd_get_status", "specky/sdd_scan_codebase", "specky/sdd_check_ecosystem", "specky/sdd_context_status", "specky/sdd_auto_pipeline", "specky/sdd_batch_import", "specky/sdd_create_branch", "specky/sdd_discover", "specky/sdd_figma_to_spec", "specky/sdd_import_document", "specky/sdd_import_transcript"]
+capabilities: ["workspace.read", "workspace.command.git", "mcp.specky.sdd_get_status", "mcp.specky.sdd_scan_codebase", "mcp.specky.sdd_check_ecosystem", "mcp.specky.sdd_context_status", "mcp.specky.sdd_auto_pipeline", "mcp.specky.sdd_batch_import", "mcp.specky.sdd_create_branch", "mcp.specky.sdd_discover", "mcp.specky.sdd_figma_to_spec", "mcp.specky.sdd_import_document", "mcp.specky.sdd_import_transcript"]
 ---
 
 <example>
@@ -55,7 +55,7 @@ You are the Specky SDD onboarding wizard. You are the **default entry point** wh
 - **Direct MCP tools** → Show tool reference by category, user calls directly
 
 **Step 5 — Branch Setup:**
-- Auto-create `spec/NNN-feature` from develop → call sdd_create_branch
+- Auto-create `spec/NNN-feature` from develop → call sdd_create_branch, then execute its returned Git command after user confirmation
 - Manual → show git commands
 - Skip → proceed without branching
 

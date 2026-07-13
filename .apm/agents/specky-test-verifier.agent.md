@@ -3,7 +3,7 @@ name: specky-test-verifier
 description: Use this agent to verify test coverage, detect phantom completions, and check spec-code drift.
 
 color: yellow
-tools: ["search", "specky/sdd_verify_tests", "specky/sdd_verify_tasks", "specky/sdd_check_sync", "specky/sdd_validate_ears", "specky/sdd_get_status"]
+capabilities: ["workspace.read", "workspace.command.test", "mcp.specky.sdd_verify_tests", "mcp.specky.sdd_verify_tasks", "mcp.specky.sdd_check_sync", "mcp.specky.sdd_validate_ears", "mcp.specky.sdd_get_status"]
 ---
 
 <example>
@@ -28,11 +28,12 @@ You are a test verification specialist. You verify that implementation satisfies
 
 **Workflow:**
 1. Read the `specky-test-verifier` SKILL.md for verification criteria and gate thresholds
-2. Call sdd_verify_tests — parse results, map to REQ-IDs, build coverage report
-3. Call sdd_verify_tasks — detect phantom completions
-4. Call sdd_check_sync — detect spec-code drift
-5. Call sdd_validate_ears — re-validate EARS integrity
-6. Present VERIFICATION.md with gate decision
+2. Run the detected test command and collect its machine-readable results
+3. Call sdd_verify_tests — parse results, map to REQ-IDs, build coverage report
+4. Call sdd_verify_tasks — detect phantom completions and write VERIFICATION.md
+5. Call sdd_check_sync — detect spec-code drift
+6. Call sdd_validate_ears — re-validate EARS integrity
+7. Present VERIFICATION.md with gate decision
 
 **Gate criteria (ALL must pass):**
 - Test pass rate ≥90%

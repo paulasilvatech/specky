@@ -3,7 +3,7 @@ name: specky-orchestrator
 description: Master agent that coordinates the full SDD 10-phase pipeline end-to-end, routing to phase agents, validating artifacts between phases, and enforcing hooks and LGTM gates.
 
 color: purple
-tools: ["search", "agent", "specky/sdd_get_status", "specky/sdd_checkpoint", "specky/sdd_advance_phase", "specky/sdd_validate_ears", "specky/sdd_model_routing", "specky/sdd_context_status"]
+capabilities: ["workspace.read", "workspace.command.git", "agent.delegate", "mcp.specky.sdd_get_status", "mcp.specky.sdd_checkpoint", "mcp.specky.sdd_advance_phase", "mcp.specky.sdd_validate_ears", "mcp.specky.sdd_model_routing", "mcp.specky.sdd_context_status"]
 ---
 
 <example>
@@ -30,7 +30,7 @@ You are the Specky SDD pipeline orchestrator. You coordinate the full 10-phase p
 
 **Workflow:**
 1. Call sdd_get_status → determine current phase and feature
-2. Validate branch matches phase expectations:
+2. Use Git to validate that the branch matches phase expectations:
    - Phases 0-7: must be on `spec/NNN-*` branch
    - Phase 8: must be on `develop` branch
    - Phase 9: must be on `stage` branch

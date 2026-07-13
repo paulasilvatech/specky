@@ -1,6 +1,6 @@
 {
   "name": "specky-sdd",
-  "version": "3.10.2",
+  "version": "3.11.0",
   "description": "Specky — Spec-Driven Development CLI toolkit. 58 MCP tools, 13 agents, 22 prompts, 14 skills, 16 hooks. Unified `specky` CLI installs to Claude Code, GitHub Copilot, Cursor, or OpenCode on macOS, Linux, and Windows.",
   "type": "module",
   "main": "dist/index.js",
@@ -69,5 +69,14 @@
   },
   "overrides": {
     "esbuild": "^0.28.1"
+  },
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "test": "tests"
+  },
+  "types": "./dist/index.d.ts",
+  "bugs": {
+    "url": "https://github.com/paulasilvatech/specky/issues"
   }
 }

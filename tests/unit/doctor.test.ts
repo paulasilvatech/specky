@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -42,6 +42,57 @@ describe("specky doctor IDE scope", () => {
 
     expect(existsSync(resolve(workspace, ".mcp.json"))).toBe(true);
     expect(existsSync(resolve(workspace, ".vscode/mcp.json"))).toBe(false);
+  });
+
+  it("supports prompt-only Claude permissions and opt-in GitHub MCP", async () => {
+    const workspace = makeWorkspace("specky-doctor-claude-github-");
+    workspaces.push(workspace);
+
+    await expect(runInit({
+      target: "claude",
+      force: false,
+      dryRun: false,
+      permissionProfile: "prompt",
+      integration: "github",
+      workspace,
+    })).resolves.toBe(0);
+    await expect(runDoctor({ fix: false, verbose: false, workspace })).resolves.toBe(0);
+
+    const mcp = JSON.parse(readFileSync(resolve(workspace, ".mcp.json"), "utf8")) as {
+      mcpServers?: { github?: { type?: string; url?: string } };
+    };
+    expect(mcp.mcpServers?.github).toEqual({
+      type: "http",
+      url: "https://api.githubcopilot.com/mcp/",
+    });
+  });
+
+  it.each([
+    ["copilot", ".vscode/mcp.json", "servers"],
+    ["claude", ".mcp.json", "mcpServers"],
+    ["cursor", ".cursor/mcp.json", "mcpServers"],
+    ["opencode", "opencode.json", "mcp"],
+  ])("registers GitHub MCP for the %s target", async (target, configPath, section) => {
+    const workspace = makeWorkspace(`specky-doctor-${target}-github-`);
+    workspaces.push(workspace);
+
+    await expect(runInit({
+      target,
+      force: false,
+      dryRun: false,
+      integration: "github",
+      workspace,
+    })).resolves.toBe(0);
+    await expect(runDoctor({ fix: false, verbose: false, workspace })).resolves.toBe(0);
+
+    const config = JSON.parse(readFileSync(resolve(workspace, configPath), "utf8")) as Record<
+      string,
+      Record<string, { github?: { type?: string; url?: string } }>
+    >;
+    expect(config[section]?.github).toEqual({
+      type: "http",
+      url: "https://api.githubcopilot.com/mcp/",
+    });
   });
 
   it.each([

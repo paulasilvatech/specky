@@ -35,6 +35,12 @@ jobs:
 
       - run: npm ci
 
+      - name: Verify release tag matches package version
+        if: github.event_name == 'release'
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          test "${{ github.event.release.tag_name }}" = "v$VERSION"
+
       - name: Audit dependencies
         run: npm audit --audit-level=high
 
@@ -54,10 +60,12 @@ jobs:
       - name: Publish to npm (skip if this version is already published)
         run: |
           VERSION=$(jq -r '.version' package.json)
+          TAG=latest
+          if [[ "$VERSION" == *-* ]]; then TAG=next; fi
           if npm view "specky-sdd@$VERSION" version >/dev/null 2>&1; then
             echo "specky-sdd@$VERSION is already on npm — skipping publish (idempotent)."
           else
-            npm publish --provenance --access public
+            npm publish --provenance --access public --tag "$TAG"
           fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -108,11 +116,18 @@ jobs:
 
       - name: Build and push multi-arch Docker image
         run: |
+          VERSION="${{ steps.pkg.outputs.version }}"
+          TAGS=(-t "ghcr.io/paulasilvatech/specky:$VERSION")
+          if [[ "$VERSION" != *-* ]]; then TAGS+=(-t "ghcr.io/paulasilvatech/specky:latest"); fi
           docker buildx build \
             --platform linux/amd64,linux/arm64 \
-            -t ghcr.io/paulasilvatech/specky:latest \
-            -t ghcr.io/paulasilvatech/specky:${{ steps.pkg.outputs.version }} \
+            --build-arg VERSION="$VERSION" \
+            --build-arg VCS_REF="${{ github.sha }}" \
+            "${TAGS[@]}" \
             --push .
+
+      - name: Verify published image manifest
+        run: docker buildx imagetools inspect ghcr.io/paulasilvatech/specky:${{ steps.pkg.outputs.version }}
 
       # T-082: Sign Docker image with cosign (requires COSIGN_PRIVATE_KEY + COSIGN_PASSWORD secrets)
       - name: Install cosign

@@ -144,7 +144,17 @@ step("fresh-install smoke test", () => {
     runSilent("git", ["config", "user.name", "r"], { cwd: fresh });
     runSilent("npm", ["init", "-y"], { cwd: fresh });
     runSilent("npm", ["install", resolve(REPO, tarball), "--silent"], { cwd: fresh });
-    runSilent("npx", ["specky", "init", "--ide=both"], { cwd: fresh });
+    runSilent(
+      "npx",
+      [
+        "specky",
+        "init",
+        "--target=copilot,claude,cursor,opencode,agent-skills",
+        "--integration=github",
+        "--permission-profile=scoped",
+      ],
+      { cwd: fresh },
+    );
 
     const counts = {
       ".claude/agents": { expected: EXPECTED.agents, got: countFiles(resolve(fresh, ".claude/agents")) },
@@ -154,6 +164,11 @@ step("fresh-install smoke test", () => {
       ".github/agents": { expected: EXPECTED.agents, got: countFiles(resolve(fresh, ".github/agents")) },
       ".github/prompts": { expected: EXPECTED.prompts, got: countFiles(resolve(fresh, ".github/prompts")) },
       ".github/hooks/specky/scripts": { expected: EXPECTED.hooks, got: countFiles(resolve(fresh, ".github/hooks/specky/scripts")) },
+      ".cursor/agents": { expected: EXPECTED.agents, got: countFiles(resolve(fresh, ".cursor/agents")) },
+      ".cursor/commands": { expected: EXPECTED.prompts, got: countFiles(resolve(fresh, ".cursor/commands")) },
+      ".opencode/agents": { expected: EXPECTED.agents, got: countFiles(resolve(fresh, ".opencode/agents")) },
+      ".opencode/commands": { expected: EXPECTED.prompts, got: countFiles(resolve(fresh, ".opencode/commands")) },
+      ".agents/skills": { expected: EXPECTED.skills, got: countDirs(resolve(fresh, ".agents/skills")) },
     };
     for (const [dir, { expected, got }] of Object.entries(counts)) {
       if (got !== expected) throw new Error(`${dir}: ${got} ≠ ${expected}`);
@@ -164,6 +179,8 @@ step("fresh-install smoke test", () => {
       ".mcp.json",
       ".vscode/mcp.json",
       ".vscode/settings.json",
+      ".cursor/mcp.json",
+      "opencode.json",
       ".specky/install.lock",
     ];
     for (const f of requiredFiles) {

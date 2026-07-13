@@ -6,7 +6,10 @@
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import type { AgentCapability } from "./harness/types.js";
 import type { Targets } from "./paths.js";
+
+export type PermissionProfile = "prompt" | "scoped";
 
 interface HookEntry {
   type: string;
@@ -72,6 +75,72 @@ export const SPECKY_REQUIRED_ALLOWS: string[] = [
   // All Specky MCP tools
   "mcp__specky__*",
 ];
+
+function testRunnerAllows(workspace: string): string[] {
+  const allows = ["Bash(npm:*)", "Bash(npx:*)"];
+  if (existsSync(resolve(workspace, "pnpm-lock.yaml"))) allows.push("Bash(pnpm:*)");
+  if (existsSync(resolve(workspace, "yarn.lock"))) allows.push("Bash(yarn:*)");
+  if (existsSync(resolve(workspace, "bun.lockb")) || existsSync(resolve(workspace, "bun.lock"))) {
+    allows.push("Bash(bun:*)");
+  }
+  return allows;
+}
+
+/**
+ * Compute the narrowest Claude allowlist that can satisfy installed agent
+ * capabilities. The prompt profile deliberately leaves host confirmation on.
+ */
+export function requiredClaudeAllows(
+  capabilities: Iterable<AgentCapability>,
+  opts: {
+    profile: PermissionProfile;
+    workspace: string;
+    integrations?: readonly string[];
+  },
+): string[] {
+  if (opts.profile === "prompt") return [];
+
+  const allows = new Set<string>();
+  const integrations = new Set(opts.integrations ?? []);
+  for (const capability of capabilities) {
+    switch (capability) {
+      case "workspace.read":
+        allows.add("Read");
+        allows.add("Glob");
+        allows.add("Grep");
+        break;
+      case "workspace.edit":
+        allows.add("Edit");
+        allows.add("Write");
+        allows.add("MultiEdit");
+        break;
+      case "agent.delegate":
+        allows.add("Task");
+        break;
+      case "workspace.command.git":
+        allows.add("Bash(git:*)");
+        break;
+      case "workspace.command.test":
+        for (const allow of testRunnerAllows(opts.workspace)) allows.add(allow);
+        break;
+      case "workspace.command.release-gates":
+        allows.add("Bash(.claude/hooks/scripts/specky-security-scan.sh:*)");
+        allows.add("Bash(.claude/hooks/scripts/specky-release-gate.sh:*)");
+        break;
+      default:
+        if (capability.startsWith("mcp.specky.")) {
+          allows.add(`mcp__specky__${capability.slice("mcp.specky.".length)}`);
+        }
+        if (
+          integrations.has("github") &&
+          capability.startsWith("mcp.github.")
+        ) {
+          allows.add(`mcp__github__${capability.slice("mcp.github.".length)}`);
+        }
+    }
+  }
+  return [...allows].sort((left, right) => left.localeCompare(right));
+}
 
 function readSettings(path: string): ClaudeSettings {
   if (!existsSync(path)) return {};
@@ -151,7 +220,13 @@ function mergePermissions(
 export function mergeClaudeHooks(
   targets: Targets,
   claudeHooks: HooksSection,
-  opts: { dryRun: boolean },
+  opts: {
+    dryRun: boolean;
+    capabilities?: Iterable<AgentCapability>;
+    integrations?: readonly string[];
+    permissionProfile?: PermissionProfile;
+    workspace?: string;
+  },
 ): MergeResult {
   const path = targets.claude.settingsJson;
   const existing = readSettings(path);
@@ -161,9 +236,16 @@ export function mergeClaudeHooks(
     (k) => !existing.hooks || !existing.hooks[k],
   );
 
+  const requiredAllows = opts.capabilities
+    ? requiredClaudeAllows(opts.capabilities, {
+      profile: opts.permissionProfile ?? "scoped",
+      workspace: opts.workspace ?? process.cwd(),
+      integrations: opts.integrations,
+    })
+    : SPECKY_REQUIRED_ALLOWS;
   const { merged: mergedPerms, added: addedPermissions } = mergePermissions(
     existing.permissions,
-    SPECKY_REQUIRED_ALLOWS,
+    requiredAllows,
   );
 
   const final: ClaudeSettings = {
@@ -183,7 +265,7 @@ export function loadClaudeHooksManifest(manifestPath: string): HooksSection {
   if (!existsSync(manifestPath)) {
     throw new Error(
       `[specky] claude-hooks.json not found at ${manifestPath}. ` +
-        `Did the build step run? (npm run build)`,
+      `Did the build step run? (npm run build)`,
     );
   }
   const raw = readFileSync(manifestPath, "utf8");

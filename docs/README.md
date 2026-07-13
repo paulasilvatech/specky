@@ -19,6 +19,7 @@ Essential guides and reference material for Specky (`specky-sdd`). The repositor
 | [APM-USAGE.md](APM-USAGE.md) | APM primitives and packaging |
 | [MODEL_GUIDE.md](MODEL_GUIDE.md) | Model routing guidance |
 | [SYSTEM-DESIGN.md](SYSTEM-DESIGN.md) | C4 diagrams and pipeline state machine |
+| [TARGET-CAPABILITIES.md](TARGET-CAPABILITIES.md) | Capability compilation, permission profiles, GitHub MCP, and host approval boundaries |
 
 ## Enterprise
 

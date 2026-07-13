@@ -5,13 +5,13 @@
  */
 
 import type { HarnessCompiler } from "../types.js";
-import { transformToolsLine, stripYamlFrontmatter } from "./common.js";
+import { transformAgentTools, stripYamlFrontmatter } from "./common.js";
 
 export const cursorCompiler: HarnessCompiler = {
     target: "cursor",
 
-    compileAgent(content) {
-        return transformToolsLine(content, "cursor", "comma-list");
+    compileAgent(content, opts) {
+        return transformAgentTools(content, "cursor", "comma-list", opts);
     },
 
     compilePrompt(content) {

@@ -1,12 +1,32 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
+    capabilityToNative,
+    isAgentCapability,
     logicalToNative,
     mapTool,
     normalizeToLogical,
 } from "../../src/cli/lib/harness/tool-map.js";
 import { getCompiler, SUPPORTED_TARGETS } from "../../src/cli/lib/harness/index.js";
 
+const REPO = resolve(import.meta.dirname, "../..");
+
 describe("harness tool-map", () => {
+    it("renders canonical capabilities into native target tools", () => {
+        expect(capabilityToNative("workspace.command.test", "copilot")).toEqual(["runCommands"]);
+        expect(capabilityToNative("workspace.command.release-gates", "claude")).toEqual(["Bash"]);
+        expect(capabilityToNative("mcp.github.create_pull_request", "cursor")).toEqual([
+            "mcp__github__create_pull_request",
+        ]);
+        expect(capabilityToNative("mcp.github.create_issue", "opencode")).toEqual([
+            "github/create_issue",
+        ]);
+        expect(isAgentCapability("workspace.command.git")).toBe(true);
+        expect(isAgentCapability("workspace.command")).toBe(false);
+        expect(isAgentCapability("mcp.unknown.tool")).toBe(false);
+    });
+
     it("normalizes native and source tokens to logical ids", () => {
         expect(normalizeToLogical("search")).toBe("workspace.search");
         expect(normalizeToLogical("Read")).toBe("workspace.search");
@@ -119,6 +139,40 @@ describe("harness compiler registry", () => {
             "tools: read, agent, specky/sdd_get_status\n",
         );
         expect(getCompiler("agent-skills").compileAgent(source)).toBe(source);
+    });
+
+    it("compiles canonical capabilities and rejects mixed frontmatter", () => {
+        const source = "capabilities: [workspace.read, workspace.command.test, mcp.github.create_pull_request]\n";
+        expect(getCompiler("copilot").compileAgent(source)).toBe(
+            'tools: ["search","runCommands"]\n',
+        );
+        expect(getCompiler("claude").compileAgent(source, { integrations: ["github"] })).toBe(
+            "tools: Read, Glob, Grep, Bash, mcp__github__create_pull_request\n",
+        );
+        expect(() => getCompiler("copilot").compileAgent(
+            `${source}tools: [\"search\"]\n`,
+        )).toThrow("either capabilities or tools");
+    });
+
+    it("renders the release agent's command and GitHub capabilities per executable target", () => {
+        const source = readFileSync(
+            resolve(REPO, ".apm/agents/specky-release-engineer.agent.md"),
+            "utf8",
+        );
+        const expected = {
+            copilot: ["runCommands", "github/create_pull_request", "github/create_issue"],
+            claude: ["Bash", "mcp__github__create_pull_request", "mcp__github__create_issue"],
+            cursor: ["Bash", "mcp__github__create_pull_request", "mcp__github__create_issue"],
+            opencode: ["bash", "github/create_pull_request", "github/create_issue"],
+        } as const;
+
+        for (const [target, tools] of Object.entries(expected)) {
+            const compiled = getCompiler(target as keyof typeof expected).compileAgent(source, {
+                integrations: ["github"],
+            });
+            expect(compiled).not.toContain("capabilities:");
+            for (const tool of tools) expect(compiled).toContain(tool);
+        }
     });
 
     it("compiles prompt frontmatter per harness", () => {

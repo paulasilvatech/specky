@@ -7,13 +7,13 @@
  */
 
 import type { HarnessCompiler } from "../types.js";
-import { transformToolsLine, normalizeNewlines } from "./common.js";
+import { transformAgentTools, normalizeNewlines } from "./common.js";
 
 export const claudeCompiler: HarnessCompiler = {
     target: "claude",
 
-    compileAgent(content) {
-        return transformToolsLine(content, "claude", "comma-list");
+    compileAgent(content, opts) {
+        return transformAgentTools(content, "claude", "comma-list", opts);
     },
 
     compilePrompt(content) {

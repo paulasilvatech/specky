@@ -8,10 +8,18 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { VERSION } from "../../constants.js";
 
-interface McpServerEntry {
+interface CommandMcpServerEntry {
   command: string;
   args: string[];
 }
+
+interface HttpMcpServerEntry {
+  type: "http";
+  url: string;
+}
+
+type McpServerEntry = CommandMcpServerEntry | HttpMcpServerEntry;
+export type ManagedMcpServer = "specky" | "github";
 
 interface McpConfig {
   mcpServers?: Record<string, McpServerEntry>;
@@ -23,10 +31,19 @@ interface McpConfig {
 // Pin to the version that produced this install rather than `@latest`, so the
 // running server matches the assets on disk and a future npm release cannot be
 // auto-executed on the next session without an explicit `specky upgrade`.
-const DEFAULT_SERVER: McpServerEntry = {
+const SPECKY_SERVER: CommandMcpServerEntry = {
   command: "npx",
   args: ["-y", `specky-sdd@${VERSION}`, "serve"],
 };
+
+const GITHUB_SERVER: HttpMcpServerEntry = {
+  type: "http",
+  url: "https://api.githubcopilot.com/mcp/",
+};
+
+function managedServerEntry(server: ManagedMcpServer): McpServerEntry {
+  return server === "github" ? GITHUB_SERVER : SPECKY_SERVER;
+}
 
 function readJson(path: string): McpConfig {
   if (!existsSync(path)) return {};
@@ -53,23 +70,29 @@ function writeJson(path: string, data: McpConfig, dryRun: boolean): void {
  */
 export function writeMcpRegistration(
   path: string,
-  opts: { dryRun: boolean; serverName?: string; useVscodeSchema?: boolean; useOpenCodeSchema?: boolean },
+  opts: {
+    dryRun: boolean;
+    serverName?: ManagedMcpServer;
+    useVscodeSchema?: boolean;
+    useOpenCodeSchema?: boolean;
+  },
 ): { path: string; written: boolean; action: "created" | "merged" | "unchanged" } {
   const name = opts.serverName ?? "specky";
+  const server = managedServerEntry(name);
   const existing = readJson(path);
   const before = JSON.stringify(existing);
 
   if (opts.useOpenCodeSchema) {
     existing.mcp = existing.mcp ?? {};
-    existing.mcp[name] = DEFAULT_SERVER;
+    existing.mcp[name] = server;
   } else if (opts.useVscodeSchema) {
     existing.servers = existing.servers ?? {};
-    existing.servers[name] = DEFAULT_SERVER;
+    existing.servers[name] = server;
     existing.mcpServers = existing.mcpServers ?? {};
-    existing.mcpServers[name] = DEFAULT_SERVER;
+    existing.mcpServers[name] = server;
   } else {
     existing.mcpServers = existing.mcpServers ?? {};
-    existing.mcpServers[name] = DEFAULT_SERVER;
+    existing.mcpServers[name] = server;
   }
 
   const after = JSON.stringify(existing);

@@ -2,7 +2,11 @@
   "mcpServers": {
     "specky": {
       "command": "npx",
-      "args": ["-y", "specky-sdd", "serve"]
+      "args": [
+        "-y",
+        "specky-sdd@3.11.0",
+        "serve"
+      ]
     }
   }
 }

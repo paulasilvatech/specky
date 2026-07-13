@@ -46,6 +46,10 @@ AI Client → JSON-RPC → Zod .strict() validation → Service layer
 
 Specky does **not** use `eval()`, `Function()`, `vm.runInNewContext()`, or any dynamic code execution. Template rendering uses string replacement only — no template engines that execute code.
 
+### Agent Capability Boundaries
+
+The Specky MCP server does not execute arbitrary shell commands or persist GitHub credentials. Generated agents may declare narrowly scoped Git, test, or release-gate capabilities, but the selected host runtime executes and approves those native tools. The optional GitHub MCP integration is registered only with `specky install --integration=github`; GitHub authentication and repository authorization remain with the signed-in host identity. See [Target Capabilities](docs/TARGET-CAPABILITIES.md).
+
 ### Network Calls
 
 The **MCP server makes zero outbound network calls**. All data stays on the user's machine. It communicates only via stdio (JSON-RPC over stdin/stdout) or optional HTTP transport on localhost, and this holds unconditionally — `specky serve` never performs the update check described below.
@@ -127,7 +131,7 @@ The audit trail's plain hash chain detects corruption but not deliberate rewriti
 - Zero `any` types in source code — enforced by CI
 - All schemas use `.strict()` — rejects unknown fields
 - `FileManager` is the sole I/O boundary — no direct `fs` calls in tools or other services
-- No shell command execution — branch names and PR payloads are data only, not executed
+- The Specky MCP server does not execute shell commands; target runtimes may execute only the explicitly declared, host-approved agent capabilities
 
 ## Security Best Practices for Users
 

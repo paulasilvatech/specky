@@ -10,6 +10,10 @@ This document describes the target architecture for Specky as an enterprise-grad
 - Evidence-based quality gates.
 - Documentation and diagrams generated in parallel with implementation.
 
+## Target Capability Compilation
+
+Canonical agents declare portable capabilities in `.apm/agents`. The installer compiles those capabilities into the selected harness's native tools and, for Claude Code, derives narrow `permissions.allow` entries in the default `scoped` profile. `prompt` leaves all approval to the host. GitHub MCP is an explicit optional integration; Specky produces payloads and the authenticated host performs any external mutation. See [Target Capabilities](TARGET-CAPABILITIES.md).
+
 ## C4 Context
 
 ```mermaid

@@ -45,13 +45,28 @@ function fmValue(frontmatter, key) {
   return match ? match[1].replace(/^["']|["']$/g, "") : null;
 }
 
-function parseTools(frontmatter) {
-  const match = frontmatter.match(/^tools:\s*\[(.*)\]\s*$/m);
+function parseArray(frontmatter, key) {
+  const match = frontmatter.match(new RegExp(String.raw`^${key}:\s*\[(.*)\]\s*$`, "m"));
   if (!match) return [];
   return match[1]
     .split(",")
     .map((token) => token.trim().replace(/^"|"$/g, ""))
     .filter(Boolean);
+}
+
+const CANONICAL_CAPABILITIES = new Set([
+  "workspace.read",
+  "workspace.edit",
+  "workspace.command.git",
+  "workspace.command.test",
+  "workspace.command.release-gates",
+  "web.fetch",
+  "agent.delegate",
+  "todo.write",
+]);
+
+function isCapability(value) {
+  return CANONICAL_CAPABILITIES.has(value) || /^mcp\.(specky|github)\.[a-z][a-z0-9_]*$/.test(value);
 }
 
 const COPILOT_AGENT_TOOLS = new Set([
@@ -118,7 +133,8 @@ function main() {
   for (const filePath of agentFiles) {
     const text = readFileSync(filePath, "utf8");
     const fm = readFrontmatter(text);
-    const tools = parseTools(fm);
+    const tools = parseArray(fm, "tools");
+    const capabilities = parseArray(fm, "capabilities");
     const sddTokens = parseSddTokens(text);
 
     if (/^model:/m.test(fm))
@@ -129,6 +145,13 @@ function main() {
       errors.push(`${filePath}: missing 'name' in frontmatter`);
     if (!fmValue(fm, "description"))
       errors.push(`${filePath}: missing 'description' in frontmatter`);
+
+    if (tools.length > 0 && capabilities.length > 0) {
+      errors.push(`${filePath}: declare either tools or capabilities, not both`);
+    }
+    if (tools.length === 0 && capabilities.length === 0) {
+      errors.push(`${filePath}: missing tools or capabilities in frontmatter`);
+    }
 
     for (const tool of tools) {
       if (CLAUDE_TOOL_NAMES.has(tool)) {
@@ -148,10 +171,19 @@ function main() {
       }
     }
 
-    const missingTools = sddTokens.filter((tool) => !tools.includes(`specky/${tool}`));
+    for (const capability of capabilities) {
+      if (!isCapability(capability)) {
+        errors.push(`${filePath}: unknown capability "${capability}"`);
+      }
+    }
+
+    const declaredSpeckyTools = capabilities.length > 0
+      ? capabilities.filter((capability) => capability.startsWith("mcp.specky.")).map((capability) => capability.slice("mcp.specky.".length))
+      : tools.filter((tool) => tool.startsWith("specky/")).map((tool) => tool.slice("specky/".length));
+    const missingTools = sddTokens.filter((tool) => !declaredSpeckyTools.includes(tool));
     if (missingTools.length > 0)
       errors.push(
-        `${filePath}: missing tools in frontmatter -> ${missingTools.join(", ")}`,
+        `${filePath}: missing Specky capabilities in frontmatter -> ${missingTools.join(", ")}`,
       );
     checkUnknownTools(filePath, text);
   }

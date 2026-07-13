@@ -81,4 +81,15 @@ describe("APM governance", () => {
         expect(result.ok).toBe(false);
         expect(result.errors.join("\n")).toContain("untrusted");
     });
+
+    it("rejects optional MCP capabilities outside policy", () => {
+        writeFileSync(
+            resolve(workspace, "apm-policy.yml"),
+            "schemaVersion: 1\nmcp:\n  allowedServers:\n    - specky\n  optionalCapabilityServers: []\n",
+        );
+
+        const result = checkPolicy(workspace);
+        expect(result.ok).toBe(false);
+        expect(result.errors.join("\n")).toContain('optional MCP server "github"');
+    });
 });

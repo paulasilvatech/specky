@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { specDirSchema } from "../../src/schemas/common.js";
 import { loadConfig } from "../../src/config.js";
 import { FileManager } from "../../src/services/file-manager.js";
-import { SPECKY_REQUIRED_ALLOWS } from "../../src/cli/lib/settings-merger.js";
+import { requiredClaudeAllows } from "../../src/cli/lib/settings-merger.js";
 
 describe("specDirSchema traversal guard", () => {
   it("accepts workspace-relative paths", () => {
@@ -93,18 +93,50 @@ describe("loadConfig (.specky/config.yml)", () => {
 });
 
 describe("installer pre-authorization is least-privilege", () => {
+  const capabilities = [
+    "workspace.read",
+    "workspace.edit",
+    "workspace.command.git",
+    "workspace.command.test",
+    "workspace.command.release-gates",
+    "mcp.specky.sdd_get_status",
+    "mcp.github.create_pull_request",
+  ] as const;
+
   it("does not pre-authorize arbitrary code execution or network egress", () => {
+    const allows = requiredClaudeAllows(capabilities, {
+      profile: "scoped",
+      workspace: wsForPermissions(),
+      integrations: ["github"],
+    });
     for (const dangerous of [
       "Bash(bash:*)", "Bash(sh:*)", "Bash(node:*)", "Bash(python:*)",
       "Bash(python3:*)", "Bash(rm:*)", "Bash(chmod:*)", "WebFetch", "WebSearch",
     ]) {
-      expect(SPECKY_REQUIRED_ALLOWS, `must not pre-authorize ${dangerous}`).not.toContain(dangerous);
+      expect(allows, `must not pre-authorize ${dangerous}`).not.toContain(dangerous);
     }
   });
 
   it("still grants the scoped commands the SDD flow needs", () => {
-    for (const needed of ["Read", "Grep", "Edit", "Write", "Bash(git:*)", "Bash(npm:*)", "mcp__specky__*"]) {
-      expect(SPECKY_REQUIRED_ALLOWS).toContain(needed);
+    const allows = requiredClaudeAllows(capabilities, {
+      profile: "scoped",
+      workspace: wsForPermissions(),
+      integrations: ["github"],
+    });
+    for (const needed of ["Read", "Grep", "Edit", "Write", "Bash(git:*)", "Bash(npm:*)", "mcp__specky__sdd_get_status", "mcp__github__create_pull_request"]) {
+      expect(allows).toContain(needed);
     }
   });
+
+  it("leaves all permissions to host confirmation in the prompt profile", () => {
+    expect(requiredClaudeAllows(capabilities, {
+      profile: "prompt",
+      workspace: wsForPermissions(),
+      integrations: ["github"],
+    })).toEqual([]);
+  });
 });
+
+function wsForPermissions(): string {
+  return mkdtempSync(resolve(tmpdir(), "specky-permission-profile-"));
+}

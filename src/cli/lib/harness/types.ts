@@ -38,6 +38,28 @@ export type LogicalTool =
     | `raw:${string}`;
 
 /**
+ * Canonical agent capability vocabulary. Canonical `.apm` agents declare
+ * capabilities; compilers render them into the target's native tool tokens.
+ * Command subtypes retain the least-privilege intent needed by host-specific
+ * permission profiles while sharing one native command tool per harness.
+ */
+export type AgentCapability =
+    | "workspace.read"
+    | "workspace.edit"
+    | "workspace.command.git"
+    | "workspace.command.test"
+    | "workspace.command.release-gates"
+    | "web.fetch"
+    | "agent.delegate"
+    | "todo.write"
+    | `mcp.specky.${string}`
+    | `mcp.github.${string}`;
+
+export interface HarnessCompileOptions {
+    integrations?: readonly string[];
+}
+
+/**
  * A compiler renders canonical primitive files into one harness's native
  * form. Content transforms operate on raw file text (frontmatter + body);
  * renamers map source filenames to the harness's expected extension.
@@ -45,7 +67,7 @@ export type LogicalTool =
 export interface HarnessCompiler {
     readonly target: HarnessTarget;
     /** Transform an agent markdown file (frontmatter `tools:` line, etc.). */
-    compileAgent(content: string): string;
+    compileAgent(content: string, opts?: HarnessCompileOptions): string;
     /** Transform a prompt/command markdown file. */
     compilePrompt(content: string): string;
     /** Transform an instruction/rules markdown file. */

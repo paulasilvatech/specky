@@ -35,7 +35,7 @@ to `@latest` (Step 5). Stable releases can go straight to `@latest`.
 ```bash
 # on a branch off develop:
 #   - package.json / package-lock.json version -> X.Y.Z
-#   - apm.yml / config.yml version -> X.Y.Z
+#   - apm.yml / config.yml / mcp.json runtime pin -> X.Y.Z
 #   - CHANGELOG.md: add the [X.Y.Z] section
 #   - regenerate docs/API_REFERENCE.md if tools changed
 node scripts/generate-api-reference.mjs
@@ -51,9 +51,10 @@ node scripts/generate-api-reference.mjs
 node scripts/release.mjs
 ```
 
-Runs: clean tree check, clean build, all tests, `npm pack --dry-run`, a fresh
-install from the packed tarball + `specky init` + `specky doctor`, and a
-version/dist-tag sanity check. Must exit `0`.
+Runs: clean tree check, clean build, all tests, `npm pack --dry-run`, and a
+fresh installation of Copilot, Claude, Cursor, OpenCode, and `agent-skills`
+from the packed tarball. The smoke install enables the GitHub MCP integration,
+runs `specky doctor`, and checks version/dist-tag sanity. Must exit `0`.
 
 ### Step 3 — Publish (CANONICAL: GitHub Release triggers CI)
 
@@ -203,13 +204,14 @@ docker rm -f "$cid"
 ## Release checklist (copy into the release PR description)
 
 ```text
-- [ ] Version bumped in package.json / package-lock.json / apm.yml / config.yml
+- [ ] Version bumped in package.json / package-lock.json / apm.yml / config.yml / mcp.json runtime pin
 - [ ] CHANGELOG.md entry for this version
 - [ ] docs/API_REFERENCE.md regenerated (if tools changed)
-- [ ] CI green on main (all platforms + node 20/22)
+- [ ] CI green on main (all platforms + node 20/22, all target installs)
 - [ ] `node scripts/release.mjs` exits 0
 - [ ] README install section still accurate
 - [ ] dist-tag decision made (next vs latest)
+- [ ] GitHub Release tag exactly matches `v$(node -p "require('./package.json').version")`
 - [ ] GitHub Release published on main (fires the publish workflow)
 - [ ] npm shows the new version as latest (npm view --prefer-online)
 - [ ] Post-publish smoke test from the npm registry passed

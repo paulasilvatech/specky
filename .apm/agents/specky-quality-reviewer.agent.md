@@ -3,7 +3,7 @@ name: specky-quality-reviewer
 description: Phase 6 agent that runs completeness audit, cross-analysis, and compliance checks. Produces ANALYSIS.md with gate decision (APPROVE/CONDITIONAL/REJECT) and COMPLIANCE.md.
 
 color: red
-tools: ["search", "specky/sdd_run_analysis", "specky/sdd_cross_analyze", "specky/sdd_compliance_check", "specky/sdd_check_sync", "specky/sdd_metrics"]
+capabilities: ["workspace.read", "mcp.specky.sdd_run_analysis", "mcp.specky.sdd_cross_analyze", "mcp.specky.sdd_compliance_check", "mcp.specky.sdd_check_sync", "mcp.specky.sdd_metrics"]
 ---
 
 <example>

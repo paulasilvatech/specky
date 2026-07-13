@@ -2,21 +2,21 @@
 schemaVersion: 1
 package:
   name: specky-sdd
-  version: 3.10.2
+  version: 3.11.0
 primitives:
-  .apm/agents/specky-design-architect.agent.md: sha256:a9411a98bd2fe4c4aa1e6eab66e84eaf9a010897d408e1737a279fe58f7023b2
-  .apm/agents/specky-implementer.agent.md: sha256:76c546fe70fe3f5399ba25f0e6de3d9b280880fe7c12d88f093cee55c0b02ece
-  .apm/agents/specky-onboarding.agent.md: sha256:755a51c27eb1fe044ce4940fe6dda3a8eb0ff983c04d1c00e1d59be59723aa9d
-  .apm/agents/specky-orchestrator.agent.md: sha256:aae379a2dd8833fc9861ee9302f244032856a739b3fb31f568713f866a16f0c8
-  .apm/agents/specky-quality-reviewer.agent.md: sha256:cdcbe7bee2a4c669b52b8a67d5f31bc01ea0b518ca6daabf57a4603af2312c83
-  .apm/agents/specky-release-engineer.agent.md: sha256:b33e0f64b6fe23fb427c9368945d76e780aff1d8d848ab67bbcb2fa1a03f50e9
-  .apm/agents/specky-requirements-engineer.agent.md: sha256:69f84bf9a9f7d76475f7a21e9067c906b73c2a867db9fefe50abee2a4942b762
-  .apm/agents/specky-research-analyst.agent.md: sha256:4bc469d91b8c573cde9097efdbf1ba9fc0bc9580b4e0148e679bb689fbf744b0
-  .apm/agents/specky-sdd-clarify.agent.md: sha256:6dcd4879b2fff198a1fa80d61003eec852d4b1a82b7da1bf46c037a00bd463b6
-  .apm/agents/specky-sdd-init.agent.md: sha256:dff5a301375885781085f0421524cd58ef2305c43084c71e09625c2255182e8a
-  .apm/agents/specky-spec-engineer.agent.md: sha256:1a119fb44d1e48189726d61a1fbe11b2291535defed71316a8dba01f43401efd
-  .apm/agents/specky-task-planner.agent.md: sha256:5be3951932c925d09ff7c0a6066ccad2e25bc9fcc3950088b6966cefe6b98fde
-  .apm/agents/specky-test-verifier.agent.md: sha256:26291f7940f909649da55f8755f0b4a03bbaeae15e2fd61c18f00e7488d44220
+  .apm/agents/specky-design-architect.agent.md: sha256:206bb609b3f1547ede880a61f9e4b3a3a9c1df22dc33310fd5af1452dbeaff0f
+  .apm/agents/specky-implementer.agent.md: sha256:4768d48f96d6826a06a1a7ead47c0f74a3caa3afc7d0f93e03faa3b6c5ad49df
+  .apm/agents/specky-onboarding.agent.md: sha256:eb3e04effaedfece9b74233f0f1e59ceceafe78db2ec940c97d785b318b2e8d2
+  .apm/agents/specky-orchestrator.agent.md: sha256:fea1cc4d8498fa762eba4409f44f624a7b256de49d0215bce1c5a4013032f4cb
+  .apm/agents/specky-quality-reviewer.agent.md: sha256:bb81e074e4fa8887745e3da341cf11eb8c10978cc4989cd3a2c221798fad2ce0
+  .apm/agents/specky-release-engineer.agent.md: sha256:679125e0fe1b2da40ca0142848eecdd0e518eb279a927acdbf006bf7de638df5
+  .apm/agents/specky-requirements-engineer.agent.md: sha256:9393480399ced54dd8b201e6821103c9ed9e27fdbdf7426745e0da9535f60ddb
+  .apm/agents/specky-research-analyst.agent.md: sha256:92cd4041e0b021efa310e2cf12abb3c45e8f08e490e4b9bb275a81f4c4845cd9
+  .apm/agents/specky-sdd-clarify.agent.md: sha256:0dac1b774dc616eecddd5937e6ee520de32cdb12482fe3c25181a9e199d82302
+  .apm/agents/specky-sdd-init.agent.md: sha256:7dbba26d70b4fa9aada59e9a1efb8fa811cbe94fbf4c7429940ce7941393f3f2
+  .apm/agents/specky-spec-engineer.agent.md: sha256:dc639dde08405d06199b0257363d8ae70e5e14f3dcf991b43e5529e56d241ae8
+  .apm/agents/specky-task-planner.agent.md: sha256:124ebb0dde85dded8d7dd57ef728fa9838a78884bbd9de0f89f74879ae6d0e85
+  .apm/agents/specky-test-verifier.agent.md: sha256:e1386f81ae1fe9694c34d5b518e408804f2709237e137ce28bab48819e82f924
   .apm/hooks/scripts/specky-artifact-validator.sh: sha256:2c255e3221cca919ace520ce319c66cc4904aa9c917ce08a52547fe63f8d9770
   .apm/hooks/scripts/specky-auto-checkpoint.sh: sha256:46d5a336b20c844469574b2281b5cae24ee5116547a262bb160135aaef38d62e
   .apm/hooks/scripts/specky-branch-validator.sh: sha256:73256941bdc4aaac518935214c6f0029f32b1529307088243142fe7423594cf6
@@ -77,5 +77,5 @@ primitives:
   .apm/skills/specky-spec-engineer/SKILL.md: sha256:b5722dacc513a69b54a2d474e1dfa4a25029c5f6f2a930fae3b0ed8f3c9eb49e
   .apm/skills/specky-task-planner/SKILL.md: sha256:bf391eaa0541ae507f99eacd18a8747b597bcde4ff84d9a389fdc4aad5e76ed7
   .apm/skills/specky-test-verifier/SKILL.md: sha256:7e663a68f597f409a7209e07830b90b467052583bde8557eed389848baaa8609
-  apm-policy.yml: sha256:421910c17b1a7431f1336d8374538c111245c0c1de58adc6d8eddc185010a639
-  apm.yml: sha256:faaad94df10783caf1226b684caac659685a418e70e3f4172610bdbfc89cdb5e
+  apm-policy.yml: sha256:560cfde2c8efe36bdc2cbb095f259506d51312249d3b4cee67640e244e972530
+  apm.yml: sha256:ac0a62e81a271f1a2de440018d3463991a8c1ee8dd376e4024eea27d1b1c5b3f

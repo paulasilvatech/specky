@@ -1,6 +1,6 @@
 # Specky CLI Reference
 
-> Version: v3.10.2
+> Version: v3.11.0
 
 The `specky` CLI is the single write-path for installing, validating, and upgrading Specky in a workspace. It replaces the previous ad-hoc copying done by APM and manual `.github/` / `.claude/` setup.
 
@@ -13,8 +13,8 @@ The `specky` CLI is the single write-path for installing, validating, and upgrad
 Install Specky assets (agents, prompts, skills, hooks where supported) into the current workspace. `install` is the preferred spelling (matches `npm install` intuition); `init` remains as an alias and dispatches to the same implementation. The installer generates platform-native primitives for the selected APM target instead of copying one shared syntax into every environment.
 
 ```
-specky install [--target=<targets>] [--force] [--dry-run]
-specky init    [--target=<targets>] [--force] [--dry-run]   # alias
+specky install [--target=<targets>] [--force] [--dry-run] [--permission-profile=<scoped|prompt>] [--integration=github]
+specky init    [--target=<targets>] [--force] [--dry-run] [--permission-profile=<scoped|prompt>] [--integration=github]   # alias
 
 # Backward-compatible legacy spelling
 specky install [--ide=<claude|copilot|both|auto>] [--force] [--dry-run]
@@ -26,6 +26,8 @@ specky install [--ide=<claude|copilot|both|auto>] [--force] [--dry-run]
 | `--ide` | `auto` | Deprecated alias for legacy `copilot`, `claude`, `both`, and `auto` installs. Prefer `--target`. |
 | `--force` | false | Overwrite existing files. Required to re-install over an existing layout. |
 | `--dry-run` | false | Show what would be written without modifying the filesystem. |
+| `--permission-profile` | `scoped` | `scoped` derives narrow Claude allow rules from agent capabilities. `prompt` leaves approval to the target runtime. |
+| `--integration` | none | Optional external MCP integration. `github` registers GitHub MCP but never stores credentials. |
 
 **What it writes (depends on `--target`):**
 
@@ -41,7 +43,7 @@ When `--target=copilot`:
 - `.vscode/settings.json` — deep-merged with `chat.mcp.enabled`, `chat.agent.enabled`, etc.
 - If `.claude/settings.json` exists, **strips the `hooks` section** to prevent Copilot cross-read
 
-The installed Copilot agents use GitHub Copilot-native tool identifiers such as `search`, `agent`, and namespaced Specky MCP tools like `specky/sdd_get_status`. Prompt files use `agent: agent` frontmatter so VS Code runs them with agent-mode tool access.
+The installed Copilot agents use GitHub Copilot-native tool identifiers such as `search`, `agent`, and namespaced Specky MCP tools like `specky/sdd_get_status`. Prompt files use `agent: agent` frontmatter so VS Code runs them with agent-mode tool access. Copilot controls confirmation for sensitive native and external MCP actions.
 
 When `--target=claude`:
 
@@ -51,7 +53,7 @@ When `--target=claude`:
 - `.claude/hooks/scripts/*.sh` (16 hook scripts)
 - `.claude/settings.json` — deep-merged:
   - `hooks` section (SessionStart, UserPromptSubmit, PreToolUse, PostToolUse, Stop)
-  - `permissions.allow` auto-populated with native tools (`Read`, `Edit`, `Write`, `Bash(git:*)`, etc.) and all `mcp__specky__*` tools
+  - `permissions.allow` derived from the installed agent capabilities when `--permission-profile=scoped`; `prompt` adds no Specky-managed allow rules
 - `.claude/rules/specky-sdd.md`
 - `.mcp.json` — MCP server registration
 
@@ -77,7 +79,7 @@ When `--target=opencode`:
 
 When `--target=agent-skills`:
 
-- `.agents/skills/*/SKILL.md` only.
+- `.agents/skills/*/SKILL.md` only. This is a skills-only bundle: no agents, prompts, hooks, MCP registration, or executable permissions are installed.
 
 If Copilot is part of the target set (`copilot`, `both`, or `all`), Specky strips `hooks` from `.claude/settings.json` to prevent VS Code Copilot from cross-reading Claude lifecycle hooks and blocking tool calls.
 
@@ -93,7 +95,7 @@ Never overwrites `.specs/`, `.specky/profile.json`, or existing user-authored ke
 Without `chat.mcp.enabled` and `chat.mcp.discovery.enabled`, GitHub Copilot in VS Code won't discover the Specky MCP server even if `.vscode/mcp.json` is correct. Users previously had to manually toggle tools in the Copilot Chat tool selector — now it Just Works. The Specky MCP server advertises its icon via `file://` in the handshake (v3.10.2+); VS Code ignores HTTPS icon URLs on stdio transports.
 
 **Why Claude `permissions.allow` matters:**
-Claude Code asks for approval each time an agent invokes a tool unless the tool is pre-authorized via `permissions.allow`. Specky's Claude agents need read/search tools, scoped git/npm/npx shell commands, workspace edit tools, and `mcp__specky__*`. The CLI pre-authorizes that least-privilege set so pipeline work does not get interrupted by repeated prompts.
+Claude Code asks for approval each time an agent invokes a tool unless the tool is pre-authorized via `permissions.allow`. In the default `scoped` profile, Specky derives the exact native and MCP entries required by the installed agent capabilities, including only narrow Git, test-runner, and release-gate prefixes. The `prompt` profile adds no Specky-managed allow rules. Neither profile bypasses the host's authentication or confirmation model. See [Target Capabilities](TARGET-CAPABILITIES.md).
 
 ---
 

@@ -3,7 +3,7 @@ name: specky-requirements-engineer
 description: Use this agent to analyze raw input and produce validated FRD and NFRD documents ready for sdd_init.
 
 color: magenta
-tools: ["search", "edit", "specky/sdd_init", "specky/sdd_discover", "specky/sdd_import_document", "specky/sdd_import_transcript", "specky/sdd_batch_import", "specky/sdd_validate_ears"]
+capabilities: ["workspace.read", "workspace.edit", "mcp.specky.sdd_init", "mcp.specky.sdd_discover", "mcp.specky.sdd_import_document", "mcp.specky.sdd_import_transcript", "mcp.specky.sdd_batch_import", "mcp.specky.sdd_validate_ears"]
 ---
 
 <example>

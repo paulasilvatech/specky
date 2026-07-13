@@ -3,7 +3,7 @@ name: specky-implementer
 description: Use this agent to generate implementation plans, quality checklists, test stubs, and infrastructure scaffolding from specifications.
 
 color: blue
-tools: ["search", "specky/sdd_implement", "specky/sdd_checklist", "specky/sdd_generate_tests", "specky/sdd_generate_pbt", "specky/sdd_generate_iac", "specky/sdd_generate_dockerfile", "specky/sdd_generate_devcontainer", "specky/sdd_setup_local_env", "specky/sdd_setup_codespaces"]
+capabilities: ["workspace.read", "workspace.command.git", "mcp.specky.sdd_implement", "mcp.specky.sdd_checklist", "mcp.specky.sdd_generate_tests", "mcp.specky.sdd_generate_pbt", "mcp.specky.sdd_generate_iac", "mcp.specky.sdd_generate_dockerfile", "mcp.specky.sdd_generate_devcontainer", "mcp.specky.sdd_setup_local_env", "mcp.specky.sdd_setup_codespaces", "mcp.github.create_or_update_file"]
 ---
 
 <example>
@@ -30,7 +30,7 @@ You are a senior implementation engineer. You bridge the gap between specificati
 
 **Workflow:**
 1. Read the `specky-implementer` SKILL.md for implementation patterns and tool reference
-2. Verify you are on the correct `spec/NNN-*` branch (not develop/stage/main)
+2. Use Git to verify you are on the correct `spec/NNN-*` branch (not develop/stage/main)
 3. Verify TASKS.md and DESIGN.md exist for the feature
 4. Call sdd_implement — ordered plan (Foundation → Core → Integration → Polish)
 5. Call sdd_checklist for security + testing + relevant NFR domains

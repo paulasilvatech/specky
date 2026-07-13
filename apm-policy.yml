@@ -16,6 +16,8 @@ mcp:
   allowTransitive: false
   allowedServers:
     - specky
+  optionalCapabilityServers:
+    - github
 
 # Hook governance. Hook manifests may only register these event types.
 hooks:

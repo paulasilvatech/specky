@@ -101,7 +101,7 @@ specky install --target=copilot      # VS Code + GitHub Copilot (recommended)
 specky install --target=claude       # Claude Code
 specky install --target=cursor       # Cursor
 specky install --target=opencode     # OpenCode
-specky install --target=agent-skills # Shared .agents/skills bundle
+specky install --target=agent-skills # Skills-only shared .agents/skills bundle
 ```
 
 > **Important:** Prefer `--target=...`. The legacy `--ide` flag still works for `copilot`, `claude`, `both`, and `auto`, but it is deprecated in favor of APM-style targets. If Copilot is installed in a workspace, Specky strips Claude hooks from `.claude/settings.json` to prevent Copilot cross-read blocks. See [docs/INSTALL.md](docs/INSTALL.md) for details.
@@ -114,9 +114,9 @@ npm install --save-dev specky-sdd@latest
 npx specky install --target=copilot
 ```
 
-The CLI installs 13 agents, 22 prompts, 14 skills, 16 hooks, the target MCP server registration (pinned to the installed version), and pre-authorizes or scopes tools according to the selected harness. It does **not** pre-authorize arbitrary shell, `rm`, or network access; those still prompt. Run `specky doctor` anytime to validate integrity and config.
+The CLI installs 13 agents, 22 prompts, 14 skills, 16 hooks, and target-local MCP registration pinned to the installed version. Canonical agent capabilities compile to the selected harness's native tools; they are not inferred from workflow prose. Use `--permission-profile=scoped` (default) for narrow Claude pre-authorization, or `--permission-profile=prompt` to leave every approval with the host. Specky does **not** pre-authorize arbitrary shell, `rm`, network access, or credentials. Add `--integration=github` only when GitHub MCP routing is required. Run `specky doctor` anytime to validate integrity and configuration.
 
-Generated assets are platform-native. `specky install --target=copilot` writes GitHub Copilot agents/prompts with VS Code tool names such as `search`, `agent`, and `specky/sdd_get_status`, plus prompt `agent: agent` frontmatter. `specky install --target=claude` writes Claude Code agents/commands with `Read`, `Glob`, `Grep`, `Task`, and `mcp__specky__sdd_get_status`, with Copilot-only prompt metadata removed. Wave 1 APM targets also include Cursor, OpenCode, and the neutral `agent-skills` target.
+Generated assets are platform-native. `specky install --target=copilot` writes GitHub Copilot agents/prompts with VS Code tool names such as `search`, `agent`, and `specky/sdd_get_status`, plus prompt `agent: agent` frontmatter. `specky install --target=claude` writes Claude Code agents/commands with `Read`, `Glob`, `Grep`, `Task`, and `mcp__specky__sdd_get_status`, with Copilot-only prompt metadata removed. Cursor and OpenCode receive their own native vocabulary. `agent-skills` is intentionally skills-only. See [Target Capabilities](docs/TARGET-CAPABILITIES.md) for the full capability matrix, GitHub MCP opt-in, and host approval boundaries.
 
 Specky also has an APM governance layer for enterprise package control. `apm.yml` declares the package primitives, targets, and MCP runtime; `apm.lock.yaml` pins primitive hashes; `apm-policy.yml` enforces MCP and tool-name policy. Maintainers and CI can run `specky apm validate`, `specky apm policy`, `specky apm verify-lock`, and `specky apm sbom` before publishing or installing. See [Uso do APM pelo Specky](docs/APM-USAGE.md) for the detailed model, including why APM is not a runtime proxy and why users do not need to install the Microsoft APM CLI.
 
@@ -1253,9 +1253,9 @@ npm run dev
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | node dist/index.js 2>/dev/null
 
 # Run the published image from GHCR (multi-arch: linux/amd64 + linux/arm64)
-docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.10.2
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.11.0
 docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
-curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.10.2"}
+curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.11.0"}
 
 # Or build and run locally from source
 docker build -t specky-sdd:dev .

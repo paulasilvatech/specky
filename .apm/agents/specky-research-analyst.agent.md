@@ -3,7 +3,7 @@ name: specky-research-analyst
 description: Use this agent to gather technical context before specification. Scans codebases, imports documents, and produces RESEARCH.md.
 
 color: cyan
-tools: ["search", "fetch", "specky/sdd_scan_codebase", "specky/sdd_discover", "specky/sdd_research", "specky/sdd_import_document", "specky/sdd_import_transcript", "specky/sdd_check_ecosystem"]
+capabilities: ["workspace.read", "web.fetch", "mcp.specky.sdd_scan_codebase", "mcp.specky.sdd_discover", "mcp.specky.sdd_research", "mcp.specky.sdd_import_document", "mcp.specky.sdd_import_transcript", "mcp.specky.sdd_check_ecosystem"]
 ---
 
 <example>

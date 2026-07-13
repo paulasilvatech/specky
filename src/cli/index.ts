@@ -59,6 +59,9 @@ Commands:
                                         Deprecated alias for --target
     --force                             Overwrite existing files
     --dry-run                           Show changes without writing
+    --permission-profile=<scoped|prompt>
+                      Default: scoped; prompt keeps host approval on
+    --integration=github                Register the optional GitHub MCP server
 
   doctor                 Validate install integrity against install.lock
     --fix                               Repair missing/modified files
@@ -110,6 +113,10 @@ async function dispatch(command: string, rest: string[]): Promise<number> {
         target: typeof targetRaw === "string" ? targetRaw : undefined,
         force: flags["force"] === true,
         dryRun: flags["dry-run"] === true,
+        permissionProfile: typeof flags["permission-profile"] === "string"
+          ? flags["permission-profile"]
+          : undefined,
+        integration: typeof flags["integration"] === "string" ? flags["integration"] : undefined,
       });
     }
     case "doctor": {

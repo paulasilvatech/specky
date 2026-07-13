@@ -32,7 +32,7 @@ specky install --target=copilot      # VS Code + GitHub Copilot (recommended)
 specky install --target=claude       # Claude Code
 specky install --target=cursor       # Cursor
 specky install --target=opencode     # OpenCode
-specky install --target=agent-skills # Shared .agents/skills bundle
+specky install --target=agent-skills # Skills-only shared .agents/skills bundle
 ```
 
 > **Important:** Prefer `--target=...`. The legacy `--ide` flag still works for `copilot`, `claude`, `both`, and `auto`, but new installs should use APM-style targets. When Copilot is installed in the same workspace, Specky strips Claude hooks from `.claude/settings.json` to prevent Copilot cross-read blocks. See [Target-specific install](#target-specific-install) below.
@@ -58,9 +58,9 @@ deployments, use the published GHCR image instead of installing Node/npm on the
 host:
 
 ```bash
-docker pull ghcr.io/paulasilvatech/specky:latest        # or pin: :3.10.2
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin: :3.11.0
 docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
-curl -s http://localhost:3200/health                    # -> {"status":"ok","version":"3.10.2"}
+curl -s http://localhost:3200/health                    # -> {"status":"ok","version":"3.11.0"}
 ```
 
 Production deployments should pin an explicit version tag and enable token auth
@@ -78,7 +78,7 @@ full container model, secrets layout, and private-package login guidance.
 | **Zero-install** | `npx -y specky-sdd@latest init` | One-shot bootstrap, no persistent install. Downloads fresh each time. |
 | **Offline** | `npm pack` + `npm install ./specky-sdd-*.tgz` | Air-gapped environments. |
 
-**Both modes produce the same target-specific workspace layout** (`.github/`, `.claude/`, `.cursor/`, `.opencode/`, `.agents/skills/`, and `.specky/` as applicable). The only difference is where the `specky` binary lives.
+**Both modes produce the same target-specific workspace layout** (`.github/`, `.claude/`, `.cursor/`, `.opencode/`, `.agents/skills/`, and `.specky/` as applicable). The only difference is where the `specky` binary lives. Add `--permission-profile=prompt` to keep every target action behind host confirmation, or use the default `scoped` profile for narrow Claude allow rules. GitHub routing is opt-in with `--integration=github`; credentials are never stored by Specky. See [Target Capabilities](TARGET-CAPABILITIES.md).
 
 **Rule of thumb**:
 
@@ -206,7 +206,7 @@ specky install --target=copilot      # VS Code + GitHub Copilot (recommended)
 specky install --target=claude       # Claude Code only
 specky install --target=cursor       # Cursor
 specky install --target=opencode     # OpenCode
-specky install --target=agent-skills # Shared .agents/skills only
+specky install --target=agent-skills # Skills-only shared .agents/skills bundle
 ```
 
 `--ide=copilot`, `--ide=claude`, `--ide=both`, and `--ide=auto` remain as deprecated aliases for older scripts.

@@ -4,13 +4,13 @@
  */
 
 import type { HarnessCompiler } from "../types.js";
-import { transformToolsLine } from "./common.js";
+import { transformAgentTools } from "./common.js";
 
 export const opencodeCompiler: HarnessCompiler = {
     target: "opencode",
 
-    compileAgent(content) {
-        return transformToolsLine(content, "opencode", "comma-list");
+    compileAgent(content, opts) {
+        return transformAgentTools(content, "opencode", "comma-list", opts);
     },
 
     compilePrompt(content) {

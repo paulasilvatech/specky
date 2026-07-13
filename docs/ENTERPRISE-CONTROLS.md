@@ -25,7 +25,7 @@ Specky should provide these enterprise guarantees:
 | Rate limiting | Implemented for HTTP mode; on by default under the enterprise profile | Bound the bucket map. |
 | HTTP transport security | Loopback bind by default, bearer-token auth (shared token or named token table), DNS-rebinding protection | TLS termination via reverse proxy — see [ENTERPRISE-DEPLOYMENT.md](ENTERPRISE-DEPLOYMENT.md). |
 | Enterprise profile | Implemented (`profile: enterprise` / `SPECKY_PROFILE` / `--profile=`) — flips audit/RBAC/rate-limit/fail-closed defaults to ON; explicit config wins | — |
-| Installer least-privilege | Minimal pre-authorized allow-list; no arbitrary shell/`rm`/network | Document opt-in for broader grants. |
+| Installer least-privilege | Capability-derived `scoped` allow rules or `prompt` mode; no arbitrary shell/`rm`/network | Target runtimes retain final confirmation and authentication. |
 | HMAC state signature | Implemented | Add user-facing state signature verification command/tool. |
 | Audit chain verification | Implemented | Extend verification reporting into release evidence automation. |
 | Compliance checks | Implemented as keyword controls | Integrate into semantic gate. |
@@ -58,6 +58,8 @@ sequenceDiagram
   Wrapper->>Audit: log success/error
   Wrapper-->>Client: normalized response
 ```
+
+  The wrapper authorizes Specky MCP tools. The target runtime separately owns the human approval experience for native tools and external MCP servers; GitHub MCP separately owns GitHub authentication and repository authorization. See [Target Capabilities](TARGET-CAPABILITIES.md).
 
 ## RBAC Policy
 

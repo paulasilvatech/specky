@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.11.0] - 2026-07-13
+
+### Added
+
+- Canonical agent `capabilities:` declarations compiled into target-native tool identifiers for Copilot, Claude Code, Cursor, and OpenCode.
+- `--permission-profile=scoped|prompt` installation modes. The scoped Claude profile derives narrow native, command, and MCP allow rules from installed agent capabilities.
+- Optional GitHub MCP registration with `--integration=github`, including target-aware diagnostics in `specky doctor`.
+- [Target Capabilities](docs/TARGET-CAPABILITIES.md) reference for target rendering, approval boundaries, and GitHub MCP routing.
+
+### Changed
+
+- Initializer, orchestrator, verifier, implementer, and release workflows now declare the Git/test/release capabilities their instructions require.
+- Release workflows distinguish Specky payload generation from authenticated GitHub MCP mutations.
+- APM runtime references are pinned to the package release version rather than `@latest`.
+
 ## [3.10.2] - 2026-07-13
 
 Patch release: Specky logo in VS Code and Cursor MCP / Agent Plugins UI.

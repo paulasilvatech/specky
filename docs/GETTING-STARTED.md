@@ -34,7 +34,7 @@ specky install --target=copilot      # VS Code + GitHub Copilot
 specky install --target=claude       # Claude Code
 specky install --target=cursor       # Cursor
 specky install --target=opencode     # OpenCode
-specky install --target=agent-skills # Shared .agents/skills bundle
+specky install --target=agent-skills # Skills-only shared .agents/skills bundle
 ```
 
 > **Important:** Prefer `--target=<harness>` (the canonical APM-aligned selector). The legacy `--ide=copilot` / `--ide=claude` flag still works as a deprecated alias. Do NOT install both Copilot and Claude into the same project — Copilot reads `.claude/settings.json` hooks, causing cross-read conflicts that block tool calls.

@@ -7,13 +7,13 @@
  */
 
 import type { HarnessCompiler } from "../types.js";
-import { transformToolsLine } from "./common.js";
+import { transformAgentTools } from "./common.js";
 
 export const copilotCompiler: HarnessCompiler = {
     target: "copilot",
 
-    compileAgent(content) {
-        return transformToolsLine(content, "copilot", "json-array");
+    compileAgent(content, opts) {
+        return transformAgentTools(content, "copilot", "json-array", opts);
     },
 
     compilePrompt(content) {

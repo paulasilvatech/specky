@@ -22,6 +22,11 @@ RUN npm run build
 
 # ---- Runtime stage: production dependencies + built artifacts only ----
 FROM node:22-bookworm-slim AS runtime
+ARG VERSION
+ARG VCS_REF
+LABEL org.opencontainers.image.source="https://github.com/paulasilvatech/specky" \
+  org.opencontainers.image.version="${VERSION}" \
+  org.opencontainers.image.revision="${VCS_REF}"
 ENV NODE_ENV=production
 WORKDIR /app
 

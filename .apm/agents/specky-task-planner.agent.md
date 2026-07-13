@@ -3,7 +3,7 @@ name: specky-task-planner
 description: Phase 5 agent that writes TASKS.md with dependency-resolved task sequences, REQ-ID traceability, complexity estimates, and parallel markers. Also generates CHECKLIST.md.
 
 color: orange
-tools: ["search", "specky/sdd_write_tasks", "specky/sdd_checklist"]
+capabilities: ["workspace.read", "mcp.specky.sdd_write_tasks", "mcp.specky.sdd_checklist"]
 ---
 
 <example>

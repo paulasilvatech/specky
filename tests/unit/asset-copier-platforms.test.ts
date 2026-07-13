@@ -37,7 +37,7 @@ describe("asset copier platform-specific primitive transforms", () => {
         );
         const toolsLine = agent.split("\n").find((line) => line.startsWith("tools:")) ?? "";
 
-        expect(toolsLine).toContain('["search","agent","specky/sdd_get_status"');
+        expect(toolsLine).toContain('["search","runCommands","agent","specky/sdd_get_status"');
         expect(toolsLine).not.toMatch(/\b(Read|Glob|Grep|Task)\b/);
         expect(toolsLine).not.toContain("mcp__specky__");
         expect(toolsLine).not.toMatch(/"sdd_[a-z0-9_]+"/);
@@ -76,7 +76,7 @@ describe("asset copier platform-specific primitive transforms", () => {
             "utf8",
         );
 
-        expect(agent).toContain("tools: Read, Glob, Grep, Task, mcp__specky__sdd_get_status");
+        expect(agent).toContain("tools: Read, Glob, Grep, Bash, Task, mcp__specky__sdd_get_status");
         expect(agent).not.toContain("specky/sdd_get_status");
         expect(agent).not.toContain('"search"');
 
@@ -122,7 +122,7 @@ describe("asset copier platform-specific primitive transforms", () => {
             "utf8",
         );
 
-        expect(agent).toContain("tools: Read, Glob, Grep, Task, mcp__specky__sdd_get_status");
+        expect(agent).toContain("tools: Read, Glob, Grep, Bash, Task, mcp__specky__sdd_get_status");
         expect(agent).not.toContain("specky/sdd_get_status");
         expect(command).not.toContain("agent: agent");
         expect(rule).toContain("alwaysApply: true");
@@ -147,7 +147,7 @@ describe("asset copier platform-specific primitive transforms", () => {
             "utf8",
         );
 
-        expect(agent).toContain("tools: read, agent, specky/sdd_get_status");
+        expect(agent).toContain("tools: read, bash, agent, specky/sdd_get_status");
         expect(agent).not.toContain("mcp__specky__sdd_get_status");
         expect(command).not.toContain("agent: agent");
         expect(skill).toContain("name: specky-onboarding");

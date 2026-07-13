@@ -5,11 +5,11 @@ on:
     branches: [main, develop]
   pull_request:
     paths:
-      - 'src/cli/**'
-      - 'scripts/**'
-      - 'package.json'
-      - '.apm/**'
-      - '.github/workflows/install-smoke.yml'
+      - "src/cli/**"
+      - "scripts/**"
+      - "package.json"
+      - ".apm/**"
+      - ".github/workflows/install-smoke.yml"
 
 permissions:
   contents: read
@@ -48,7 +48,7 @@ jobs:
           git init -q
           npm init -y >/dev/null
           npm install "../$TARBALL" --silent
-          npx specky init --ide=both
+          npx specky init --target=copilot,claude,cursor,opencode,agent-skills --integration=github --permission-profile=scoped
 
       - name: Assert asset layout
         shell: bash
@@ -67,9 +67,16 @@ jobs:
           assert_eq "$(count .github/prompts)"       22 "copilot prompts"
           assert_eq "$(countd .github/skills)"       14 "copilot skills"
           assert_eq "$(count .github/hooks/specky/scripts)" 16 "copilot hooks"
+          assert_eq "$(count .cursor/agents)"        13 "cursor agents"
+          assert_eq "$(count .cursor/commands)"      22 "cursor commands"
+          assert_eq "$(count .opencode/agents)"      13 "opencode agents"
+          assert_eq "$(count .opencode/commands)"    22 "opencode commands"
+          assert_eq "$(countd .agents/skills)"       14 "shared skills"
           test -f .claude/settings.json || { echo "::error::missing .claude/settings.json"; fail=1; }
           test -f .mcp.json || { echo "::error::missing .mcp.json"; fail=1; }
           test -f .vscode/mcp.json || { echo "::error::missing .vscode/mcp.json"; fail=1; }
+          test -f .cursor/mcp.json || { echo "::error::missing .cursor/mcp.json"; fail=1; }
+          test -f opencode.json || { echo "::error::missing opencode.json"; fail=1; }
           test -f .specky/install.lock || { echo "::error::missing .specky/install.lock"; fail=1; }
           exit $fail
 

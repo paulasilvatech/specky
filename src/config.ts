@@ -63,6 +63,12 @@ const configSchema = z
         default_role: z.enum(["viewer", "contributor", "admin"]).default("contributor"),
       })
       .default({ enabled: false, default_role: "contributor" }),
+    installation: z
+      .object({
+        permission_profile: z.enum(["scoped", "prompt"]).default("scoped"),
+        integrations: z.array(z.enum(["github"])).default([]),
+      })
+      .default({ permission_profile: "scoped", integrations: [] }),
     pipeline: z
       .object({
         // Server-side LGTM enforcement: when true, sdd_advance_phase refuses to
@@ -103,10 +109,12 @@ export function resolveProfile(
   const argv = overrides.argv ?? process.argv;
   const env = overrides.env ?? process.env;
 
-  const flagValue = argv
-    .filter((a) => a.startsWith("--profile="))
-    .at(-1)
-    ?.slice("--profile=".length);
+  let flagValue: string | undefined;
+  for (const arg of argv) {
+    if (arg.startsWith("--profile=")) {
+      flagValue = arg.slice("--profile=".length);
+    }
+  }
   const candidates: Array<string | undefined> = [
     flagValue,
     env["SPECKY_PROFILE"],

@@ -16,7 +16,11 @@ import type { HarnessTarget } from "../harness/types.js";
 export interface ApmPolicy {
     schemaVersion?: number;
     allowedSources?: string[];
-    mcp?: { allowTransitive?: boolean; allowedServers?: string[] };
+    mcp?: {
+        allowTransitive?: boolean;
+        allowedServers?: string[];
+        optionalCapabilityServers?: string[];
+    };
     hooks?: { allowedEvents?: string[] };
     targets?: Record<string, { forbidToolTokens?: string[] }>;
 }
@@ -57,6 +61,27 @@ function checkMcpAllowlist(pkgRoot: string, policy: ApmPolicy, errors: string[])
     for (const server of manifest.mcp?.servers ?? []) {
         if (!allowedServers.includes(server.name)) {
             errors.push(`MCP server "${server.name}" is not in policy allowedServers`);
+        }
+    }
+}
+
+function checkOptionalCapabilityServers(
+    policy: ApmPolicy,
+    agentsDir: string,
+    errors: string[],
+): void {
+    const allowedServers = new Set(policy.mcp?.optionalCapabilityServers ?? []);
+    for (const file of policyAgentFiles(agentsDir)) {
+        const content = readFileSync(resolve(agentsDir, file), "utf8");
+        const declaredServers = [
+            ...content.matchAll(/\bmcp\.([a-z][a-z0-9-]*)\.[a-z][a-z0-9_]*\b/g),
+        ].map((match) => match[1]);
+        for (const server of declaredServers) {
+            if (server !== "specky" && !allowedServers.has(server)) {
+                errors.push(
+                    `agent "${file}" references optional MCP server "${server}" outside policy`,
+                );
+            }
         }
     }
 }
@@ -143,6 +168,7 @@ export function checkPolicy(pkgRoot: string): PolicyResult {
     const { agentsDir, hooksManifest } = sourcePaths(pkgRoot);
 
     checkMcpAllowlist(pkgRoot, policy, errors);
+    checkOptionalCapabilityServers(policy, agentsDir, errors);
     checkHookEvents(policy, hooksManifest, errors);
     checkTargetIsolation(policy, agentsDir, errors, warnings);
 

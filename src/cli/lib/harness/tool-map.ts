@@ -6,7 +6,7 @@
  * byte-for-byte identical to the legacy inline transforms in asset-copier.ts.
  */
 
-import type { HarnessTarget, LogicalTool } from "./types.js";
+import type { AgentCapability, HarnessTarget, LogicalTool } from "./types.js";
 
 const MCP_PREFIX = "mcp.specky.";
 const RAW_PREFIX = "raw:";
@@ -102,10 +102,102 @@ const NATIVE: Record<PlainLogicalTool, Record<HarnessTarget, string[]>> = {
     },
 };
 
+type PlainCapability = Exclude<
+    AgentCapability,
+    `mcp.specky.${string}` | `mcp.github.${string}`
+>;
+
+const CAPABILITY_NATIVE: Record<
+    PlainCapability,
+    Record<Exclude<HarnessTarget, "agent-skills">, string[]>
+> = {
+    "workspace.read": {
+        copilot: ["search"],
+        claude: ["Read", "Glob", "Grep"],
+        cursor: ["Read", "Glob", "Grep"],
+        opencode: ["read"],
+    },
+    "workspace.edit": {
+        copilot: ["edit"],
+        claude: ["Edit", "Write", "MultiEdit"],
+        cursor: ["Edit", "Write", "MultiEdit"],
+        opencode: ["edit"],
+    },
+    "workspace.command.git": {
+        copilot: ["runCommands"],
+        claude: ["Bash"],
+        cursor: ["Bash"],
+        opencode: ["bash"],
+    },
+    "workspace.command.test": {
+        copilot: ["runCommands"],
+        claude: ["Bash"],
+        cursor: ["Bash"],
+        opencode: ["bash"],
+    },
+    "workspace.command.release-gates": {
+        copilot: ["runCommands"],
+        claude: ["Bash"],
+        cursor: ["Bash"],
+        opencode: ["bash"],
+    },
+    "web.fetch": {
+        copilot: ["fetch"],
+        claude: ["WebFetch", "WebSearch"],
+        cursor: ["WebFetch", "WebSearch"],
+        opencode: ["fetch"],
+    },
+    "agent.delegate": {
+        copilot: ["agent"],
+        claude: ["Task"],
+        cursor: ["Task"],
+        opencode: ["agent"],
+    },
+    "todo.write": {
+        copilot: ["todos"],
+        claude: ["TodoWrite"],
+        cursor: ["TodoWrite"],
+        opencode: ["todo"],
+    },
+};
+
 function speckyMcpToken(tool: string, target: HarnessTarget): string {
     if (target === "claude" || target === "cursor") return `mcp__specky__${tool}`;
     if (target === "agent-skills") return tool;
     return `specky/${tool}`;
+}
+
+function mcpToken(server: "specky" | "github", tool: string, target: Exclude<HarnessTarget, "agent-skills">): string {
+    if (target === "claude" || target === "cursor") return `mcp__${server}__${tool}`;
+    return `${server}/${tool}`;
+}
+
+/** Return whether a value is an allowed canonical agent capability. */
+export function isAgentCapability(value: string): value is AgentCapability {
+    return (
+        value in CAPABILITY_NATIVE ||
+        /^mcp\.(specky|github)\.[a-z][a-z0-9_]*$/.test(value)
+    );
+}
+
+/**
+ * Render a canonical agent capability to target-native tool tokens.
+ * Agent Skills is intentionally excluded because it installs skills only.
+ */
+export function capabilityToNative(
+    capability: AgentCapability,
+    target: Exclude<HarnessTarget, "agent-skills">,
+): string[] {
+    if (!isAgentCapability(capability)) {
+        throw new Error(`Unknown agent capability "${capability}".`);
+    }
+
+    if (capability.startsWith("mcp.")) {
+        const [, server, ...toolParts] = capability.split(".");
+        return [mcpToken(server as "specky" | "github", toolParts.join("."), target)];
+    }
+
+    return CAPABILITY_NATIVE[capability as PlainCapability][target];
 }
 
 /** Render a logical tool id into the native token(s) for a harness. */

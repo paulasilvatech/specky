@@ -16,7 +16,7 @@
     <meta property="og:title" content="Specky — Agentic Spec-Driven Development">
     <meta property="og:description"
       content="The complete SDD CLI toolkit that keeps your requirements, code, and tests in sync. 13 agents, 58 MCP tools, 22 prompts, 14 skills, 16 hooks, 10-phase enforced pipeline, and opt-in enterprise controls. One install, everything works.">
-    <meta property="og:image" content="https://getspecky.ai/og-image.png?v=3">
+    <meta property="og:image" content="https://getspecky.ai/og-image.png?v=3.11.0">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="Specky">
@@ -26,7 +26,7 @@
     <meta name="twitter:title" content="Specky — Agentic Spec-Driven Development">
     <meta name="twitter:description"
       content="The complete SDD CLI toolkit that keeps your requirements, code, and tests in sync. 13 agents, 58 MCP tools, 22 prompts, 14 skills, 16 hooks, 10-phase enforced pipeline, and opt-in enterprise controls. One install, everything works.">
-    <meta name="twitter:image" content="https://getspecky.ai/og-image.png?v=3">
+    <meta name="twitter:image" content="https://getspecky.ai/og-image.png?v=3.11.0">
 
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
@@ -2326,7 +2326,7 @@
       <div class="hero-grid"></div>
       <div class="hero-glow"></div>
       <div class="hero-inner">
-        <div class="hero-badge"><span class="badge-dot"></span> Open Source · MIT License · v3.10.2</div>
+        <div class="hero-badge"><span class="badge-dot"></span> Open Source · MIT License · v3.11.0</div>
         <div class="hero-copy">
           <h1 data-i18n="hero.h1">Stop vibe coding.<br><span data-i18n="hero.h1span">Start spec coding.</span></h1>
           <p class="lead">
@@ -2719,7 +2719,8 @@
             <span class="in-icon">💡</span>
             <p><strong>Tip:</strong> Specky auto-detects your stack (TypeScript, Python, Java, Go…) and applies the
               right EARS patterns. No configuration needed for most projects. <a
-                href="https://github.com/paulasilvatech/specky/blob/main/docs/GETTING-STARTED.md" target="_blank">Full docs
+                href="https://github.com/paulasilvatech/specky/blob/main/docs/GETTING-STARTED.md" target="_blank">Full
+                docs
                 →</a></p>
           </div>
         </div>
@@ -2871,7 +2872,7 @@
           <div class="install-note" style="margin-bottom:20px">
             <span class="in-icon">🔒</span>
             <p><strong>Air-gapped mode:</strong> The MCP server (<code>specky serve</code>) makes <strong>zero outbound
-              network calls</strong> — stdio or localhost HTTP only. No telemetry, no cloud sync. Three runtime npm
+                network calls</strong> — stdio or localhost HTTP only. No telemetry, no cloud sync. Three runtime npm
               dependencies (<code>@modelcontextprotocol/sdk</code>, <code>zod</code>, <code>yaml</code>). The CLI may
               optionally check the npm registry once per day for update banners; disable that for a strict offline
               posture (see step 3).</p>
@@ -2889,7 +2890,7 @@
               <button class="code-copy-btn" data-copy-id="c-airgap-pack">Copy</button>
             </div>
             <pre id="c-airgap-pack"><span class="dk">$</span> npm pack specky-sdd
-<span class="cm"># produces: specky-sdd-3.10.2.tgz</span></pre>
+<span class="cm"># produces: specky-sdd-3.11.0.tgz</span></pre>
           </div>
           <ol class="install-steps" style="margin-top:16px">
             <li>
@@ -2901,9 +2902,9 @@
           <div class="code-block" style="margin-top:12px">
             <div class="code-block-header">
               <span class="code-block-title">Terminal (air-gapped machine)</span>
-              <button class="code-copy-btn" data-copy="npm install -g ./specky-sdd-3.10.2.tgz">Copy</button>
+              <button class="code-copy-btn" data-copy="npm install -g ./specky-sdd-3.11.0.tgz">Copy</button>
             </div>
-            <pre><span class="dk">$</span> npm install -g ./specky-sdd-3.10.2.tgz
+            <pre><span class="dk">$</span> npm install -g ./specky-sdd-3.11.0.tgz
 <span class="dk">$</span> specky install --target=cursor   <span class="cm"># or copilot, claude, opencode</span></pre>
           </div>
           <ol class="install-steps" style="margin-top:16px">
@@ -2911,7 +2912,8 @@
               <div class="step-content">
                 <h4>Disable the optional CLI update check</h4>
                 <p>By default the CLI may perform one GET per day to <code>registry.npmjs.org</code> after
-                  <code>doctor</code>/<code>status</code> — not telemetry, but not air-gapped. Turn it off:</p>
+                  <code>doctor</code>/<code>status</code> — not telemetry, but not air-gapped. Turn it off:
+                </p>
               </div>
             </li>
           </ol>
@@ -2938,7 +2940,8 @@
           <div class="code-block" style="margin-top:12px">
             <div class="code-block-header">
               <span class="code-block-title">.mcp.json / .vscode/mcp.json (air-gapped)</span>
-              <button class="code-copy-btn" data-copy='{"mcpServers":{"specky":{"command":"specky","args":["serve"]}}}'>Copy</button>
+              <button class="code-copy-btn"
+                data-copy='{"mcpServers":{"specky":{"command":"specky","args":["serve"]}}}'>Copy</button>
             </div>
             <pre>{
   "mcpServers": {
@@ -2989,7 +2992,9 @@
       <div class="sec-inner">
         <div class="sec-label" data-i18n="upgrade.label">Stay Current</div>
         <div class="sec-title" data-i18n="upgrade.title">Upgrade Specky</div>
-        <div class="sec-sub" data-i18n="upgrade.sub_html">Bump the npm package, then refresh project assets. No <code>--target</code> on upgrade — Specky reuses the harness recorded in <code>.specky/install.json</code>.</div>
+        <div class="sec-sub" data-i18n="upgrade.sub_html">Bump the npm package, then refresh project assets. No
+          <code>--target</code> on upgrade — Specky reuses the harness recorded in <code>.specky/install.json</code>.
+        </div>
 
         <div class="code-block" style="margin-top:16px">
           <div class="code-block-header">
@@ -3018,7 +3023,12 @@ npx specky upgrade">Copy</button>
 
         <div class="install-note" style="margin-top:16px;max-width:720px">
           <span class="in-icon">🔄</span>
-          <p data-i18n="upgrade.note_p"><strong>No <code>--target</code> on upgrade.</strong> <code>specky upgrade</code> reads your previous install from <code>.specky/install.json</code> and refreshes the same harness. It preserves <code>.specs/</code> and re-pins MCP registration — updating npm alone leaves the old server pinned. Use <code>specky install --target=...</code> only for a first install or when switching IDE (e.g. Copilot → Cursor).</p>
+          <p data-i18n="upgrade.note_p"><strong>No <code>--target</code> on upgrade.</strong>
+            <code>specky upgrade</code> reads your previous install from <code>.specky/install.json</code> and refreshes
+            the same harness. It preserves <code>.specs/</code> and re-pins MCP registration — updating npm alone leaves
+            the old server pinned. Use <code>specky install --target=...</code> only for a first install or when
+            switching IDE (e.g. Copilot → Cursor).
+          </p>
         </div>
       </div>
     </section>
@@ -3301,10 +3311,10 @@ npx specky upgrade">Copy</button>
             <button class="code-copy-btn" data-copy-id="c-enterprise-pull">Copy</button>
           </div>
           <pre id="c-enterprise-pull"><span class="cm"># Public image, no login needed. Multi-arch: linux/amd64 + linux/arm64.</span>
-<span class="dk">$</span> docker pull ghcr.io/paulasilvatech/specky:3.10.2        <span class="cm"># or :latest</span>
-<span class="dk">$</span> docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:3.10.2
+<span class="dk">$</span> docker pull ghcr.io/paulasilvatech/specky:3.11.0        <span class="cm"># or :latest</span>
+<span class="dk">$</span> docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:3.11.0
 <span class="dk">$</span> curl -s http://localhost:3200/health
-<span class="cm"># -&gt; {"status":"ok","version":"3.10.2"}</span></pre>
+<span class="cm"># -&gt; {"status":"ok","version":"3.11.0"}</span></pre>
         </div>
 
         <div class="code-block" style="margin-bottom:16px">
@@ -3320,7 +3330,7 @@ npx specky upgrade">Copy</button>
     -e SDD_AUDIT_HMAC_KEY_FILE=/run/secrets/audit.key \
     -v "$PWD/workspace:/workspace" \
     -v /etc/specky:/run/secrets:ro \
-    ghcr.io/paulasilvatech/specky:3.10.2</pre>
+    ghcr.io/paulasilvatech/specky:3.11.0</pre>
         </div>
 
         <div class="install-note">
