@@ -2,7 +2,7 @@
 schemaVersion: 1
 package:
   name: specky-sdd
-  version: 3.10.1
+  version: 3.10.2
 primitives:
   .apm/agents/specky-design-architect.agent.md: sha256:a9411a98bd2fe4c4aa1e6eab66e84eaf9a010897d408e1737a279fe58f7023b2
   .apm/agents/specky-implementer.agent.md: sha256:76c546fe70fe3f5399ba25f0e6de3d9b280880fe7c12d88f093cee55c0b02ece

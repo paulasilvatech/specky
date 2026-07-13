@@ -1,6 +1,6 @@
 # Specky CLI Reference
 
-> Version: v3.10.1
+> Version: v3.10.2
 
 The `specky` CLI is the single write-path for installing, validating, and upgrading Specky in a workspace. It replaces the previous ad-hoc copying done by APM and manual `.github/` / `.claude/` setup.
 
@@ -65,6 +65,7 @@ When `--target=cursor`:
 - `.cursor/hooks.json` and `.cursor/hooks/`
 - `.agents/skills/*/SKILL.md`
 - `.cursor/mcp.json` with `mcpServers.specky`
+- `.cursor-plugin/plugin.json` with Specky logo for Agent Plugins (v3.10.2+)
 
 When `--target=opencode`:
 
@@ -89,7 +90,7 @@ Both modes also write:
 Never overwrites `.specs/`, `.specky/profile.json`, or existing user-authored keys in `settings.json`.
 
 **Why `.vscode/settings.json` auto-config matters:**
-Without `chat.mcp.enabled` and `chat.mcp.discovery.enabled`, GitHub Copilot in VS Code won't discover the Specky MCP server even if `.vscode/mcp.json` is correct. Users previously had to manually toggle tools in the Copilot Chat tool selector — now it Just Works.
+Without `chat.mcp.enabled` and `chat.mcp.discovery.enabled`, GitHub Copilot in VS Code won't discover the Specky MCP server even if `.vscode/mcp.json` is correct. Users previously had to manually toggle tools in the Copilot Chat tool selector — now it Just Works. The Specky MCP server advertises its icon via `file://` in the handshake (v3.10.2+); VS Code ignores HTTPS icon URLs on stdio transports.
 
 **Why Claude `permissions.allow` matters:**
 Claude Code asks for approval each time an agent invokes a tool unless the tool is pre-authorized via `permissions.allow`. Specky's Claude agents need read/search tools, scoped git/npm/npx shell commands, workspace edit tools, and `mcp__specky__*`. The CLI pre-authorizes that least-privilege set so pipeline work does not get interrupted by repeated prompts.

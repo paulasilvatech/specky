@@ -66,6 +66,10 @@ import { RbacEngine } from "./services/rbac-engine.js";
 import { registerRbacTools } from "./tools/rbac.js";
 import { installToolEnforcement } from "./tools/tool-enforcement.js";
 import { registerAuditTools } from "./tools/audit.js";
+import { mcpServerIcons, resolvePackageRoot } from "./utils/server-icon.js";
+
+const pkgRoot = resolvePackageRoot(import.meta.url);
+const serverIcons = mcpServerIcons(pkgRoot);
 
 // Resolve workspace root
 const workspaceRoot = process.env["SDD_WORKSPACE"] || process.cwd();
@@ -120,16 +124,7 @@ const server = new McpServer(
     title: "Specky",
     description: "Agentic Spec-Driven Development plugin — 13 agents, 58 MCP tools, 10-phase enforced pipeline, EARS notation, 22 prompts, 8 skills, 16 hooks.",
     websiteUrl: "https://getspecky.ai",
-    icons: [
-      {
-        src: "https://raw.githubusercontent.com/paulasilvatech/specky/main/site/specky-brand-icon.svg",
-        mimeType: "image/svg+xml",
-      },
-      {
-        src: "https://raw.githubusercontent.com/paulasilvatech/specky/main/site/specky-icon.png",
-        mimeType: "image/png",
-      },
-    ],
+    ...(serverIcons.length > 0 ? { icons: serverIcons } : {}),
   },
   {
     instructions: "Specky is a Spec-Driven Development engine. Start with sdd_init to create a project, then follow the 10-phase pipeline: Init → Discover → Specify → Clarify → Design → Tasks → Analyze → Implement → Verify → Release. Use sdd_get_status to check current phase. Reply LGTM at quality gates to advance.",

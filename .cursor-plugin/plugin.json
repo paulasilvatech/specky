@@ -1,0 +1,15 @@
+{
+  "name": "specky",
+  "version": "3.10.2",
+  "description": "Specky — Spec-Driven Development plugin (58 MCP tools, 13 agents, 10-phase pipeline).",
+  "author": {
+    "name": "Paula Silva",
+    "email": "paula@paulasilvatech.com"
+  },
+  "homepage": "https://getspecky.ai",
+  "repository": "https://github.com/paulasilvatech/specky",
+  "license": "MIT",
+  "logo": "site/specky-icon.png",
+  "keywords": ["specky", "sdd", "spec-driven-development", "mcp"],
+  "mcpServers": "mcp.json"
+}

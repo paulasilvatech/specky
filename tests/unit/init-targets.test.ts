@@ -36,6 +36,9 @@ describe("specky install target selection", () => {
         );
         expect(mcp.mcpServers?.specky).toBeDefined();
 
+        expect(existsSync(resolve(workspace, ".cursor-plugin/plugin.json"))).toBe(true);
+        expect(existsSync(resolve(workspace, ".cursor/assets/specky-icon.png"))).toBe(true);
+
         const meta = readJson<{ targets?: string[] }>(resolve(workspace, ".specky/install.json"));
         expect(meta.targets).toEqual(["cursor"]);
     });

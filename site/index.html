@@ -2326,7 +2326,7 @@
       <div class="hero-grid"></div>
       <div class="hero-glow"></div>
       <div class="hero-inner">
-        <div class="hero-badge"><span class="badge-dot"></span> Open Source · MIT License · v3.10</div>
+        <div class="hero-badge"><span class="badge-dot"></span> Open Source · MIT License · v3.10.2</div>
         <div class="hero-copy">
           <h1 data-i18n="hero.h1">Stop vibe coding.<br><span data-i18n="hero.h1span">Start spec coding.</span></h1>
           <p class="lead">
@@ -2889,7 +2889,7 @@
               <button class="code-copy-btn" data-copy-id="c-airgap-pack">Copy</button>
             </div>
             <pre id="c-airgap-pack"><span class="dk">$</span> npm pack specky-sdd
-<span class="cm"># produces: specky-sdd-3.10.1.tgz</span></pre>
+<span class="cm"># produces: specky-sdd-3.10.2.tgz</span></pre>
           </div>
           <ol class="install-steps" style="margin-top:16px">
             <li>
@@ -2901,9 +2901,9 @@
           <div class="code-block" style="margin-top:12px">
             <div class="code-block-header">
               <span class="code-block-title">Terminal (air-gapped machine)</span>
-              <button class="code-copy-btn" data-copy="npm install -g ./specky-sdd-3.10.1.tgz">Copy</button>
+              <button class="code-copy-btn" data-copy="npm install -g ./specky-sdd-3.10.2.tgz">Copy</button>
             </div>
-            <pre><span class="dk">$</span> npm install -g ./specky-sdd-3.10.1.tgz
+            <pre><span class="dk">$</span> npm install -g ./specky-sdd-3.10.2.tgz
 <span class="dk">$</span> specky install --target=cursor   <span class="cm"># or copilot, claude, opencode</span></pre>
           </div>
           <ol class="install-steps" style="margin-top:16px">
@@ -3301,10 +3301,10 @@ npx specky upgrade">Copy</button>
             <button class="code-copy-btn" data-copy-id="c-enterprise-pull">Copy</button>
           </div>
           <pre id="c-enterprise-pull"><span class="cm"># Public image, no login needed. Multi-arch: linux/amd64 + linux/arm64.</span>
-<span class="dk">$</span> docker pull ghcr.io/paulasilvatech/specky:3.10.1        <span class="cm"># or :latest</span>
-<span class="dk">$</span> docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:3.10.1
+<span class="dk">$</span> docker pull ghcr.io/paulasilvatech/specky:3.10.2        <span class="cm"># or :latest</span>
+<span class="dk">$</span> docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:3.10.2
 <span class="dk">$</span> curl -s http://localhost:3200/health
-<span class="cm"># -&gt; {"status":"ok","version":"3.10.1"}</span></pre>
+<span class="cm"># -&gt; {"status":"ok","version":"3.10.2"}</span></pre>
         </div>
 
         <div class="code-block" style="margin-bottom:16px">
@@ -3320,7 +3320,7 @@ npx specky upgrade">Copy</button>
     -e SDD_AUDIT_HMAC_KEY_FILE=/run/secrets/audit.key \
     -v "$PWD/workspace:/workspace" \
     -v /etc/specky:/run/secrets:ro \
-    ghcr.io/paulasilvatech/specky:3.10.1</pre>
+    ghcr.io/paulasilvatech/specky:3.10.2</pre>
         </div>
 
         <div class="install-note">

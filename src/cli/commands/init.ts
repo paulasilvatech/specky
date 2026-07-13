@@ -19,6 +19,7 @@ import { SUPPORTED_TARGETS, type HarnessTarget } from "../lib/harness/index.js";
 import { packageRoot, sourcePaths, targetPaths, type Targets } from "../lib/paths.js";
 import { loadClaudeHooksManifest, mergeClaudeHooks } from "../lib/settings-merger.js";
 import { writeMcpRegistration } from "../lib/mcp-writer.js";
+import { writeCursorPluginManifest } from "../lib/cursor-plugin-writer.js";
 import { writeVscodeSettings } from "../lib/vscode-settings-writer.js";
 import { writeGitignoreBlock } from "../lib/gitignore-writer.js";
 
@@ -148,6 +149,10 @@ function installCursor(ctx: Ctx): CopyResult {
     serverName: "specky",
   });
   console.log(`  .cursor/mcp.json: ${mcp.action}`);
+
+  const plugin = writeCursorPluginManifest(ctx.workspace, ctx.pkg, { dryRun: ctx.dryRun });
+  console.log(`  .cursor-plugin/plugin.json: ${plugin.action}`);
+
   console.log(`  .cursor/hooks.json: ${existsSync(ctx.targets.cursor.hooksManifest) ? "installed" : "skipped"}`);
   console.log("");
   return r;

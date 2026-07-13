@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.10.2] - 2026-07-13
+
+Patch release: Specky logo in VS Code and Cursor MCP / Agent Plugins UI.
+
+### Added
+
+- **`mcpServerIcons`** (`src/utils/server-icon.ts`) — resolves `site/specky-icon.png` to a `file://` URI with `sizes` for stdio MCP clients (VS Code requires local URIs; HTTPS icons are ignored).
+- **Cursor plugin manifest on install** — `specky install --target=cursor` writes `.cursor-plugin/plugin.json` and copies `.cursor/assets/specky-icon.png` so the Specky logo appears in Cursor Agent Plugins.
+- **Repo plugin scaffold** — root `.cursor-plugin/plugin.json` and `mcp.json` for Cursor Marketplace / Git plugin installs.
+- Regression tests for server-icon resolution and cursor-plugin-writer.
+
+### Fixed
+
+- **VS Code / Copilot MCP icon** — server handshake no longer advertises `raw.githubusercontent.com` URLs; uses the packaged PNG via `file://`.
+- **Cursor generic plug icon** — workspace installs get an explicit plugin manifest with logo instead of relying on MCP `serverInfo.icons` alone (still inconsistent in some Cursor MCP views).
+
+### Changed
+
+- `.gitignore` block ignores vendored `.cursor/assets/`; keeps `.cursor-plugin/plugin.json` team-shareable (same as `.cursor/mcp.json`).
+
 ## [3.10.1] - 2026-07-13
 
 Patch release: dual TASKS.md parser (table + checkbox), honest COMPLIANCE/VERIFICATION persistence, Analyze-phase remediation for blocked gates, and generation quality fixes.

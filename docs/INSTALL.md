@@ -58,9 +58,9 @@ deployments, use the published GHCR image instead of installing Node/npm on the
 host:
 
 ```bash
-docker pull ghcr.io/paulasilvatech/specky:latest        # or pin: :3.10.1
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin: :3.10.2
 docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
-curl -s http://localhost:3200/health                    # -> {"status":"ok","version":"3.10.1"}
+curl -s http://localhost:3200/health                    # -> {"status":"ok","version":"3.10.2"}
 ```
 
 Production deployments should pin an explicit version tag and enable token auth
@@ -217,7 +217,7 @@ If Copilot is part of the selected target set (`copilot`, `both`, or `all`), Spe
 | --- | --- | --- |
 | VS Code + Copilot | `specky install --target=copilot` | `.github/agents/`, `.github/prompts/`, `.github/skills/`, `.github/hooks/specky/`, `.vscode/` |
 | Claude Code | `specky install --target=claude` | `.claude/agents/`, `.claude/commands/`, `.claude/skills/`, `.claude/hooks/`, `.claude/settings.json` |
-| Cursor | `specky install --target=cursor` | `.cursor/agents/`, `.cursor/commands/`, `.cursor/rules/specky-sdd.mdc`, `.cursor/hooks.json`, `.cursor/hooks/`, `.cursor/mcp.json`, `.agents/skills/` |
+| Cursor | `specky install --target=cursor` | `.cursor/agents/`, `.cursor/commands/`, `.cursor/rules/specky-sdd.mdc`, `.cursor/hooks.json`, `.cursor/hooks/`, `.cursor/mcp.json`, `.cursor-plugin/plugin.json`, `.agents/skills/` |
 | OpenCode | `specky install --target=opencode` | `.opencode/agents/`, `.opencode/commands/`, `opencode.json`, `.agents/skills/` |
 | Agent Skills | `specky install --target=agent-skills` | `.agents/skills/` |
 | Legacy both | `specky install --target=both` | Copilot + Claude assets; Claude hooks are stripped for Copilot safety |
@@ -243,9 +243,10 @@ GitHub Copilot maps all hooks to `PreToolUse`, so Specky strips lifecycle events
 After `specky install --target=cursor`:
 
 1. Open Cursor Settings → MCP and confirm the `specky` server is enabled.
-2. Start an Agent chat and approve Specky MCP tools on first use, following your team policy.
-3. Run `/specky-onboarding` or invoke `@specky-onboarding`.
-4. Run `specky doctor` and confirm Cursor agents, commands, skills, rules, hooks, and MCP checks pass.
+2. Confirm **Agent Plugins → Installed** shows the Specky logo (from `.cursor-plugin/plugin.json`, v3.10.2+).
+3. Start an Agent chat and approve Specky MCP tools on first use, following your team policy.
+4. Run `/specky-onboarding` or invoke `@specky-onboarding`.
+5. Run `specky doctor` and confirm Cursor agents, commands, skills, rules, hooks, and MCP checks pass.
 
 Cursor project skills intentionally install to `.agents/skills/{skill-name}/SKILL.md`. Do not move them to `.cursor/skills/`; `.cursor/agents/` stores personas, while `.agents/skills/` stores reusable playbooks.
 
@@ -258,7 +259,7 @@ specky install --target=cursor
 specky doctor
 ```
 
-This regenerates `.cursor/agents/`, `.cursor/commands/`, `.cursor/rules/`, `.cursor/hooks/`, and `.agents/skills/`. Keep `.specky/config.yml`, `.cursor/mcp.json`, and `.specs/` in git.
+This regenerates `.cursor/agents/`, `.cursor/commands/`, `.cursor/rules/`, `.cursor/hooks/`, `.cursor-plugin/plugin.json`, and `.agents/skills/`. Keep `.specky/config.yml`, `.cursor/mcp.json`, `.cursor-plugin/plugin.json`, and `.specs/` in git.
 
 ---
 
