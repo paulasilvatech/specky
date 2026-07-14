@@ -11,10 +11,40 @@ provenance and runs the full test matrix; the manual route is a fallback.
 ## Prerequisites (one-time)
 
 1. **npm account** with publish rights to `specky-sdd` (`npm whoami` prints your username)
-2. **`NPM_TOKEN` repo secret** (an npm *automation* token) — used by CI so the
-   GitHub Release can publish without a browser/2FA prompt
+2. **npm Trusted Publisher** configured for this package and workflow (instructions below)
 3. **gh CLI authenticated** (`gh auth status`) — to create the Release / check CI
 4. **Clean working tree**, changes merged to `main`
+
+### Configure npm Trusted Publishing
+
+Trusted Publishing uses GitHub Actions OIDC and short-lived credentials. It
+does not use `NPM_TOKEN`, a browser login, a passkey, or an OTP during CI.
+
+While signed in to npm as the `adoleta` package owner:
+
+1. Open `specky-sdd` on npmjs.com.
+2. Go to **Settings → Trusted Publisher**.
+3. Select **GitHub Actions**.
+4. Enter these exact, case-sensitive values:
+
+  | Field | Value |
+  | --- | --- |
+  | Organization or user | `paulasilvatech` |
+  | Repository | `specky` |
+  | Workflow filename | `publish.yml` |
+  | Environment | Leave blank |
+  | Allowed actions | `npm publish` |
+
+The workflow runs on a GitHub-hosted runner, grants `id-token: write`, uses
+Node 24, and pins npm 11.6.0 (Trusted Publishing requires npm 11.5.1 or newer
+and Node 22.14.0 or newer). npm automatically generates provenance for public
+packages published from public GitHub repositories.
+
+After one successful OIDC publish, remove the obsolete repository secret:
+
+```bash
+gh secret delete NPM_TOKEN --repo paulasilvatech/specky
+```
 
 ---
 
@@ -60,8 +90,8 @@ runs `specky doctor`, and checks version/dist-tag sanity. Must exit `0`.
 
 Creating a **published** GitHub Release is the trigger. `.github/workflows/publish.yml`
 runs on `release: published`, builds, audits, tests, and then runs an
-**idempotent** `npm publish --provenance --access public` (it skips if that
-version is already on npm).
+**idempotent** `npm publish --access public` authenticated by npm Trusted
+Publishing (OIDC). It skips if that version is already on npm.
 
 ```bash
 VERSION=$(node -p "require('./package.json').version")
@@ -76,8 +106,8 @@ publish) → target `main` → paste the release notes → **Publish** (must be
 *Publish*, not *Draft* — a draft does not fire the workflow).
 
 > The Release also creates the `vX.Y.Z` git tag, so there is no separate
-> `git tag` step. CI provenance requires this route (a laptop cannot mint
-> provenance).
+> `git tag` step. npm Trusted Publishing and automatic provenance require this
+> GitHub-hosted workflow route.
 
 ### Step 3b — Manual publish (fallback only)
 
@@ -232,3 +262,11 @@ docker rm -f "$cid"
 | Use `@latest` for a prerelease | Use `@next` and promote later (Step 5) |
 | Skip the version bump before releasing | Bump package.json first — it drives the CLI/server version |
 | Ignore a failing smoke test because "works locally" | Fix the test; don't bypass |
+
+---
+
+## References
+
+- [npm Trusted Publishing](https://docs.npmjs.com/trusted-publishers/)
+- [npm install-time security and GAT bypass2fa deprecation](https://github.blog/changelog/2026-07-08-npm-install-time-security-and-gat-bypass2fa-deprecation/)
+- [GitHub Actions OIDC](https://docs.github.com/en/actions/concepts/security/openid-connect)

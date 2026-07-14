@@ -30,8 +30,11 @@ jobs:
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 22
+          node-version: 24
           registry-url: https://registry.npmjs.org
+
+      - name: Use an npm CLI with Trusted Publishing support
+        run: npm install --global npm@11.6.0
 
       - run: npm ci
 
@@ -65,10 +68,10 @@ jobs:
           if npm view "specky-sdd@$VERSION" version >/dev/null 2>&1; then
             echo "specky-sdd@$VERSION is already on npm — skipping publish (idempotent)."
           else
-            npm publish --provenance --access public --tag "$TAG"
+            # npm exchanges the GitHub OIDC identity for a short-lived publish
+            # credential. No NPM_TOKEN or interactive OTP is used.
+            npm publish --access public --tag "$TAG"
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   docker-publish:
     runs-on: ubuntu-latest
