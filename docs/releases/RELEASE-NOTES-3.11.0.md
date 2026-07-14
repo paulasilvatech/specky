@@ -57,7 +57,7 @@ specky install --force --target=copilot --integration=github
 specky doctor --verbose
 ```
 
-Read [Target Capabilities](../TARGET-CAPABILITIES.md) for the target matrix, security boundaries, and runtime approval model.
+Read [Target Capabilities](https://github.com/paulasilvatech/specky/blob/main/docs/TARGET-CAPABILITIES.md) for the target matrix, security boundaries, and runtime approval model.
 
 ## References
 

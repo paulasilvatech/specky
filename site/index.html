@@ -1484,6 +1484,10 @@
         color: var(--v400);
       }
 
+
+      .install-note + .install-note {
+        margin-top: 12px;
+      }
       .install-steps {
         list-style: none;
         counter-reset: step;
@@ -2689,6 +2693,14 @@
             <p><strong>Everything is auto-configured.</strong> Specky creates <code>.vscode/mcp.json</code>, installs
               agents, prompts, skills, hooks, and pins the MCP server to the package version.</p>
           </div>
+          <div class="install-note">
+            <span class="in-icon">🔐</span>
+            <p><strong>Target-correct capabilities.</strong> Use <code>--permission-profile=prompt</code> to keep every
+              action behind host confirmation. Add <code>--integration=github</code> only when agents should route
+              authenticated PR and Issue payloads through GitHub MCP. <a
+                href="https://github.com/paulasilvatech/specky/blob/main/docs/TARGET-CAPABILITIES.md"
+                target="_blank">Capability matrix →</a></p>
+          </div>
           <ol class="install-steps" style="margin-top:16px">
             <li>
               <div class="step-content">
@@ -2754,7 +2766,8 @@
           <div class="install-note" style="margin-top:12px">
             <span class="in-icon">💡</span>
             <p><strong>Everything is auto-configured.</strong> Specky sets up the MCP server, agents, skills, hooks, and
-              slash commands automatically.</p>
+              slash commands automatically. The default <code>scoped</code> profile derives narrow Claude allow rules;
+              use <code>--permission-profile=prompt</code> to require confirmation for every action.</p>
           </div>
           <ol class="install-steps" style="margin-top:16px">
             <li>
