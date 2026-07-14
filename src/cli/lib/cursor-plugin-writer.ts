@@ -2,7 +2,7 @@
  * cursor-plugin-writer.ts — Write .cursor-plugin/plugin.json so Cursor shows
  * the Specky logo in Agent Plugins (stdio MCP icons alone are often ignored).
  */
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { closeSync, copyFileSync, existsSync, ftruncateSync, mkdirSync, openSync, readFileSync, writeSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { VERSION } from "../../constants.js";
 
@@ -49,14 +49,36 @@ export function writeCursorPluginManifest(
     }
   }
 
-  const before = existsSync(manifestPath) ? readFileSync(manifestPath, "utf8") : "";
-  if (before === after) {
-    return { path: manifestPath, action: "unchanged" };
+  if (opts.dryRun) {
+    const before = existsSync(manifestPath) ? readFileSync(manifestPath, "utf8") : "";
+    if (before === after) {
+      return { path: manifestPath, action: "unchanged" };
+    }
+    return { path: manifestPath, action: before ? "merged" : "created" };
   }
-  const action = before ? "merged" : "created";
-  if (!opts.dryRun) {
-    mkdirSync(pluginDir, { recursive: true });
-    writeFileSync(manifestPath, after, "utf8");
+
+  // Use a file descriptor throughout to avoid a TOCTOU race condition (CWE-367).
+  mkdirSync(pluginDir, { recursive: true });
+  let fd: number | undefined;
+  try {
+    try {
+      fd = openSync(manifestPath, "r+");
+    } catch (openErr: unknown) {
+      const code = typeof openErr === "object" && openErr !== null && "code" in openErr ? openErr.code : undefined;
+      if (code !== "ENOENT") throw openErr;
+      // File does not yet exist; create it atomically.
+      fd = openSync(manifestPath, "w");
+      writeSync(fd, after, 0);
+      return { path: manifestPath, action: "created" };
+    }
+    const before = readFileSync(fd, "utf8");
+    if (before === after) {
+      return { path: manifestPath, action: "unchanged" };
+    }
+    ftruncateSync(fd, 0);
+    writeSync(fd, after, 0);
+    return { path: manifestPath, action: "merged" };
+  } finally {
+    if (fd !== undefined) closeSync(fd);
   }
-  return { path: manifestPath, action };
 }
