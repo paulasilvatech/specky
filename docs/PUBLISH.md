@@ -40,11 +40,17 @@ Node 24, and pins npm 11.6.0 (Trusted Publishing requires npm 11.5.1 or newer
 and Node 22.14.0 or newer). npm automatically generates provenance for public
 packages published from public GitHub repositories.
 
-After one successful OIDC publish, remove the obsolete repository secret:
+After saving the Trusted Publisher and selecting **Require two-factor
+authentication and disallow tokens** in the package publishing settings,
+remove the obsolete repository secret:
 
 ```bash
 gh secret delete NPM_TOKEN --repo paulasilvatech/specky
 ```
+
+The first publish of a new version validates the OIDC trust relationship. An
+already-published version is skipped by the idempotency check and therefore
+cannot be used to exercise a new OIDC exchange.
 
 ---
 
