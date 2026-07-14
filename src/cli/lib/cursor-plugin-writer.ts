@@ -63,8 +63,9 @@ export function writeCursorPluginManifest(
   try {
     try {
       fd = openSync(manifestPath, "r+");
-    } catch (openErr: any) {
-      if (openErr.code !== "ENOENT") throw openErr;
+    } catch (openErr: unknown) {
+      const code = typeof openErr === "object" && openErr !== null && "code" in openErr ? openErr.code : undefined;
+      if (code !== "ENOENT") throw openErr;
       // File does not yet exist; create it atomically.
       fd = openSync(manifestPath, "w");
       writeSync(fd, after, 0);
