@@ -7,7 +7,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { formatError, truncate } from "./tool-result.js";
 import { join } from "node:path";
-import { Phase, PHASE_ORDER } from "../constants.js";
+import { Phase } from "../constants.js";
 import { loadConfig } from "../config.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
@@ -17,10 +17,14 @@ import { FeaturePackageGenerator, SPECKY_SCAFFOLD_MARKER } from "../services/fea
 import { AnalysisEngine } from "../services/analysis-engine.js";
 import { enrichResponse } from "./response-builder.js";
 import { routingEngine } from "../utils/routing-helper.js";
-import { slugify } from "../utils/slug.js";
+import { requireExecutionContext } from "../services/execution-context.js";
+import {
+  discoveryQuestionsForContract,
+  renderWorkloadDesign,
+} from "../contracts/pipeline-profiles.js";
+import { artifactMetadata } from "../utils/artifact-metadata.js";
 import { extractRequirementIds } from "../utils/id-contracts.js";
 import {
-  deriveDesignStubs,
   partitionFunctionalNonFunctional,
 } from "../utils/design-stubs.js";
 import {
@@ -133,17 +137,25 @@ export function registerPipelineTools(
         openWorldHint: false,
       },
     },
-    async ({ project_name, spec_dir, principles, constraints }) => {
+    async ({ project_name, spec_dir, feature_number, principles, constraints }) => {
       try {
-        const featureDir = join(spec_dir, `001-${project_name}`);
+        const featureDir = join(spec_dir, `${feature_number}-${project_name}`);
+        const collision = (await fileManager.listFeatures(spec_dir)).find(
+          (feature) => feature.number === feature_number,
+        );
+        if (collision) {
+          throw new Error(`Feature number ${feature_number} is already assigned to ${collision.directory}.`);
+        }
+        const contract = requireExecutionContext("sdd_init").requestedContract!;
 
         // Ensure spec directory
         await fileManager.ensureSpecDir(spec_dir);
 
         // Render CONSTITUTION.md
         const content = await templateEngine.renderWithFrontmatter("constitution", {
+          ...artifactMetadata({ version: "1.0.0", author: "sdd_init", status: "Active" }),
           title: `${project_name} — Constitution`,
-          feature_id: `001-${project_name}`,
+          feature_id: `${feature_number}-${project_name}`,
           project_name,
           author: "SDD Pipeline",
           principles: principles || ["Simplicity", "Traceability", "Quality"],
@@ -156,28 +168,36 @@ export function registerPipelineTools(
 
         await fileManager.writeSpecFile(featureDir, "CONSTITUTION.md", content);
 
-        // Initialize state machine (under the state lock so a pipelined
-        // sdd_discover cannot load a half-written state and drop the feature).
-        await stateMachine.withStateLock(spec_dir, async () => {
-          const state = stateMachine.createDefaultState(project_name);
-          state.features = [featureDir];
+        await stateMachine.withStateLock(featureDir, async () => {
+          const state = stateMachine.createFeatureState({
+            projectName: project_name,
+            feature: {
+              number: feature_number,
+              name: project_name,
+              directory: featureDir,
+            },
+            contract,
+          });
           state.phases[Phase.Init] = {
             status: "completed",
             started_at: new Date().toISOString(),
             completed_at: new Date().toISOString(),
           };
-          await stateMachine.saveState(spec_dir, state);
+          await stateMachine.saveState(featureDir, state);
         });
 
         const result = {
           status: "initialized",
           project_name,
+          feature_number,
           feature_dir: featureDir,
+          contract_id: contract.id,
+          contract_fingerprint: contract.fingerprint,
           files_created: ["CONSTITUTION.md", ".sdd-state.json"],
           next_action: "Call sdd_discover with your project idea to get discovery questions.",
         };
 
-        const enriched = await enrichResponse("sdd_init", result, stateMachine, spec_dir, {
+        const enriched = await enrichResponse("sdd_init", result, stateMachine, featureDir, {
           completedPhase: Phase.Init,
           nextPhase: Phase.Discover,
           artifactsProduced: ["CONSTITUTION.md", ".sdd-state.json"],
@@ -199,7 +219,7 @@ export function registerPipelineTools(
     {
       title: "Discover Project Requirements",
       description:
-        "Returns 7 structured discovery questions tailored to your project idea. Covers: scope, users, constraints, integrations, performance, security, and deployment.",
+        "Returns lifecycle- and workload-specific discovery questions with required evidence. Brownfield requires a codebase baseline; migration requires source and target summaries.",
       inputSchema: discoverInputSchema,
       annotations: {
         readOnlyHint: false,
@@ -208,91 +228,35 @@ export function registerPipelineTools(
         openWorldHint: false,
       },
     },
-    async ({ project_idea, codebase_summary, spec_dir }) => {
+    async ({ project_idea, codebase_summary, migration_source, migration_target }) => {
       try {
-        // Phase validation
-        const phaseCheck = await stateMachine.validatePhaseForTool(spec_dir, "sdd_discover");
-        if (!phaseCheck.allowed) {
-          return {
-            content: [{ type: "text" as const, text: JSON.stringify({
-              error: "phase_validation_failed",
-              tool: "sdd_discover",
-              current_phase: phaseCheck.current_phase,
-              expected_phases: phaseCheck.expected_phases,
-              message: phaseCheck.error_message,
-              fix: `Complete the ${phaseCheck.current_phase} phase first, then advance to proceed.`,
-            }, null, 2) }],
-            isError: true,
-          };
+        const context = requireExecutionContext("sdd_discover");
+        const stateDir = context.stateDir!;
+        const contract = context.state!.contract;
+        if (!contract.phases.includes(Phase.Discover)) {
+          throw new Error(`Contract ${contract.id} does not include the Discover phase.`);
         }
-
-        const questions = [
-          {
-            id: "Q1",
-            category: "Scope",
-            question: `What is the primary problem "${project_idea}" solves? What are the boundaries of the first release?`,
-            why_it_matters: "Defines what is in and out of scope to prevent feature creep.",
-            example_answer: "The first release focuses on core CRUD operations. Analytics dashboard is deferred to v2.",
-          },
-          {
-            id: "Q2",
-            category: "Users",
-            question: "Who are the primary users? What are their technical skill levels?",
-            why_it_matters: "User personas drive UI complexity, error handling depth, and documentation needs.",
-            example_answer: "Primary users are developers with 2+ years experience. Secondary users are technical PMs.",
-          },
-          {
-            id: "Q3",
-            category: "Constraints",
-            question: "What technical constraints exist? (language, framework, hosting, budget, timeline)",
-            why_it_matters: "Constraints narrow design choices and prevent wasted effort on infeasible approaches.",
-            example_answer: "Must use TypeScript, deploy on Azure, and be production-ready within 8 weeks.",
-          },
-          {
-            id: "Q4",
-            category: "Integrations",
-            question: "What external systems, APIs, or services does this need to integrate with?",
-            why_it_matters: "Integration points are the primary source of complexity and failure modes.",
-            example_answer: "Integrates with GitHub API for repository data and Azure AD for authentication.",
-          },
-          {
-            id: "Q5",
-            category: "Performance",
-            question: "What are the expected load characteristics? (concurrent users, data volume, response time requirements)",
-            why_it_matters: "Performance requirements drive architecture decisions (caching, async processing, database choice).",
-            example_answer: "Expected 100 concurrent users, <500ms API response time, <10GB data storage.",
-          },
-          {
-            id: "Q6",
-            category: "Security",
-            question: "What are the security and compliance requirements? (authentication, authorization, data sensitivity, regulations)",
-            why_it_matters: "Security requirements affect architecture, data handling, and deployment choices from day one.",
-            example_answer: "OAuth 2.0 authentication, role-based access control, no PII stored outside encrypted databases.",
-          },
-          {
-            id: "Q7",
-            category: "Deployment",
-            question: "How will this be deployed and operated? (CI/CD, monitoring, rollback strategy)",
-            why_it_matters: "Deployment strategy influences testing requirements, configuration management, and observability design.",
-            example_answer: "GitHub Actions CI/CD, Docker containers on AKS, Prometheus monitoring, blue-green deployments.",
-          },
-        ];
-
-        if (codebase_summary) {
-          questions[2].question += ` (Note: existing codebase detected — consider compatibility with current stack.)`;
-        }
+        const questions = discoveryQuestionsForContract(contract, {
+          projectIdea: project_idea,
+          codebaseSummary: codebase_summary,
+          migrationSource: migration_source,
+          migrationTarget: migration_target,
+        });
 
         // Record discover phase
-        await stateMachine.recordPhaseStart(spec_dir, Phase.Discover);
-        await stateMachine.recordPhaseComplete(spec_dir, Phase.Discover);
+        await stateMachine.recordPhaseStart(stateDir, Phase.Discover);
+        await stateMachine.recordPhaseComplete(stateDir, Phase.Discover);
 
         const result = {
           project_idea,
+          contract_id: contract.id,
+          lifecycle: contract.lifecycle,
+          workload: contract.workload,
           questions,
           instructions: "Answer each question, then call sdd_write_spec with your answers and requirements.",
         };
 
-        const enriched = await enrichResponse("sdd_discover", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_discover", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
@@ -318,35 +282,13 @@ export function registerPipelineTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_name, feature_number, discovery_answers, requirements, spec_dir, force }) => {
+    async ({ feature_name, feature_number, discovery_answers, requirements, force }) => {
       try {
-        // Phase validation
-        const phaseCheck = await stateMachine.validatePhaseForTool(spec_dir, "sdd_write_spec");
-        if (!phaseCheck.allowed) {
-          return {
-            content: [{ type: "text" as const, text: JSON.stringify({
-              error: "phase_validation_failed",
-              tool: "sdd_write_spec",
-              current_phase: phaseCheck.current_phase,
-              expected_phases: phaseCheck.expected_phases,
-              message: phaseCheck.error_message,
-              fix: `Complete the ${phaseCheck.current_phase} phase first, then advance to proceed.`,
-            }, null, 2) }],
-            isError: true,
-          };
-        }
-
-        // Resolve the feature package from disk so the spec lands in the same
-        // directory sdd_init created. Feature identity comes from the pipeline
-        // state, never re-derived from the display name — otherwise the package
-        // forks (e.g. 001-user-auth vs 001-user-authentication) and phase
-        // advancement stalls on a "missing SPECIFICATION.md" that was written
-        // into the wrong directory.
-        const existingFeature = (await fileManager.listFeatures(spec_dir)).find(
-          (f) => f.number === feature_number,
-        );
-        const featureSlug = existingFeature?.name ?? slugify(feature_name);
-        const featureDir = existingFeature?.directory ?? join(spec_dir, `${feature_number}-${featureSlug}`);
+        const context = requireExecutionContext("sdd_write_spec");
+        const existingFeature = context.feature!;
+        const featureSlug = existingFeature.name;
+        const featureDir = existingFeature.directory;
+        const stateDir = context.stateDir!;
         const featureId = `${feature_number}-${featureSlug}`;
 
         // Validate EARS patterns
@@ -360,12 +302,14 @@ export function registerPipelineTools(
 
         if (validationIssues.length > 0 && !force) {
           return {
-            content: [{ type: "text" as const, text: JSON.stringify({
-              error: "ears_validation_failed",
-              tool: "sdd_write_spec",
-              validation_issues: validationIssues,
-              message: "One or more requirements failed EARS validation. Fix them or pass force: true to write anyway.",
-            }, null, 2) }],
+            content: [{
+              type: "text" as const, text: JSON.stringify({
+                error: "ears_validation_failed",
+                tool: "sdd_write_spec",
+                validation_issues: validationIssues,
+                message: "One or more requirements failed EARS validation. Fix them or pass force: true to write anyway.",
+              }, null, 2)
+            }],
             isError: true,
           };
         }
@@ -383,11 +327,12 @@ export function registerPipelineTools(
           .map((req) => `| ${req.id} | ${req.text.slice(0, 60)}... | Acceptance test |`)
           .join("\n");
 
-        await stateMachine.ensurePhasesThrough(spec_dir, Phase.Specify);
-        await stateMachine.recordPhaseStart(spec_dir, Phase.Specify);
-        await stateMachine.invalidateGateDecision(spec_dir);
+        await stateMachine.ensurePhasesThrough(stateDir, Phase.Specify);
+        await stateMachine.recordPhaseStart(stateDir, Phase.Specify);
+        await stateMachine.invalidateGateDecision(stateDir);
 
         const content = await templateEngine.renderWithFrontmatter("specification", {
+          ...artifactMetadata({ version: "1.0.0", author: "sdd_write_spec", status: "Draft" }),
           title: `${feature_name} — Specification`,
           feature_id: featureId,
           project_name: feature_name,
@@ -408,15 +353,7 @@ export function registerPipelineTools(
           sourceTool: "sdd_write_spec",
         });
 
-        // Register a newly created feature so state-driven resolution and phase
-        // gating (which read state.features) can find it on the next call.
-        if (!existingFeature) {
-          await stateMachine.mutateState(spec_dir, (state) => {
-            if (!state.features.includes(featureDir)) state.features.push(featureDir);
-          });
-        }
-
-        await stateMachine.recordPhaseComplete(spec_dir, Phase.Specify);
+        await stateMachine.recordPhaseComplete(stateDir, Phase.Specify);
 
         const result = {
           status: "specification_written",
@@ -427,7 +364,7 @@ export function registerPipelineTools(
           next_action: "Review the specification. Call sdd_advance_phase when ready, then sdd_clarify for disambiguation.",
         };
 
-        const enriched = await enrichResponse("sdd_write_spec", result, stateMachine, spec_dir, {
+        const enriched = await enrichResponse("sdd_write_spec", result, stateMachine, stateDir, {
           completedPhase: Phase.Specify,
           nextPhase: Phase.Clarify,
           artifactsProduced: ["SPECIFICATION.md", ...featurePackage.created],
@@ -458,30 +395,11 @@ export function registerPipelineTools(
         openWorldHint: false,
       },
     },
-    async ({ spec_dir, feature_number }) => {
+    async () => {
       try {
-        // Phase validation
-        const phaseCheck = await stateMachine.validatePhaseForTool(spec_dir, "sdd_clarify");
-        if (!phaseCheck.allowed) {
-          return {
-            content: [{ type: "text" as const, text: JSON.stringify({
-              error: "phase_validation_failed",
-              tool: "sdd_clarify",
-              current_phase: phaseCheck.current_phase,
-              expected_phases: phaseCheck.expected_phases,
-              message: phaseCheck.error_message,
-              fix: `Complete the ${phaseCheck.current_phase} phase first, then advance to proceed.`,
-            }, null, 2) }],
-            isError: true,
-          };
-        }
-
-        // Find feature directory
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(`Feature ${feature_number} not found in ${spec_dir}`);
-        }
+        const context = requireExecutionContext("sdd_clarify");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
 
         // Read specification
         const specContent = await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md");
@@ -539,7 +457,7 @@ export function registerPipelineTools(
           });
         }
 
-        await stateMachine.recordPhaseStart(spec_dir, Phase.Clarify);
+        await stateMachine.recordPhaseStart(stateDir, Phase.Clarify);
 
         const result = {
           status: "clarification_questions",
@@ -548,7 +466,7 @@ export function registerPipelineTools(
           instructions: "Answer the clarification questions, then call sdd_write_design to proceed.",
         };
 
-        const enriched = await enrichResponse("sdd_clarify", result, stateMachine, spec_dir, {
+        const enriched = await enrichResponse("sdd_clarify", result, stateMachine, stateDir, {
           nextPhase: Phase.Design,
         });
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
@@ -576,37 +494,27 @@ export function registerPipelineTools(
         openWorldHint: false,
       },
     },
-    async ({ architecture_overview, mermaid_diagrams, adrs, api_contracts, system_context, container_architecture, component_design, code_level_design, data_models, infrastructure, security_architecture, error_handling, cross_cutting, spec_dir, feature_number, force }) => {
+    async ({ architecture_overview, mermaid_diagrams, workload_design, adrs, api_contracts, system_context, container_architecture, component_design, code_level_design, data_models, infrastructure, security_architecture, error_handling, cross_cutting, force }) => {
       try {
-        // Phase validation
-        const phaseCheck = await stateMachine.validatePhaseForTool(spec_dir, "sdd_write_design");
-        if (!phaseCheck.allowed) {
-          return {
-            content: [{ type: "text" as const, text: JSON.stringify({
-              error: "phase_validation_failed",
-              tool: "sdd_write_design",
-              current_phase: phaseCheck.current_phase,
-              expected_phases: phaseCheck.expected_phases,
-              message: phaseCheck.error_message,
-              fix: `Complete the ${phaseCheck.current_phase} phase first, then advance to proceed.`,
-            }, null, 2) }],
-            isError: true,
-          };
+        const context = requireExecutionContext("sdd_write_design");
+        const feature = context.feature!;
+        const featureNumber = context.featureNumber!;
+        const stateDir = context.stateDir!;
+        const contract = context.state!.contract;
+        const workloadDesign = renderWorkloadDesign(contract.workload, workload_design);
+        if (contract.workload === "api" && (!api_contracts || api_contracts.length === 0)) {
+          throw new Error("API workload design requires at least one api_contracts entry.");
         }
 
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(`Feature ${feature_number} not found in ${spec_dir}`);
-        }
-
-        let stubs = deriveDesignStubs("");
-        let specContent = "";
+        let specContent: string;
         try {
           specContent = await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md");
-          stubs = deriveDesignStubs(specContent);
         } catch {
-          // SPECIFICATION.md may not exist yet
+          throw new Error(`SPECIFICATION.md is required before design in ${feature.directory}.`);
+        }
+        const requirementReferences = extractRequirementIds(specContent);
+        if (requirementReferences.length === 0) {
+          throw new Error("SPECIFICATION.md contains no requirement IDs for design traceability.");
         }
 
         // Build diagrams section
@@ -619,46 +527,46 @@ export function registerPipelineTools(
 
         // Build ADRs section
         const adrsContent = adrs
-          ? adrs
-              .map(
-                (a, i) =>
-                  `### ADR-${String(i + 1).padStart(3, "0")}: ${a.title}\n\n**Decision:** ${a.decision}\n\n**Rationale:** ${a.rationale}\n\n**Consequences:** ${a.consequences}\n`
-              )
-              .join("\n---\n\n")
-          : "[TODO: Add Architecture Decision Records]";
+          .map(
+            (a, i) =>
+              `### ADR-${String(i + 1).padStart(3, "0")}: ${a.title}\n\n**Decision:** ${a.decision}\n\n**Rationale:** ${a.rationale}\n\n**Consequences:** ${a.consequences}\n`
+          )
+          .join("\n---\n\n");
 
         // Build API contracts section
         const apiContent = api_contracts
           ? api_contracts
-              .map(
-                (c) =>
-                  `### ${c.method} ${c.endpoint}\n\n${c.description}\n\n**Request:** ${c.request || "N/A"}\n\n**Response:** ${c.response || "N/A"}\n`
-              )
-              .join("\n---\n\n")
-          : stubs.api_contracts_stub;
+            .map(
+              (c) =>
+                `### ${c.method} ${c.endpoint}\n\n${c.description}\n\n**Request:** ${c.request || "N/A"}\n\n**Response:** ${c.response || "N/A"}\n`
+            )
+            .join("\n---\n\n")
+          : "No network API is exposed by this workload contract.";
 
-        await stateMachine.ensurePhasesThrough(spec_dir, Phase.Design);
-        await stateMachine.recordPhaseStart(spec_dir, Phase.Design);
-        await stateMachine.invalidateGateDecision(spec_dir);
+        await stateMachine.ensurePhasesThrough(stateDir, Phase.Design);
+        await stateMachine.recordPhaseStart(stateDir, Phase.Design);
+        await stateMachine.invalidateGateDecision(stateDir);
 
         const content = await templateEngine.renderWithFrontmatter("design", {
+          ...artifactMetadata({ version: "1.0.0", author: "sdd_write_design", status: "Draft" }),
           title: `${feature.name} — Design`,
-          feature_id: `${feature_number}-${feature.name}`,
+          feature_id: `${featureNumber}-${feature.name}`,
           project_name: feature.name,
           architecture_overview,
-          system_context: system_context || architecture_overview,
-          container_architecture: container_architecture || architecture_overview,
-          component_design: component_design || stubs.component_design,
-          code_level_design: code_level_design || stubs.code_level_design,
+          system_context,
+          container_architecture,
+          component_design,
+          code_level_design,
           diagrams: mermaid_diagrams.map((d) => d.title),
-          data_models: data_models || stubs.data_models,
+          data_models,
           api_contracts: apiContent,
-          infrastructure: infrastructure || stubs.infrastructure,
-          security_architecture: security_architecture || stubs.security_architecture,
-          adrs: adrs ? adrs.map((a) => a.title) : [],
-          error_handling: error_handling || stubs.error_handling,
-          cross_cutting: cross_cutting || stubs.cross_cutting,
-          requirement_references: stubs.requirement_references,
+          infrastructure,
+          security_architecture,
+          adrs: adrs.map((a) => a.title),
+          error_handling,
+          cross_cutting,
+          workload_design: workloadDesign,
+          requirement_references: requirementReferences.map((id) => `- ${id}`).join("\n"),
         });
 
         // Replace the template diagram/ADR placeholders with actual content
@@ -680,17 +588,19 @@ export function registerPipelineTools(
         const overwriteDesign = await shouldOverwriteScaffold(fileManager, feature.directory, "DESIGN.md", force);
         const filePath = await fileManager.writeSpecFile(feature.directory, "DESIGN.md", finalContent, overwriteDesign);
 
-        await stateMachine.recordPhaseComplete(spec_dir, Phase.Design);
+        await stateMachine.recordPhaseComplete(stateDir, Phase.Design);
 
         const result = {
           status: "design_written",
           file: filePath,
           diagram_count: mermaid_diagrams.length,
           adr_count: adrs?.length || 0,
+          contract_id: contract.id,
+          workload: contract.workload,
           next_action: "Review the design. Call sdd_advance_phase, then sdd_write_tasks.",
         };
 
-        const enriched = await enrichResponse("sdd_write_design", result, stateMachine, spec_dir, {
+        const enriched = await enrichResponse("sdd_write_design", result, stateMachine, stateDir, {
           completedPhase: Phase.Design,
           nextPhase: Phase.Tasks,
           artifactsProduced: ["DESIGN.md"],
@@ -721,29 +631,12 @@ export function registerPipelineTools(
         openWorldHint: false,
       },
     },
-    async ({ tasks, pre_impl_gates, spec_dir, feature_number, force }) => {
+    async ({ tasks, pre_impl_gates, force }) => {
       try {
-        // Phase validation
-        const phaseCheck = await stateMachine.validatePhaseForTool(spec_dir, "sdd_write_tasks");
-        if (!phaseCheck.allowed) {
-          return {
-            content: [{ type: "text" as const, text: JSON.stringify({
-              error: "phase_validation_failed",
-              tool: "sdd_write_tasks",
-              current_phase: phaseCheck.current_phase,
-              expected_phases: phaseCheck.expected_phases,
-              message: phaseCheck.error_message,
-              fix: `Complete the ${phaseCheck.current_phase} phase first, then advance to proceed.`,
-            }, null, 2) }],
-            isError: true,
-          };
-        }
-
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(`Feature ${feature_number} not found in ${spec_dir}`);
-        }
+        const context = requireExecutionContext("sdd_write_tasks");
+        const feature = context.feature!;
+        const featureNumber = context.featureNumber!;
+        const stateDir = context.stateDir!;
 
         // Build task table
         const taskTable = tasks
@@ -761,8 +654,9 @@ export function registerPipelineTools(
         const parallelCount = tasks.filter((t) => t.parallel).length;
 
         const content = await templateEngine.renderWithFrontmatter("tasks", {
+          ...artifactMetadata({ version: "1.0.0", author: "sdd_write_tasks", status: "Draft" }),
           title: `${feature.name} — Tasks`,
-          feature_id: `${feature_number}-${feature.name}`,
+          feature_id: `${featureNumber}-${feature.name}`,
           project_name: feature.name,
           gates: gatesList,
           task_table: taskTable,
@@ -773,14 +667,14 @@ export function registerPipelineTools(
           total_effort: `${tasks.length} tasks`,
         });
 
-        await stateMachine.ensurePhasesThrough(spec_dir, Phase.Tasks);
-        await stateMachine.recordPhaseStart(spec_dir, Phase.Tasks);
-        await stateMachine.invalidateGateDecision(spec_dir);
+        await stateMachine.ensurePhasesThrough(stateDir, Phase.Tasks);
+        await stateMachine.recordPhaseStart(stateDir, Phase.Tasks);
+        await stateMachine.invalidateGateDecision(stateDir);
 
         const overwriteTasks = await shouldOverwriteScaffold(fileManager, feature.directory, "TASKS.md", force);
         const filePath = await fileManager.writeSpecFile(feature.directory, "TASKS.md", content, overwriteTasks);
 
-        await stateMachine.recordPhaseComplete(spec_dir, Phase.Tasks);
+        await stateMachine.recordPhaseComplete(stateDir, Phase.Tasks);
 
         const result = {
           status: "tasks_written",
@@ -790,7 +684,7 @@ export function registerPipelineTools(
           next_action: "Review the tasks. Call sdd_advance_phase, then sdd_run_analysis for quality gate.",
         };
 
-        const enriched = await enrichResponse("sdd_write_tasks", result, stateMachine, spec_dir, {
+        const enriched = await enrichResponse("sdd_write_tasks", result, stateMachine, stateDir, {
           completedPhase: Phase.Tasks,
           nextPhase: Phase.Analyze,
           artifactsProduced: ["TASKS.md"],
@@ -821,29 +715,12 @@ export function registerPipelineTools(
         openWorldHint: false,
       },
     },
-    async ({ spec_dir, feature_number, force }) => {
+    async ({ force }) => {
       try {
-        // Phase validation
-        const phaseCheck = await stateMachine.validatePhaseForTool(spec_dir, "sdd_run_analysis");
-        if (!phaseCheck.allowed) {
-          return {
-            content: [{ type: "text" as const, text: JSON.stringify({
-              error: "phase_validation_failed",
-              tool: "sdd_run_analysis",
-              current_phase: phaseCheck.current_phase,
-              expected_phases: phaseCheck.expected_phases,
-              message: phaseCheck.error_message,
-              fix: `Complete the ${phaseCheck.current_phase} phase first, then advance to proceed.`,
-            }, null, 2) }],
-            isError: true,
-          };
-        }
-
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(`Feature ${feature_number} not found in ${spec_dir}`);
-        }
+        const context = requireExecutionContext("sdd_run_analysis");
+        const feature = context.feature!;
+        const featureNumber = context.featureNumber!;
+        const stateDir = context.stateDir!;
 
         // Read available spec files
         const files = await fileManager.listSpecFiles(feature.directory);
@@ -874,8 +751,9 @@ export function registerPipelineTools(
         };
 
         const content = await templateEngine.renderWithFrontmatter("analysis", {
+          ...artifactMetadata({ version: "1.0.0", author: "sdd_run_analysis", status: decision }),
           title: `${feature.name} — Analysis`,
-          feature_id: `${feature_number}-${feature.name}`,
+          feature_id: `${featureNumber}-${feature.name}`,
           project_name: feature.name,
           gate_decision: decision,
           coverage_percent: String(coveragePercent),
@@ -896,16 +774,16 @@ export function registerPipelineTools(
 
         const filePath = await fileManager.writeSpecFile(feature.directory, "ANALYSIS.md", content, force);
 
-        await stateMachine.ensurePhasesThrough(spec_dir, Phase.Analyze);
-        await stateMachine.recordPhaseStart(spec_dir, Phase.Analyze);
+        await stateMachine.ensurePhasesThrough(stateDir, Phase.Analyze);
+        await stateMachine.recordPhaseStart(stateDir, Phase.Analyze);
 
         // Update state with gate decision
-        await stateMachine.mutateState(spec_dir, (state) => {
+        await stateMachine.mutateState(stateDir, (state) => {
           state.gate_decision = gateDecision;
         });
 
         if (decision === "APPROVE") {
-          await stateMachine.recordPhaseComplete(spec_dir, Phase.Analyze);
+          await stateMachine.recordPhaseComplete(stateDir, Phase.Analyze);
         }
 
         const result = {
@@ -917,7 +795,7 @@ export function registerPipelineTools(
             : `Address the following gaps: ${gaps.join(", ")}`,
         };
 
-        const enriched = await enrichResponse("sdd_run_analysis", result, stateMachine, spec_dir, {
+        const enriched = await enrichResponse("sdd_run_analysis", result, stateMachine, stateDir, {
           completedPhase: decision === "APPROVE" ? Phase.Analyze : undefined,
           nextPhase: decision === "APPROVE" ? Phase.Implement : Phase.Analyze,
           artifactsProduced: ["ANALYSIS.md"],
@@ -955,36 +833,32 @@ export function registerPipelineTools(
         openWorldHint: false,
       },
     },
-    async ({ spec_dir, feature_number, lgtm }) => {
+    async ({ lgtm }) => {
       try {
+        const context = requireExecutionContext("sdd_advance_phase");
+        const stateDir = context.stateDir!;
+        const feature = context.feature!;
         const config = loadConfig(fileManager.workspaceRoot);
-        const priorState = await stateMachine.loadState(spec_dir);
+        const priorState = await stateMachine.loadState(stateDir);
         const completedPhase = priorState.current_phase;
 
-        const state = await stateMachine.advancePhase(spec_dir, feature_number, {
+        const state = await stateMachine.advancePhase(stateDir, {
           lgtm,
           requireLgtm: config.pipeline.require_lgtm,
         });
-        const currentIndex = PHASE_ORDER.indexOf(state.current_phase);
-        const nextPhase = currentIndex < PHASE_ORDER.length - 1
-          ? PHASE_ORDER[currentIndex + 1]
+        const currentIndex = state.contract.phases.indexOf(state.current_phase);
+        const nextPhase = currentIndex < state.contract.phases.length - 1
+          ? state.contract.phases[currentIndex + 1]
           : null;
 
         // Gate instrumentation: record whether artifact was modified before approval
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        let gateEntry;
-        if (feature) {
-          const requiredFiles = stateMachine.getRequiredFiles(completedPhase);
-          const artifactPath = requiredFiles[0]
-            ? `${feature.directory}/${requiredFiles[0]}`
-            : feature.directory;
-          // Record LGTM presence on every advance so gate history captures
-          // review approvals, not just artifact-modification signals.
-          gateEntry = await stateMachine.recordGateEvent(spec_dir, completedPhase, artifactPath, {
-            lgtm: lgtm === true,
-          });
-        }
+        const requiredFiles = stateMachine.getRequiredFiles(completedPhase);
+        const artifactPath = requiredFiles[0]
+          ? `${feature.directory}/${requiredFiles[0]}`
+          : feature.directory;
+        const gateEntry = await stateMachine.recordGateEvent(stateDir, completedPhase, artifactPath, {
+          lgtm: lgtm === true,
+        });
 
         const result: Record<string, unknown> = {
           status: "phase_advanced",
@@ -1003,19 +877,21 @@ export function registerPipelineTools(
             "Artifact approved without modification. Consider whether the AI-generated content reflects your actual requirements. Unmodified approvals are a leading indicator of cognitive debt (arXiv:2603.22106).";
         }
 
-        const enriched = await enrichResponse("sdd_advance_phase", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_advance_phase", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         if (message.includes("LGTM quality gate") && message.includes("pipeline.require_lgtm")) {
           return {
-            content: [{ type: "text" as const, text: JSON.stringify({
-              error: "lgtm_required",
-              tool: "sdd_advance_phase",
-              message,
-              fix: "Review the phase artifact, then call sdd_advance_phase again with lgtm: true to record the approval.",
-              require_lgtm: true,
-            }, null, 2) }],
+            content: [{
+              type: "text" as const, text: JSON.stringify({
+                error: "lgtm_required",
+                tool: "sdd_advance_phase",
+                message,
+                fix: "Review the phase artifact, then call sdd_advance_phase again with lgtm: true to record the approval.",
+                require_lgtm: true,
+              }, null, 2)
+            }],
             isError: true,
           };
         }

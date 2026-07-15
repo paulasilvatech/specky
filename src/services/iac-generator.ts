@@ -92,7 +92,7 @@ export function detectServicesFromDesign(designContent: string, packageJsonConte
 }
 
 /** A concrete infrastructure component detected in DESIGN.md. */
-interface InfraComponent {
+export interface InfraComponent {
   /** Module/category the component belongs to (networking, compute, database, ...). */
   module: string;
   /** Specific service flavor (postgres, redis, container, kubernetes, ...). */
@@ -111,17 +111,6 @@ interface RenderedComponent {
   hcl: string;
   outputs: TfOutput[];
 }
-
-const DEFAULT_SERVICE_FOR_MODULE: Record<string, string> = {
-  networking: "network",
-  compute: "container",
-  database: "postgres",
-  cache: "redis",
-  storage: "object",
-  messaging: "queue",
-  identity: "identity",
-  monitoring: "logs",
-};
 
 /** Compose sidecar templates for the services detectServicesFromDesign can emit. */
 const COMPOSE_SERVICES: Record<string, { image: string; ports: string[]; environment?: string[]; volume?: { name: string; mountPath: string } }> = {
@@ -143,15 +132,33 @@ const COMPOSE_SERVICES: Record<string, { image: string; ports: string[]; environ
   kafka: { image: "apache/kafka:3.7.0", ports: ["9092:9092"] },
 };
 
+function renderDockerfile(language: string, multiStage: boolean): string {
+  const normalized = language.toLowerCase();
+  if (normalized.includes("typescript") || normalized.includes("javascript")) {
+    return multiStage
+      ? `FROM node:22-slim AS builder\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build\n\nFROM node:22-slim\nWORKDIR /app\nCOPY --from=builder /app/dist ./dist\nCOPY --from=builder /app/node_modules ./node_modules\nCOPY --from=builder /app/package.json ./\nEXPOSE 3000\nCMD ["node", "dist/index.js"]`
+      : `FROM node:22-slim\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build\nEXPOSE 3000\nCMD ["node", "dist/index.js"]`;
+  }
+  if (normalized.includes("python")) {
+    return multiStage
+      ? `FROM python:3.12-slim AS builder\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\n\nFROM python:3.12-slim\nWORKDIR /app\nCOPY --from=builder /app .\nEXPOSE 8000\nCMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0"]`
+      : `FROM python:3.12-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nEXPOSE 8000\nCMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0"]`;
+  }
+  if (normalized === "go" || normalized.includes("golang")) {
+    return multiStage
+      ? `FROM golang:1.22 AS builder\nWORKDIR /app\nCOPY go.mod go.sum ./\nRUN go mod download\nCOPY . .\nRUN CGO_ENABLED=0 go build -o /app/service ./...\n\nFROM debian:bookworm-slim\nWORKDIR /app\nCOPY --from=builder /app/service ./service\nEXPOSE 3000\nCMD ["./service"]`
+      : `FROM golang:1.22\nWORKDIR /app\nCOPY go.mod go.sum ./\nRUN go mod download\nCOPY . .\nRUN go build -o service ./...\nEXPOSE 3000\nCMD ["./service"]`;
+  }
+  throw new Error(`Unsupported Docker capability language: ${language}`);
+}
+
 export class IacGenerator {
-  constructor(private fileManager: FileManager) {}
+  constructor(_fileManager: FileManager) { }
 
-  async generateTerraform(featureDir: string, cloud: CloudProvider, modules?: string[]): Promise<IacResult> {
-    let designContent = "";
-    try { designContent = await this.fileManager.readSpecFile(featureDir, "DESIGN.md"); } catch { /* empty */ }
-
-    const explicitModules = Boolean(modules && modules.length > 0);
-    const components = this.detectComponents(designContent, modules);
+  async generateTerraform(cloud: CloudProvider, components: InfraComponent[]): Promise<IacResult> {
+    if (components.length === 0) {
+      throw new Error("Terraform generation requires at least one resource in the IaC capability contract.");
+    }
     const files: IacFile[] = [];
 
     const { mainTf, outputs } = this.renderCloud(cloud, components);
@@ -162,7 +169,10 @@ export class IacGenerator {
     files.push({ path: "terraform/outputs.tf", content: this.generateOutputsTf(outputs), description: "Terraform output definitions" });
     files.push({ path: "terraform/terraform.tfvars.example", content: vars.map(v => `${v.name} = ${v.default || `"<${v.name}>"`}`).join("\n"), description: "Example variable values" });
 
-    const diagram = `flowchart TD\n  TF[Terraform: ${cloud}]\n${components.map((c, i) => `  TF --> M${i}[${c.module}: ${c.service}]`).join("\n")}`;
+    const diagramEdges = components
+      .map((component, index) => `  TF --> M${index}[${component.module}: ${component.service}]`)
+      .join("\n");
+    const diagram = `flowchart TD\n  TF[Terraform: ${cloud}]\n${diagramEdges}`;
 
     const resourceCount = (mainTf.match(/^resource "/gm) || []).length;
     const componentList = components.map(c => `${c.module} (${c.service})`).join(", ");
@@ -171,7 +181,7 @@ export class IacGenerator {
       provider: "terraform",
       files,
       variables: vars,
-      explanation: `Generated Terraform for ${cloud} with ${resourceCount} resource blocks across ${components.length} modules: ${componentList}. ${explicitModules ? "Modules were requested explicitly." : "Components detected from DESIGN.md."}`,
+      explanation: `Generated Terraform for ${cloud} with ${resourceCount} resource blocks across ${components.length} contract resources: ${componentList}.`,
       next_steps: "Set required variables (see terraform.tfvars.example), then run sdd_validate_iac to validate the configuration via Terraform MCP.",
       diagram,
     };
@@ -196,25 +206,7 @@ export class IacGenerator {
     services: string[] = []
   ): DevEnvironmentResult {
     const files: IacFile[] = [];
-    const lang = techStack.language.toLowerCase();
-    const isNode = lang.includes("typescript") || lang.includes("javascript");
-    const isPython = lang.includes("python");
-
-    let dockerfile = "";
-    if (isNode) {
-      dockerfile = multiStage
-        ? `FROM node:22-slim AS builder\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build\n\nFROM node:22-slim\nWORKDIR /app\nCOPY --from=builder /app/dist ./dist\nCOPY --from=builder /app/node_modules ./node_modules\nCOPY --from=builder /app/package.json ./\nEXPOSE 3000\nCMD ["node", "dist/index.js"]`
-        : `FROM node:22-slim\nWORKDIR /app\nCOPY package*.json ./\nRUN npm ci\nCOPY . .\nRUN npm run build\nEXPOSE 3000\nCMD ["node", "dist/index.js"]`;
-    } else if (isPython) {
-      dockerfile = multiStage
-        ? `FROM python:3.12-slim AS builder\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\n\nFROM python:3.12-slim\nWORKDIR /app\nCOPY --from=builder /app .\nEXPOSE 8000\nCMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0"]`
-        : `FROM python:3.12-slim\nWORKDIR /app\nCOPY requirements.txt .\nRUN pip install --no-cache-dir -r requirements.txt\nCOPY . .\nEXPOSE 8000\nCMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0"]`;
-    } else {
-      dockerfile = `FROM ubuntu:22.04\nWORKDIR /app\nCOPY . .\nEXPOSE 3000\nCMD ["./start.sh"]`;
-    }
-    // The generic ubuntu fallback is single-stage regardless of the flag —
-    // report what was actually generated, not what was requested.
-    const multiStageUsed = multiStage && (isNode || isPython);
+    const dockerfile = renderDockerfile(techStack.language, multiStage);
 
     files.push({ path: "Dockerfile", content: dockerfile, description: "Application Dockerfile" });
 
@@ -225,17 +217,19 @@ export class IacGenerator {
     files.push({ path: ".dockerignore", content: "node_modules\ndist\n.git\n*.md\n.specs\n.env*\ncoverage", description: "Docker ignore file" });
 
     const serviceNote = includeCompose && services.length > 0 ? ` (services: app, ${services.join(", ")})` : "";
+    const frameworkLabel = techStack.framework ? ` (${techStack.framework})` : "";
+    const composeLabel = includeCompose ? ` with docker-compose.yml${serviceNote}` : "";
     return {
       type: "docker",
       files,
-      explanation: `Generated ${multiStageUsed ? "multi-stage " : ""}Dockerfile for ${techStack.language}${techStack.framework ? ` (${techStack.framework})` : ""}${includeCompose ? ` with docker-compose.yml${serviceNote}` : ""}.`,
+      explanation: `Generated ${multiStage ? "multi-stage " : ""}Dockerfile for ${techStack.language}${frameworkLabel}${composeLabel}.`,
       next_steps: "Run docker build to test the image, or use sdd_setup_local_env to create a full dev environment.",
     };
   }
 
   generateDevcontainer(techStack: { language: string; framework?: string }, features?: string[], extensions?: string[]): DevEnvironmentResult {
     const lang = techStack.language.toLowerCase();
-    let image = "mcr.microsoft.com/devcontainers/base:ubuntu";
+    let image: string;
     const devFeatures: Record<string, Record<string, string>> = {};
     const devExtensions: string[] = extensions || [];
     let postCreateCommand: string | undefined;
@@ -252,6 +246,8 @@ export class IacGenerator {
       image = "mcr.microsoft.com/devcontainers/go:1.22";
       devExtensions.push("golang.go");
       postCreateCommand = "go mod download";
+    } else {
+      throw new Error(`Unsupported devcontainer capability language: ${techStack.language}`);
     }
 
     if (features) {
@@ -323,51 +319,6 @@ export class IacGenerator {
       for (const v of volumes) lines.push(`  ${v}:`);
     }
     return lines.join("\n");
-  }
-
-  /**
-   * Detect concrete infrastructure components from DESIGN.md. Each component
-   * carries its module/category AND the specific service flavor named in the
-   * design (postgres vs mysql, container vs kubernetes, ...), so the emitted
-   * Terraform contains real resource blocks for what the design describes.
-   */
-  private detectComponents(designContent: string, requestedModules?: string[]): InfraComponent[] {
-    const lower = designContent.toLowerCase();
-    const detected: InfraComponent[] = [];
-    const add = (module: string, service: string): void => {
-      if (!detected.some(c => c.module === module && c.service === service)) detected.push({ module, service });
-    };
-
-    if (/\b(vpc|vnet|virtual network|subnet|load balancer|application gateway|front door|firewall)\b/.test(lower)) add("networking", "network");
-
-    if (/\b(kubernetes|k8s|aks|eks|gke)\b/.test(lower)) add("compute", "kubernetes");
-    else if (/\b(lambda|serverless|azure functions?|cloud functions?)\b/.test(lower)) add("compute", "serverless");
-    else if (/\b(container apps?|containers?|docker|ecs|fargate|cloud run|app service)\b/.test(lower)) add("compute", "container");
-
-    if (/\bpostgres(ql)?\b/.test(lower)) add("database", "postgres");
-    if (/\b(mysql|mariadb)\b/.test(lower)) add("database", "mysql");
-    if (/\b(cosmos ?db|mongodb|mongo|dynamodb|firestore|documentdb)\b/.test(lower)) add("database", "nosql");
-    if (/\b(sql server|azure sql|mssql)\b/.test(lower)) add("database", "sqlserver");
-
-    if (/\b(redis|memcached|elasticache|cache)\b/.test(lower)) add("cache", "redis");
-    if (/\b(blob storage|s3|bucket|object storage|storage account|file share|storage)\b/.test(lower)) add("storage", "object");
-    if (/\b(service bus|sqs|sns|pub\/?sub|rabbitmq|kafka|event hubs?|message queue|queue)\b/.test(lower)) add("messaging", "queue");
-    if (/\b(managed identity|iam|rbac|entra|active directory|service account)\b/.test(lower)) add("identity", "identity");
-    if (/\b(monitoring|log analytics|application insights|cloudwatch|observability|alerting|metrics)\b/.test(lower)) add("monitoring", "logs");
-
-    // Explicit module list: honor it, refining each module with the flavor
-    // detected in the design (requested "database" + design says mysql → mysql).
-    if (requestedModules && requestedModules.length > 0) {
-      const result: InfraComponent[] = [];
-      for (const m of requestedModules) {
-        const hits = detected.filter(c => c.module === m);
-        if (hits.length > 0) result.push(...hits);
-        else result.push({ module: m, service: DEFAULT_SERVICE_FOR_MODULE[m] ?? m });
-      }
-      return result;
-    }
-
-    return detected.length > 0 ? detected : [{ module: "compute", service: "container" }, { module: "networking", service: "network" }];
   }
 
   private renderCloud(cloud: CloudProvider, components: InfraComponent[]): { mainTf: string; outputs: TfOutput[] } {

@@ -5,15 +5,15 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { formatError, truncate } from "./tool-result.js";
 import { z } from "zod";
-import {} from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { DocGenerator } from "../services/doc-generator.js";
 import { enrichResponse } from "./response-builder.js";
+import { featureNumberSchema, specDirSchema } from "../schemas/common.js";
 
 const docsInputSchema = z.object({
-  feature_number: z.string().regex(/^\d{3}$/).describe("Zero-padded feature number."),
-  spec_dir: z.string().min(1).default(".specs").describe("Spec directory."),
+  feature_number: featureNumberSchema,
+  spec_dir: specDirSchema,
 }).strict();
 
 export function registerDocumentationTools(

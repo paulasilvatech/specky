@@ -5,13 +5,13 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { formatError, truncate } from "./tool-result.js";
-import {} from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
 import type { IntentDriftEngine } from "../services/intent-drift-engine.js";
 import { checkSyncInputSchema } from "../schemas/utility.js";
 import { enrichResponse } from "./response-builder.js";
+import { requireExecutionContext } from "../services/execution-context.js";
 
 export function registerAnalysisTools(
   server: McpServer,
@@ -35,13 +35,11 @@ export function registerAnalysisTools(
         openWorldHint: false,
       },
     },
-    async ({ spec_dir, feature_number, code_paths }) => {
+    async ({ code_paths }) => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(`Feature ${feature_number} not found in ${spec_dir}`);
-        }
+        const context = requireExecutionContext("sdd_check_sync");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
 
         // Read specification
         let specContent: string;
@@ -100,11 +98,11 @@ export function registerAnalysisTools(
             const driftReport = intentDriftEngine.computeCoverage(principles, specContent, tasksContent);
 
             // Store drift snapshot in state
-            const state = await stateMachine.loadState(spec_dir);
+            const state = await stateMachine.loadState(stateDir);
             const MAX_DRIFT = 100;
             const snapshot = { timestamp: new Date().toISOString(), score: driftReport.intent_drift_score, orphaned_count: driftReport.orphaned_principles.length };
             state.drift_history = [...(state.drift_history ?? []), snapshot].slice(-MAX_DRIFT);
-            await stateMachine.saveState(spec_dir, state);
+            await stateMachine.saveState(stateDir, state);
 
             const trend = intentDriftEngine.computeTrend(state.drift_history ?? []);
             intentDrift = { ...driftReport, drift_trend: trend };
@@ -124,7 +122,7 @@ export function registerAnalysisTools(
           ...(intentDrift ? { intent_drift: intentDrift } : {}),
         };
 
-        const enriched = await enrichResponse("sdd_check_sync", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_check_sync", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {

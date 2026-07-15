@@ -4,7 +4,6 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { formatError, truncate } from "./tool-result.js";
-import {} from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { DiagramGenerator } from "../services/diagram-generator.js";
@@ -16,6 +15,7 @@ import {
   generateUserStoriesInputSchema,
   figmaDiagramInputSchema,
 } from "../schemas/visualization.js";
+import { requireExecutionContext } from "../services/execution-context.js";
 
 const SOURCE_TO_FILE: Record<string, string> = {
   spec: "SPECIFICATION.md",
@@ -23,6 +23,44 @@ const SOURCE_TO_FILE: Record<string, string> = {
   tasks: "TASKS.md",
   constitution: "CONSTITUTION.md",
 };
+
+const MERMAID_HEADERS: Record<string, RegExp> = {
+  flowchart: /^flowchart\s+/,
+  sequence: /^sequenceDiagram\b/,
+  class: /^classDiagram\b/,
+  er: /^erDiagram\b/,
+  state: /^stateDiagram(?:-v2)?\b/,
+  c4_context: /^(?:C4Context|flowchart)\b/,
+  c4_container: /^(?:C4Container|flowchart)\b/,
+  c4_component: /^(?:C4Component|flowchart)\b/,
+  c4_code: /^(?:classDiagram|flowchart)\b/,
+  activity: /^(?:flowchart|stateDiagram)\b/,
+  use_case: /^flowchart\s+/,
+  dfd: /^flowchart\s+/,
+  deployment: /^flowchart\s+/,
+  network_topology: /^flowchart\s+/,
+  gantt: /^gantt\b/,
+  pie: /^pie\b/,
+  mindmap: /^mindmap\b/,
+};
+
+function validateDiagramEvidence(
+  diagramType: string,
+  mermaidCode: string,
+  evidenceRefs: string[],
+  sourceContent: string,
+): void {
+  const normalizedCode = mermaidCode.trim();
+  if (!MERMAID_HEADERS[diagramType]?.test(normalizedCode)) {
+    throw new Error(`Diagram ${diagramType} has an incompatible Mermaid header.`);
+  }
+  const missingRefs = evidenceRefs.filter(
+    (reference) => !sourceContent.toLowerCase().includes(reference.toLowerCase()),
+  );
+  if (missingRefs.length > 0) {
+    throw new Error(`Diagram ${diagramType} evidence is absent from its source: ${missingRefs.join(", ")}.`);
+  }
+}
 
 export function registerVisualizationTools(
   server: McpServer,
@@ -45,35 +83,22 @@ export function registerVisualizationTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir, diagram_type, source }) => {
+    async ({ diagram_type, mermaid_code, evidence_refs }) => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: JSON.stringify({
-                  error: `Feature ${feature_number} not found in ${spec_dir}.`,
-                  fix: "Run sdd_init first to create the feature directory.",
-                }),
-              },
-            ],
-          };
+        const context = requireExecutionContext("sdd_generate_diagram");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
+        const diagramContract = context.state!.contract.required_diagrams.find(
+          (diagram) => diagram.type === diagram_type,
+        );
+        if (!diagramContract) {
+          throw new Error(
+            `Diagram ${diagram_type} is not required by ${context.state!.contract.id}. ` +
+            `Allowed: ${context.state!.contract.required_diagrams.map((diagram) => diagram.type).join(", ")}.`,
+          );
         }
 
-        const fileName = SOURCE_TO_FILE[source];
-        if (!fileName) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: JSON.stringify({ error: `Unknown source: ${source}` }),
-              },
-            ],
-          };
-        }
+        const fileName = SOURCE_TO_FILE[diagramContract.source];
 
         let content: string;
         try {
@@ -92,15 +117,23 @@ export function registerVisualizationTools(
           };
         }
 
-        const diagramSpec = diagramGenerator.generateDiagram(content, diagram_type, `${feature.name} — ${diagram_type}`);
+        validateDiagramEvidence(diagram_type, mermaid_code, evidence_refs, content);
+        const diagramSpec = {
+          type: diagram_type,
+          title: diagramContract.title,
+          mermaid_code,
+          source: diagramContract.source,
+        };
 
         const result = {
           ...diagramSpec,
-          feature_number,
+          feature_number: feature.number,
+          contract_id: context.state!.contract.id,
+          evidence_refs,
           learning_note: `A "${diagram_type}" diagram visualizes ${getDiagramDescription(diagram_type)}. Mermaid diagrams can be rendered in GitHub Markdown, documentation sites, and most modern editors.`,
         };
 
-        const enriched = await enrichResponse("sdd_generate_diagram", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_generate_diagram", result, stateMachine, stateDir);
         return {
           content: [
             {
@@ -138,37 +171,85 @@ export function registerVisualizationTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir }) => {
+    async ({ diagrams: diagramInputs }) => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: JSON.stringify({
-                  error: `Feature ${feature_number} not found in ${spec_dir}.`,
-                  fix: "Run sdd_init first to create the feature directory.",
-                }),
-              },
-            ],
-          };
+        const context = requireExecutionContext("sdd_generate_all_diagrams");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
+        const diagramContracts = context.state!.contract.required_diagrams;
+        const requiredTypes = diagramContracts.map((diagram) => diagram.type);
+        const inputTypes = diagramInputs.map((diagram) => diagram.diagram_type);
+        const missing = requiredTypes.filter((type) => !inputTypes.includes(type));
+        const extra = inputTypes.filter((type) => !requiredTypes.includes(type));
+        const duplicate = inputTypes.filter((type, index) => inputTypes.indexOf(type) !== index);
+        if (missing.length > 0 || extra.length > 0 || duplicate.length > 0) {
+          throw new Error(
+            `Diagram set mismatch. Missing: ${missing.join(", ") || "none"}. ` +
+            `Extra: ${extra.join(", ") || "none"}. Duplicate: ${[...new Set(duplicate)].join(", ") || "none"}.`,
+          );
         }
 
-        const allDiagrams = await diagramGenerator.generateAllDiagrams(spec_dir, feature.directory);
+        const diagrams = [];
+        for (const diagramContract of diagramContracts) {
+          const fileName = SOURCE_TO_FILE[diagramContract.source];
+          let sourceContent: string;
+          try {
+            sourceContent = await fileManager.readSpecFile(feature.directory, fileName);
+          } catch {
+            throw new Error(
+              `${fileName} is required for ${diagramContract.type} in contract ${context.state!.contract.id}.`,
+            );
+          }
+          const input = diagramInputs.find(
+            (diagram) => diagram.diagram_type === diagramContract.type,
+          )!;
+          validateDiagramEvidence(
+            diagramContract.type,
+            input.mermaid_code,
+            input.evidence_refs,
+            sourceContent,
+          );
+          diagrams.push({
+            type: diagramContract.type,
+            title: diagramContract.title,
+            source: diagramContract.source,
+            mermaid_code: input.mermaid_code,
+            evidence_refs: input.evidence_refs,
+          });
+        }
+
+        const diagramsContent = diagrams.map((diagram) => [
+          `## ${diagram.title}`,
+          "",
+          `**Type:** ${diagram.type}`,
+          `**Source:** ${diagram.source}`,
+          "",
+          "```mermaid",
+          diagram.mermaid_code,
+          "```",
+        ].join("\n")).join("\n\n---\n\n");
+        const diagramsFile = await fileManager.writeSpecFile(
+          feature.directory,
+          "DIAGRAMS.md",
+          `# ${feature.name} — Required Diagrams\n\n${diagramsContent}\n`,
+          true,
+        );
+
+        const allDiagrams = {
+          feature_number: feature.number,
+          diagrams,
+          total_generated: diagrams.length,
+          diagrams_file: diagramsFile,
+          contract_id: context.state!.contract.id,
+        };
 
         const result = {
           ...allDiagrams,
           learning_note:
-            "Diagrams aid understanding by providing visual representations of system structure and behavior. " +
-            "Architecture diagrams (C4) show system boundaries, sequence diagrams show runtime interactions, " +
-            "ERDs show data relationships, Gantt charts show timelines, and flowcharts show process logic. " +
-            "Together they form a complete visual specification that complements the written artifacts. " +
-            "The full set has been written to DIAGRAMS.md in the feature directory (see diagrams_file).",
+            `Generated the ${diagrams.length} diagram(s) required by ${context.state!.contract.id}; no unrelated diagram types were synthesized.`,
         };
 
-        const enriched = await enrichResponse("sdd_generate_all_diagrams", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_generate_all_diagrams", result, stateMachine, stateDir);
         return {
           content: [
             {
@@ -205,22 +286,15 @@ export function registerVisualizationTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir, max_stories }) => {
+    async ({ stories: storyInputs }) => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: JSON.stringify({
-                  error: `Feature ${feature_number} not found in ${spec_dir}.`,
-                  fix: "Run sdd_init first to create the feature directory.",
-                }),
-              },
-            ],
-          };
+        const context = requireExecutionContext("sdd_generate_user_stories");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
+        if (context.state!.contract.workload !== "web-application") {
+          throw new Error(
+            `sdd_generate_user_stories requires workload web-application; received ${context.state!.contract.workload}.`,
+          );
         }
 
         let specContent: string;
@@ -240,26 +314,27 @@ export function registerVisualizationTools(
           };
         }
 
-        // Extract requirements from SPECIFICATION.md
         const requirements = extractRequirements(specContent);
-        const storyLimit = max_stories ?? 10;
-        const stories: UserStory[] = [];
-
-        for (const req of requirements.slice(0, storyLimit)) {
-          const steps = extractStepsFromRequirement(req.text);
-          const flowDiagram = diagramGenerator.generateUserStoryFlow(req.title, steps);
-          const acceptanceCriteria = generateAcceptanceCriteria(req.text);
-
-          stories.push({
-            id: req.id,
-            title: req.title,
-            description: `As a user, I want ${req.title.toLowerCase()} so that ${req.rationale || "the system meets this requirement"}.`,
-            priority: req.priority,
-            acceptance_criteria: acceptanceCriteria,
-            flow_diagram: flowDiagram,
-            independent_test: `Given the system is running, when ${req.title.toLowerCase()} is triggered, then ${acceptanceCriteria[0] || "the expected outcome occurs"}.`,
-          });
+        const requirementIds = new Set(requirements.map((requirement) => requirement.id));
+        const boundIds = new Set(storyInputs.map((story) => story.requirement_id));
+        const unknown = [...boundIds].filter((id) => !requirementIds.has(id));
+        const missing = [...requirementIds].filter((id) => !boundIds.has(id));
+        if (unknown.length > 0 || missing.length > 0) {
+          throw new Error(
+            `User-story bindings mismatch. Missing: ${missing.join(", ") || "none"}. ` +
+            `Unknown: ${unknown.join(", ") || "none"}.`,
+          );
         }
+
+        const stories: UserStory[] = storyInputs.map((story) => ({
+          id: story.requirement_id,
+          title: story.goal,
+          description: `As ${story.role}, I want ${story.goal} so that ${story.benefit}.`,
+          priority: story.priority,
+          acceptance_criteria: story.acceptance_criteria,
+          flow_diagram: diagramGenerator.generateUserStoryFlow(story.goal, story.flow_steps),
+          independent_test: story.independent_test,
+        }));
 
         // Generate an overview flow diagram connecting all stories
         const overviewSteps = stories.map((s) => s.title);
@@ -278,7 +353,7 @@ export function registerVisualizationTools(
             "testable acceptance criteria derived from the specification.",
         };
 
-        const enriched = await enrichResponse("sdd_generate_user_stories", result as unknown as Record<string, unknown>, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_generate_user_stories", result as unknown as Record<string, unknown>, stateMachine, stateDir);
         return {
           content: [
             {
@@ -315,22 +390,17 @@ export function registerVisualizationTools(
         openWorldHint: true,
       },
     },
-    async ({ feature_number, spec_dir, diagram_type }) => {
+    async ({ diagram_type, nodes, connections, evidence_refs }) => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: JSON.stringify({
-                  error: `Feature ${feature_number} not found in ${spec_dir}.`,
-                  fix: "Run sdd_init first to create the feature directory.",
-                }),
-              },
-            ],
-          };
+        const context = requireExecutionContext("sdd_figma_diagram");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
+        const figma = context.state!.contract.capability_config.figma!;
+        if (!figma.diagram_types.includes(diagram_type)) {
+          throw new Error(
+            `FigJam diagram ${diagram_type} is not enabled by ${context.state!.contract.id}. ` +
+            `Allowed: ${figma.diagram_types.join(", ")}.`,
+          );
         }
 
         let designContent: string;
@@ -350,17 +420,28 @@ export function registerVisualizationTools(
           };
         }
 
-        // Build FigJam-compatible diagram structure — node/edge derivation
-        // differs per diagram type (architecture vs data_flow vs user_flow vs
-        // integration), so the four payloads are structurally distinct.
-        const figjamStructure = buildFigmaStructure(designContent, diagram_type);
+        const missingEvidence = evidence_refs.filter(
+          (reference) => !designContent.toLowerCase().includes(reference.toLowerCase()),
+        );
+        if (missingEvidence.length > 0) {
+          throw new Error(`FigJam evidence is absent from DESIGN.md: ${missingEvidence.join(", ")}.`);
+        }
+        const nodeIds = new Set(nodes.map((node) => node.id));
+        const invalidConnections = connections.filter(
+          (connection) => !nodeIds.has(connection.from) || !nodeIds.has(connection.to),
+        );
+        if (invalidConnections.length > 0) {
+          throw new Error("Every FigJam connection endpoint must reference a declared node ID.");
+        }
+        const figjamStructure = { nodes, connections };
 
         const figmaPayload = {
-          feature_number,
+          feature_number: feature.number,
           feature_name: feature.name,
           diagram_type,
           title: `${feature.name} — ${diagram_type.replace(/_/g, " ")}`,
           figjam_structure: figjamStructure,
+          evidence_refs,
           routing_instructions: {
             target_tool: "Figma MCP generate_diagram",
             description:
@@ -382,7 +463,7 @@ export function registerVisualizationTools(
             "in FigJam from the specification artifacts.",
         };
 
-        const enriched = await enrichResponse("sdd_figma_diagram", figmaPayload, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_figma_diagram", figmaPayload, stateMachine, stateDir);
         return {
           content: [
             {

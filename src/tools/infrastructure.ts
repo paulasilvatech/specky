@@ -5,17 +5,16 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { formatError, truncate } from "./tool-result.js";
 import { join } from "node:path";
-import {} from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { IacGenerator } from "../services/iac-generator.js";
-import { detectTechStackFromDesign } from "../services/iac-generator.js";
 import {
   generateIacInputSchema,
   validateIacInputSchema,
   generateDockerfileInputSchema,
 } from "../schemas/infrastructure.js";
 import { enrichResponse } from "./response-builder.js";
+import { requireExecutionContext } from "../services/execution-context.js";
 
 export function registerInfrastructureTools(
   server: McpServer,
@@ -38,28 +37,19 @@ export function registerInfrastructureTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir, cloud, modules }) => {
+    async () => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(
-            `Feature ${feature_number} not found in ${spec_dir}.\n→ Fix: Run sdd_discover first to create the feature directory.`
-          );
-        }
-
-        // Read DESIGN.md to detect infrastructure needs
+        const context = requireExecutionContext("sdd_generate_iac");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
+        const iac = context.state!.contract.capability_config.iac!;
         try {
           await fileManager.readSpecFile(feature.directory, "DESIGN.md");
         } catch {
-          // DESIGN.md is optional; generator will use defaults
+          throw new Error(`DESIGN.md is required as evidence for the IaC contract in ${feature.directory}.`);
         }
 
-        const iacResult = await iacGenerator.generateTerraform(
-          feature.directory,
-          cloud,
-          modules
-        );
+        const iacResult = await iacGenerator.generateTerraform(iac.cloud, iac.resources);
 
         // Write generated files to feature directory
         const writtenPaths: string[] = [];
@@ -75,7 +65,10 @@ export function registerInfrastructureTools(
 
         const result = {
           provider: iacResult.provider,
-          cloud,
+          cloud: iac.cloud,
+          contract_resources: iac.resources,
+          state_backend: iac.state_backend,
+          region_policy: iac.region_policy,
           files: iacResult.files.map((f) => ({
             path: f.path,
             description: f.description,
@@ -93,7 +86,7 @@ export function registerInfrastructureTools(
             "State files track deployed resources so Terraform knows what exists.",
         };
 
-        const enriched = await enrichResponse("sdd_generate_iac", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_generate_iac", result, stateMachine, stateDir);
         return {
           content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
@@ -121,20 +114,17 @@ export function registerInfrastructureTools(
         openWorldHint: true,
       },
     },
-    async ({ feature_number, spec_dir, provider, cloud, iac_dir }) => {
+    async () => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(
-            `Feature ${feature_number} not found in ${spec_dir}.\n→ Fix: Run sdd_discover first to create the feature directory.`
-          );
-        }
+        const context = requireExecutionContext("sdd_validate_iac");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
+        const iac = context.state!.contract.capability_config.iac!;
 
-        const resolvedDir = iac_dir || join(feature.directory, "terraform");
+        const resolvedDir = join(feature.directory, "terraform");
         const validationResult = iacGenerator.generateValidationPayload(
-          provider,
-          cloud,
+          iac.provider,
+          iac.cloud,
           resolvedDir
         );
 
@@ -151,7 +141,7 @@ export function registerInfrastructureTools(
             "Always validate before applying to catch misconfigurations early.",
         };
 
-        const enriched = await enrichResponse("sdd_validate_iac", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_validate_iac", result, stateMachine, stateDir);
         return {
           content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
@@ -179,34 +169,29 @@ export function registerInfrastructureTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir, include_compose, multi_stage }) => {
+    async () => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(
-            `Feature ${feature_number} not found in ${spec_dir}.\n→ Fix: Run sdd_discover first to create the feature directory.`
-          );
-        }
-
-        // Detect tech stack from DESIGN.md
-        let designContent = "";
+        const context = requireExecutionContext("sdd_generate_dockerfile");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
+        const environment = context.state!.contract.capability_config["dev-environment"]!;
         try {
-          designContent = await fileManager.readSpecFile(feature.directory, "DESIGN.md");
+          await fileManager.readSpecFile(feature.directory, "DESIGN.md");
         } catch {
-          // DESIGN.md is optional; fall back to defaults
+          throw new Error(`DESIGN.md is required as evidence for the development-environment contract in ${feature.directory}.`);
         }
 
-        // Detect from DESIGN.md prose; default to TypeScript/Node.js when the
-        // design names no recognizable stack.
-        const techStack =
-          detectTechStackFromDesign(designContent) ??
-          { language: "TypeScript", framework: undefined, runtime: "node22" };
+        const techStack = {
+          language: environment.language,
+          framework: environment.framework,
+          runtime: environment.runtime,
+        };
 
         const dockerResult = iacGenerator.generateDockerfile(
           techStack,
-          include_compose,
-          multi_stage
+          environment.include_compose,
+          environment.multi_stage,
+          environment.services,
         );
 
         // Write generated files to feature directory
@@ -240,7 +225,7 @@ export function registerInfrastructureTools(
             "docker-compose.yml orchestrates multiple containers (app, database, cache) as a single stack.",
         };
 
-        const enriched = await enrichResponse("sdd_generate_dockerfile", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_generate_dockerfile", result, stateMachine, stateDir);
         return {
           content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };

@@ -333,7 +333,7 @@ export type DiagramType =
   | "gantt" | "pie" | "mindmap";
 
 /** Supported compliance frameworks */
-export type ComplianceFramework = "hipaa" | "soc2" | "gdpr" | "pci_dss" | "iso27001" | "general";
+export type ComplianceFramework = "hipaa" | "soc2" | "gdpr" | "pci_dss" | "iso27001";
 
 /** Supported checklist domains */
 export type ChecklistDomain = "security" | "accessibility" | "performance" | "testing" | "documentation" | "deployment" | "general";

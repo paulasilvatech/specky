@@ -1,82 +1,30 @@
-#!/bin/bash
-# specky-session-banner.sh — Show Specky pipeline status at session start.
-# Target: Claude Code + GitHub Copilot
-# Type: Advisory (exit 0 always) | Trigger: SessionStart
-#
-# Prints a one-screen banner whenever the user opens a new session so they
-# immediately see which feature and phase are active. Helps avoid the SIFAP
-# incident where a user bypassed the pipeline because they didn't realize
-# one was running.
+#!/usr/bin/env bash
+# specky-session-banner.sh — Show explicit feature context or workspace-level status guidance.
+# Type: Advisory | Trigger: SessionStart.
 
 set -euo pipefail
+[ -n "${CLAUDE_PROJECT_DIR:-}" ] || exit 0
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+. "$SCRIPT_DIR/specky-contract-context.bash"
+specky_load_contract_context || exit $?
 
-# ── rc.14: Copilot compatibility guard ───────────────────
-# VS Code Copilot reads .claude/settings.json hooks and treats SessionStart as
-# PreToolUse. This script is advisory-only but Copilot surfaces any output from
-# a hook as a block warning. Skip entirely when not in Claude Code context.
-if [ -z "${CLAUDE_PROJECT_DIR:-}" ]; then
+if [ "${SPECKY_CONTEXT_ACTIVE:-0}" != "1" ]; then
+  if [ -d .specs ]; then
+    echo "🧭 Specky workspace detected. No feature selected; run 'specky status' and resume with explicit spec_dir + feature_number."
+  fi
   exit 0
-fi
-
-SPECS_DIR=".specs"
-[ -d "$SPECS_DIR" ] || exit 0
-
-# Find most recently touched feature
-LATEST=$(ls -td "$SPECS_DIR"/*/ 2>/dev/null | head -1 || true)
-if [ -z "$LATEST" ]; then
-  exit 0
-fi
-
-STATE="$LATEST/.sdd-state.json"
-if [ ! -f "$STATE" ]; then
-  exit 0
-fi
-
-FEATURE=$(basename "$LATEST")
-PHASE="?"
-if command -v jq >/dev/null 2>&1; then
-  PHASE=$(jq -r '.current_phase // "?"' "$STATE" 2>/dev/null || echo "?")
 fi
 
 BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null | tr -d '\n' || true)
-[ -z "$BRANCH" ] && BRANCH="unknown"
+[ -n "$BRANCH" ] || BRANCH="unknown"
 
 echo ""
-echo "╭─────────────────────────────────────────────────────────────╮"
-echo "│ 🧭 Specky Pipeline Active                                    │"
-echo "├─────────────────────────────────────────────────────────────┤"
-printf "│ Feature:  %-50s│\n" "$FEATURE"
-printf "│ Phase:    %-50s│\n" "$PHASE"
-printf "│ Branch:   %-50s│\n" "$BRANCH"
-echo "├─────────────────────────────────────────────────────────────┤"
-echo "│ Resume:   @specky-orchestrator (Copilot)                     │"
-echo "│           /specky-orchestrate (Claude Code)                  │"
-echo "│ Status:   specky status  (or npx specky status)             │"
-echo "│ New work: @specky-onboarding                                 │"
-echo "╰─────────────────────────────────────────────────────────────╯"
-echo ""
-
-# Validate branch matches expected for phase (advisory warning only)
-case "$PHASE" in
-  init|discover|specify|clarify|design|tasks|analyze|implement)
-    if [[ ! "$BRANCH" =~ ^spec/ ]]; then
-      echo "⚠️  [specky-session-banner] Phase $PHASE expects branch spec/NNN-* — you are on '$BRANCH'"
-      echo "    Consider: git checkout -b spec/$FEATURE (or let @specky-orchestrator handle it)"
-      echo ""
-    fi
-    ;;
-  verify)
-    if [ "$BRANCH" != "develop" ]; then
-      echo "⚠️  [specky-session-banner] Phase 'verify' expects branch 'develop' — you are on '$BRANCH'"
-      echo ""
-    fi
-    ;;
-  release)
-    if [ "$BRANCH" != "stage" ]; then
-      echo "⚠️  [specky-session-banner] Phase 'release' expects branch 'stage' — you are on '$BRANCH'"
-      echo ""
-    fi
-    ;;
-esac
-
-exit 0
+echo "🧭 Specky Feature Context"
+echo "   Feature:  ${SPECKY_FEATURE_NUMBER}-${SPECKY_FEATURE_NAME}"
+echo "   Contract: $SPECKY_CONTRACT_ID"
+echo "   Phase:    $SPECKY_PHASE"
+echo "   Branch:   $BRANCH"
+echo "   Resume:   @specky-orchestrator or /specky-orchestrate"
+if [ "${SPECKY_RELEASE_ENABLED:-0}" = "1" ]; then
+  echo "   Release:  head=${SPECKY_BRANCH_PREFIX}${SPECKY_FEATURE_NUMBER}-${SPECKY_FEATURE_NAME} base=$SPECKY_BASE_BRANCH"
+fi

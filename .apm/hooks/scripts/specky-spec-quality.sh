@@ -5,9 +5,12 @@
 # Paper: arXiv:2601.03878 — EARS quality
 
 set -euo pipefail
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+. "$SCRIPT_DIR/specky-contract-context.bash"
+specky_load_contract_context || exit $?
+[ "${SPECKY_CONTEXT_ACTIVE:-0}" = "1" ] || exit 0
 
-LATEST=$(ls -td .specs/*/ 2>/dev/null | head -1 || true)
-[ -z "$LATEST" ] && exit 0
+LATEST="$SPECKY_FEATURE_DIR"
 SPEC="$LATEST/SPECIFICATION.md"
 [ -f "$SPEC" ] || exit 0
 
@@ -15,8 +18,8 @@ echo "📋 Spec Quality Check: $SPEC"
 
 # Count requirements (POSIX ERE for macOS/Linux portability)
 REQ_COUNT=$(grep -cE 'REQ-[A-Z]+-[0-9]+' "$SPEC" 2>/dev/null || echo "0")
-if [ "$REQ_COUNT" -lt 5 ]; then
-  echo "⚠️  Only $REQ_COUNT requirements found (minimum 5)."
+if [ "$REQ_COUNT" -lt 1 ]; then
+  echo "⚠️  No requirements found. The contract requires source-backed requirements, not a fixed generic count."
 fi
 
 # Check REQ-ID format consistency

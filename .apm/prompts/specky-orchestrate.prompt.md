@@ -5,4 +5,4 @@ argument-hint: <feature description or number>
 ---
 Run the full SDD pipeline for feature [FEATURE NUMBER or NAME].
 
-@specky-orchestrator — coordinate all 10 phases (Init → Discover → Specify → Clarify → Design → Tasks → Analyze → Implement → Verify → Release), validate artifacts between phases, enforce LGTM gates at Phases 2/4/5, and route to the correct agent per phase.
+@specky-orchestrator — resolve the selected feature's signed phase graph, validate contract-specific evidence, enforce configured LGTM/gate policy, and route the current phase to its lean agent.

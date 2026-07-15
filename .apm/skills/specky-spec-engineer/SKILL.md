@@ -3,25 +3,48 @@ name: specky-spec-engineer
 description: "Use for Phase 2 (Specify): write SPECIFICATION.md with EARS, REQ-IDs, and acceptance criteria. Trigger on sdd_write_spec, sdd_turnkey_spec, sdd_validate_ears, or /specky-specify."
 ---
 
-# Phase 2 — Specify
+# Specify — Requirement Contract
 
-## Prerequisites
-- CONSTITUTION.md and RESEARCH.md exist on `spec/NNN-*`
+## Preconditions
 
-## Workflow
-1. Read CONSTITUTION.md and RESEARCH.md
-2. Call `sdd_write_spec` or `sdd_turnkey_spec`
-3. Optional: call `sdd_figma_to_spec`
-4. Call `sdd_validate_ears` and fix every failure
-5. Present SPECIFICATION.md for LGTM at the Phase 2 gate
+- Use the exact `spec_dir` and `feature_number` from signed state.
+- Read Constitution and completed lifecycle/workload discovery evidence.
+- Do not create requirements from generic baselines or presumed NFRs.
 
-## EARS
-Use the canonical 6 patterns in `../specky-sdd-pipeline/references/ears-notation.md`.
+## Exact `sdd_write_spec` Shape
 
-## REQ-ID Format
-`REQ-{DOMAIN}-{NNN}` — unique, uppercase domain, zero-padded sequence.
+```json
+{
+	"feature_name": "Order API",
+	"feature_number": "001",
+	"spec_dir": ".specs",
+	"discovery_answers": {"DQ-001": "Reviewed answer with evidence"},
+	"requirements": [{
+		"id": "REQ-API-001",
+		"ears_pattern": "event_driven",
+		"text": "When a client submits a valid order, the system shall return the created order identifier.",
+		"acceptance_criteria": ["A valid request returns one persisted order identifier"]
+	}],
+	"force": false
+}
+```
 
-## Hard Rules
-- Every requirement needs an EARS pattern, REQ-ID, and measurable acceptance criteria
-- Always run `sdd_validate_ears` before presenting
-- Branch must be `spec/NNN-*`
+Every requirement needs a unique uppercase `REQ-{DOMAIN}-{NNN}`, valid EARS prose, and measurable acceptance criteria. `force: true` is an explicit decision to persist validation warnings; never use it automatically.
+
+## Validation
+
+Call `sdd_validate_ears` with `spec_dir` and `feature_number`. The tool is always feature-scoped; direct stateless validation is not a second hidden mode.
+
+## Turnkey Refinement
+
+`sdd_turnkey_spec` operates only on an already initialized feature. Required: `feature_name`, `description`, `feature_number`, `spec_dir`, explicit `force`; optional `clarification_responses`. It cannot auto-create Constitution or state.
+
+## Figma
+
+Use `sdd_figma_to_spec` only when `figma` capability is enabled. Required: file key, optional node ID, explicit feature identity and `force`. The feature name comes from state, not a second input.
+
+## Rules
+
+- Preserve lifecycle/workload discovery context in the specification.
+- Never fabricate acceptance criteria, sources, or implied requirements.
+- Present EARS validation output and source evidence with the artifact.

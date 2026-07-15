@@ -4,12 +4,12 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { formatError, truncate } from "./tool-result.js";
-import {} from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { PbtGenerator } from "../services/pbt-generator.js";
 import { generatePbtInputSchema } from "../schemas/pbt.js";
 import { enrichResponse } from "./response-builder.js";
+import { requireExecutionContext } from "../services/execution-context.js";
 
 export function registerPbtTools(
   server: McpServer,
@@ -33,20 +33,19 @@ export function registerPbtTools(
         openWorldHint: false,
       },
     },
-    async ({ framework, feature_number, spec_dir, output_dir }) => {
+    async () => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(
-            `Feature ${feature_number} not found in ${spec_dir}. Run sdd_init first.`,
-          );
-        }
+        const context = requireExecutionContext("sdd_generate_pbt");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
+        const tdd = context.state!.contract.capability_config.tdd!;
 
         const genResult = await pbtGenerator.generate(
           feature.directory,
-          framework,
-          output_dir,
+          tdd.property_framework,
+          tdd.output_dir,
+          tdd.property_imports,
+          tdd.property_bindings,
         );
 
         const fileName = genResult.output_file.split("/").pop() || genResult.output_file;
@@ -65,7 +64,7 @@ export function registerPbtTools(
           description: p.description,
         }));
 
-        const frameworkLabel = framework === "fast-check" ? "fast-check" : "hypothesis";
+        const frameworkLabel = tdd.property_framework;
 
         const result = {
           status: "pbt_generated" as const,
@@ -85,7 +84,7 @@ export function registerPbtTools(
             "When a PBT fails, the framework 'shrinks' the input to the smallest example that triggers the failure.",
         };
 
-        const enriched = await enrichResponse("sdd_generate_pbt", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_generate_pbt", result, stateMachine, stateDir);
         return {
           content: [
             { type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) },

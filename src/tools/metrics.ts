@@ -4,7 +4,6 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { formatError, truncate } from "./tool-result.js";
-import {} from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { MetricsGenerator } from "../services/metrics-generator.js";
@@ -12,6 +11,7 @@ import type { CognitiveDebtEngine } from "../services/cognitive-debt-engine.js";
 import type { IntentDriftEngine } from "../services/intent-drift-engine.js";
 import { metricsInputSchema } from "../schemas/metrics.js";
 import { enrichResponse } from "./response-builder.js";
+import { requireExecutionContext } from "../services/execution-context.js";
 
 export function registerMetricsTools(
   server: McpServer,
@@ -38,15 +38,12 @@ export function registerMetricsTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir }) => {
+    async ({ feature_number }) => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(
-            `Feature ${feature_number} not found in ${spec_dir}. Run sdd_init first.`,
-          );
-        }
+        const context = requireExecutionContext("sdd_metrics");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
+        const state = await stateMachine.loadState(stateDir);
 
         const metricsResult = await metricsGenerator.generateMetrics(
           feature.directory,
@@ -69,23 +66,17 @@ export function registerMetricsTools(
             checklist_pass_rate: metricsResult.test_coverage_percent,
           },
           phases: metricsResult.phases,
-          cognitive_debt: await (async () => {
-            if (!cognitiveDebtEngine) return undefined;
-            try {
-              const state = await stateMachine.loadState(spec_dir);
-              return cognitiveDebtEngine.computeMetrics(state.gate_history ?? []);
-            } catch { return undefined; }
-          })(),
-          intent_drift: await (async () => {
+          cognitive_debt: cognitiveDebtEngine
+            ? cognitiveDebtEngine.computeMetrics(state.gate_history ?? [])
+            : undefined,
+          intent_drift: (() => {
             if (!intentDriftEngine) return undefined;
-            try {
-              const state = await stateMachine.loadState(spec_dir);
-              const lastSnapshot = (state.drift_history ?? []).at(-1);
-              const trend = intentDriftEngine.computeTrend(state.drift_history ?? []);
-              return lastSnapshot
-                ? { intent_drift_score: lastSnapshot.score, drift_trend: trend }
-                : undefined;
-            } catch { return undefined; }
+            const lastSnapshot = (state.drift_history ?? []).at(-1);
+            if (!lastSnapshot) return undefined;
+            return {
+              intent_drift_score: lastSnapshot.score,
+              drift_trend: intentDriftEngine.computeTrend(state.drift_history ?? []),
+            };
           })(),
           next_steps:
             `Open ${metricsResult.html_path} in a browser to view the metrics dashboard. ` +
@@ -96,7 +87,7 @@ export function registerMetricsTools(
             "and checklist pass rate from CHECKLIST.md. Phase durations are read from .sdd-state.json.",
         };
 
-        const enriched = await enrichResponse("sdd_metrics", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_metrics", result, stateMachine, stateDir);
         return {
           content: [
             { type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) },

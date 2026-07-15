@@ -5,14 +5,17 @@
 # Paper: arXiv:2603.22106 — cognitive surrender measurement
 
 set -euo pipefail
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+. "$SCRIPT_DIR/specky-contract-context.bash"
+specky_load_contract_context || exit $?
+[ "${SPECKY_CONTEXT_ACTIVE:-0}" = "1" ] || exit 0
 
-STATE=$(find . -name ".sdd-state.json" -maxdepth 2 2>/dev/null | head -1)
-[ -z "$STATE" ] || [ ! -f "$STATE" ] && exit 0
+STATE="$SPECKY_STATE_FILE"
 
 # Check if gate history exists in state
 if command -v jq &>/dev/null && [ -f "$STATE" ]; then
   GATES=$(jq -r '.gate_history // [] | length' "$STATE" 2>/dev/null || echo "0")
-  LGTM_NO_MOD=$(jq -r '[.gate_history // [] | .[] | select(.modified == false)] | length' "$STATE" 2>/dev/null || echo "0")
+  LGTM_NO_MOD=$(jq -r '[.gate_history // [] | .[] | select(.was_modified == false)] | length' "$STATE" 2>/dev/null || echo "0")
   
   if [ "$GATES" -gt 0 ]; then
     RATE=$((LGTM_NO_MOD * 100 / GATES))

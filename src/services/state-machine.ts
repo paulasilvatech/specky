@@ -1,20 +1,107 @@
 /**
  * StateMachine — Phase tracking, transition validation, state persistence.
- * State persists in .specs/.sdd-state.json.
+ * State persists in each feature directory at .specs/<NNN-name>/.sdd-state.json.
  */
 
-import { Phase, PHASE_ORDER, PHASE_REQUIRED_FILES, STATE_FILE, DEFAULT_SPEC_DIR } from "../constants.js";
-import type { SddState, PhaseStatus, TransitionResult, GateHistoryEntry } from "../types.js";
+import { Phase, PHASE_ORDER, PHASE_REQUIRED_FILES, STATE_FILE } from "../constants.js";
+import type { SddState, PhaseStatus, TransitionResult, GateHistoryEntry, FeatureIdentity } from "../types.js";
 import type { FileManager } from "./file-manager.js";
-import { basename, join, resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { stat } from "node:fs/promises";
 import { createHmac, createHash } from "node:crypto";
+import { z } from "zod";
 import { SPECKY_SCAFFOLD_MARKER } from "./feature-package-generator.js";
+import {
+  assertUseCaseContractFingerprint,
+  resolvedUseCaseContractSchema,
+  type ResolvedUseCaseContract,
+} from "../contracts/use-case.js";
+import { getToolContract } from "../contracts/tool-contracts.js";
 
 const SIG_FILE = ".sdd-state.json.sig";
 
 /** Phases whose completion requires explicit LGTM when pipeline.require_lgtm is enabled. */
-const LGTM_GATE_PHASES: readonly Phase[] = [Phase.Specify, Phase.Design, Phase.Tasks];
+const LGTM_GATE_PHASES = new Set<Phase>([Phase.Specify, Phase.Design, Phase.Tasks]);
+
+const phaseSchema = z.enum([
+  Phase.Init,
+  Phase.Discover,
+  Phase.Specify,
+  Phase.Clarify,
+  Phase.Design,
+  Phase.Tasks,
+  Phase.Analyze,
+  Phase.Implement,
+  Phase.Verify,
+  Phase.Release,
+]);
+
+const phaseStatusSchema = z.object({
+  status: z.enum(["pending", "in_progress", "completed"]),
+  started_at: z.string().optional(),
+  completed_at: z.string().optional(),
+}).strict();
+
+const stateSchema = z.object({
+  version: z.literal("5.0.0"),
+  project_name: z.string().min(1),
+  feature: z.object({
+    number: z.string().regex(/^\d{3}$/),
+    name: z.string().min(1),
+    directory: z.string().min(1),
+  }).strict(),
+  contract: resolvedUseCaseContractSchema,
+  current_phase: phaseSchema,
+  phases: z.record(phaseSchema, phaseStatusSchema),
+  amendments: z.array(z.object({
+    number: z.number().int().positive(),
+    date: z.string(),
+    author: z.string(),
+    rationale: z.string(),
+    articles_affected: z.array(z.string()),
+  }).strict()),
+  gate_decision: z.object({
+    decision: z.enum(["APPROVE", "CHANGES_NEEDED", "BLOCK"]),
+    reasons: z.array(z.string()),
+    coverage_percent: z.number(),
+    gaps: z.array(z.string()),
+    decided_at: z.string(),
+  }).strict().nullable(),
+  gate_history: z.array(z.object({
+    phase: z.string(),
+    timestamp: z.string(),
+    artifact: z.string(),
+    was_modified: z.boolean(),
+    req_count: z.number().optional(),
+    lgtm: z.boolean().optional(),
+  }).strict()).optional(),
+  drift_history: z.array(z.object({
+    timestamp: z.string(),
+    score: z.number(),
+    orphaned_count: z.number(),
+  }).strict()).optional(),
+}).strict();
+
+export class StateNotFoundError extends Error {
+  constructor(stateDir: string) {
+    super(`Feature state not found at ${join(stateDir, STATE_FILE)}`);
+    this.name = "StateNotFoundError";
+  }
+}
+
+export class StateMigrationRequiredError extends Error {
+  constructor(stateDir: string, version: unknown) {
+    const versionLabel = typeof version === "string" ? version : "unknown";
+    super(`State at ${join(stateDir, STATE_FILE)} uses version ${versionLabel}; run specky migrate-contracts before invoking pipeline tools.`);
+    this.name = "StateMigrationRequiredError";
+  }
+}
+
+export interface CreateFeatureStateInput {
+  projectName: string;
+  feature: FeatureIdentity;
+  contract: ResolvedUseCaseContract;
+}
 
 /** Tools that require an APPROVE gate decision once the pipeline reaches Analyze. */
 export const GATE_SENSITIVE_TOOLS = new Set([
@@ -115,82 +202,88 @@ export class StateMachine {
   }
 
   /**
-   * Load state from .sdd-state.json, or return a default "not initialized" state.
-   * Verifies HMAC signature if .sdd-state.json.sig exists.
-   * A missing .sig file is treated as unverified (no tamper_warning).
-   * A mismatched .sig file logs a tamper warning to stderr.
+   * Load and validate a signed v5 feature state.
    */
-  async loadState(specDir: string = DEFAULT_SPEC_DIR): Promise<SddState> {
-    const statePath = join(specDir, STATE_FILE);
+  async loadState(stateDir: string): Promise<SddState> {
+    const statePath = join(stateDir, STATE_FILE);
+    let raw: string;
     try {
-      const raw = await this.fileManager.readProjectFile(statePath);
-
-      // Verify signature if .sig file exists
-      try {
-        const storedSig = await this.fileManager.readProjectFile(join(specDir, SIG_FILE));
-        const expectedSig = this.computeSig(raw);
-        if (storedSig.trim() !== expectedSig) {
-          console.error("[specky] WARNING: State file tamper detected — .sdd-state.json signature mismatch.");
-        }
-      } catch {
-        // .sig not found — first write or pre-v3.2.0 state — skip verification silently
-      }
-
-      const parsed = JSON.parse(raw) as SddState;
-
-      // v1 → v2 migration: add missing phases for 10-phase pipeline
-      if (parsed.version === "3.0.0" || !parsed.phases["implement"]) {
-        for (const phase of PHASE_ORDER) {
-          if (!(phase in parsed.phases)) {
-            parsed.phases[phase] = { status: "pending" };
-          }
-        }
-        parsed.version = "4.0.0";
-        await this.fileManager.writeSpecFile(
-          specDir,
-          STATE_FILE,
-          JSON.stringify(parsed, null, 2),
-          true
-        );
-      }
-
-      return parsed;
+      raw = await this.fileManager.readProjectFile(statePath);
     } catch {
-      return this.createDefaultState("");
+      throw new StateNotFoundError(stateDir);
     }
+
+    let untrusted: unknown;
+    try {
+      untrusted = JSON.parse(raw);
+    } catch {
+      throw new Error(`Invalid JSON in feature state at ${statePath}`);
+    }
+    const version = typeof untrusted === "object" && untrusted !== null
+      ? (untrusted as Record<string, unknown>)["version"]
+      : undefined;
+    if (version !== "5.0.0") {
+      throw new StateMigrationRequiredError(stateDir, version);
+    }
+
+    let storedSig: string;
+    try {
+      storedSig = await this.fileManager.readProjectFile(join(stateDir, SIG_FILE));
+    } catch {
+      throw new Error(`Feature state signature not found at ${join(stateDir, SIG_FILE)}`);
+    }
+    const expectedSig = this.computeSig(raw);
+    if (storedSig.trim() !== expectedSig) {
+      throw new Error(`Feature state integrity check failed at ${statePath}`);
+    }
+
+    const parsed = stateSchema.parse(untrusted) as SddState;
+    if (parsed.feature.directory !== stateDir) {
+      throw new Error(`Feature state directory mismatch: state declares ${parsed.feature.directory}, loaded from ${stateDir}`);
+    }
+    assertUseCaseContractFingerprint(parsed.contract);
+    if (!parsed.contract.phases.includes(parsed.current_phase)) {
+      throw new Error(`Current phase ${parsed.current_phase} is not enabled by contract ${parsed.contract.id}`);
+    }
+    return parsed;
   }
 
   /**
    * Save state to .sdd-state.json and write HMAC-SHA256 signature to .sdd-state.json.sig.
    */
-  async saveState(specDir: string, state: SddState): Promise<void> {
-    const json = JSON.stringify(state, null, 2);
-    await this.fileManager.writeSpecFile(specDir, STATE_FILE, json, true);
+  async saveState(stateDir: string, state: SddState): Promise<void> {
+    if (state.feature.directory !== stateDir) {
+      throw new Error(`Refusing to save feature ${state.feature.number} state outside ${state.feature.directory}`);
+    }
+    assertUseCaseContractFingerprint(state.contract);
+    const validated = stateSchema.parse(state) as SddState;
+    const json = JSON.stringify(validated, null, 2);
+    await this.fileManager.writeSpecFile(stateDir, STATE_FILE, json, true);
     // Write tamper-detection signature
     const sig = this.computeSig(json);
-    await this.fileManager.writeSpecFile(specDir, SIG_FILE, sig, true);
+    await this.fileManager.writeSpecFile(stateDir, SIG_FILE, sig, true);
   }
 
   /**
    * Get current phase from persisted state.
    */
-  async getCurrentPhase(specDir: string = DEFAULT_SPEC_DIR): Promise<Phase> {
-    const state = await this.loadState(specDir);
+  async getCurrentPhase(stateDir: string): Promise<Phase> {
+    const state = await this.loadState(stateDir);
     return state.current_phase;
   }
 
   /**
    * Check if transition to target phase is allowed.
    */
-  async canTransition(specDir: string, targetPhase: Phase, featureNumber?: string): Promise<TransitionResult> {
-    const state = await this.loadState(specDir);
-    const currentIndex = PHASE_ORDER.indexOf(state.current_phase);
-    const targetIndex = PHASE_ORDER.indexOf(targetPhase);
+  async canTransition(stateDir: string, targetPhase: Phase): Promise<TransitionResult> {
+    const state = await this.loadState(stateDir);
+    const currentIndex = state.contract.phases.indexOf(state.current_phase);
+    const targetIndex = state.contract.phases.indexOf(targetPhase);
 
     // Can only advance to the next phase
     if (targetIndex !== currentIndex + 1) {
-      const nextPhase = currentIndex < PHASE_ORDER.length - 1
-        ? PHASE_ORDER[currentIndex + 1]
+      const nextPhase = currentIndex < state.contract.phases.length - 1
+        ? state.contract.phases[currentIndex + 1]
         : undefined;
       return {
         allowed: false,
@@ -202,21 +295,7 @@ export class StateMachine {
       };
     }
 
-    // Featureless-workspace loophole guard: without a registered feature there
-    // is no directory to validate artifacts against, so every required-file
-    // check below would silently pass and the pipeline could walk six phases
-    // with zero artifacts on disk. Refuse to advance until a feature exists.
-    if (!state.features || state.features.length === 0) {
-      return {
-        allowed: false,
-        from_phase: state.current_phase,
-        to_phase: targetPhase,
-        error_message:
-          "Cannot advance: no feature registered — run sdd_init first to create a feature before advancing phases.",
-      };
-    }
-
-    const { missingFiles, scaffoldFiles } = await this.checkRequiredArtifacts(state, featureNumber);
+    const { missingFiles, scaffoldFiles } = await this.checkRequiredArtifacts(state);
 
     if (missingFiles.length > 0) {
       return {
@@ -243,21 +322,6 @@ export class StateMachine {
       from_phase: state.current_phase,
       to_phase: targetPhase,
     };
-  }
-
-  private resolveFeatureDir(state: SddState, featureNumber?: string): string | undefined {
-    if (!featureNumber) return state.features[0];
-    const found = state.features.find((featureDir) => {
-      const name = basename(featureDir);
-      return name === featureNumber || name.startsWith(`${featureNumber}-`);
-    });
-    if (!found) {
-      const registered = state.features.map((d) => basename(d)).join(", ") || "(none)";
-      throw new Error(
-        `Feature ${featureNumber} not found. Registered features: ${registered}`,
-      );
-    }
-    return found;
   }
 
   /**
@@ -313,7 +377,7 @@ export class StateMachine {
       return { allowed: true };
     }
 
-    if (!state.gate_decision || state.gate_decision.decision !== "APPROVE") {
+    if (state.gate_decision?.decision !== "APPROVE") {
       const decision = state.gate_decision?.decision ?? null;
       return {
         allowed: false,
@@ -327,13 +391,12 @@ export class StateMachine {
     return { allowed: true };
   }
 
-  private async checkRequiredArtifacts(state: SddState, featureNumber?: string): Promise<{
+  private async checkRequiredArtifacts(state: SddState): Promise<{
     missingFiles: string[];
     scaffoldFiles: string[];
   }> {
     const requiredFiles = PHASE_REQUIRED_FILES[state.current_phase];
-    const featureDir = this.resolveFeatureDir(state, featureNumber);
-    if (!featureDir) return { missingFiles: [], scaffoldFiles: [] };
+    const featureDir = state.feature.directory;
 
     const missingFiles: string[] = [];
     const scaffoldFiles: string[] = [];
@@ -365,23 +428,21 @@ export class StateMachine {
    * Advance to the next phase. Validates prerequisites first.
    */
   async advancePhase(
-    specDir: string,
-    featureNumber?: string,
+    stateDir: string,
     options?: { lgtm?: boolean; requireLgtm?: boolean },
   ): Promise<SddState> {
-    return this.withLock(specDir, () => this._advancePhase(specDir, featureNumber, options));
+    return this.withLock(stateDir, () => this._advancePhase(stateDir, options));
   }
 
   private async _advancePhase(
-    specDir: string,
-    featureNumber?: string,
+    stateDir: string,
     options?: { lgtm?: boolean; requireLgtm?: boolean },
   ): Promise<SddState> {
-    const state = await this.loadState(specDir);
+    const state = await this.loadState(stateDir);
 
     if (
       options?.requireLgtm &&
-      LGTM_GATE_PHASES.includes(state.current_phase) &&
+      LGTM_GATE_PHASES.has(state.current_phase) &&
       options.lgtm !== true
     ) {
       throw new Error(
@@ -389,14 +450,14 @@ export class StateMachine {
       );
     }
 
-    const currentIndex = PHASE_ORDER.indexOf(state.current_phase);
+    const currentIndex = state.contract.phases.indexOf(state.current_phase);
 
-    if (currentIndex >= PHASE_ORDER.length - 1) {
+    if (currentIndex >= state.contract.phases.length - 1) {
       throw new Error(`Already at terminal phase "${state.current_phase}". Pipeline is complete.`);
     }
 
-    const nextPhase = PHASE_ORDER[currentIndex + 1];
-    const transition = await this.canTransition(specDir, nextPhase, featureNumber);
+    const nextPhase = state.contract.phases[currentIndex + 1];
+    const transition = await this.canTransition(stateDir, nextPhase);
 
     if (!transition.allowed) {
       throw new Error(transition.error_message || "Transition not allowed.");
@@ -435,7 +496,7 @@ export class StateMachine {
       started_at: new Date().toISOString(),
     };
 
-    await this.saveState(specDir, state);
+    await this.saveState(stateDir, state);
     return state;
   }
 
@@ -524,23 +585,28 @@ export class StateMachine {
     return [...PHASE_REQUIRED_FILES[phase]];
   }
 
-  /** Get phase order */
-  getPhaseOrder(): Phase[] {
-    return [...PHASE_ORDER];
-  }
-
-  /** Create a fresh state object */
-  createDefaultState(projectName: string): SddState {
+  /** Create a fresh state object for one explicitly identified feature and contract. */
+  createFeatureState(input: CreateFeatureStateInput): SddState {
+    assertUseCaseContractFingerprint(input.contract);
     const phases: Record<Phase, PhaseStatus> = {} as Record<Phase, PhaseStatus>;
     for (const phase of PHASE_ORDER) {
       phases[phase] = { status: "pending" };
     }
     return {
-      version: "4.0.0",
-      project_name: projectName,
-      current_phase: Phase.Init,
+      version: "5.0.0",
+      project_name: input.projectName,
+      feature: { ...input.feature },
+      contract: {
+        ...input.contract,
+        capabilities: [...input.contract.capabilities],
+        capability_config: structuredClone(input.contract.capability_config),
+        phases: [...input.contract.phases],
+        required_discovery_artifacts: [...input.contract.required_discovery_artifacts],
+        required_design_sections: [...input.contract.required_design_sections],
+        required_diagrams: input.contract.required_diagrams.map((diagram) => ({ ...diagram })),
+      },
+      current_phase: input.contract.phases[0],
       phases,
-      features: [],
       amendments: [],
       gate_decision: null,
     };
@@ -558,74 +624,12 @@ export class StateMachine {
     expected_phases: Phase[];
     error_message?: string;
   }> {
-    const TOOL_PHASE_MAP: Record<string, Phase[]> = {
-      // Read-only / utility tools — allowed in ANY phase (empty array = any)
-      sdd_get_status: [],
-      sdd_get_template: [],
-      sdd_scan_codebase: [],
-      sdd_check_sync: [],
-      sdd_generate_diagram: [],
-      sdd_generate_all_diagrams: [],
-      sdd_generate_user_stories: [],
-      sdd_figma_diagram: [],
-      sdd_validate_ears: [],
-      sdd_checkpoint: [],
-      sdd_restore: [],
-      sdd_list_checkpoints: [],
-      sdd_check_ecosystem: [],
-      sdd_verify_audit: [],
-      sdd_metrics: [],
-      sdd_research: [],
-
-      // Special tools — allowed in any phase
-      sdd_advance_phase: [],
-      sdd_write_bugfix: [],
-      sdd_amend: [],
-      sdd_auto_pipeline: [],
-
-      // Phase-specific tools
-      sdd_init: [Phase.Init],
-      sdd_discover: [Phase.Init, Phase.Discover],
-      sdd_write_spec: [Phase.Discover, Phase.Specify],
-      sdd_import_transcript: [Phase.Discover, Phase.Specify],
-      sdd_import_document: [Phase.Discover, Phase.Specify],
-      sdd_batch_import: [Phase.Discover, Phase.Specify],
-      sdd_figma_to_spec: [Phase.Discover, Phase.Specify],
-      sdd_batch_transcripts: [Phase.Discover, Phase.Specify],
-      sdd_turnkey_spec: [Phase.Discover, Phase.Specify],
-      sdd_clarify: [Phase.Specify, Phase.Clarify],
-      sdd_write_design: [Phase.Clarify, Phase.Design],
-      sdd_write_tasks: [Phase.Design, Phase.Tasks],
-      sdd_run_analysis: [Phase.Tasks, Phase.Analyze],
-      sdd_cross_analyze: [Phase.Tasks, Phase.Analyze],
-      sdd_compliance_check: [Phase.Tasks, Phase.Analyze],
-      sdd_checklist: [Phase.Tasks, Phase.Analyze],
-      sdd_implement: [Phase.Analyze, Phase.Implement],
-      sdd_generate_iac: [Phase.Analyze, Phase.Implement],
-      sdd_validate_iac: [Phase.Analyze, Phase.Implement],
-      sdd_generate_dockerfile: [Phase.Analyze, Phase.Implement],
-      sdd_setup_local_env: [Phase.Analyze, Phase.Implement],
-      sdd_setup_codespaces: [Phase.Analyze, Phase.Implement],
-      sdd_generate_devcontainer: [Phase.Analyze, Phase.Implement],
-      sdd_create_branch: [Phase.Analyze, Phase.Implement],
-      sdd_verify_tasks: [Phase.Implement, Phase.Verify],
-      sdd_generate_tests: [Phase.Implement, Phase.Verify],
-      sdd_verify_tests: [Phase.Implement, Phase.Verify],
-      sdd_generate_pbt: [Phase.Implement, Phase.Verify],
-      sdd_create_pr: [Phase.Verify, Phase.Release],
-      sdd_export_work_items: [Phase.Verify, Phase.Release],
-      sdd_generate_docs: [Phase.Verify, Phase.Release],
-      sdd_generate_api_docs: [Phase.Verify, Phase.Release],
-      sdd_generate_runbook: [Phase.Verify, Phase.Release],
-      sdd_generate_onboarding: [Phase.Verify, Phase.Release],
-      sdd_generate_all_docs: [Phase.Verify, Phase.Release],
-    } as const;
-
     const state = await this.loadState(specDir);
     const currentPhase = state.current_phase;
+    const toolContract = getToolContract(toolName);
+    const allowedPhases = toolContract.phases;
 
-    // Unknown tools are allowed (forward compatibility)
-    if (!(toolName in TOOL_PHASE_MAP)) {
+    if (allowedPhases === "any") {
       return {
         allowed: true,
         current_phase: currentPhase,
@@ -633,14 +637,13 @@ export class StateMachine {
       };
     }
 
-    const allowedPhases = TOOL_PHASE_MAP[toolName];
-
-    // Empty array means allowed in any phase
-    if (allowedPhases.length === 0) {
+    const enabledPhases = allowedPhases.filter((phase) => state.contract.phases.includes(phase));
+    if (enabledPhases.length === 0) {
       return {
-        allowed: true,
+        allowed: false,
         current_phase: currentPhase,
         expected_phases: [],
+        error_message: `Tool "${toolName}" is disabled by use-case contract "${state.contract.id}".`,
       };
     }
 
@@ -648,28 +651,14 @@ export class StateMachine {
       return {
         allowed: true,
         current_phase: currentPhase,
-        expected_phases: allowedPhases,
+        expected_phases: [...allowedPhases],
       };
-    }
-
-    // Analyze remediation: when the quality gate is absent / BLOCK / CHANGES_NEEDED,
-    // allow rewriting spec/design/tasks so authors can fix findings and re-run analysis.
-    const REMEDIATION_TOOLS = new Set(["sdd_write_spec", "sdd_write_design", "sdd_write_tasks"]);
-    if (currentPhase === Phase.Analyze && REMEDIATION_TOOLS.has(toolName)) {
-      const gate = state.gate_decision?.decision;
-      if (!gate || gate === "BLOCK" || gate === "CHANGES_NEEDED") {
-        return {
-          allowed: true,
-          current_phase: currentPhase,
-          expected_phases: [...allowedPhases, Phase.Analyze],
-        };
-      }
     }
 
     return {
       allowed: false,
       current_phase: currentPhase,
-      expected_phases: allowedPhases,
+      expected_phases: [...allowedPhases],
       error_message: `Tool "${toolName}" is not allowed in phase "${currentPhase}". Allowed phases: ${allowedPhases.join(", ")}.`,
     };
   }

@@ -3,7 +3,8 @@
  */
 
 import { z } from "zod";
-import { specDirSchema, forceSchema } from "./common.js";
+import { specDirSchema, featureNumberSchema, forceSchema } from "./common.js";
+import { useCaseSelectionSchema } from "../contracts/use-case.js";
 
 export const importDocumentInputSchema = z.object({
   file_path: z
@@ -17,9 +18,9 @@ export const importDocumentInputSchema = z.object({
     .describe("Raw text content to process directly instead of reading from file."),
   format: z
     .enum(["auto", "pdf", "docx", "pptx", "md", "txt", "vtt", "srt"])
-    .default("auto")
-    .describe("Document format. Use 'auto' for automatic detection from file extension."),
+    .describe("Explicit document format; auto is an intentional detection mode"),
   spec_dir: specDirSchema,
+  use_case: useCaseSelectionSchema,
 }).strict().describe("Import a document and convert it to Markdown for SDD processing.");
 
 export const figmaToSpecInputSchema = z.object({
@@ -31,10 +32,7 @@ export const figmaToSpecInputSchema = z.object({
     .string()
     .optional()
     .describe("Specific Figma node ID to extract. If omitted, extracts entire file."),
-  project_name: z
-    .string()
-    .regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/, "Must be kebab-case")
-    .describe("Kebab-case project name for the generated spec."),
+  feature_number: featureNumberSchema,
   spec_dir: specDirSchema,
   force: forceSchema,
 }).strict().describe("Extract design context from Figma and generate requirements specification. Outputs a payload for the AI client to call Figma MCP's get_design_context tool.");
@@ -45,5 +43,6 @@ export const batchImportInputSchema = z.object({
     .min(1)
     .describe("Directory containing documents to import (PDF, DOCX, PPTX, TXT, MD)."),
   spec_dir: specDirSchema,
+  use_case: useCaseSelectionSchema,
   force: forceSchema,
 }).strict().describe("Batch import all documents from a directory, converting each to Markdown and processing through the SDD pipeline.");

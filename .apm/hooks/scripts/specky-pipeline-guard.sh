@@ -22,6 +22,8 @@
 # ALL work MUST flow through @specky-orchestrator.
 
 set -euo pipefail
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/specky-contract-context.bash"
 
 # ── rc.14: Copilot compatibility guard ───────────────────
 # VS Code Copilot reads .claude/settings.json hooks and treats SessionStart/
@@ -51,24 +53,14 @@ if [ "$SPECKY_GUARD_MODE" = "off" ]; then
   SPECKY_GUARD_MODE="advisory"
 fi
 
-# ── Check if pipeline is active ──────────────────────────
-LATEST=$(ls -td .specs/*/ 2>/dev/null | head -1 || true)
-if [ -z "$LATEST" ]; then
+# ── Resolve explicit pipeline context ───────────────────
+specky_load_contract_context || exit $?
+if [ "${SPECKY_CONTEXT_ACTIVE:-0}" != "1" ]; then
   exit 0
 fi
-
-STATE="$LATEST/.sdd-state.json"
-if [ ! -f "$STATE" ]; then
-  exit 0
-fi
-
-FEATURE=$(basename "$LATEST")
-
-# Try to read current phase (optional — requires jq)
-PHASE="?"
-if command -v jq >/dev/null 2>&1; then
-  PHASE=$(jq -r '.current_phase // "?"' "$STATE" 2>/dev/null || echo "?")
-fi
+FEATURE="${SPECKY_FEATURE_NUMBER}-${SPECKY_FEATURE_NAME}"
+PHASE="$SPECKY_PHASE"
+STATE="$SPECKY_STATE_FILE"
 
 # ── Extract user prompt ──────────────────────────────────
 # Claude Code sends the prompt as JSON on stdin: {"prompt": "..."}

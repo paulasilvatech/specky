@@ -32,7 +32,7 @@ const STRUCTURAL_HEADING_REGEX =
   /^(table of contents|contents|toc|overview|introduction|revision history|document (?:control|history)|references|appendix(?:\s+\w+)?|glossary|summary|executive summary|purpose|scope|background|assumptions|out of scope|non-goals|approvals?|sign[- ]?offs?|change ?log|metadata|version history|status)$/i;
 
 export class DiagramGenerator {
-  constructor(private fileManager: FileManager) {}
+  constructor(private fileManager: FileManager) { }
 
   /**
    * Generate a specific diagram type from artifact content.
@@ -93,7 +93,7 @@ export class DiagramGenerator {
         mermaid_code = this.generateNetworkTopology(content, title);
         break;
       default:
-        mermaid_code = this.generateFlowchart(content, title);
+        throw new Error(`Unsupported diagram type: ${String(type)}`);
     }
 
     return { type, title, source: "spec", mermaid_code };

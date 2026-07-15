@@ -6,10 +6,17 @@ import { z } from "zod";
 import { specDirSchema, featureNumberSchema } from "./common.js";
 import { TEMPLATE_NAMES } from "../constants.js";
 
-export const getStatusInputSchema = z.object({
-  spec_dir: specDirSchema,
-  feature_number: featureNumberSchema,
-}).strict();
+export const getStatusInputSchema = z.discriminatedUnion("view", [
+  z.object({
+    view: z.literal("workspace"),
+    spec_dir: specDirSchema,
+  }).strict(),
+  z.object({
+    view: z.literal("feature"),
+    spec_dir: specDirSchema,
+    feature_number: featureNumberSchema,
+  }).strict(),
+]);
 
 export const getTemplateInputSchema = z.object({
   template_name: z
@@ -32,17 +39,19 @@ export const writeBugfixInputSchema = z.object({
     .min(1)
     .describe("What should happen instead"),
   unchanged_behavior: z
-    .array(z.string())
-    .optional()
+    .array(z.string().min(1))
+    .min(1)
     .describe("Behaviors that must remain unchanged after the fix"),
   root_cause: z
     .string()
-    .optional()
-    .describe("Root cause analysis (if known)"),
+    .min(1)
+    .describe("Evidence-based root cause analysis"),
   test_plan: z
     .string()
-    .optional()
+    .min(1)
     .describe("How to verify the fix"),
+  severity: z.enum(["Low", "Medium", "High", "Critical"]),
+  related_requirements: z.array(z.string().regex(/^REQ-[A-Z]+-\d{3}$/)).min(1),
   spec_dir: specDirSchema,
   feature_number: featureNumberSchema,
 }).strict();
@@ -62,12 +71,10 @@ export const scanCodebaseInputSchema = z.object({
     .int()
     .min(1)
     .max(5)
-    .default(3)
-    .describe("Scan depth (1-5, default 3)"),
+    .describe("Explicit scan depth (1-5)"),
   exclude: z
     .array(z.string())
-    .optional()
-    .describe("Glob patterns to exclude (defaults to node_modules, .git, dist)"),
+    .describe("Explicit exclusion patterns; use [] for none"),
 }).strict();
 
 export const amendInputSchema = z.object({

@@ -67,6 +67,7 @@ import { registerRbacTools } from "./tools/rbac.js";
 import { installToolEnforcement } from "./tools/tool-enforcement.js";
 import { registerAuditTools } from "./tools/audit.js";
 import { mcpServerIcons, resolvePackageRoot } from "./utils/server-icon.js";
+import { ExecutionContextResolver } from "./services/execution-context.js";
 
 const pkgRoot = resolvePackageRoot(import.meta.url);
 const serverIcons = mcpServerIcons(pkgRoot);
@@ -134,6 +135,11 @@ const server = new McpServer(
 // Initialize services (v1)
 const fileManager = new FileManager(workspaceRoot);
 const stateMachine = new StateMachine(fileManager, workspaceRoot);
+const executionContextResolver = new ExecutionContextResolver(
+  fileManager,
+  stateMachine,
+  () => loadConfig(workspaceRoot),
+);
 const templateEngine = new TemplateEngine(fileManager, config.templates_path || undefined);
 const earsValidator = new EarsValidator();
 const codebaseScanner = new CodebaseScanner(fileManager);
@@ -172,6 +178,7 @@ installToolEnforcement(server, {
   auditLogger,
   rbacEngine,
   stateMachine,
+  contextResolver: executionContextResolver,
 });
 
 // Register all tools (58 total)

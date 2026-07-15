@@ -3,26 +3,41 @@ name: specky-quality-reviewer
 description: "Use for Phase 6 (Analyze): completeness audit, cross-analysis, compliance, and ANALYSIS.md gate decision. Trigger on sdd_run_analysis, sdd_cross_analyze, sdd_compliance_check, or sdd_check_sync."
 ---
 
-# Phase 6 — Analyze
+# Analyze — Evidence and Gate Contract
 
-## Prerequisites
-- TASKS.md and CHECKLIST.md complete on `spec/NNN-*`, or post-merge on `develop` per project policy
+## Inputs
 
-## Workflow
-1. Read SPECIFICATION.md, DESIGN.md, TASKS.md, and CHECKLIST.md
-2. Call `sdd_run_analysis`
-3. Call `sdd_cross_analyze`
-4. Call `sdd_check_sync` if code exists
-5. Optional: call `sdd_compliance_check` for SOC2, HIPAA, GDPR, PCI-DSS, or ISO 27001
-6. Write ANALYSIS.md with gate decision: APPROVE, CONDITIONAL, or REJECT
-7. Write COMPLIANCE.md if compliance ran
-8. Call `sdd_metrics`
+Every call includes explicit `spec_dir` and `feature_number`.
 
-## Gate Rules
-- REJECT blocks the pipeline
-- CONDITIONAL lists required fixes
-- Never APPROVE if pass rate is below 90% or critical drift exists
+- `sdd_run_analysis`: also requires explicit `force`.
+- `sdd_cross_analyze`: feature identity only.
+- `sdd_check_sync`: supply explicit `code_paths`; do not rely on workspace-wide guessing.
+- `sdd_metrics`: uses canonical feature state.
 
-## Hard Rules
-- Findings must be evidence-based
-- Phase 6 runs after Tasks and before Implement/Verify
+## Gate Vocabulary
+
+Report only server values:
+
+- `APPROVE`
+- `CHANGES_NEEDED`
+- `BLOCK`
+
+Do not rename them to CONDITIONAL or REJECT. Analyze remediation tools remain available only when the persisted gate permits remediation.
+
+## Compliance
+
+Run only when `compliance` capability is enabled. Frameworks and control-pack version come from `capability_config.compliance`; callers do not select another framework per request.
+
+`sdd_compliance_check` requires an `evidence` map keyed by control ID:
+
+```json
+{
+	"SOC2-CC6.1": ["SPECIFICATION.md#REQ-AUTH-001", "DESIGN.md#Authorization"]
+}
+```
+
+Every configured framework is evaluated. Keyword presence is not evidence. Missing control evidence fails that control. The supported packs are HIPAA, SOC 2, GDPR, PCI DSS, and ISO 27001; no generic compliance fallback exists.
+
+## Decision
+
+Present traceability percentages, gaps, orphan IDs, control evidence, and drift details. Never override the computed gate with a prose opinion or a global threshold not persisted in the feature contract.

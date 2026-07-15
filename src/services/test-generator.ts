@@ -23,6 +23,12 @@ export interface TestGenerationResult {
   total_tests: number;
 }
 
+export interface TestBinding {
+  requirement_id: string;
+  test_name: string;
+  body: string;
+}
+
 /**
  * Convert an arbitrary feature name into a PascalCase identifier that is
  * legal as a Java/C#/Python class name (and therefore as a javac filename).
@@ -35,59 +41,55 @@ export function pascalIdentifier(s: string): string {
   return /^\d/.test(pascal) ? `Feature${pascal}` : pascal;
 }
 
-const FRAMEWORK_CONFIG: Record<TestFramework, { fileBase: (featureName: string) => string; imports: string; wrapper: (name: string, body: string) => string }> = {
+const FRAMEWORK_CONFIG: Record<TestFramework, { fileBase: (featureName: string) => string; wrapper: (name: string, body: string) => string }> = {
   vitest: {
     fileBase: (f) => `${f || "feature"}.test.ts`,
-    imports: 'import { describe, it, expect } from "vitest";',
     wrapper: (name, body) => `describe("${name}", () => {\n${body}\n});`,
   },
   jest: {
     fileBase: (f) => `${f || "feature"}.test.ts`,
-    imports: '// Jest — no imports needed (globals)',
     wrapper: (name, body) => `describe("${name}", () => {\n${body}\n});`,
   },
   playwright: {
     fileBase: (f) => `${f || "feature"}.spec.ts`,
-    imports: 'import { test, expect } from "@playwright/test";',
     wrapper: (name, body) => `test.describe("${name}", () => {\n${body}\n});`,
   },
   pytest: {
     // Hyphens are illegal in Python module names — pytest cannot import them.
     fileBase: (f) => `${(f || "feature").replace(/-+/g, "_").toLowerCase()}_test.py`,
-    imports: "import pytest",
     wrapper: (name, body) =>
-      `class Test${pascalIdentifier(name)}:\n    """Test stubs generated from acceptance criteria."""\n\n${body}`,
+      `class Test${pascalIdentifier(name)}:\n    """Executable tests bound to specification requirements."""\n\n${body}`,
   },
   junit: {
     // javac requires the filename to match the public class name exactly.
     fileBase: (f) => `${pascalIdentifier(f)}Test.java`,
-    imports: 'import org.junit.jupiter.api.Test;\nimport static org.junit.jupiter.api.Assertions.*;',
     wrapper: (name, body) => `public class ${pascalIdentifier(name)}Test {\n${body}\n}`,
   },
   xunit: {
     fileBase: (f) => `${pascalIdentifier(f)}Tests.cs`,
-    imports: "using Xunit;",
     wrapper: (name, body) => `public class ${pascalIdentifier(name)}Tests {\n${body}\n}`,
   },
 };
 
 export class TestGenerator {
-  constructor(private fileManager: FileManager) {}
+  constructor(private fileManager: FileManager) { }
 
   async generate(
     featureDir: string,
     framework: TestFramework,
     outputDir: string,
+    imports: string,
+    bindings: TestBinding[],
   ): Promise<TestGenerationResult> {
     const spec = await this.safeRead(featureDir, "SPECIFICATION.md");
-    const tasks = await this.safeRead(featureDir, "TASKS.md");
-    const combined = [spec, tasks].filter(Boolean).join("\n");
+    const requirementIds = extractRequirementIds(spec);
+    if (requirementIds.length === 0) {
+      throw new Error(`No requirement IDs found in ${featureDir}/SPECIFICATION.md.`);
+    }
+    this.validateBindings(requirementIds, bindings);
 
-    const criteria = this.extractAcceptanceCriteria(combined);
-    const reqs = this.extractRequirements(combined);
-
-    const stubs = this.buildStubs(criteria, reqs, framework);
-    const content = this.renderFile(stubs, framework, featureDir);
+    const stubs = this.buildBoundTests(bindings, framework);
+    const content = this.renderFile(stubs, framework, featureDir, imports);
     const featureName = featureDir.replace(/.*\d{3}-/, "").replace(/[^a-zA-Z0-9-]/g, "");
     const cfg = FRAMEWORK_CONFIG[framework];
     const outputFile = `${outputDir}/${cfg.fileBase(featureName)}`;
@@ -154,24 +156,6 @@ export class TestGenerator {
       }
     }
 
-    // Fallback: if no ACs found, generate from requirements themselves
-    if (results.length === 0) {
-      const reqLines = lines.filter(
-        (l) =>
-          /(?:shall|must|should)\s/i.test(l) &&
-          !l.trim().startsWith("|") &&
-          !l.trim().startsWith("#") &&
-          !/\]\(#/.test(l),
-      );
-      for (let i = 0; i < reqLines.length; i++) {
-        const inlineId = extractRequirementIds(reqLines[i])[0];
-        results.push({
-          id: inlineId ?? `REQ-${String(i + 1).padStart(3, "0")}`,
-          criterion: reqLines[i].trim().replace(/^[-*#\d.)\s]+/, ""),
-        });
-      }
-    }
-
     return results;
   }
 
@@ -182,59 +166,70 @@ export class TestGenerator {
       .map(l => l.trim().replace(/^[-*#\d.)\s]+/, ""));
   }
 
-  buildStubs(
-    criteria: Array<{ id: string; criterion: string }>,
-    _reqs: string[],
+  private buildBoundTests(
+    bindings: TestBinding[],
     framework: TestFramework,
   ): TestStub[] {
     const usedNames = new Set<string>();
-    return criteria.map((ac, i) => {
+    return bindings.map((binding, i) => {
       const stubId = `TC-${String(i + 1).padStart(3, "0")}`;
-      const desc = ac.criterion.length > 80
-        ? ac.criterion.slice(0, 77) + "..."
-        : ac.criterion;
-      const testCode = this.generateTestBody(desc, ac.id, framework, usedNames);
+      const testCode = this.generateBoundTest(binding, framework, usedNames);
       return {
         id: stubId,
-        requirement_id: ac.id,
-        description: desc,
+        requirement_id: binding.requirement_id,
+        description: binding.test_name,
         test_code: testCode,
       };
     });
   }
 
-  private generateTestBody(
-    description: string,
-    requirementId: string,
+  private generateBoundTest(
+    binding: TestBinding,
     framework: TestFramework,
     usedNames: Set<string>,
   ): string {
-    // Test names carry the FULL requirement ID (e.g. "REQ-API-001") so that
-    // name-based traceability in sdd_verify_tests works on the stubs as-is.
-    const title = description.startsWith(requirementId)
-      ? description
-      : `${requirementId}: ${description}`;
+    const title = `${binding.requirement_id}: ${binding.test_name}`;
     const safeTitle = title.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
     switch (framework) {
       case "vitest":
       case "jest":
-        return `  // Traces to: ${requirementId}\n  it("${safeTitle}", () => {\n    // TODO: implement test\n    expect(true).toBe(true);\n  });`;
+        return `  // Traces to: ${binding.requirement_id}\n  it("${safeTitle}", async () => {\n${this.indent(binding.body, 4)}\n  });`;
       case "playwright":
-        return `  // Traces to: ${requirementId}\n  test("${safeTitle}", async ({ page }) => {\n    // TODO: implement E2E test\n    await expect(page).toBeTruthy();\n  });`;
+        return `  // Traces to: ${binding.requirement_id}\n  test("${safeTitle}", async ({ page }) => {\n${this.indent(binding.body, 4)}\n  });`;
       case "pytest": {
         const name = this.uniqueName(`test_${this.snakeCase(title)}`, usedNames, "_");
         const docstring = title.replace(/\\/g, "/").replace(/"/g, "'");
-        return `    # Traces to: ${requirementId}\n    def ${name}(self):\n        """${docstring}"""\n        # TODO: implement test\n        assert True`;
+        return `    # Traces to: ${binding.requirement_id}\n    def ${name}(self):\n        """${docstring}"""\n${this.indent(binding.body, 8)}`;
       }
       case "junit": {
         const name = this.uniqueName(this.camelCase(title) || "requirement", usedNames, "");
-        return `    // Traces to: ${requirementId}\n    @Test\n    void ${name}() {\n        // TODO: implement test\n        assertTrue(true);\n    }`;
+        return `    // Traces to: ${binding.requirement_id}\n    @Test\n    void ${name}() {\n${this.indent(binding.body, 8)}\n    }`;
       }
       case "xunit": {
         const name = this.uniqueName(this.pascalCase(title) || "Requirement", usedNames, "");
-        return `    // Traces to: ${requirementId}\n    [Fact]\n    public void ${name}() {\n        // TODO: implement test\n        Assert.True(true);\n    }`;
+        return `    // Traces to: ${binding.requirement_id}\n    [Fact]\n    public void ${name}() {\n${this.indent(binding.body, 8)}\n    }`;
       }
     }
+  }
+
+  private validateBindings(requirementIds: string[], bindings: TestBinding[]): void {
+    const expected = new Set(requirementIds);
+    const covered = new Set(bindings.map((binding) => binding.requirement_id));
+    const missing = requirementIds.filter((id) => !covered.has(id));
+    const unknown = [...covered].filter((id) => !expected.has(id));
+    if (missing.length > 0 || unknown.length > 0) {
+      throw new Error(`TDD bindings mismatch. Missing: ${missing.join(", ") || "none"}. Unknown: ${unknown.join(", ") || "none"}.`);
+    }
+    for (const binding of bindings) {
+      if (/(?:\/\/|#|\/\*|\[)\s*TODO\b|expect\(true\)|assert\s+True|assertTrue\(true\)|Assert\.True\(true\)|toBeTruthy\(\)/i.test(binding.body)) {
+        throw new Error(`TDD binding ${binding.requirement_id} contains a placeholder or trivial assertion.`);
+      }
+    }
+  }
+
+  private indent(body: string, spaces: number): string {
+    const prefix = " ".repeat(spaces);
+    return body.split("\n").map((line) => `${prefix}${line}`).join("\n");
   }
 
   /** Deduplicate generated identifiers — javac/C# reject duplicate members. */
@@ -249,7 +244,7 @@ export class TestGenerator {
     return candidate;
   }
 
-  private renderFile(stubs: TestStub[], framework: TestFramework, featureDir: string): string {
+  private renderFile(stubs: TestStub[], framework: TestFramework, featureDir: string, imports: string): string {
     const cfg = FRAMEWORK_CONFIG[framework];
     const featureName = featureDir.replace(/.*\d{3}-/, "").replace(/[^a-zA-Z0-9 -]/g, "") || "Feature";
     const body = stubs.map(s => s.test_code).join("\n\n");
@@ -260,21 +255,20 @@ export class TestGenerator {
       // docstring instead, mirroring the hypothesis PBT generator.
       const header = [
         `"""`,
-        `Auto-generated test stubs from Specky SDD`,
+        `Executable tests generated from explicit Specky TDD bindings`,
         `Feature: ${featureName}`,
         `Framework: pytest`,
         `Generated: ${date}`,
         ``,
-        `Each test traces to an acceptance criterion from SPECIFICATION.md.`,
-        `Replace the TODO placeholders with real assertions.`,
+        `Each executable test traces to a requirement in SPECIFICATION.md.`,
         `"""`,
       ].join("\n");
-      return `${header}\n\n${cfg.imports}\n\n\n${cfg.wrapper(featureName, body)}\n`;
+      return `${header}\n\n${imports}\n\n\n${cfg.wrapper(featureName, body)}\n`;
     }
 
-    const header = `/**\n * Auto-generated test stubs from Specky SDD\n * Feature: ${featureName}\n * Framework: ${framework}\n * Generated: ${date}\n *\n * Each test traces to an acceptance criterion from SPECIFICATION.md.\n * Replace the TODO placeholders with real assertions.\n */\n`;
+    const header = `/**\n * Executable tests generated from explicit Specky TDD bindings\n * Feature: ${featureName}\n * Framework: ${framework}\n * Generated: ${date}\n *\n * Each executable test traces to a requirement in SPECIFICATION.md.\n */\n`;
 
-    return `${header}\n${cfg.imports}\n\n${cfg.wrapper(featureName, body)}\n`;
+    return `${header}\n${imports}\n\n${cfg.wrapper(featureName, body)}\n`;
   }
 
   private snakeCase(s: string): string {

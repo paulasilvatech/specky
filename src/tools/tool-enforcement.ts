@@ -1,9 +1,14 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { createHash } from "node:crypto";
-import { DEFAULT_SPEC_DIR } from "../constants.js";
 import type { AuditLogger } from "../services/audit-logger.js";
 import { type RbacRole, RbacEngine } from "../services/rbac-engine.js";
 import type { StateMachine } from "../services/state-machine.js";
+import {
+  ExecutionContextError,
+  type ExecutionContext,
+  type ExecutionContextResolver,
+  runWithExecutionContext,
+} from "../services/execution-context.js";
 
 interface RegisterableServer {
   registerTool: (name: string, config: unknown, handler: ToolHandler) => unknown;
@@ -16,6 +21,7 @@ export interface ToolEnforcementOptions {
   auditLogger: AuditLogger;
   rbacEngine: RbacEngine;
   stateMachine: StateMachine;
+  contextResolver: ExecutionContextResolver;
 }
 
 export interface ToolEnforcementDeniedResponse {
@@ -73,10 +79,6 @@ function readString(input: ToolInput, key: string): string | undefined {
   return typeof value === "string" && value.trim() ? value : undefined;
 }
 
-function getSpecDir(input: ToolInput): string {
-  return readString(input, "spec_dir") ?? DEFAULT_SPEC_DIR;
-}
-
 function getFeatureNumber(input: ToolInput): string | undefined {
   return readString(input, "feature_number");
 }
@@ -100,12 +102,7 @@ export function getCallerIdentity(args: unknown[]): CallerIdentity {
   if (!isRecord(extra) || !isRecord(extra["authInfo"])) return {};
   const authInfo = extra["authInfo"];
   const authExtra = isRecord(authInfo["extra"]) ? authInfo["extra"] : {};
-  const principal =
-    typeof authExtra["principal"] === "string" && authExtra["principal"]
-      ? authExtra["principal"]
-      : typeof authInfo["clientId"] === "string" && authInfo["clientId"]
-        ? authInfo["clientId"]
-        : undefined;
+  const principal = readString(authExtra, "principal") ?? readString(authInfo, "clientId");
   const role = isRbacRole(authExtra["role"]) ? authExtra["role"] : undefined;
   return { principal, role };
 }
@@ -207,6 +204,123 @@ async function auditBestEffort(write: Promise<void>, toolName: string): Promise<
   }
 }
 
+async function resolveContextOrDeny(
+  input: ToolInput,
+  context: ToolExecutionContext,
+  options: ToolEnforcementOptions,
+): Promise<ExecutionContext | ToolEnforcementDeniedResponse> {
+  try {
+    const executionContext = await options.contextResolver.resolve(context.toolName, input);
+    context.specDir = executionContext.specDir ?? "<stateless>";
+    context.featureNumber = executionContext.featureNumber;
+    return executionContext;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const code = error instanceof ExecutionContextError ? error.code : "context_resolution_failed";
+    await auditBestEffort(
+      auditError(options.auditLogger, context, message),
+      context.toolName,
+    );
+    return buildDeniedResponse({ error: code, tool: context.toolName, message });
+  }
+}
+
+interface StateValidationResult {
+  currentPhase?: string;
+  denied?: ToolEnforcementDeniedResponse;
+}
+
+async function validateStateContext(
+  executionContext: ExecutionContext,
+  context: ToolExecutionContext,
+  options: ToolEnforcementOptions,
+): Promise<StateValidationResult> {
+  if (!executionContext.stateDir) {
+    return { currentPhase: executionContext.state?.current_phase };
+  }
+
+  const phaseCheck = await options.stateMachine.validatePhaseForTool(
+    executionContext.stateDir,
+    context.toolName,
+  );
+  if (!phaseCheck.allowed) {
+    const message = phaseCheck.error_message ?? `Tool ${context.toolName} is not allowed in phase ${phaseCheck.current_phase}.`;
+    await auditBestEffort(
+      auditError(options.auditLogger, context, message, phaseCheck.current_phase),
+      context.toolName,
+    );
+    return {
+      currentPhase: phaseCheck.current_phase,
+      denied: buildDeniedResponse({
+        error: "phase_validation_failed",
+        tool: context.toolName,
+        current_phase: phaseCheck.current_phase,
+        expected_phases: phaseCheck.expected_phases,
+        message,
+      }),
+    };
+  }
+
+  const gateCheck = await options.stateMachine.validateGateForTool(
+    executionContext.stateDir,
+    context.toolName,
+  );
+  if (gateCheck.allowed) return { currentPhase: phaseCheck.current_phase };
+
+  const message = gateCheck.error_message ?? `Tool ${context.toolName} blocked by analysis gate.`;
+  await auditBestEffort(
+    auditError(options.auditLogger, context, message, phaseCheck.current_phase),
+    context.toolName,
+  );
+  return {
+    currentPhase: phaseCheck.current_phase,
+    denied: buildDeniedResponse({
+      error: "gate_blocked",
+      tool: context.toolName,
+      current_phase: phaseCheck.current_phase,
+      gate_decision: gateCheck.gate_decision ?? null,
+      message,
+      fix: "Run sdd_run_analysis and obtain APPROVE before proceeding to implementation.",
+    }),
+  };
+}
+
+async function executeWithAudit(
+  executionContext: ExecutionContext,
+  context: ToolExecutionContext,
+  handler: ToolHandler,
+  args: unknown[],
+  options: ToolEnforcementOptions,
+  currentPhase?: string,
+): Promise<unknown> {
+  try {
+    await auditStart(options.auditLogger, context, currentPhase);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return buildDeniedResponse({
+      error: "audit_unavailable",
+      tool: context.toolName,
+      message: `Refusing to execute: the audit trail could not be written and audit.fail_closed is on. (${message})`,
+    });
+  }
+
+  try {
+    const result = await runWithExecutionContext(executionContext, async () => handler(...args));
+    await auditBestEffort(
+      auditSuccess(options.auditLogger, context, result, currentPhase),
+      context.toolName,
+    );
+    return result;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await auditBestEffort(
+      auditError(options.auditLogger, context, message, currentPhase),
+      context.toolName,
+    );
+    throw error;
+  }
+}
+
 function wrapToolHandler(
   toolName: string,
   handler: ToolHandler,
@@ -214,12 +328,12 @@ function wrapToolHandler(
 ): ToolHandler {
   return async (...args: unknown[]) => {
     const input = getToolInput(args);
-    const specDir = getSpecDir(input);
+    const requestedSpecDir = readString(input, "spec_dir");
     const identity = getCallerIdentity(args);
     const activeRole = getActiveRole(options.rbacEngine, identity);
     const context: ToolExecutionContext = {
       toolName,
-      specDir,
+      specDir: requestedSpecDir ?? "<unspecified>",
       featureNumber: getFeatureNumber(input),
       activeRole,
       principal: identity.principal,
@@ -241,68 +355,20 @@ function wrapToolHandler(
       });
     }
 
-    const phaseCheck = await options.stateMachine.validatePhaseForTool(specDir, toolName);
-    if (!phaseCheck.allowed) {
-      const message = phaseCheck.error_message ?? `Tool ${toolName} is not allowed in phase ${phaseCheck.current_phase}.`;
-      await auditBestEffort(
-        auditError(options.auditLogger, context, message, phaseCheck.current_phase),
-        toolName,
-      );
-      return buildDeniedResponse({
-        error: "phase_validation_failed",
-        tool: toolName,
-        current_phase: phaseCheck.current_phase,
-        expected_phases: phaseCheck.expected_phases,
-        message,
-      });
-    }
+    const resolved = await resolveContextOrDeny(input, context, options);
+    if ("isError" in resolved) return resolved;
 
-    const gateCheck = await options.stateMachine.validateGateForTool(specDir, toolName);
-    if (!gateCheck.allowed) {
-      const message = gateCheck.error_message ?? `Tool ${toolName} blocked by analysis gate.`;
-      await auditBestEffort(
-        auditError(options.auditLogger, context, message, phaseCheck.current_phase),
-        toolName,
-      );
-      return buildDeniedResponse({
-        error: "gate_blocked",
-        tool: toolName,
-        current_phase: phaseCheck.current_phase,
-        gate_decision: gateCheck.gate_decision ?? null,
-        message,
-        fix: "Run sdd_run_analysis and obtain APPROVE before proceeding to implementation.",
-      });
-    }
+    const validation = await validateStateContext(resolved, context, options);
+    if (validation.denied) return validation.denied;
 
-    // Fail-closed gate: if the pre-execution audit entry cannot be written,
-    // the tool does not run (no unaudited actions in enterprise mode).
-    try {
-      await auditStart(options.auditLogger, context, phaseCheck.current_phase);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return buildDeniedResponse({
-        error: "audit_unavailable",
-        tool: toolName,
-        message:
-          `Refusing to execute: the audit trail could not be written and audit.fail_closed is on. (${message})`,
-      });
-    }
-
-    try {
-      const result = await handler(...args);
-      await auditBestEffort(
-        auditSuccess(options.auditLogger, context, result, phaseCheck.current_phase),
-        toolName,
-      );
-      return result;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      await auditBestEffort(
-        auditError(options.auditLogger, context, message, phaseCheck.current_phase),
-        toolName,
-      );
-      throw error;
-    }
+    return executeWithAudit(
+      resolved,
+      context,
+      handler,
+      args,
+      options,
+      validation.currentPhase,
+    );
   };
 }
 

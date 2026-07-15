@@ -39,7 +39,14 @@ describe("deterministic runtime context", () => {
   it("uses the fixed date in template frontmatter", () => {
     const templateEngine = new TemplateEngine(fileManager);
 
-    const frontmatter = templateEngine.generateFrontmatter({ title: "Stable" });
+    const frontmatter = templateEngine.generateFrontmatter({
+      title: "Stable",
+      feature_id: "001-stable",
+      version: "1.0.0",
+      date: currentDateString(),
+      author: "determinism-test",
+      status: "Draft",
+    });
 
     expect(frontmatter).toContain('date: "2026-06-17"');
   });
@@ -58,7 +65,7 @@ describe("deterministic runtime context", () => {
   });
 
   it("generates stable test stub dates", async () => {
-    const featureDir = "001-stable-tests";
+    const featureDir = ".specs/001-stable-tests";
     mkdirSync(join(workspace, featureDir), { recursive: true });
     writeFileSync(
       join(workspace, featureDir, "SPECIFICATION.md"),
@@ -74,9 +81,15 @@ describe("deterministic runtime context", () => {
       "utf8",
     );
     const testGenerator = new TestGenerator(fileManager);
+    const imports = 'import { describe, it, expect } from "vitest";';
+    const bindings = [{
+      requirement_id: "REQ-CORE-001",
+      test_name: "keeps generated dates stable",
+      body: "const generated = \"2026-06-17\";\nexpect(generated).toBe(\"2026-06-17\");",
+    }];
 
-    const first = await testGenerator.generate(featureDir, "vitest", "tests");
-    const second = await testGenerator.generate(featureDir, "vitest", "tests");
+    const first = await testGenerator.generate(featureDir, "vitest", "tests", imports, bindings);
+    const second = await testGenerator.generate(featureDir, "vitest", "tests", imports, bindings);
 
     expect(first.content).toBe(second.content);
     expect(first.content).toContain("Generated: 2026-06-17");

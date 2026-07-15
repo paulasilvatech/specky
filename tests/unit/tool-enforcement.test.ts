@@ -8,6 +8,8 @@ import { FileManager } from "../../src/services/file-manager.js";
 import { RbacEngine } from "../../src/services/rbac-engine.js";
 import { StateMachine } from "../../src/services/state-machine.js";
 import { installToolEnforcement } from "../../src/tools/tool-enforcement.js";
+import { ExecutionContextResolver } from "../../src/services/execution-context.js";
+import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
 
 interface ToolResult {
   content: Array<{ type: string; text: string }>;
@@ -35,6 +37,36 @@ function getHandler(server: FakeServer, name: string): Handler {
   return handler;
 }
 
+function enforcementOptions(workspace: string, role: "viewer" | "contributor" = "contributor") {
+  const fileManager = new FileManager(workspace);
+  const stateMachine = new StateMachine(fileManager, workspace);
+  return {
+    auditLogger: new AuditLogger(workspace, true),
+    rbacEngine: new RbacEngine(role === "viewer", role),
+    stateMachine,
+    contextResolver: new ExecutionContextResolver(fileManager, stateMachine),
+  };
+}
+
+async function writeFeatureState(workspace: string, featureName: string) {
+  const fileManager = new FileManager(workspace);
+  const stateMachine = new StateMachine(fileManager, workspace);
+  const stateDir = `.specs/001-${featureName}`;
+  const state = stateMachine.createFeatureState({
+    projectName: featureName,
+    feature: { number: "001", name: featureName, directory: stateDir },
+    contract: resolveUseCaseContract({
+      lifecycle: "greenfield",
+      workload: "service",
+      execution_mode: "full",
+      capabilities: [],
+      capability_config: {},
+    }),
+  });
+  await stateMachine.saveState(stateDir, state);
+  return stateDir;
+}
+
 describe("installToolEnforcement", () => {
   let workspace: string;
 
@@ -50,11 +82,7 @@ describe("installToolEnforcement", () => {
     const server = new FakeServer();
     let executed = false;
 
-    installToolEnforcement(server as unknown as McpServer, {
-      auditLogger: new AuditLogger(workspace, true),
-      rbacEngine: new RbacEngine(true, "viewer"),
-      stateMachine: new StateMachine(new FileManager(workspace), workspace),
-    });
+    installToolEnforcement(server as unknown as McpServer, enforcementOptions(workspace, "viewer"));
 
     server.registerTool("sdd_write_spec", {}, async () => {
       executed = true;
@@ -79,19 +107,19 @@ describe("installToolEnforcement", () => {
   it("blocks tools that are not allowed in the current phase", async () => {
     const server = new FakeServer();
     let executed = false;
+    await writeFeatureState(workspace, "phase");
 
-    installToolEnforcement(server as unknown as McpServer, {
-      auditLogger: new AuditLogger(workspace, true),
-      rbacEngine: new RbacEngine(false, "contributor"),
-      stateMachine: new StateMachine(new FileManager(workspace), workspace),
-    });
+    installToolEnforcement(server as unknown as McpServer, enforcementOptions(workspace));
 
     server.registerTool("sdd_write_design", {}, async () => {
       executed = true;
       return { content: [{ type: "text", text: "should not run" }] };
     });
 
-    const result = await getHandler(server, "sdd_write_design")({ spec_dir: ".specs" });
+    const result = await getHandler(server, "sdd_write_design")({
+      spec_dir: ".specs",
+      feature_number: "001",
+    });
     const payload = JSON.parse(result.content[0].text) as { error: string; current_phase: string };
 
     expect(executed).toBe(false);
@@ -109,16 +137,12 @@ describe("installToolEnforcement", () => {
     const server = new FakeServer();
     let extraArg: unknown;
 
-    installToolEnforcement(server as unknown as McpServer, {
-      auditLogger: new AuditLogger(workspace, true),
-      rbacEngine: new RbacEngine(true, "viewer"),
-      stateMachine: new StateMachine(new FileManager(workspace), workspace),
-    });
+    installToolEnforcement(server as unknown as McpServer, enforcementOptions(workspace, "viewer"));
 
     server.registerTool("sdd_get_status", {}, async (_input, extra) => {
       extraArg = extra;
       return {
-      content: [{ type: "text", text: "ok" }],
+        content: [{ type: "text", text: "ok" }],
       };
     });
 
@@ -154,10 +178,13 @@ describe("identity-based RBAC (authInfo from the HTTP token table)", () => {
 
   function installedServer(auditLogger?: AuditLogger): FakeServer {
     const server = new FakeServer();
+    const fileManager = new FileManager(workspace);
+    const stateMachine = new StateMachine(fileManager, workspace);
     installToolEnforcement(server as unknown as McpServer, {
       auditLogger: auditLogger ?? new AuditLogger(workspace, true),
       rbacEngine: new RbacEngine(true, "contributor"),
-      stateMachine: new StateMachine(new FileManager(workspace), workspace),
+      stateMachine,
+      contextResolver: new ExecutionContextResolver(fileManager, stateMachine),
     });
     return server;
   }

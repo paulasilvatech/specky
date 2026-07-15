@@ -24,11 +24,11 @@ export const verifyTasksInputSchema = z.object({
 }).strict().describe("Verify task completions against actual code. Detects phantom completions (tasks marked done with no code evidence). Writes VERIFICATION.md.");
 
 export const complianceCheckInputSchema = z.object({
-  framework: z
-    .enum(["hipaa", "soc2", "gdpr", "pci_dss", "iso27001", "general"])
-    .describe("Compliance framework to validate against"),
   feature_number: featureNumberSchema,
   spec_dir: specDirSchema,
+  evidence: z
+    .record(z.string().min(1), z.array(z.string().min(3)).min(1))
+    .describe("Explicit evidence excerpts keyed by control ID for every configured framework"),
 }).strict().describe("Validate specification and design against compliance framework controls. Writes COMPLIANCE.md.");
 
 export const crossAnalyzeInputSchema = z.object({

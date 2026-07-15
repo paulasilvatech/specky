@@ -10,14 +10,12 @@ import { z } from "zod";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import { enrichResponse } from "./response-builder.js";
+import { featureNumberSchema, specDirSchema } from "../schemas/common.js";
+import { requireExecutionContext } from "../services/execution-context.js";
 
 const checkpointInputSchema = z.object({
-  feature_number: z
-    .string()
-    .regex(/^\d{3}$/, "Feature number must be 3 digits")
-    .default("001")
-    .describe("Feature number (e.g. '001')"),
-  spec_dir: z.string().default(".specs").describe("Spec directory path"),
+  feature_number: featureNumberSchema,
+  spec_dir: specDirSchema,
   label: z
     .string()
     .max(100)
@@ -26,12 +24,8 @@ const checkpointInputSchema = z.object({
 }).strict().describe("Create a named snapshot of all spec artifacts for the feature. Allows rollback to this point later.");
 
 const restoreInputSchema = z.object({
-  feature_number: z
-    .string()
-    .regex(/^\d{3}$/, "Feature number must be 3 digits")
-    .default("001")
-    .describe("Feature number (e.g. '001')"),
-  spec_dir: z.string().default(".specs").describe("Spec directory path"),
+  feature_number: featureNumberSchema,
+  spec_dir: specDirSchema,
   checkpoint_id: z
     .string()
     .min(1)
@@ -39,12 +33,8 @@ const restoreInputSchema = z.object({
 }).strict().describe("Restore spec artifacts from a previous checkpoint. Overwrites current artifacts with the checkpoint snapshot.");
 
 const listCheckpointsInputSchema = z.object({
-  feature_number: z
-    .string()
-    .regex(/^\d{3}$/, "Feature number must be 3 digits")
-    .default("001")
-    .describe("Feature number (e.g. '001')"),
-  spec_dir: z.string().default(".specs").describe("Spec directory path"),
+  feature_number: featureNumberSchema,
+  spec_dir: specDirSchema,
 }).strict().describe("List all available checkpoints for a feature.");
 
 export function registerCheckpointTools(
@@ -68,16 +58,14 @@ export function registerCheckpointTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir, label }) => {
+    async ({ label }) => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(`Feature ${feature_number} not found in ${spec_dir}. Run sdd_init first.`);
-        }
+        const context = requireExecutionContext("sdd_checkpoint");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
 
         // Load current state
-        const state = await stateMachine.loadState(spec_dir);
+        const state = await stateMachine.loadState(stateDir);
 
         // Determine checkpoint number
         const checkpointsDir = join(feature.directory, ".checkpoints");
@@ -116,6 +104,9 @@ export function registerCheckpointTools(
           phase: state.current_phase,
           phases: state.phases,
           gate_decision: state.gate_decision,
+          feature: state.feature,
+          contract_id: state.contract.id,
+          contract_fingerprint: state.contract.fingerprint,
           artifacts: Object.keys(artifacts),
           artifact_contents: artifacts,
         };
@@ -141,7 +132,7 @@ export function registerCheckpointTools(
             "Each checkpoint stores the full content of all artifacts plus the pipeline state.",
         };
 
-        const enriched = await enrichResponse("sdd_checkpoint", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_checkpoint", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
@@ -168,13 +159,11 @@ export function registerCheckpointTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir, checkpoint_id }) => {
+    async ({ checkpoint_id }) => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(`Feature ${feature_number} not found in ${spec_dir}.`);
-        }
+        const context = requireExecutionContext("sdd_restore");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
 
         const checkpointsDir = join(feature.directory, ".checkpoints");
 
@@ -202,11 +191,19 @@ export function registerCheckpointTools(
           }
         }
 
-        const checkpoint = JSON.parse(checkpointContent!);
+        const checkpoint = JSON.parse(checkpointContent!) as Record<string, unknown>;
+        const state = await stateMachine.loadState(stateDir);
+        if (
+          checkpoint["contract_fingerprint"] !== state.contract.fingerprint ||
+          !checkpoint["feature"] ||
+          (checkpoint["feature"] as Record<string, unknown>)["number"] !== state.feature.number
+        ) {
+          throw new Error(`Checkpoint ${checkpoint_id} does not belong to feature ${state.feature.number} under contract ${state.contract.id}.`);
+        }
 
         // Auto-backup current state before restoring
         const backupArtifacts: Record<string, string> = {};
-        for (const name of Object.keys(checkpoint.artifact_contents)) {
+        for (const name of Object.keys(checkpoint["artifact_contents"] as Record<string, string>)) {
           try {
             const current = await fileManager.readSpecFile(feature.directory, name);
             backupArtifacts[name] = current;
@@ -215,14 +212,16 @@ export function registerCheckpointTools(
           }
         }
 
-        const state = await stateMachine.loadState(spec_dir);
         const autoBackup = {
           id: "CP-AUTO-BACKUP",
-          label: `Auto-backup before restoring ${checkpoint.id}`,
+          label: `Auto-backup before restoring ${String(checkpoint["id"])}`,
           created_at: new Date().toISOString(),
           phase: state.current_phase,
           phases: state.phases,
           gate_decision: state.gate_decision,
+          feature: state.feature,
+          contract_id: state.contract.id,
+          contract_fingerprint: state.contract.fingerprint,
           artifacts: Object.keys(backupArtifacts),
           artifact_contents: backupArtifacts,
         };
@@ -235,32 +234,32 @@ export function registerCheckpointTools(
 
         // Restore artifacts
         const restored: string[] = [];
-        for (const [name, content] of Object.entries(checkpoint.artifact_contents as Record<string, string>)) {
+        for (const [name, content] of Object.entries(checkpoint["artifact_contents"] as Record<string, string>)) {
           await fileManager.writeSpecFile(feature.directory, name, content, true);
           restored.push(name);
         }
 
         // Restore pipeline state
-        if (checkpoint.phases) {
-          state.current_phase = checkpoint.phase;
-          state.phases = checkpoint.phases;
-          state.gate_decision = checkpoint.gate_decision || null;
-          await stateMachine.saveState(spec_dir, state);
+        if (checkpoint["phases"]) {
+          state.current_phase = checkpoint["phase"] as typeof state.current_phase;
+          state.phases = checkpoint["phases"] as typeof state.phases;
+          state.gate_decision = (checkpoint["gate_decision"] as typeof state.gate_decision) ?? null;
+          await stateMachine.saveState(stateDir, state);
         }
 
         const result = {
           status: "checkpoint_restored",
-          checkpoint_id: checkpoint.id,
-          checkpoint_label: checkpoint.label,
-          restored_phase: checkpoint.phase,
+          checkpoint_id: checkpoint["id"],
+          checkpoint_label: checkpoint["label"],
+          restored_phase: checkpoint["phase"],
           restored_artifacts: restored,
           auto_backup: "CP-AUTO-BACKUP",
-          next_steps: `Restored to ${checkpoint.id} ("${checkpoint.label}"). Current state before restore was saved as CP-AUTO-BACKUP. Review the restored artifacts and continue from the ${checkpoint.phase} phase.`,
+          next_steps: `Restored to ${String(checkpoint["id"])} ("${String(checkpoint["label"])}"). Current state before restore was saved as CP-AUTO-BACKUP. Review the restored artifacts and continue from the ${String(checkpoint["phase"])} phase.`,
           learning_note: "The restore operation creates an automatic backup of your current state before overwriting. " +
             "This means you can always undo a restore by running sdd_restore(checkpoint_id: 'CP-AUTO-BACKUP').",
         };
 
-        const enriched = await enrichResponse("sdd_restore", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_restore", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {

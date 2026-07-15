@@ -4,7 +4,6 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { formatError, truncate } from "./tool-result.js";
-import {} from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TestGenerator } from "../services/test-generator.js";
@@ -12,6 +11,7 @@ import type { TestResultParser } from "../services/test-result-parser.js";
 import type { TestTraceabilityMapper } from "../services/test-traceability-mapper.js";
 import { generateTestsInputSchema, verifyTestsInputSchema } from "../schemas/testing.js";
 import { enrichResponse } from "./response-builder.js";
+import { requireExecutionContext } from "../services/execution-context.js";
 
 export function registerTestingTools(
   server: McpServer,
@@ -37,20 +37,19 @@ export function registerTestingTools(
         openWorldHint: false,
       },
     },
-    async ({ framework, feature_number, spec_dir, output_dir }) => {
+    async () => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(
-            `Feature ${feature_number} not found in ${spec_dir}. Run sdd_init first.`,
-          );
-        }
+        const context = requireExecutionContext("sdd_generate_tests");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
+        const tdd = context.state!.contract.capability_config.tdd!;
 
         const genResult = await testGenerator.generate(
           feature.directory,
-          framework,
-          output_dir,
+          tdd.framework,
+          tdd.output_dir,
+          tdd.imports,
+          tdd.bindings,
         );
 
         const fileName = genResult.output_file.split("/").pop() || genResult.output_file;
@@ -65,7 +64,7 @@ export function registerTestingTools(
         // Record where the tests landed so sdd_verify_tests can scan the
         // same directory for its coverage mapping (best-effort).
         try {
-          await recordGeneratedTest(fileManager, feature.directory, framework, genResult.output_file);
+          await recordGeneratedTest(fileManager, feature.directory, tdd.framework, genResult.output_file);
         } catch { /* generation already succeeded — manifest is advisory */ }
 
         const traceability = genResult.stubs.map((s) => ({
@@ -74,38 +73,40 @@ export function registerTestingTools(
           description: s.description,
         }));
 
-        const recommendedServers = framework === "playwright"
+        const recommendedServers = tdd.framework === "playwright"
           ? [{
-              id: "playwright-mcp",
-              name: "Playwright MCP",
-              purpose: "Execute generated Playwright tests directly from the AI client",
-              install_command: "npx @anthropic/mcp-playwright",
-              install_note: "Enables automated browser testing via MCP",
-              required: false,
-              status: "recommended" as const,
-              enhances: ["sdd_generate_tests"],
-            }]
+            id: "playwright-mcp",
+            name: "Playwright MCP",
+            purpose: "Execute generated Playwright tests directly from the AI client",
+            install_command: "npx @anthropic/mcp-playwright",
+            install_note: "Enables automated browser testing via MCP",
+            required: false,
+            status: "recommended" as const,
+            enhances: ["sdd_generate_tests"],
+          }]
           : [];
 
         const result = {
           status: "tests_generated",
           framework: genResult.framework,
+          coverage_threshold: tdd.coverage_threshold,
+          trace_marker: tdd.trace_marker,
           total_tests: genResult.total_tests,
           output_file: genResult.output_file,
           traceability,
           content: genResult.content,
           recommended_servers: recommendedServers.length > 0 ? recommendedServers : undefined,
           next_steps:
-            framework === "playwright"
+            tdd.framework === "playwright"
               ? "Run the generated Playwright tests using Playwright MCP or `npx playwright test`. Review each TODO stub and replace with real assertions. Use sdd_verify_tasks to check implementation coverage."
-              : `Run the generated tests using your ${framework} runner. Review each TODO stub and replace with real assertions. Use sdd_verify_tasks to check implementation coverage.`,
+              : `Run the generated tests using your ${tdd.framework} runner. Review each TODO stub and replace with real assertions. Use sdd_verify_tasks to check implementation coverage.`,
           learning_note:
             "Test stubs trace directly to acceptance criteria from your specification. " +
             "Each test corresponds to a specific requirement, maintaining full traceability " +
             "from spec → test → code. Replace the TODO placeholders with real test logic.",
         };
 
-        const enriched = await enrichResponse("sdd_generate_tests", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_generate_tests", result, stateMachine, stateDir);
         return {
           content: [
             { type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) },
@@ -141,15 +142,12 @@ export function registerTestingTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir, test_results_json }) => {
+    async ({ test_results_json }) => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(
-            `Feature ${feature_number} not found in ${spec_dir}. Run sdd_init first.`,
-          );
-        }
+        const context = requireExecutionContext("sdd_verify_tests");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
+        const tdd = context.state!.contract.capability_config.tdd!;
 
         const verification = await testGenerator.verifyTestResults(
           feature.directory,
@@ -194,17 +192,19 @@ export function registerTestingTools(
           ...verification,
           ...(coverageReport ? { enhanced_coverage: coverageReport } : {}),
           ...(failureDetails && failureDetails.length > 0 ? { failure_details: failureDetails } : {}),
+          coverage_threshold: tdd.coverage_threshold,
+          meets_threshold: effectiveCoverage >= tdd.coverage_threshold,
           next_steps:
-            effectiveCoverage === 100
-              ? "All requirements are covered by tests. Proceed to sdd_advance_phase."
-              : `${uncoveredReqs.length} requirements lack test coverage. Write tests for: ${uncoveredReqs.join(", ")}.`,
+            effectiveCoverage >= tdd.coverage_threshold
+              ? `Coverage ${effectiveCoverage}% meets the contracted ${tdd.coverage_threshold}% threshold.`
+              : `Coverage ${effectiveCoverage}% is below the contracted ${tdd.coverage_threshold}% threshold. Uncovered: ${uncoveredReqs.join(", ")}.`,
           learning_note:
             "Requirement-test traceability closes the quality loop. " +
             "Each requirement (REQ-XXX-NNN) should have at least one test that references it by ID. " +
             "100% requirement coverage means every spec item is verified by a test.",
         };
 
-        const enriched = await enrichResponse("sdd_verify_tests", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_verify_tests", result, stateMachine, stateDir);
         return {
           content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };

@@ -3,12 +3,13 @@
  * handoff information, and parallel execution hints.
  */
 
-import { Phase } from "../constants.js";
+import { Phase, TOOL_NAMES } from "../constants.js";
 import type { PhaseStatus, HandoffContext, ParallelHint } from "../types.js";
 import { MethodologyGuide } from "../services/methodology.js";
 import { DependencyGraph } from "../services/dependency-graph.js";
 import { routingEngine } from "../utils/routing-helper.js";
 import { buildDefaultContextSummary } from "../utils/context-helper.js";
+import { requireExecutionContext } from "../services/execution-context.js";
 
 interface PhaseContext {
   current_phase: Phase;
@@ -16,6 +17,11 @@ interface PhaseContext {
   phases_completed: Phase[];
   completion_percent: number;
 }
+
+const FEATURE_CREATION_TOOLS = new Set<string>([
+  TOOL_NAMES.INIT,
+  TOOL_NAMES.AUTO_PIPELINE,
+]);
 
 /**
  * Build an enriched tool response with phase context and educational content.
@@ -98,16 +104,13 @@ export async function enrichResponse(
     summaryOfWork?: string;
   }
 ): Promise<Record<string, unknown>> {
-  try {
-    const state = await stateMachine.loadState(specDir);
-    return buildToolResponse(toolName, result, state.current_phase, state.phases, options);
-  } catch {
-    // If state can't be loaded, return result as-is with minimal enrichment
-    return {
-      ...result,
-      educational_note: MethodologyGuide.getToolExplanation(toolName).why_it_matters,
-    };
+  const context = requireExecutionContext(toolName);
+  const stateDir = context.stateDir ?? (FEATURE_CREATION_TOOLS.has(toolName) ? specDir : undefined);
+  if (!stateDir) {
+    throw new Error(`${toolName} has no feature state context and cannot produce phase enrichment.`);
   }
+  const state = await stateMachine.loadState(stateDir);
+  return buildToolResponse(toolName, result, state.current_phase, state.phases, options);
 }
 
 /**

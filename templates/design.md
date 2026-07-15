@@ -101,4 +101,10 @@
 
 ---
 
+## 13. Workload-Specific Design Contract
+
+{{workload_design}}
+
+---
+
 **Covers:** {{requirement_references}}

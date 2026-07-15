@@ -4,6 +4,7 @@
  */
 
 import { type Phase as PhaseEnum, type EarsPatternName, type TemplateName, type WorkItemPlatform, type DiagramType, type ComplianceFramework, type ChecklistDomain, type DocumentFormat, type IacProvider, type CloudProvider } from "./constants.js";
+import type { ResolvedUseCaseContract } from "./contracts/use-case.js";
 
 /** Re-export Phase type from constants for convenience */
 export type Phase = PhaseEnum;
@@ -49,13 +50,21 @@ export interface GateHistoryEntry {
   req_count?: number;
 }
 
-/** Full pipeline state persisted in .sdd-state.json */
+/** Immutable identity of the feature that owns a pipeline state file. */
+export interface FeatureIdentity {
+  number: string;
+  name: string;
+  directory: string;
+}
+
+/** Full per-feature pipeline state persisted in .sdd-state.json. */
 export interface SddState {
-  version: string;
+  version: "5.0.0";
   project_name: string;
+  feature: FeatureIdentity;
+  contract: ResolvedUseCaseContract;
   current_phase: PhaseEnum;
   phases: Record<PhaseEnum, PhaseStatus>;
-  features: string[];
   amendments: Amendment[];
   gate_decision: GateDecision | null;
   gate_history?: GateHistoryEntry[];
@@ -132,15 +141,18 @@ export interface EarsImprovement {
   suggestion: string;
 }
 
-/** Context for template rendering */
+export type TemplateRow = Record<string, string>;
+export type TemplateValue = string | string[] | TemplateRow[];
+
+/** Context for strict template rendering and artifact frontmatter. */
 export interface TemplateContext {
-  title?: string;
-  version?: string;
-  date?: string;
-  author?: string;
-  status?: string;
-  feature_id?: string;
-  [key: string]: string | string[] | undefined;
+  title: string;
+  version: string;
+  date: string;
+  author: string;
+  status: string;
+  feature_id: string;
+  [key: string]: TemplateValue;
 }
 
 /** Tool error format */

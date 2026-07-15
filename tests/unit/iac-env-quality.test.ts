@@ -26,7 +26,7 @@
  * Tests drive the REAL tool handlers over an in-memory MCP transport against
  * temp workspaces, and execute the real hook script under both sh and bash.
  */
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
@@ -44,6 +44,12 @@ import {
 } from "../../src/services/iac-generator.js";
 import { registerInfrastructureTools } from "../../src/tools/infrastructure.js";
 import { registerEnvironmentTools } from "../../src/tools/environment.js";
+import { AuditLogger } from "../../src/services/audit-logger.js";
+import { RbacEngine } from "../../src/services/rbac-engine.js";
+import { ExecutionContextResolver } from "../../src/services/execution-context.js";
+import { installToolEnforcement } from "../../src/tools/tool-enforcement.js";
+import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
+import { Phase } from "../../src/constants.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 const HOOK = join(REPO, ".apm/hooks/scripts/specky-ears-validator.sh");
@@ -54,13 +60,85 @@ interface Harness {
   close: () => Promise<void>;
 }
 
-async function buildHarness(workspace: string): Promise<Harness> {
+async function buildHarness(
+  workspace: string,
+  cloud: "azure" | "aws" | "gcp" = "azure",
+  services: string[] = ["postgres", "redis"],
+): Promise<Harness> {
   const fileManager = new FileManager(workspace);
   const stateMachine = new StateMachine(fileManager, workspace);
   const codebaseScanner = new CodebaseScanner(fileManager);
   const iacGenerator = new IacGenerator(fileManager);
+  const resources = cloud === "aws"
+    ? [
+      { module: "compute" as const, service: "serverless" },
+      { module: "database" as const, service: "nosql" },
+      { module: "storage" as const, service: "object" },
+    ]
+    : [
+      { module: "compute" as const, service: "container" },
+      { module: "database" as const, service: "postgres" },
+      { module: "cache" as const, service: "redis" },
+      { module: "networking" as const, service: "network" },
+    ];
+  const contract = resolveUseCaseContract({
+    lifecycle: "greenfield",
+    workload: "infrastructure",
+    execution_mode: "full",
+    capabilities: ["iac", "dev-environment"],
+    capability_config: {
+      iac: {
+        provider: "terraform",
+        cloud,
+        resources,
+        state_backend: "remote encrypted state with locking",
+        region_policy: "Use only regions approved by the workload owner",
+      },
+      "dev-environment": {
+        language: "TypeScript",
+        framework: "Express",
+        runtime: "node22",
+        package_manager: "npm",
+        port: 3000,
+        services,
+        codespaces_machine: "standardLinux32gb",
+        extensions: ["dbaeumer.vscode-eslint"],
+        base_image: "mcr.microsoft.com/devcontainers/typescript-node:22",
+        features: [],
+        include_compose: true,
+        multi_stage: true,
+      },
+    },
+  });
+  for (const feature of await fileManager.listFeatures(".specs")) {
+    const state = stateMachine.createFeatureState({
+      projectName: feature.name,
+      feature: {
+        number: feature.number,
+        name: feature.name,
+        directory: feature.directory,
+      },
+      contract,
+    });
+    state.current_phase = Phase.Analyze;
+    state.phases[Phase.Analyze] = { status: "in_progress" };
+    state.gate_decision = {
+      decision: "APPROVE",
+      reasons: ["Test fixture"],
+      coverage_percent: 100,
+      gaps: [],
+      decided_at: new Date().toISOString(),
+    };
+    await stateMachine.saveState(feature.directory, state);
+  }
 
   const server = new McpServer({ name: "specky-test", version: "0.0.0" });
+  installToolEnforcement(server, {
+    auditLogger: new AuditLogger(workspace, false),
+    rbacEngine: new RbacEngine(false, "contributor"),
+    stateMachine,
+    contextResolver: new ExecutionContextResolver(fileManager, stateMachine),
+  });
   registerInfrastructureTools(server, fileManager, stateMachine, iacGenerator);
   registerEnvironmentTools(server, fileManager, stateMachine, iacGenerator, codebaseScanner);
 
@@ -136,7 +214,7 @@ describe("IaC / environment promise-delivery regressions", () => {
 
     const { isError, payload } = await callTool(h.client, "sdd_generate_iac", {
       feature_number: "001",
-      cloud: "azure",
+      spec_dir: ".specs",
     });
     expect(isError).toBe(false);
 
@@ -175,12 +253,12 @@ describe("IaC / environment promise-delivery regressions", () => {
       "- DynamoDB table for orders",
       "- S3 bucket for report storage",
     ].join("\n"));
-    const h = await buildHarness(ws);
+    const h = await buildHarness(ws, "aws");
     cleanups.push(h.close);
 
     const { isError } = await callTool(h.client, "sdd_generate_iac", {
       feature_number: "001",
-      cloud: "aws",
+      spec_dir: ".specs",
     });
     expect(isError).toBe(false);
 
@@ -195,7 +273,7 @@ describe("IaC / environment promise-delivery regressions", () => {
     expect(mainTf).not.toContain("TODO");
   });
 
-  it("without a DESIGN.md the fallback still emits real resource blocks, not TODO comments", async () => {
+  it("without DESIGN.md the tool fails instead of generating inferred infrastructure", async () => {
     const ws = makeWorkspace("specky-iac-fallback-");
     seedFeature(ws); // feature dir exists, no DESIGN.md
     const h = await buildHarness(ws);
@@ -203,14 +281,10 @@ describe("IaC / environment promise-delivery regressions", () => {
 
     const { isError } = await callTool(h.client, "sdd_generate_iac", {
       feature_number: "001",
-      cloud: "azure",
+      spec_dir: ".specs",
     });
-    expect(isError).toBe(false);
-
-    const mainTf = readFileSync(join(ws, ".specs/001-shop/terraform/main.tf"), "utf8");
-    expect(mainTf).toContain('resource "azurerm_container_app" "app"');
-    expect(mainTf).toContain('resource "azurerm_virtual_network" "network"');
-    expect(mainTf).not.toContain("TODO");
+    expect(isError).toBe(true);
+    expect(existsSync(join(ws, ".specs/001-shop/terraform/main.tf"))).toBe(false);
   });
 
   // ── Fix 2: DESIGN.md tech-stack fallback for devcontainer generation ──
@@ -223,6 +297,7 @@ describe("IaC / environment promise-delivery regressions", () => {
 
     const { isError, payload } = await callTool(h.client, "sdd_generate_devcontainer", {
       feature_number: "001",
+      spec_dir: ".specs",
     });
     expect(isError).toBe(false);
 
@@ -230,7 +305,7 @@ describe("IaC / environment promise-delivery regressions", () => {
     // and wrote a generic ubuntu image with zero extensions.
     const techStack = payload.tech_stack as Record<string, unknown>;
     expect(techStack.language).toBe("TypeScript");
-    expect(payload.tech_stack_source).toBe("DESIGN.md");
+    expect(payload.tech_stack_source).toBe("feature contract");
 
     const config = JSON.parse(readFileSync(join(ws, ".devcontainer/devcontainer.json"), "utf8")) as {
       image: string;
@@ -241,12 +316,11 @@ describe("IaC / environment promise-delivery regressions", () => {
     expect(config.customizations.vscode.extensions).toContain("dbaeumer.vscode-eslint");
   });
 
-  it("devcontainer for an unrecognized stack no longer hardcodes 'npm install'", () => {
+  it("devcontainer rejects an unconfigured stack instead of emitting generic Ubuntu", () => {
     const gen = new IacGenerator(new FileManager(REPO));
-    const res = gen.generateDevcontainer({ language: "unknown" });
-    const config = JSON.parse(res.files[0].content) as Record<string, unknown>;
-    expect(config.postCreateCommand).toBeUndefined();
-    expect(String(config.image)).toContain("ubuntu");
+    expect(() => gen.generateDevcontainer({ language: "unknown" })).toThrow(
+      /Unsupported devcontainer capability language/,
+    );
   });
 
   // ── Fix 3: sdd_setup_local_env auto-detects additional_services ──
@@ -259,13 +333,14 @@ describe("IaC / environment promise-delivery regressions", () => {
 
     const { isError, payload } = await callTool(h.client, "sdd_setup_local_env", {
       feature_number: "001",
+      spec_dir: ".specs",
     });
     expect(isError).toBe(false);
 
     // The audit found additional_services ALWAYS [] even with DESIGN.md naming
     // PostgreSQL and Redis.
     expect(payload.additional_services).toEqual(["postgres", "redis"]);
-    expect(payload.services_source).toContain("auto-detected");
+    expect(payload.services_source).toBe("feature contract");
 
     const files = payload.files as Array<{ path: string; content: string }>;
     const compose = files.find((f) => f.path === "docker-compose.yml");
@@ -287,25 +362,26 @@ describe("IaC / environment promise-delivery regressions", () => {
 
     const { isError, payload } = await callTool(h.client, "sdd_setup_local_env", {
       feature_number: "001",
+      spec_dir: ".specs",
     });
     expect(isError).toBe(false);
     expect(payload.additional_services).toEqual(["postgres", "redis"]);
-    expect(payload.tech_stack_source).toBe("codebase");
+    expect(payload.tech_stack_source).toBe("feature contract");
   });
 
   it("an explicit services list overrides auto-detection", async () => {
     const ws = makeWorkspace("specky-lenv-explicit-");
     seedFeature(ws, "PostgreSQL everywhere.\n");
-    const h = await buildHarness(ws);
+    const h = await buildHarness(ws, "azure", ["rabbitmq"]);
     cleanups.push(h.close);
 
     const { isError, payload } = await callTool(h.client, "sdd_setup_local_env", {
       feature_number: "001",
-      services: ["rabbitmq"],
+      spec_dir: ".specs",
     });
     expect(isError).toBe(false);
     expect(payload.additional_services).toEqual(["rabbitmq"]);
-    expect(payload.services_source).toBe("explicit");
+    expect(payload.services_source).toBe("feature contract");
 
     const files = payload.files as Array<{ path: string; content: string }>;
     const compose = files.find((f) => f.path === "docker-compose.yml");
@@ -322,7 +398,7 @@ describe("IaC / environment promise-delivery regressions", () => {
 
     const { isError, payload, raw } = await callTool(h.client, "sdd_setup_codespaces", {
       feature_number: "001",
-      machine_type: "standardLinux32gb",
+      spec_dir: ".specs",
     });
     expect(isError).toBe(false);
 

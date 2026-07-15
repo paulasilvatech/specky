@@ -39,7 +39,7 @@ export class DocGenerator {
 
   private static readonly DATABASES = ["PostgreSQL", "Postgres", "MySQL", "SQLite", "MongoDB", "Redis"];
 
-  constructor(private fileManager: FileManager, private stateMachine?: StateMachine) {}
+  constructor(private fileManager: FileManager, private stateMachine?: StateMachine) { }
 
   async generateFullDocs(featureDir: string, featureNumber: string): Promise<DocumentationResult> {
     const sections: string[] = [];
@@ -265,8 +265,7 @@ export class DocGenerator {
     content += `## 2. Phase-by-Phase Journey\n\n`;
     if (this.stateMachine) {
       try {
-        const specDir = featureDir.replace(/\/\d{3}-.*$/, "");
-        const state = await this.stateMachine.loadState(specDir);
+        const state = await this.stateMachine.loadState(featureDir);
         const phaseNames = ["init", "discover", "specify", "clarify", "design", "tasks", "analyze", "implement", "verify", "release"];
         for (const phaseName of phaseNames) {
           const phaseStatus = state.phases[phaseName as keyof typeof state.phases];
@@ -302,8 +301,7 @@ export class DocGenerator {
     content += `## 4. Quality Gate Results\n\n`;
     if (this.stateMachine) {
       try {
-        const specDir = featureDir.replace(/\/\d{3}-.*$/, "");
-        const state = await this.stateMachine.loadState(specDir);
+        const state = await this.stateMachine.loadState(featureDir);
         if (state.gate_decision) {
           content += `- **Decision**: ${state.gate_decision.decision}\n`;
           content += `- **Coverage**: ${state.gate_decision.coverage_percent}%\n`;

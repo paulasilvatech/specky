@@ -5,7 +5,6 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { formatError, truncate } from "./tool-result.js";
-import { join } from "node:path";
 import { z } from "zod";
 import { Phase } from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
@@ -14,7 +13,9 @@ import type { TemplateEngine } from "../services/template-engine.js";
 import type { EarsValidator } from "../services/ears-validator.js";
 import { enrichResponse } from "./response-builder.js";
 import { FeaturePackageGenerator } from "../services/feature-package-generator.js";
-import { slugify } from "../utils/slug.js";
+import { featureNumberSchema, specDirSchema } from "../schemas/common.js";
+import { requireExecutionContext } from "../services/execution-context.js";
+import { artifactMetadata } from "../utils/artifact-metadata.js";
 
 // Inline schema
 const turnkeySpecInputSchema = z.object({
@@ -28,19 +29,11 @@ const turnkeySpecInputSchema = z.object({
     .min(10)
     .max(10000)
     .describe("Natural language description of the feature. Can be a paragraph, bullet points, or a meeting summary. The tool will extract EARS requirements automatically."),
-  feature_number: z
-    .string()
-    .regex(/^\d{3}$/, "Feature number must be 3 digits, e.g. '001'")
-    .default("001")
-    .describe("Feature number (zero-padded, e.g. '001')"),
-  spec_dir: z
-    .string()
-    .default(".specs")
-    .describe("Spec directory path"),
+  feature_number: featureNumberSchema,
+  spec_dir: specDirSchema,
   force: z
     .boolean()
-    .default(false)
-    .describe("Overwrite existing files if true"),
+    .describe("Explicit overwrite decision"),
   clarification_responses: z
     .record(z.string(), z.string())
     .optional()
@@ -77,16 +70,12 @@ export function registerTurnkeyTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_name, description, feature_number, spec_dir, force, clarification_responses }) => {
+    async ({ feature_name, description, feature_number, force, clarification_responses }) => {
       try {
-        // Reuse the existing feature package when one is already on disk;
-        // otherwise derive a canonical slug. Identity is resolved from state,
-        // never forked from the display name.
-        const existingFeature = (await fileManager.listFeatures(spec_dir)).find(
-          (f) => f.number === feature_number,
-        );
-        const featureSlug = existingFeature?.name ?? slugify(feature_name);
-        const featureDir = existingFeature?.directory ?? join(spec_dir, `${feature_number}-${featureSlug}`);
+        const context = requireExecutionContext("sdd_turnkey_spec");
+        const featureSlug = context.feature!.name;
+        const featureDir = context.feature!.directory;
+        const stateDir = context.stateDir!;
 
         // If clarification_responses provided, enrich the description with the answers
         let enrichedDescription = description;
@@ -160,9 +149,21 @@ export function registerTurnkeyTools(
           .join("\n");
 
         const content = await templateEngine.renderWithFrontmatter("specification", {
+          ...artifactMetadata({ version: "1.0.0", author: "sdd_turnkey_spec", status: "Draft" }),
           title: `${feature_name} — Specification`,
           feature_id: `${feature_number}-${featureSlug}`,
           project_name: feature_name,
+          discovery_context: [
+            "## Discovery Context",
+            "",
+            "- **Source:** Explicit turnkey description",
+            `- **Clarification responses applied:** ${Object.keys(clarification_responses ?? {}).length}`,
+            "",
+            description,
+            "",
+            "---",
+            "",
+          ].join("\n"),
           requirements_core: reqSections.slice(0, requirements.length).join("\n"),
           requirements_functional: "",
           requirements_nonfunctional: reqSections.slice(requirements.length).join("\n"),
@@ -173,8 +174,6 @@ export function registerTurnkeyTools(
           uniqueness_score: `${allRequirements.length}/${allRequirements.length}`,
         });
 
-        // Ensure directory and write file
-        await fileManager.ensureSpecDir(spec_dir);
         const filePath = await fileManager.writeSpecFile(featureDir, "SPECIFICATION.md", content, force);
         const featurePackage = await featurePackageGenerator.ensureFeaturePackage({
           featureDir,
@@ -184,39 +183,9 @@ export function registerTurnkeyTools(
           sourceTool: "sdd_turnkey_spec",
         });
 
-        // Initialize pipeline state properly using advancePhase
-        const state = await stateMachine.loadState(spec_dir);
-        if (state.current_phase === Phase.Init && state.features.length === 0) {
-          // Auto-init: create Constitution first (required for Init phase)
-          const constitutionContent = await templateEngine.renderWithFrontmatter("constitution", {
-            title: `${feature_name} — Constitution`,
-            feature_id: `${feature_number}-${featureSlug}`,
-            project_name: feature_name,
-            author: "SDD Pipeline (Turnkey)",
-            principles: ["Simplicity", "Traceability", "Quality"],
-            constraints: ["Derived from natural language description"],
-            description: `Foundational charter for ${feature_name}`,
-            license: "MIT",
-            scope_in: description.slice(0, 200),
-            scope_out: "Features not mentioned in the original description",
-          });
-          await fileManager.writeSpecFile(featureDir, "CONSTITUTION.md", constitutionContent, force);
-
-          // Initialize state with features, then advance through phases properly
-          const newState = stateMachine.createDefaultState(feature_name);
-          newState.features = [featureDir];
-          newState.phases[Phase.Init] = { status: "completed", started_at: new Date().toISOString(), completed_at: new Date().toISOString() };
-          await stateMachine.saveState(spec_dir, newState);
-
-          // Advance Init → Discover → Specify using proper state transitions
-          await stateMachine.advancePhase(spec_dir, feature_number);  // Init → Discover
-          await stateMachine.recordPhaseComplete(spec_dir, Phase.Discover);
-          await stateMachine.advancePhase(spec_dir, feature_number);  // Discover → Specify
-          await stateMachine.recordPhaseComplete(spec_dir, Phase.Specify);
-        } else {
-          await stateMachine.recordPhaseStart(spec_dir, Phase.Specify);
-          await stateMachine.recordPhaseComplete(spec_dir, Phase.Specify);
-        }
+        await stateMachine.ensurePhasesThrough(stateDir, Phase.Specify);
+        await stateMachine.recordPhaseStart(stateDir, Phase.Specify);
+        await stateMachine.recordPhaseComplete(stateDir, Phase.Specify);
 
         const validCount = allRequirements.filter(r => r.valid).length;
         const result = {
@@ -230,9 +199,7 @@ export function registerTurnkeyTools(
           pattern_distribution: countPatterns(allRequirements),
           feature_package: featurePackage,
           clarification_questions: clarifications,
-          files_created: state.features.length === 0
-            ? ["CONSTITUTION.md", "SPECIFICATION.md", ".sdd-state.json", ...featurePackage.created]
-            : ["SPECIFICATION.md", ...featurePackage.created],
+          files_created: ["SPECIFICATION.md", ...featurePackage.created],
           next_steps:
             clarifications.length > 0
               ? `Review ${clarifications.length} clarification questions below. You can: (1) call sdd_turnkey_spec again with clarification_responses to auto-refine, or (2) call sdd_clarify for interactive disambiguation. When satisfied, proceed to sdd_write_design.`
@@ -244,7 +211,7 @@ export function registerTurnkeyTools(
             "Review the generated EARS statements — the AI's best guess may need human refinement for edge cases.",
         };
 
-        const enriched = await enrichResponse("sdd_turnkey_spec", result, stateMachine, spec_dir, {
+        const enriched = await enrichResponse("sdd_turnkey_spec", result, stateMachine, stateDir, {
           completedPhase: Phase.Specify,
           nextPhase: Phase.Clarify,
           artifactsProduced: ["SPECIFICATION.md", ...featurePackage.created],
@@ -296,7 +263,7 @@ export function extractRequirementCandidates(description: string): RequirementCa
 
     // Behavior: action/verb-driven
     if (lower.match(/\b(user|admin|system|api|service|app|client|server)\b/) &&
-        lower.match(/\b(create|read|update|delete|send|receive|process|validate|authenticate|authorize|display|show|return|store|log|notify|upload|download|search|filter|sort|export|import)\b/)) {
+      lower.match(/\b(create|read|update|delete|send|receive|process|validate|authenticate|authorize|display|show|return|store|log|notify|upload|download|search|filter|sort|export|import)\b/)) {
       candidates.push({
         text: sentence,
         type: "behavior",
@@ -327,8 +294,8 @@ export function extractRequirementCandidates(description: string): RequirementCa
 
     // Lower confidence: sentences with a verb that look like a requirement
     if (lower.match(/\b(the|a|an)\s+\w+\s+(should|will|can|must)\b/) ||
-        sentence.match(/^[-*]\s+/) ||
-        sentence.match(/^\d+[.)]\s+/)) {
+      sentence.match(/^[-*]\s+/) ||
+      sentence.match(/^\d+[.)]\s+/)) {
       candidates.push({
         text: sentence.replace(/^[-*\d.)]+\s*/, ""),
         type: "functional",

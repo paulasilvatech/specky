@@ -4,8 +4,6 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { formatError, truncate } from "./tool-result.js";
-import { join } from "node:path";
-import {} from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
@@ -21,6 +19,7 @@ import {
 } from "../schemas/integration.js";
 import { enrichResponse } from "./response-builder.js";
 import { parseTasksFromMarkdown } from "../utils/task-parser.js";
+import { requireExecutionContext } from "../services/execution-context.js";
 
 export function registerIntegrationTools(
   server: McpServer,
@@ -45,17 +44,18 @@ export function registerIntegrationTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir, branch_prefix, base_branch }) => {
+    async () => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        const featureName = feature?.name || "unnamed-feature";
+        const context = requireExecutionContext("sdd_create_branch");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
+        const release = context.state!.contract.capability_config.release!;
 
         const branchInfo = gitManager.generateBranchInfo(
-          feature_number,
-          featureName,
-          branch_prefix,
-          base_branch
+          feature.number,
+          feature.name,
+          release.branch_prefix,
+          release.base_branch,
         );
 
         const result = {
@@ -66,7 +66,7 @@ export function registerIntegrationTools(
           learning_note: "SDD branch naming ties the feature number to the branch, enabling traceability from spec to code.",
         };
 
-        const enriched = await enrichResponse("sdd_create_branch", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_create_branch", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
@@ -92,20 +92,24 @@ export function registerIntegrationTools(
         openWorldHint: true,
       },
     },
-    async ({ platform, feature_number, spec_dir, include_subtasks, project_key, area_path, iteration_path }) => {
+    async () => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(`Feature ${feature_number} not found in ${spec_dir}. Run sdd_init first.`);
-        }
+        const context = requireExecutionContext("sdd_export_work_items");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
+        const specDir = context.specDir!;
+        const workItems = context.state!.contract.capability_config["work-items"]!;
 
         const exportResult = await workItemExporter.export(
-          platform,
-          spec_dir,
+          workItems.platform,
+          specDir,
           feature.directory,
-          include_subtasks,
-          { project_key, area_path, iteration_path }
+          workItems.include_subtasks,
+          {
+            project_key: workItems.project_key,
+            area_path: workItems.area_path,
+            iteration_path: workItems.iteration_path,
+          },
         );
 
         const serverRecommendations: Record<string, { id: string; name: string; purpose: string; install_command: string; install_note: string }> = {
@@ -138,13 +142,13 @@ export function registerIntegrationTools(
           items: exportResult.items,
           metadata: exportResult.metadata,
           routing_instructions: exportResult.routing_instructions,
-          recommended_servers: [serverRecommendations[platform]].filter(Boolean),
-          explanation: `Exported ${exportResult.items.length} work items in the ${platform}-native payload shape. Route to ${exportResult.routing_instructions.mcp_server} MCP to create them.`,
+          recommended_servers: [serverRecommendations[workItems.platform]].filter(Boolean),
+          explanation: `Exported ${exportResult.items.length} work items in the ${workItems.platform}-native payload shape. Route to ${exportResult.routing_instructions.mcp_server} MCP to create them.`,
           next_steps: `The AI client should call ${exportResult.routing_instructions.mcp_server} MCP's ${exportResult.routing_instructions.tool_name} for each item in the items array. ${exportResult.routing_instructions.note}`,
           learning_note: "Work items maintain traceability from TASKS.md through to your project management platform: every item carries task_id and traces_to, and the rendered body/description repeats the REQ references.",
         };
 
-        const enriched = await enrichResponse("sdd_export_work_items", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_export_work_items", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
@@ -170,19 +174,19 @@ export function registerIntegrationTools(
         openWorldHint: true,
       },
     },
-    async ({ feature_number, spec_dir, base_branch, head_branch, draft }) => {
+    async () => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(`Feature ${feature_number} not found in ${spec_dir}. Run sdd_init first.`);
-        }
+        const context = requireExecutionContext("sdd_create_pr");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
+        const release = context.state!.contract.capability_config.release!;
+        const headBranch = `${release.branch_prefix}${feature.number}-${feature.name}`;
 
         const prPayload = await gitManager.generatePrPayload(
           feature.directory,
-          feature_number,
-          base_branch,
-          head_branch
+          feature.number,
+          release.base_branch,
+          headBranch,
         );
 
         const result = {
@@ -192,7 +196,7 @@ export function registerIntegrationTools(
           base_branch: prPayload.base_branch,
           head_branch: prPayload.head_branch,
           labels: prPayload.labels,
-          draft,
+          draft: release.draft_pr,
           spec_summary: prPayload.spec_summary,
           requirements_covered: prPayload.requirements_covered,
           routing_instructions: prPayload.routing_instructions,
@@ -201,7 +205,7 @@ export function registerIntegrationTools(
           learning_note: "SDD pull requests include spec artifact references and requirement coverage, enabling reviewers to trace code changes back to requirements.",
         };
 
-        const enriched = await enrichResponse("sdd_create_pr", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_create_pr", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
@@ -227,13 +231,11 @@ export function registerIntegrationTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir, task_ids, checkpoint }) => {
+    async ({ task_ids, checkpoint }) => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(`Feature ${feature_number} not found in ${spec_dir}. Run sdd_write_tasks first.`);
-        }
+        const context = requireExecutionContext("sdd_implement");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
 
         const tasksContent = await fileManager.readSpecFile(feature.directory, "TASKS.md");
 
@@ -248,7 +250,7 @@ export function registerIntegrationTools(
         }));
 
         // Filter to requested task_ids if provided
-        const targetTasks = task_ids
+        const targetTasks = task_ids.length > 0
           ? allTasks.filter((t) => task_ids.includes(t.id))
           : allTasks;
 
@@ -271,7 +273,7 @@ export function registerIntegrationTools(
         const diagram = generateGanttDiagram(phases);
 
         const plan: ImplementationPlan = {
-          feature_number,
+          feature_number: feature.number,
           phases,
           total_tasks: targetTasks.length,
           parallel_opportunities: parallelOpportunities,
@@ -287,7 +289,7 @@ export function registerIntegrationTools(
           learning_note: "Implementation plans resolve task dependencies to find the optimal execution order. Parallel groups reduce total implementation time.",
         };
 
-        const enriched = await enrichResponse("sdd_implement", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_implement", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
@@ -313,25 +315,26 @@ export function registerIntegrationTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir, questions }) => {
+    async ({ questions }) => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        const featureDir = feature?.directory || join(spec_dir, `${feature_number}-research`);
+        const context = requireExecutionContext("sdd_research");
+        const feature = context.feature!;
+        const featureDir = feature.directory;
+        const stateDir = context.stateDir!;
 
         const entries: ResearchEntry[] = questions.map((q) => ({
           id: q.id,
           question: q.question,
-          findings: "[TODO: Document findings after investigation]",
+          findings: "No findings recorded; investigation remains open.",
           sources: [],
-          recommendation: "[TODO: Provide recommendation based on findings]",
+          recommendation: "No recommendation recorded until evidence is reviewed.",
           status: "open" as const,
         }));
 
         // Build RESEARCH.md content
         const today = new Date().toISOString().split("T")[0];
-        let content = `---\ntitle: Research Log\nfeature: ${feature_number}\ndate: ${today}\nstatus: in_progress\n---\n\n`;
-        content += `# Research Log — Feature ${feature_number}\n\n`;
+        let content = `---\ntitle: Research Log\nfeature: ${feature.number}\ndate: ${today}\nstatus: in_progress\n---\n\n`;
+        content += `# Research Log — Feature ${feature.number}\n\n`;
         content += `**Generated**: ${new Date().toISOString()}\n**Total Questions**: ${entries.length}\n\n---\n\n`;
 
         for (const entry of entries) {
@@ -350,7 +353,7 @@ export function registerIntegrationTools(
         const result = {
           status: "research_created",
           file: filePath,
-          feature_number,
+          feature_number: feature.number,
           entries,
           total_questions: entries.length,
           open_count: entries.filter((e) => e.status === "open").length,
@@ -359,7 +362,7 @@ export function registerIntegrationTools(
           learning_note: "Research logs capture unknowns early in the spec process. Resolving them before design prevents costly rework later.",
         };
 
-        const enriched = await enrichResponse("sdd_research", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_research", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
