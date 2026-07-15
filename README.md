@@ -839,9 +839,9 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 
 | Tool | Description |
 |------|-------------|
-| `sdd_generate_diagram` | Single Mermaid diagram (17 software engineering diagram types) |
-| `sdd_generate_all_diagrams` | All diagrams for a feature at once |
-| `sdd_generate_user_stories` | User stories with flow diagrams |
+| `sdd_generate_diagram` | Single Mermaid diagram validated against the workload contract's required set |
+| `sdd_generate_all_diagrams` | The exact diagram set the feature contract requires, written atomically |
+| `sdd_generate_user_stories` | User stories with flow diagrams (web-application workload) |
 | `sdd_figma_diagram` | FigJam-ready diagram via Figma MCP |
 
 ### Infrastructure as Code (3)
@@ -1276,12 +1276,12 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 
 | Capability | Status |
 |------------|--------|
-| 58 MCP tools across 10 enforced pipeline phases | Stable |
+| 58 MCP tools driven by signed per-feature use-case contracts | Stable |
 | Unified `specky` CLI: install, doctor, status, upgrade, hooks, serve | Stable |
 | Target-specific install: `--target=copilot`, `claude`, `cursor`, `opencode`, or `agent-skills` | Stable |
 | Copilot-safe hook manifests (no lifecycle event cross-read) | Stable |
 | Phase validation on every tool with gate enforcement | Stable |
-| 17 software engineering diagram types (C4, sequence, ER, DFD, deployment, network) | Stable |
+| Workload-contracted diagram sets (C4, sequence, ER, DFD, deployment, network) | Stable |
 | 12-section system design template (C4 model, security, infrastructure) | Stable |
 | Enriched interactive responses on all tools (progress, handoff, education) | Stable |
 | Parallel documentation generation (5 types via Promise.all) | Stable |
