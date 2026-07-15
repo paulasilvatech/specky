@@ -20,6 +20,7 @@ import {
 import { enrichResponse } from "./response-builder.js";
 import { parseTasksFromMarkdown } from "../utils/task-parser.js";
 import { requireExecutionContext } from "../services/execution-context.js";
+import { currentDateString, currentTimestamp } from "../utils/runtime-context.js";
 
 export function registerIntegrationTools(
   server: McpServer,
@@ -304,9 +305,9 @@ export function registerIntegrationTools(
   server.registerTool(
     "sdd_research",
     {
-      title: "Research Questions",
+      title: "Write Evidence-Backed Research",
       description:
-        "Takes an array of research questions, generates RESEARCH.md with structured entries (question, findings placeholder, sources, recommendation, status), and writes it to the feature directory.",
+        "Writes resolved or explicitly deferred research entries with findings, reviewed sources, recommendations, and status. No open placeholders are generated.",
       inputSchema: researchInputSchema,
       annotations: {
         readOnlyHint: false,
@@ -315,51 +316,45 @@ export function registerIntegrationTools(
         openWorldHint: false,
       },
     },
-    async ({ questions }) => {
+    async ({ entries: inputEntries, force }) => {
       try {
         const context = requireExecutionContext("sdd_research");
         const feature = context.feature!;
         const featureDir = feature.directory;
         const stateDir = context.stateDir!;
 
-        const entries: ResearchEntry[] = questions.map((q) => ({
-          id: q.id,
-          question: q.question,
-          findings: "No findings recorded; investigation remains open.",
-          sources: [],
-          recommendation: "No recommendation recorded until evidence is reviewed.",
-          status: "open" as const,
-        }));
+        const entries: ResearchEntry[] = inputEntries;
 
         // Build RESEARCH.md content
-        const today = new Date().toISOString().split("T")[0];
-        let content = `---\ntitle: Research Log\nfeature: ${feature.number}\ndate: ${today}\nstatus: in_progress\n---\n\n`;
+        const today = currentDateString();
+        let content = `---\ntitle: Research Log\nfeature: ${feature.number}\ndate: ${today}\nstatus: complete\n---\n\n`;
         content += `# Research Log — Feature ${feature.number}\n\n`;
-        content += `**Generated**: ${new Date().toISOString()}\n**Total Questions**: ${entries.length}\n\n---\n\n`;
+        content += `**Generated**: ${currentTimestamp()}\n**Total Entries**: ${entries.length}\n\n---\n\n`;
 
         for (const entry of entries) {
-          const q = questions.find((qu) => qu.id === entry.id);
+          const source = inputEntries.find((candidate) => candidate.id === entry.id)!;
           content += `## ${entry.id}: ${entry.question}\n\n`;
-          if (q?.context) content += `**Context**: ${q.context}\n\n`;
+          content += `**Context**: ${source.context}\n\n`;
           content += `**Status**: ${entry.status}\n\n`;
           content += `### Findings\n\n${entry.findings}\n\n`;
-          content += `### Sources\n\n- (none yet)\n\n`;
+          content += `### Sources\n\n${entry.sources.map((item) => `- ${item}`).join("\n")}\n\n`;
           content += `### Recommendation\n\n${entry.recommendation}\n\n`;
           content += `---\n\n`;
         }
 
-        const filePath = await fileManager.writeSpecFile(featureDir, "RESEARCH.md", content, true);
+        const filePath = await fileManager.writeSpecFile(featureDir, "RESEARCH.md", content, force);
 
         const result = {
           status: "research_created",
           file: filePath,
           feature_number: feature.number,
           entries,
-          total_questions: entries.length,
-          open_count: entries.filter((e) => e.status === "open").length,
-          explanation: `Created RESEARCH.md with ${entries.length} research questions. All marked as 'open' for investigation.`,
-          next_steps: "Investigate each question, update findings and recommendations in RESEARCH.md, then mark as 'resolved' or 'deferred'.",
-          learning_note: "Research logs capture unknowns early in the spec process. Resolving them before design prevents costly rework later.",
+          total_entries: entries.length,
+          resolved_count: entries.filter((entry) => entry.status === "resolved").length,
+          deferred_count: entries.filter((entry) => entry.status === "deferred").length,
+          explanation: `Wrote ${entries.length} evidence-backed research entries without unresolved placeholders.`,
+          next_steps: "Use resolved recommendations as design evidence and track deferred entries as explicit risk.",
+          learning_note: "Research artifacts record evidence and decisions; unanswered placeholders are rejected by the input contract.",
         };
 
         const enriched = await enrichResponse("sdd_research", result, stateMachine, stateDir);

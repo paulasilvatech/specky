@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod";
-import { specDirSchema, featureNumberSchema } from "./common.js";
+import { specDirSchema, featureNumberSchema, forceSchema } from "./common.js";
 
 export const createBranchInputSchema = z.object({
   feature_number: featureNumberSchema,
@@ -34,7 +34,8 @@ export const implementInputSchema = z.object({
 export const researchInputSchema = z.object({
   feature_number: featureNumberSchema,
   spec_dir: specDirSchema,
-  questions: z
+  force: forceSchema,
+  entries: z
     .array(
       z.object({
         id: z
@@ -47,10 +48,14 @@ export const researchInputSchema = z.object({
           .describe("The research question to resolve"),
         context: z
           .string()
-          .optional()
-          .describe("Additional context about why this question matters"),
+          .min(3)
+          .describe("Why this question matters to the feature contract"),
+        findings: z.string().min(10).describe("Evidence-based findings"),
+        sources: z.array(z.string().min(5)).min(1).describe("Reviewed source references"),
+        recommendation: z.string().min(10).describe("Decision supported by the findings"),
+        status: z.enum(["resolved", "deferred"]),
       }).strict()
     )
     .min(1)
-    .describe("Array of research questions to investigate and resolve"),
+    .describe("Resolved or explicitly deferred research entries"),
 }).strict();

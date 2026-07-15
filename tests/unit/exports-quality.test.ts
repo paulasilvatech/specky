@@ -15,7 +15,7 @@
  *   4. sdd_batch_import counted compressed (real-world) DOCX conversions —
  *      which produced binary garbage — as "successful".
  */
-import { mkdirSync, mkdtempSync, cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { deflateRawSync } from "node:zlib";
@@ -581,5 +581,57 @@ describe("export & quality-report regressions", () => {
     expect(res.isError).toBe(true);
     expect(res.raw).toContain("compressed docx not supported natively");
     expect(res.raw).toContain("MarkItDown");
+  });
+
+  it("sdd_research writes only resolved evidence and reviewed sources", async () => {
+    const ws = makeWorkspace("specky-research-evidence-");
+    seedFeature(ws, ".specs/001-checkout-service", {});
+    const h = await buildHarness(ws, Phase.Discover);
+    cleanups.push(h.close);
+
+    const res = await callTool(h.client, "sdd_research", {
+      feature_number: "001",
+      spec_dir: ".specs",
+      force: false,
+      entries: [{
+        id: "RQ-001",
+        question: "Which idempotency strategy protects checkout retries?",
+        context: "The payment operation can be retried by clients and gateways.",
+        findings: "A client-supplied idempotency key uniquely identifies one payment attempt.",
+        sources: ["DESIGN.md#Payment-idempotency", "ADR-004"],
+        recommendation: "Persist idempotency keys with the payment result for the contracted retention period.",
+        status: "resolved",
+      }],
+    });
+    expect(res.isError).toBe(false);
+    const research = readFileSync(join(ws, ".specs/001-checkout-service/RESEARCH.md"), "utf8");
+    expect(research).toContain("A client-supplied idempotency key");
+    expect(research).toContain("DESIGN.md#Payment-idempotency");
+    expect(research).not.toContain("TODO");
+    expect(research).not.toContain("none yet");
+  });
+
+  it("sdd_research rejects missing sources before writing", async () => {
+    const ws = makeWorkspace("specky-research-invalid-");
+    seedFeature(ws, ".specs/001-checkout-service", {});
+    const h = await buildHarness(ws, Phase.Discover);
+    cleanups.push(h.close);
+
+    const res = await callTool(h.client, "sdd_research", {
+      feature_number: "001",
+      spec_dir: ".specs",
+      force: false,
+      entries: [{
+        id: "RQ-001",
+        question: "Which retry policy applies to checkout?",
+        context: "Retries can duplicate payment operations.",
+        findings: "The retry policy requires bounded exponential backoff.",
+        sources: [],
+        recommendation: "Use the reviewed bounded retry policy.",
+        status: "resolved",
+      }],
+    });
+    expect(res.isError).toBe(true);
+    expect(existsSync(join(ws, ".specs/001-checkout-service/RESEARCH.md"))).toBe(false);
   });
 });

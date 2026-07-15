@@ -147,7 +147,7 @@ const transcriptParser = new TranscriptParser(fileManager);
 
 // Initialize services (v2)
 const documentConverter = new DocumentConverter(fileManager);
-const diagramGenerator = new DiagramGenerator(fileManager);
+const diagramGenerator = new DiagramGenerator();
 const iacGenerator = new IacGenerator(fileManager);
 const workItemExporter = new WorkItemExporter(fileManager);
 const crossAnalyzer = new CrossAnalyzer(fileManager);

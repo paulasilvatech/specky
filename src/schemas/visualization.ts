@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod";
-import { specDirSchema, featureNumberSchema } from "./common.js";
+import { specDirSchema, featureNumberSchema, forceSchema } from "./common.js";
 
 export const generateDiagramInputSchema = z.object({
   feature_number: featureNumberSchema,
@@ -23,6 +23,7 @@ export const generateDiagramInputSchema = z.object({
 export const generateAllDiagramsInputSchema = z.object({
   feature_number: featureNumberSchema,
   spec_dir: specDirSchema,
+  force: forceSchema,
   diagrams: z.array(z.object({
     diagram_type: z.enum([
       "flowchart", "sequence", "class", "er", "state",
@@ -57,13 +58,13 @@ export const figmaDiagramInputSchema = z.object({
     .enum(["architecture", "user_flow", "data_flow", "integration"])
     .describe("Type of diagram to generate for FigJam."),
   nodes: z.array(z.object({
-    id: z.string().regex(/^[A-Za-z0-9_]+$/),
+    id: z.string().regex(/^\w+$/),
     label: z.string().min(1),
     type: z.enum(["user", "component", "service", "database", "external"]),
   }).strict()).min(2),
   connections: z.array(z.object({
-    from: z.string().regex(/^[A-Za-z0-9_]+$/),
-    to: z.string().regex(/^[A-Za-z0-9_]+$/),
+    from: z.string().regex(/^\w+$/),
+    to: z.string().regex(/^\w+$/),
     label: z.string().min(1),
   }).strict()).min(1),
   evidence_refs: z.array(z.string().min(3)).min(1),
