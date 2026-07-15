@@ -46,6 +46,7 @@ import { ExecutionContextResolver } from "../../src/services/execution-context.j
 import { installToolEnforcement } from "../../src/tools/tool-enforcement.js";
 import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
 import { Phase } from "../../src/constants.js";
+import { testDocumentationConfig } from "../helpers/documentation-config.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 // The built-in template dir resolves relative to dist/; when running from
@@ -113,6 +114,7 @@ async function buildHarness(
         base_branch: "develop",
         draft_pr: false,
         checkpoints: true,
+        documentation: testDocumentationConfig(),
       },
     },
   });

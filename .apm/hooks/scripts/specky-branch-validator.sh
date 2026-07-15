@@ -40,4 +40,5 @@ fi
 echo "⚠️  [specky-branch-validator] $MESSAGE" >&2
 echo "   Contract: $SPECKY_CONTRACT_ID" >&2
 echo "   Base: $SPECKY_BASE_BRANCH | Prefix: $SPECKY_BRANCH_PREFIX" >&2
+echo "   Enforce native edits with: export SPECKY_GUARD=strict" >&2
 exit 0

@@ -1,25 +1,9 @@
 /**
- * SpeckyConfig — Optional `.specky/config.yml` support.
- * Reads project-local configuration and merges with defaults.
- *
- * Parsing uses the `yaml` library (safe by default — no code execution) and a
- * Zod schema for validation, replacing a hand-rolled line parser that could not
- * handle nested lists/quoting and did no validation.
- *
- * Profiles: `standard` (default) keeps every enterprise control opt-in and
- * off. `enterprise` flips the *defaults* of audit_enabled, rbac.enabled,
- * rate_limit.enabled, and audit.fail_closed to true — an explicit value in
- * config.yml always wins over the profile default, so an enterprise deployment
- * can still switch an individual control off. The profile itself can come from
- * config.yml (`profile: enterprise`), the `SPECKY_PROFILE` env var, the
- * `SPECKY_ENTERPRISE=1` shorthand, or the server's `--profile=enterprise` flag
- * (flag > env > config file).
- */
-/**
  * Strict workspace runtime configuration.
  *
  * The package-level config.yml documents shipped primitives. Runtime behavior
- * is governed only by .specky/config.yml, whose schema is complete and closed.
+ * is governed only by mandatory .specky/config.yml, whose schema is complete
+ * and closed. The installer is the sole bootstrap path for creating the file.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -164,8 +148,10 @@ export function resolveProfile(
 export function loadConfig(workspaceRoot: string, overrides: ProfileOverrides = {}): SpeckyConfig {
   const configPath = join(workspaceRoot, ".specky", "config.yml");
   if (!existsSync(configPath)) {
-    const profile = resolveProfile("standard", overrides);
-    return createWorkspaceConfig({ profile });
+    throw new ConfigValidationError(
+      configPath,
+      "file is required; run `specky install` to write a complete workspace contract",
+    );
   }
 
   let parsed: unknown;

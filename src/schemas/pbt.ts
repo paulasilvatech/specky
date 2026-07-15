@@ -8,4 +8,4 @@ import { specDirSchema, featureNumberSchema } from "./common.js";
 export const generatePbtInputSchema = z.object({
   feature_number: featureNumberSchema,
   spec_dir: specDirSchema,
-}).strict().describe("Generate property-based tests from EARS requirements. Extracts invariants, round-trip properties, and idempotence checks.");
+}).strict().describe("Generate executable property tests from persisted requirement-bound property bindings.");

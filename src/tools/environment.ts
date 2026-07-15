@@ -58,7 +58,7 @@ export function registerEnvironmentTools(
     {
       title: "Setup Local Dev Environment",
       description:
-        "Detects the project tech stack (codebase manifests, falling back to DESIGN.md) and generates a Docker-based local development environment (Dockerfile + docker-compose.yml with auto-detected sidecar services). Returns a payload with routing_instructions for Docker MCP to create and manage containers.",
+        "Generates a Docker-based local environment from the persisted dev-environment capability: exact stack, services, port, compose, and multi-stage policy. Returns Docker MCP routing without starting containers.",
       inputSchema: setupLocalEnvInputSchema,
       annotations: {
         readOnlyHint: false,
@@ -118,7 +118,7 @@ export function registerEnvironmentTools(
     {
       title: "Setup GitHub Codespaces",
       description:
-        "Detects the project tech stack (codebase manifests, falling back to DESIGN.md) and generates a devcontainer configuration suitable for GitHub Codespaces. Returns the devcontainer.json payload with routing_instructions to commit it via GitHub MCP, plus the GitHub UI/CLI/API steps to create the Codespace (the official GitHub MCP does not expose Codespace creation).",
+        "Generates Codespaces configuration from persisted dev-environment image, features, extensions, port, stack, and machine parameters. Returns commit and external creation routing; it does not create a Codespace.",
       inputSchema: setupCodespacesInputSchema,
       annotations: {
         readOnlyHint: false,
@@ -182,7 +182,7 @@ export function registerEnvironmentTools(
     {
       title: "Generate Devcontainer Config",
       description:
-        "Generates .devcontainer/devcontainer.json from the detected tech stack (codebase manifests, falling back to DESIGN.md). Writes the file to disk for local use with VS Code Dev Containers or GitHub Codespaces.",
+        "Writes .devcontainer/devcontainer.json from the persisted dev-environment capability. Unsupported or incomplete stacks fail rather than producing a generic image.",
       inputSchema: generateDevcontainerInputSchema,
       annotations: {
         readOnlyHint: false,

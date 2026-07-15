@@ -107,9 +107,26 @@ export const capabilityConfigSchema = z.object({
         base_branch: z.string().regex(/^[A-Za-z0-9._/-]+$/),
         draft_pr: z.boolean(),
         checkpoints: z.boolean(),
+        documentation: z.object({
+            types: z.array(z.enum(["full", "api", "runbook", "onboarding", "journey"])).min(1),
+            version: nonEmptyText,
+            api_base_url: nonEmptyText.optional(),
+            deployment_steps: z.array(nonEmptyText).min(1),
+            health_checks: z.array(nonEmptyText).min(1),
+            monitoring_checks: z.array(nonEmptyText).min(1),
+            troubleshooting: z.array(z.object({
+                symptom: nonEmptyText,
+                cause: nonEmptyText,
+                resolution: nonEmptyText,
+            }).strict()).min(1),
+            rollback_steps: z.array(nonEmptyText).min(1),
+            support_contacts: z.array(nonEmptyText).min(1),
+            onboarding_steps: z.array(nonEmptyText).min(1),
+        }).strict(),
     }).strict().optional(),
 }).strict();
 export type CapabilityConfig = z.infer<typeof capabilityConfigSchema>;
+export type DocumentationConfig = NonNullable<NonNullable<CapabilityConfig["release"]>["documentation"]>;
 
 export const useCaseSelectionSchema = z.object({
     lifecycle: lifecycleSchema,
@@ -313,6 +330,16 @@ function validateCapabilityConfig(selection: UseCaseSelection): void {
     const workItems = selection.capability_config["work-items"];
     if (workItems?.platform === "jira" && !workItems.project_key) {
         throw new Error("Jira work-items capability requires project_key.");
+    }
+
+    const documentation = selection.capability_config.release?.documentation;
+    if (documentation?.types.includes("api")) {
+        if (selection.workload !== "api") {
+            throw new Error("API documentation is available only for the api workload.");
+        }
+        if (!documentation.api_base_url) {
+            throw new Error("API documentation requires api_base_url.");
+        }
     }
 
     const tdd = selection.capability_config.tdd;

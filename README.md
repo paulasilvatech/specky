@@ -2,13 +2,13 @@
   <br>
   <img src="site/specky-brand-logo.svg" alt="Specky" height="80">
   <br><br>
-  <p><strong>13 agents. 58 MCP tools. 10-phase pipeline. One CLI.</strong></p>
+  <p><strong>13 agents. 58 MCP tools. Explicit use-case contracts. One CLI.</strong></p>
   <p>Agentic Spec-Driven Development</p>
 
   <p>
     <img src="https://img.shields.io/badge/agents-13-374151?style=flat-square" alt="13 Agents"/>
     <img src="https://img.shields.io/badge/tools-58_MCP-4b5563?style=flat-square" alt="58 Tools"/>
-    <img src="https://img.shields.io/badge/phases-10_enforced-6b7280?style=flat-square" alt="10 Phases"/>
+    <img src="https://img.shields.io/badge/phase_graphs-contract_scoped-6b7280?style=flat-square" alt="Contract-scoped phase graphs"/>
     <img src="https://img.shields.io/badge/hooks-16-9ca3af?style=flat-square" alt="16 Hooks"/>
     <img src="https://img.shields.io/badge/license-MIT-d1d5db?style=flat-square" alt="MIT"/>
   </p>
@@ -33,6 +33,7 @@
   <p>
     <a href="https://getspecky.ai">Website</a> ·
     <a href="docs/GETTING-STARTED.md">Getting Started</a> ·
+    <a href="docs/USE-CASE-CONTRACTS.md">Use-Case Contracts</a> ·
     <a href="https://www.npmjs.com/package/specky-sdd">npm</a> ·
     <a href="SECURITY.md">Security</a>
   </p>
@@ -50,9 +51,10 @@
 | | [Where Specifications Live](#where-specifications-live) | File structure and naming conventions |
 | | [Input Methods](#input-methods-6-ways-to-start) | 6 ways to feed Specky |
 | | [Three Project Types](#three-project-types-one-pipeline) | Greenfield, Brownfield, Modernization |
+| | [Use-Case Contracts](docs/USE-CASE-CONTRACTS.md) | Lifecycle, workload, mode, capabilities, evidence, migration |
 | | [How to upgrade](#how-to-upgrade) | Bump npm + refresh project assets (no `--target` needed) |
 | | [Staying up to date](#staying-up-to-date) | Update notifications and opt-out |
-| **Pipeline** | [Pipeline and LGTM Gates](#pipeline-and-lgtm-gates) | 10 phases with human review gates |
+| **Pipeline** | [Pipeline and LGTM Gates](#pipeline-and-lgtm-gates) | Feature-specific phase graphs and configured review gates |
 | | [All 58 Tools](#all-58-tools) | Complete tool reference by category |
 | | [EARS Notation](#ears-notation) | The 6 requirement patterns |
 | **Enterprise** | [Compliance Frameworks](#compliance-frameworks) | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 |
@@ -62,7 +64,7 @@
 
 ## What is Specky?
 
-Specky is a **CLI toolkit for Spec-Driven Development** — 13 specialized agents, 58 MCP tools, 22 prompts, 14 skills, and 16 automation hooks — that enforces a deterministic 10-phase pipeline from **any input** (meeting transcripts, documents, Figma designs, or natural language prompts) through specifications, architecture, infrastructure as code, implementation, and deployment.
+Specky is a **CLI toolkit for Spec-Driven Development** — 13 specialized agents, 58 MCP tools, 22 prompts, 14 skills, and 16 automation hooks. Each feature selects an explicit lifecycle, workload, execution mode, and capability configuration; Specky persists the resolved phase graph and rejects missing identity, hidden defaults, unsupported capabilities, and ungrounded artifact evidence.
 
 Powered by the [Spec-Kit](https://github.com/paulasilvatech/spec-kit) methodology. Install the `specky` CLI and it places agents, prompts, skills, hooks, and the MCP server registration into your project — for **GitHub Copilot** (VS Code), **Claude Code**, **Cursor**, or **OpenCode**.
 
@@ -82,8 +84,8 @@ Specky is a **complete AI development toolkit** — not just an MCP server. The 
 
 An MCP server gives you **tools**. The CLI toolkit gives you the **experience**:
 
-- **Tools alone**: You call `sdd_write_spec` and hope you're in the right phase, with the right prerequisites, on the right branch.
-- **CLI toolkit**: You type `@specky-orchestrator` and the agent validates your phase, checks your branch, loads the right skill, calls the right tool, runs pre/post hooks, and pauses for LGTM before advancing.
+- **Tools alone**: You must provide exact feature identity, use-case selection, capability parameters, and evidence.
+- **CLI toolkit**: You invoke `@specky-orchestrator`; it loads the feature's signed contract, follows its persisted graph, delegates to lean agents that read rich skills, and applies configured gates.
 
 The MCP engine is the runtime. The agents + hooks + skills are the product.
 
@@ -175,7 +177,7 @@ flowchart LR
 
 AI coding assistants are fast but chaotic. You say *"build me a login system"* and the AI generates code immediately, skipping requirements, guessing architecture, and producing something that works but doesn't match what anyone actually needed. This is **vibe coding**: generating code based on vibes instead of validated specifications.
 
-The result? Teams spend 40% of their time on rework because requirements were never written down, acceptance criteria were never defined, and there's no way to verify the code matches the original intent.
+The result is avoidable rework: requirements, acceptance criteria, design decisions, tasks, tests, and release evidence cannot be traced to one reviewed contract.
 
 ### The Solution: Deterministic Development
 
@@ -195,7 +197,7 @@ The result? Teams spend 40% of their time on rework because requirements were ne
 
 Specky adds a **deterministic engine** between your intent and your code:
 
-- **State Machine**: 10 mandatory phases, no skipping. Init, Discover, Specify, Clarify, Design, Tasks, Analyze, Implement, Verify, Release.
+- **State Machine**: signed per-feature phase graphs for full, rapid, and emergency execution modes.
 - **EARS Validator**: Every requirement validated against 6 patterns. No vague statements pass.
 - **Cross-Artifact Analysis**: Automatic alignment checking between spec, design, and tasks. Orphaned requirements are flagged instantly.
 - **MCP-to-MCP Architecture**: Specky outputs structured JSON that your AI client routes to GitHub, Azure DevOps, Jira, Terraform, Figma, and Docker MCP servers. No vendor lock-in.
@@ -207,18 +209,18 @@ Specky adds a **deterministic engine** between your intent and your code:
 | Capability | Specky |
 |---|---|
 | Complete CLI toolkit | 13 agents, 22 prompts, 14 skills, 16 hooks + 58 MCP tools |
-| Pipeline orchestrator | @specky-orchestrator coordinates all 10 phases end-to-end |
+| Pipeline orchestrator | @specky-orchestrator follows the selected feature's signed phase graph |
 | Onboarding wizard | @specky-onboarding detects context and guides setup |
-| Any input (PDF, DOCX, PPTX, transcript, Figma) to spec | 58 MCP tools handle all input formats |
+| Explicit input contracts | Document, transcript, and Figma tools require enabled capabilities and complete parameters |
 | EARS validation (programmatic, not AI guessing) | 6 patterns enforced at schema level |
-| Enforced pipeline (not suggestions) | 10 phases with actual gates that block advancement |
+| Enforced pipeline (not suggestions) | Contract-specific phases, central analysis gate, optional configured LGTM blocking |
 | Pre/post hooks on every phase | specky-artifact-validator, specky-branch-validator, specky-phase-gate, specky-lgtm-gate |
-| 17 diagram types generated automatically | C4 (4 levels), sequence, ER, activity, use case, DFD, deployment, network |
-| Infrastructure as Code | Terraform, Bicep, Dockerfile from DESIGN.md |
+| Workload-specific diagrams | Exact required manifest, explicit Mermaid/FigJam payloads, source evidence references |
+| Infrastructure as Code | Terraform from persisted cloud/resources; DESIGN.md evidence required |
 | Work item export | GitHub Issues, Azure Boards, Jira via MCP-to-MCP routing |
-| 6 compliance frameworks | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 built-in |
+| 5 compliance frameworks | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 with explicit control-ID evidence |
 | Cross-artifact traceability | Requirement to design to task to test to code |
-| Gitflow-SDD branching | spec/NNN → develop → stage → main |
+| Explicit release policy | Branch prefix, base, draft, and checkpoint choices persisted per feature |
 | Unified CLI distribution | `npm install -g specky-sdd && specky install --target=copilot` — one binary, multi-OS (macOS/Linux/Windows/WSL) |
 | First-class harness targets | VS Code + Copilot, Claude Code, Cursor, OpenCode, plus shared `.agents/skills` |
 | Zero outbound calls from the MCP server | Air-gap friendly; code never leaves your machine. The CLI's once-daily update check is [opt-out](#staying-up-to-date) |
@@ -284,7 +286,7 @@ The onboarding wizard detects your project context (greenfield/brownfield/modern
 @specky-orchestrator run the pipeline for a todo API
 ```
 
-The orchestrator coordinates all 10 phases: Init → Discover → Specify → Clarify → Design → Tasks → Analyze → Implement → Verify → Release, with LGTM gates at Specify, Design, and Tasks.
+The orchestrator resolves the selected feature contract and follows its `full`, `rapid`, or `emergency` phase graph. Specify, Design, and Tasks require `lgtm: true` only when workspace configuration enables LGTM enforcement.
 
 | Your situation | Guide |
 |---------------|-------|
@@ -557,26 +559,26 @@ The AI calls `sdd_write_tasks` → creates `TASKS.md` with implementation tasks 
 ### Step 5: Quality gates
 
 ```
-> Run analysis, compliance check for SOC2, and generate all diagrams
+> Run analysis, submit SOC2 control evidence, and validate the workload-required diagram set
 ```
 
 The AI calls:
 
 - `sdd_run_analysis` → completeness audit, orphaned criteria detection
-- `sdd_compliance_check` → SOC2 controls validation
-- `sdd_generate_all_diagrams` → architecture, sequence, ER, flow, dependency, traceability diagrams
+- `sdd_compliance_check` → evaluates the persisted SOC2 pack using evidence keyed by control ID
+- `sdd_generate_all_diagrams` → validates exactly the workload-required Mermaid payloads against source evidence
 
 ### Step 6: Generate infrastructure and tests
 
 ```
-> Generate Terraform for Azure, a Dockerfile, and test stubs for vitest
+> Generate the persisted Azure Terraform resources, Docker environment, and executable Vitest bindings
 ```
 
 The AI calls:
 
-- `sdd_generate_iac` → Terraform configuration
-- `sdd_generate_dockerfile` → Dockerfile + docker-compose
-- `sdd_generate_tests` → Test stubs with acceptance criteria mapped to test cases
+- `sdd_generate_iac` → Terraform for the exact cloud/resources stored in the feature contract
+- `sdd_generate_dockerfile` → Dockerfile/compose from the persisted development stack
+- `sdd_generate_tests` → executable tests from fingerprinted requirement bindings
 
 ### Step 7: Export and ship
 
@@ -758,9 +760,9 @@ flowchart LR
   class G1,G2,G3 gate;
 ```
 
-Every Specky project follows the same 10-phase pipeline. The state machine **blocks phase-skipping**. You cannot jump from Init to Design without completing Specify first.
+This diagram is the `full` execution-mode graph. Rapid and emergency contracts persist smaller ordered graphs. The state machine blocks transitions outside the selected feature's graph.
 
-**LGTM gates:** After each major phase (Specify, Design, Tasks), the AI pauses and asks you to review. Reply **LGTM** to proceed. This ensures human oversight at every quality gate.
+**LGTM gates:** Specify, Design, and Tasks can require `lgtm: true` when `.specky/config.yml` enables LGTM enforcement. When disabled, review remains useful but is not a hidden blocking default.
 
 **Feedback loop:** If `sdd_verify_tasks` detects drift between specification and implementation, Specky routes you back to the Specify phase to correct the divergence before proceeding.
 
@@ -893,15 +895,15 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 
 | Tool | Description |
 |------|-------------|
-| `sdd_generate_tests` | Generate test stubs from acceptance criteria (vitest/jest/playwright/pytest/junit/xunit) |
+| `sdd_generate_tests` | Assemble executable tests from persisted requirement bindings (vitest/jest/playwright/pytest/junit/xunit) |
 | `sdd_verify_tests` | Verify test results against requirements, report traceability coverage |
-| `sdd_generate_pbt` | Generate property-based tests using fast-check (TypeScript) or Hypothesis (Python). Extracts invariants, round-trips, idempotence, state transitions, and negative properties from EARS requirements |
+| `sdd_generate_pbt` | Assemble executable fast-check or Hypothesis properties from persisted requirement bindings; no generated model stubs |
 
 ### Turnkey Specification (1)
 
 | Tool | Description |
 |------|-------------|
-| `sdd_turnkey_spec` | Generate a complete EARS specification from a natural language description. Auto-extracts requirements, classifies all 6 EARS patterns, generates acceptance criteria, infers non-functional requirements, and identifies clarification questions |
+| `sdd_turnkey_spec` | Refine an already initialized feature from an explicit description and clarification responses; never creates state or Constitution implicitly |
 
 ### Checkpointing (3)
 
@@ -921,7 +923,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 
 | Tool | Description |
 |------|-------------|
-| `sdd_model_routing` | Model routing decision table for all 10 phases with cost analysis |
+| `sdd_model_routing` | Capability-class routing guidance for the phase vocabulary; the selected feature graph controls applicable phases |
 | `sdd_context_status` | Context tier assignment (Hot/Domain/Cold) for spec artifacts with token savings |
 | `sdd_check_access` | RBAC access check for current role with per-tool permissions summary |
 
@@ -1161,7 +1163,7 @@ Specky is 100% open source (MIT) — enterprise mode is just an opt-in configura
 
 - **3 runtime dependencies** — minimal attack surface (`@modelcontextprotocol/sdk`, `zod`, `yaml`)
 - **Zero outbound network requests from the MCP server** — all data stays local; the CLI's optional once-daily update check is the only network touch ([opt-out](#staying-up-to-date))
-- **No `eval()` or dynamic code execution** — template rendering is string replacement only
+- **Strict template rendering** — missing variables/loops raise `TemplateRenderError`; no TODO substitution or dynamic template execution
 - **Path traversal prevention**: FileManager sanitizes all paths, blocks `..` sequences
 - **Zod `.strict()` validation** — every tool input is schema-validated; unknown fields rejected
 - **specky-security-scan hook** blocks commits containing hardcoded secrets (exit code 2)
@@ -1183,7 +1185,7 @@ When using Specky, follow these practices to protect your data:
 | **Never expose HTTP mode to public networks without TLS** | HTTP has optional bearer-token auth but no TLS | `--http` binds to `127.0.0.1` by default; set `SDD_HTTP_TOKEN` (shared) or `SDD_HTTP_TOKENS_FILE` (per-user identity + role) for bearer auth. For remote access, add a reverse proxy (nginx, Caddy) terminating TLS |
 | **Protect the `.specs/` directory** | Contains your specification artifacts (architecture, API contracts, business logic) | Add `.specs/` to `.gitignore` if specs contain sensitive IP, or use a private repo |
 | **Protect checkpoints** | `.specs/{feature}/.checkpoints/` stores full artifact snapshots | Same as above — treat checkpoints like source code |
-| **Review auto-generated specs before committing** | Turnkey and auto-pipeline generate from natural language — may capture sensitive details | Review SPECIFICATION.md and DESIGN.md before `git add` |
+| **Review source-backed artifacts before committing** | Transcript/document inputs and explicit source quotes may contain sensitive details | Review SPECIFICATION.md, DESIGN.md, and TRANSCRIPT.md before `git add` |
 | **Keep the specky-security-scan hook enabled** | Detects API keys, passwords, tokens in staged files | Comes pre-configured; don't disable `.claude/hooks/specky-security-scan.sh` |
 | **Use environment variables for secrets** | Specky never stores credentials, but your specs might reference them | Write `$DATABASE_URL` in specs, never the actual connection string |
 | **Run `npm audit` regularly** | Catches dependency vulnerabilities | `npm audit` — CI runs this automatically on every PR |
@@ -1293,7 +1295,7 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 | Intent drift detection with amendment suggestions | Stable |
 | 16 automation hooks (advisory-default, strict opt-in via SPECKY_GUARD) | Stable |
 | 13 specialized agents + 22 prompts + 14 skills | Stable |
-| 6 compliance frameworks (HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001) | Stable |
+| 5 compliance frameworks (HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001) with explicit control evidence | Stable |
 | 6 input types (transcript, PDF, DOCX, Figma, codebase, raw text) | Stable |
 | Test generation for 6 frameworks (vitest, jest, playwright, pytest, junit, xunit) | Stable |
 | MCP-to-MCP routing (GitHub, Azure DevOps, Jira, Terraform, Figma, Docker) | Stable |

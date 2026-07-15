@@ -210,7 +210,7 @@ export function registerTranscriptTools(
     {
       title: "Auto Pipeline from Transcript",
       description:
-        "FULLY AUTOMATED: Reads a meeting transcript, extracts requirements, and runs the complete SDD pipeline in one call. Creates CONSTITUTION.md, SPECIFICATION.md, DESIGN.md, TASKS.md, and ANALYSIS.md from a single transcript file. Supports VTT (Teams), SRT (Zoom), TXT, and MD formats.",
+        "Validates explicit Constitution, source-quoted EARS requirements, complete architecture, tasks, and gates against one transcript before atomically orchestrating the full contracted artifact set.",
       inputSchema: autoPipelineInputSchema,
       annotations: {
         readOnlyHint: false,
@@ -577,7 +577,7 @@ export function registerTranscriptTools(
     {
       title: "Batch Process Transcript Folder",
       description:
-        "Scans a folder for transcript files (.vtt, .srt, .txt, .md) and runs the full SDD auto-pipeline for each one. Designed for Power Automate + OneDrive workflows where meeting transcripts are saved automatically to a shared folder. Each transcript becomes its own feature spec package.",
+        "Validates a one-to-one explicit feature manifest for every transcript file, including source quotes, architecture, tasks, gates, and feature numbers, before writing batch feature packages.",
       inputSchema: batchTranscriptsInputSchema,
       annotations: {
         readOnlyHint: false,

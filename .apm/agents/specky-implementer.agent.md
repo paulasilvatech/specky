@@ -9,18 +9,18 @@ capabilities: ["workspace.read", "workspace.command.git", "mcp.specky.sdd_implem
 <example>
 Context: Tasks and design are complete, ready to implement
 user: "Generate the implementation plan for feature 001"
-assistant: "I'll create an ordered plan with checklists and test stubs."
+assistant: "I'll create an ordered plan and assemble the executable TDD bindings enabled by the feature contract."
 <commentary>
 Transitioning from spec to code is exactly this agent's purpose.
 </commentary>
 </example>
 
 <example>
-Context: User needs test scaffolding
-user: "Create test stubs with requirement traceability"
-assistant: "I'll generate test stubs with REQ-ID comments for every requirement."
+Context: User needs executable test generation
+user: "Create requirement-bound tests"
+assistant: "I'll validate and assemble the persisted executable bindings for every requirement."
 <commentary>
-Test stub generation with traceability is a core implementer task.
+Executable TDD binding assembly with traceability is a core implementer task.
 </commentary>
 </example>
 

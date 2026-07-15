@@ -24,9 +24,7 @@ import {
 } from "../contracts/pipeline-profiles.js";
 import { artifactMetadata } from "../utils/artifact-metadata.js";
 import { extractRequirementIds } from "../utils/id-contracts.js";
-import {
-  partitionFunctionalNonFunctional,
-} from "../utils/design-stubs.js";
+import { partitionFunctionalNonFunctional } from "../utils/requirement-partition.js";
 import {
   initInputSchema,
   discoverInputSchema,
@@ -166,7 +164,7 @@ export function registerPipelineTools(
           scope_out: "Future enhancements not in initial scope",
         });
 
-        await fileManager.writeSpecFile(featureDir, "CONSTITUTION.md", content);
+        await fileManager.writeSpecFile(featureDir, "CONSTITUTION.md", content, false);
 
         await stateMachine.withStateLock(featureDir, async () => {
           const state = stateMachine.createFeatureState({

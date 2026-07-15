@@ -74,7 +74,7 @@ export function registerVisualizationTools(
     {
       title: "Generate Mermaid Diagram",
       description:
-        "Generates a single Mermaid diagram from a specification artifact. Supports 17 diagram types: flowchart, sequence, class, ER, state machine, C4 context, C4 container, C4 component, C4 code, activity, use case, DFD (data flow), deployment, network topology, Gantt, pie chart, and mind map.",
+        "Validates explicit Mermaid code and source evidence for one diagram type required by the feature workload contract.",
       inputSchema: generateDiagramInputSchema,
       annotations: {
         readOnlyHint: true,
@@ -161,8 +161,7 @@ export function registerVisualizationTools(
     {
       title: "Generate All Diagrams",
       description:
-        "Generates ALL diagram types for a feature in one call. Produces architecture, sequence, ERD, flow, dependency, and traceability diagrams from all available artifacts, " +
-        "and writes the full set to DIAGRAMS.md in the feature directory, grouped by source artifact.",
+        "Validates the exact workload-required diagram set, rejecting missing, extra, duplicate, ungrounded, or incompatible Mermaid payloads, then writes DIAGRAMS.md.",
       inputSchema: generateAllDiagramsInputSchema,
       annotations: {
         readOnlyHint: false,

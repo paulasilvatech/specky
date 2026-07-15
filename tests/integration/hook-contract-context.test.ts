@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
 import { FileManager } from "../../src/services/file-manager.js";
 import { StateMachine } from "../../src/services/state-machine.js";
+import { testDocumentationConfig } from "../helpers/documentation-config.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 const CONTEXT = resolve(REPO, ".apm/hooks/scripts/specky-contract-context.mjs");
@@ -69,6 +70,7 @@ describe("contract-aware hooks", () => {
                     base_branch: "trunk",
                     draft_pr: true,
                     checkpoints: true,
+                    documentation: testDocumentationConfig(),
                 },
             },
         });
@@ -95,7 +97,12 @@ describe("contract-aware hooks", () => {
     function runContext(number: string) {
         return spawnSync("node", [CONTEXT, "json"], {
             cwd: workspace,
-            env: { ...process.env, SDD_SPEC_DIR: ".specs", SDD_FEATURE_NUMBER: number },
+            env: {
+                ...process.env,
+                SPECKY_HOOK_WORKSPACE: workspace,
+                SDD_SPEC_DIR: ".specs",
+                SDD_FEATURE_NUMBER: number,
+            },
             encoding: "utf8",
         });
     }
@@ -104,7 +111,7 @@ describe("contract-aware hooks", () => {
         await writeFeature("001", "first", 80);
         await writeFeature("002", "second", 90);
         const result = runContext("002");
-        expect(result.status).toBe(0);
+        expect(result.status, result.stderr).toBe(0);
         const context = JSON.parse(result.stdout) as {
             featureNumber: string;
             featureName: string;
@@ -140,13 +147,14 @@ describe("contract-aware hooks", () => {
             cwd: workspace,
             env: {
                 ...process.env,
+                SPECKY_HOOK_WORKSPACE: workspace,
                 SDD_SPEC_DIR: ".specs",
                 SDD_FEATURE_NUMBER: "001",
                 SDD_TOOL_NAME: "sdd_write_design",
             },
             encoding: "utf8",
         });
-        expect(featureResult.status).toBe(0);
+        expect(featureResult.status, featureResult.stderr).toBe(0);
         expect(featureResult.stdout).toContain("matches persisted release policy");
 
         runGit(workspace, ["checkout", "-qb", "trunk"]);
@@ -154,6 +162,7 @@ describe("contract-aware hooks", () => {
             cwd: workspace,
             env: {
                 ...process.env,
+                SPECKY_HOOK_WORKSPACE: workspace,
                 SDD_SPEC_DIR: ".specs",
                 SDD_FEATURE_NUMBER: "001",
                 SDD_TOOL_NAME: "sdd_create_branch",
@@ -168,16 +177,26 @@ describe("contract-aware hooks", () => {
         await writeFeature("001", "passing", 80);
         const passing = spawnSync("bash", [RELEASE_GATE], {
             cwd: workspace,
-            env: { ...process.env, SDD_SPEC_DIR: ".specs", SDD_FEATURE_NUMBER: "001" },
+            env: {
+                ...process.env,
+                SPECKY_HOOK_WORKSPACE: workspace,
+                SDD_SPEC_DIR: ".specs",
+                SDD_FEATURE_NUMBER: "001",
+            },
             encoding: "utf8",
         });
-        expect(passing.status).toBe(0);
+        expect(passing.status, passing.stderr).toBe(0);
         expect(passing.stdout).toContain("85% meets 80%");
 
         await writeFeature("002", "blocked", 90);
         const blocked = spawnSync("bash", [RELEASE_GATE], {
             cwd: workspace,
-            env: { ...process.env, SDD_SPEC_DIR: ".specs", SDD_FEATURE_NUMBER: "002" },
+            env: {
+                ...process.env,
+                SPECKY_HOOK_WORKSPACE: workspace,
+                SDD_SPEC_DIR: ".specs",
+                SDD_FEATURE_NUMBER: "002",
+            },
             encoding: "utf8",
         });
         expect(blocked.status).toBe(2);

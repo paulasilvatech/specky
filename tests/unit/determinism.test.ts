@@ -7,6 +7,19 @@ import { FileManager } from "../../src/services/file-manager.js";
 import { TemplateEngine } from "../../src/services/template-engine.js";
 import { TestGenerator } from "../../src/services/test-generator.js";
 import { currentDateString, currentTimestamp, formatTimestampForDisplay } from "../../src/utils/runtime-context.js";
+import type { DocumentationConfig } from "../../src/contracts/use-case.js";
+
+const DOCUMENTATION: DocumentationConfig = {
+  types: ["full"],
+  version: "1.0.0",
+  deployment_steps: ["Deploy the reviewed artifact."],
+  health_checks: ["Verify the health contract."],
+  monitoring_checks: ["Verify the monitoring contract."],
+  troubleshooting: [{ symptom: "Failure", cause: "Known cause", resolution: "Known resolution" }],
+  rollback_steps: ["Restore the reviewed artifact."],
+  support_contacts: ["team@example.test"],
+  onboarding_steps: ["Read the feature contract."],
+};
 
 describe("deterministic runtime context", () => {
   const fixedNow = "2026-06-17T12:34:56.000Z";
@@ -54,11 +67,31 @@ describe("deterministic runtime context", () => {
   it("generates stable documentation timestamps", async () => {
     const featureDir = "001-stable-docs";
     mkdirSync(join(workspace, featureDir), { recursive: true });
-    writeFileSync(join(workspace, featureDir, "SPECIFICATION.md"), "# Spec\n\nThe system shall be stable.", "utf8");
+    writeFileSync(join(workspace, featureDir, "SPECIFICATION.md"), [
+      "### REQ-CORE-001: Stable behavior",
+      "",
+      "The system shall keep documentation stable.",
+      "",
+      "**Acceptance Criteria:**",
+      "- Repeated generation is byte-identical",
+    ].join("\n"), "utf8");
+    writeFileSync(join(workspace, featureDir, "DESIGN.md"), [
+      "## System Context", "Stable user context.",
+      "## Container Architecture", "Stable container context.",
+      "## Component Design", "Stable component context.",
+      "## Data Model", "Stable data context.",
+      "## Infrastructure", "Stable infrastructure context.",
+    ].join("\n\n"), "utf8");
+    writeFileSync(
+      join(workspace, featureDir, "TASKS.md"),
+      "| T-001 | Generate docs | No | S | — | REQ-CORE-001 |\n",
+      "utf8",
+    );
+    writeFileSync(join(workspace, featureDir, "ANALYSIS.md"), "Decision: APPROVE\n", "utf8");
     const docGenerator = new DocGenerator(fileManager);
 
-    const first = await docGenerator.generateFullDocs(featureDir, "001");
-    const second = await docGenerator.generateFullDocs(featureDir, "001");
+    const first = await docGenerator.generateFullDocs(featureDir, "001", DOCUMENTATION);
+    const second = await docGenerator.generateFullDocs(featureDir, "001", DOCUMENTATION);
 
     expect(first.content).toBe(second.content);
     expect(first.content).toContain(`**Generated**: ${fixedNow}`);

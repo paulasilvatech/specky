@@ -162,6 +162,11 @@ interface Harness {
 
 async function buildHarness(workspace: string): Promise<Harness> {
   cpSync(TEMPLATES_SRC, join(workspace, CUSTOM_TEMPLATES), { recursive: true });
+  const configPath = join(workspace, ".specky/config.yml");
+  if (!existsSync(configPath)) {
+    mkdirSync(join(workspace, ".specky"), { recursive: true });
+    writeFileSync(configPath, serializeWorkspaceConfig(createWorkspaceConfig()));
+  }
 
   const fileManager = new FileManager(workspace);
   const stateMachine = new StateMachine(fileManager, workspace);

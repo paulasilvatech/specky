@@ -249,7 +249,7 @@ async function maybePrintUpdateBanner(command: string): Promise<void> {
   if (!UPDATE_BANNER_COMMANDS.has(command)) return;
   try {
     const { loadConfig } = await import("../config.js");
-    // Workspace-level hard disable (.specky/config.yml). Absent file → default true.
+    // Workspace-level hard disable. Missing/invalid config suppresses only this best-effort banner.
     if (!loadConfig(process.cwd()).update_check) return;
     const { checkForUpdate } = await import("./lib/update-check.js");
     const latest = await checkForUpdate({});

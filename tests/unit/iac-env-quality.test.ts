@@ -28,6 +28,7 @@
  */
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { createHash, createHmac } from "node:crypto";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
@@ -455,8 +456,51 @@ describe("ears-validator.sh hook", () => {
   });
 
   function runHook(cwd: string, shell: string): { status: number | null; stdout: string; stderr: string } {
-    const res = spawnSync(shell, [HOOK], { cwd, encoding: "utf8" });
+    const featureDir = join(cwd, ".specs/001-x");
+    const hasSignedState = existsSync(join(featureDir, ".sdd-state.json.sig"));
+    const res = spawnSync(shell, [HOOK], {
+      cwd,
+      encoding: "utf8",
+      env: hasSignedState
+        ? {
+          ...process.env,
+          SPECKY_HOOK_WORKSPACE: cwd,
+          SDD_SPEC_DIR: ".specs",
+          SDD_FEATURE_NUMBER: "001",
+        }
+        : process.env,
+    });
     return { status: res.status, stdout: res.stdout ?? "", stderr: res.stderr ?? "" };
+  }
+
+  function activateHookFeature(cwd: string): void {
+    const featureDirectory = ".specs/001-x";
+    const contract = resolveUseCaseContract({
+      lifecycle: "greenfield",
+      workload: "api",
+      execution_mode: "full",
+      capabilities: [],
+      capability_config: {},
+    });
+    const phaseNames = ["init", "discover", "specify", "clarify", "design", "tasks", "analyze", "implement", "verify", "release"];
+    const state = {
+      version: "5.0.0",
+      project_name: "x",
+      feature: { number: "001", name: "x", directory: featureDirectory },
+      contract,
+      current_phase: "specify",
+      phases: Object.fromEntries(phaseNames.map((phase) => [phase, { status: "pending" }])),
+      amendments: [],
+      gate_decision: null,
+    };
+    const raw = JSON.stringify(state, null, 2);
+    const key = process.env["SDD_STATE_KEY"]
+      ?? createHash("sha256").update(`specky-state-v1:${cwd}`).digest("hex");
+    writeFileSync(join(cwd, featureDirectory, ".sdd-state.json"), raw);
+    writeFileSync(
+      join(cwd, featureDirectory, ".sdd-state.json.sig"),
+      createHmac("sha256", key).update(raw).digest("hex"),
+    );
   }
 
   const PARTIAL_SPEC = [
@@ -471,6 +515,7 @@ describe("ears-validator.sh hook", () => {
       const d = makeDir("specky-ears-partial-");
       mkdirSync(join(d, ".specs/001-x"), { recursive: true });
       writeFileSync(join(d, ".specs/001-x/SPECIFICATION.md"), PARTIAL_SPEC);
+      activateHookFeature(d);
 
       // The original hook crashed here: grep -c printed "0" AND exited 1, so
       // `|| echo "0"` appended a second line and $((...)) blew up → exit 1,
@@ -498,6 +543,7 @@ describe("ears-validator.sh hook", () => {
       "- REQ-A-005: If the session expires, then the system shall redirect to login.",
       "- REQ-A-006: While in maintenance mode, when a request arrives, the system shall queue it.",
     ].join("\n"));
+    activateHookFeature(d);
 
     const res = runHook(d, "sh");
     expect(res.status).toBe(0);
@@ -508,6 +554,7 @@ describe("ears-validator.sh hook", () => {
   it("exits 1 only for a real failure: latest feature dir has no SPECIFICATION.md", () => {
     const d = makeDir("specky-ears-missing-");
     mkdirSync(join(d, ".specs/001-x"), { recursive: true });
+    activateHookFeature(d);
 
     const res = runHook(d, "sh");
     expect(res.status).toBe(1);

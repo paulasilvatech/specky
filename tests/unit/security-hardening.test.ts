@@ -82,10 +82,8 @@ describe("loadConfig (.specky/config.yml)", () => {
     expect(cfg.rate_limit.burst).toBe(10);
   });
 
-  it("returns defaults when the file is absent", () => {
-    const cfg = loadConfig(ws);
-    expect(cfg.audit_enabled).toBe(false);
-    expect(cfg.contracts.require_explicit_selection).toBe(true);
+  it("rejects a missing runtime config instead of returning defaults", () => {
+    expect(() => loadConfig(ws)).toThrow(/file is required/);
   });
 
   it("refuses an escaping templates_path without falling back", () => {

@@ -1,9 +1,35 @@
-audit_enabled: true
+kind: "specky-package-catalog"
 version: "3.11.0"
-installation:
-  permission_profile: scoped
-  integrations: []
+runtime_config:
+  path: ".specky/config.yml"
+  required: true
+  strict: true
+  unknown_keys: "reject"
+  partial_documents: "reject"
+  missing_file: "reject"
+contracts:
+  require_explicit_selection: true
+  lifecycles: ["greenfield", "brownfield", "migration"]
+  workloads:
+    ["api", "web-application", "service", "cli", "library", "infrastructure"]
+  execution_modes: ["full", "rapid", "emergency"]
+  capabilities:
+    [
+      "compliance",
+      "tdd",
+      "iac",
+      "dev-environment",
+      "document-import",
+      "transcript-import",
+      "figma",
+      "work-items",
+      "release",
+    ]
+  canonical_state: ".specs/<NNN-name>/.sdd-state.json"
+  state_version: "5.0.0"
+  state_signature: "HMAC-SHA256"
 pipeline:
+  # Complete phase vocabulary. Each feature persists its actual ordered graph.
   phases: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
   phase_names:
     0: "init"
@@ -29,7 +55,7 @@ pipeline:
     7: "specky-implementer"
     8: "specky-test-verifier"
     9: "specky-release-engineer"
-  lgtm_gates: [2, 4, 5]
+  configurable_lgtm_gates: [2, 4, 5]
 hooks:
   # Source scripts ship at .apm/hooks/scripts and are installed per IDE:
   #   claude  -> .claude/hooks/scripts
@@ -56,53 +82,3 @@ hooks:
     - "specky-metrics-dashboard"
 specs_dir: ".specs"
 skills_dir: ".apm/skills"
-branching:
-  strategy: "gitflow-sdd"
-  branches:
-    feature: "spec/{NNN}-{feature-name}"
-    develop: "develop"
-    stage: "stage"
-    production: "main"
-  phase_mapping:
-    spec_branch: [0, 1, 2, 3, 4, 5, 6, 7] # All spec work
-    develop: [8] # Integration + review
-    stage: [8, 9] # QA + release gates
-    main: [] # Production only
-  artifacts_per_phase:
-    0: ["CONSTITUTION.md", ".sdd-state.json"]
-    1: ["RESEARCH.md"]
-    2: ["SPECIFICATION.md"]
-    4: ["DESIGN.md"]
-    5: ["TASKS.md", "CHECKLIST.md"]
-    6: ["ANALYSIS.md", "COMPLIANCE.md"]
-    8: ["VERIFICATION.md", "CROSS_ANALYSIS.md"]
-  rules:
-    - "Each spec MUST have its own branch: spec/NNN-feature-name"
-    - "Create spec branch from develop, never from main"
-    - "All .specs/ artifacts are created on the spec branch (Phases 0-7)"
-    - "Merge to develop only after Phase 8 (verify) passes"
-    - "Merge to stage only after integration review on develop"
-    - "Merge to main only after blocking gates pass on stage"
-    - "Delete spec branch after successful merge to develop"
-model_routing:
-  # Primary (recommended) models per phase. Requires Anthropic plan with Opus access.
-  # Without Opus, fall back per `fallback_chain` in src/services/model-routing-engine.ts.
-  # Short summary of fallback tiers:
-  #   Reasoning-heavy (specify/clarify/design/analyze/verify):
-  #     claude-opus-4-7 → claude-opus-4-6 → claude-sonnet-4-6 → gpt-5 → gpt-4.5
-  #   Balanced (discover/tasks):
-  #     claude-sonnet-4-6 → claude-opus-4-6 → gpt-5 → gpt-4.5
-  #   Fast (init/release):
-  #     claude-haiku-4-5 → claude-sonnet-4-6 → gpt-4.5
-  #   Coding (implement):
-  #     claude-sonnet-4-6 → codex → gpt-5 → claude-opus-4-6
-  phase_0: "claude-haiku-4-5"
-  phase_1: "claude-sonnet-4-6"
-  phase_2: "claude-opus-4-7"
-  phase_3: "claude-opus-4-7"
-  phase_4: "claude-opus-4-7"
-  phase_5: "claude-sonnet-4-6"
-  phase_6: "claude-opus-4-7"
-  phase_7: "claude-sonnet-4-6"
-  phase_8: "claude-opus-4-7"
-  phase_9: "claude-haiku-4-5"

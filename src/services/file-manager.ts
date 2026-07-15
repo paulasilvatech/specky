@@ -6,7 +6,7 @@
 import { mkdir, readFile, writeFile, readdir, stat, rename, access, unlink } from "node:fs/promises";
 import { join, resolve, relative, basename, dirname, sep } from "node:path";
 import { randomUUID } from "node:crypto";
-import { DEFAULT_SPEC_DIR, DEFAULT_EXCLUDE_PATTERNS, DEFAULT_SCAN_DEPTH, MAX_SCAN_DEPTH } from "../constants.js";
+import { MAX_SCAN_DEPTH } from "../constants.js";
 import type { DirectoryTree, FeatureInfo } from "../types.js";
 
 export class FileManager {
@@ -49,7 +49,7 @@ export class FileManager {
   /**
    * Ensure the spec directory exists, creating it if needed.
    */
-  async ensureSpecDir(specDir: string = DEFAULT_SPEC_DIR): Promise<string> {
+  async ensureSpecDir(specDir: string): Promise<string> {
     const absPath = this.sanitizePath(specDir);
     await mkdir(absPath, { recursive: true });
     return absPath;
@@ -64,7 +64,7 @@ export class FileManager {
     featureDir: string,
     fileName: string,
     content: string,
-    force: boolean = false
+    force: boolean
   ): Promise<string> {
     const absPath = this.sanitizePath(join(featureDir, fileName));
 
@@ -99,6 +99,61 @@ export class FileManager {
   }
 
   /**
+   * Write a set of files as one rollback-safe operation. All conflicts are
+   * checked before writes; any failure restores the original bytes.
+   */
+  async writeSpecFiles(
+    files: Array<{ directory: string; fileName: string; content: string }>,
+    force: boolean,
+  ): Promise<string[]> {
+    const targets = files.map((file) => ({
+      ...file,
+      absolutePath: this.sanitizePath(join(file.directory, file.fileName)),
+    }));
+    if (new Set(targets.map((target) => target.absolutePath)).size !== targets.length) {
+      throw new Error("Bulk write contains duplicate target paths.");
+    }
+
+    const snapshots = new Map<string, Buffer | null>();
+    for (const target of targets) {
+      const exists = await this.pathExists(target.absolutePath);
+      if (exists && !force) {
+        throw new Error(
+          `File already exists: ${relative(this.root, target.absolutePath)}. Use force: true to overwrite.`,
+        );
+      }
+      snapshots.set(target.absolutePath, exists ? await readFile(target.absolutePath) : null);
+    }
+
+    const temporaryPaths: string[] = [];
+    try {
+      for (const target of targets) {
+        await mkdir(dirname(target.absolutePath), { recursive: true });
+        const temporaryPath = `${target.absolutePath}.${randomUUID()}.tmp`;
+        temporaryPaths.push(temporaryPath);
+        await writeFile(temporaryPath, target.content, "utf-8");
+      }
+      for (let index = 0; index < targets.length; index++) {
+        await rename(temporaryPaths[index], targets[index].absolutePath);
+      }
+      return targets.map((target) => target.absolutePath);
+    } catch (error) {
+      for (const temporaryPath of temporaryPaths) {
+        try { await unlink(temporaryPath); } catch { /* already renamed or absent */ }
+      }
+      for (const [absolutePath, original] of snapshots) {
+        if (original === null) {
+          try { await unlink(absolutePath); } catch { /* absent */ }
+        } else {
+          await mkdir(dirname(absolutePath), { recursive: true });
+          await writeFile(absolutePath, original);
+        }
+      }
+      throw error;
+    }
+  }
+
+  /**
    * Read a spec file from a feature directory.
    */
   async readSpecFile(featureDir: string, fileName: string): Promise<string> {
@@ -130,7 +185,7 @@ export class FileManager {
   /**
    * List all feature directories in a spec dir.
    */
-  async listFeatures(specDir: string = DEFAULT_SPEC_DIR): Promise<FeatureInfo[]> {
+  async listFeatures(specDir: string): Promise<FeatureInfo[]> {
     const absPath = this.sanitizePath(specDir);
     const features: FeatureInfo[] = [];
 
@@ -163,9 +218,9 @@ export class FileManager {
    * Scan a directory recursively up to a depth limit.
    */
   async scanDirectory(
-    dir: string = ".",
-    depth: number = DEFAULT_SCAN_DEPTH,
-    exclude: readonly string[] = DEFAULT_EXCLUDE_PATTERNS
+    dir: string,
+    depth: number,
+    exclude: readonly string[]
   ): Promise<DirectoryTree> {
     const clampedDepth = Math.min(depth, MAX_SCAN_DEPTH);
     const absPath = this.sanitizePath(dir);

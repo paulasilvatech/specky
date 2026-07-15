@@ -24,11 +24,9 @@ export function registerTestingTools(
   server.registerTool(
     "sdd_generate_tests",
     {
-      title: "Generate Test Stubs",
+      title: "Generate Executable Requirement Tests",
       description:
-        "Generate test stubs from acceptance criteria in SPECIFICATION.md and TASKS.md. " +
-        "Supports 6 frameworks: vitest, jest, playwright, pytest, junit, xunit. " +
-        "Each test stub traces to a requirement ID for full traceability.",
+        "Assemble executable tests from the persisted TDD framework, imports, and requirement bindings. Every SPECIFICATION.md REQ-ID must have a nontrivial binding; TODO and trivial assertions are rejected.",
       inputSchema: generateTestsInputSchema,
       annotations: {
         readOnlyHint: false,
@@ -101,9 +99,7 @@ export function registerTestingTools(
               ? "Run the generated Playwright tests using Playwright MCP or `npx playwright test`. Review each TODO stub and replace with real assertions. Use sdd_verify_tasks to check implementation coverage."
               : `Run the generated tests using your ${tdd.framework} runner. Review each TODO stub and replace with real assertions. Use sdd_verify_tasks to check implementation coverage.`,
           learning_note:
-            "Test stubs trace directly to acceptance criteria from your specification. " +
-            "Each test corresponds to a specific requirement, maintaining full traceability " +
-            "from spec → test → code. Replace the TODO placeholders with real test logic.",
+            "Executable tests come from fingerprinted TDD bindings and preserve requirement traceability from spec to test to code.",
         };
 
         const enriched = await enrichResponse("sdd_generate_tests", result, stateMachine, stateDir);

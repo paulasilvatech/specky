@@ -6,7 +6,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { formatError, truncate } from "./tool-result.js";
 import { join } from "node:path";
 import { z } from "zod";
-import { DEFAULT_EXCLUDE_PATTERNS, STATE_FILE, VERSION, MCP_ECOSYSTEM, TOTAL_TOOLS } from "../constants.js";
+import { STATE_FILE, VERSION, MCP_ECOSYSTEM, TOTAL_TOOLS } from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
@@ -292,8 +292,7 @@ export function registerUtilityTools(
     },
     async ({ depth, exclude }) => {
       try {
-        const excludePatterns = exclude || [...DEFAULT_EXCLUDE_PATTERNS];
-        const summary = await codebaseScanner.scan(depth, excludePatterns);
+        const summary = await codebaseScanner.scan(depth, exclude);
         const enriched = enrichStateless("sdd_scan_codebase", summary as unknown as Record<string, unknown>);
 
         return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };

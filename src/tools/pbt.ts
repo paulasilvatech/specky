@@ -22,9 +22,7 @@ export function registerPbtTools(
     {
       title: "Generate Property-Based Tests",
       description:
-        "Extracts universal properties (invariants, round-trips, idempotence) from EARS requirements " +
-        "and generates property-based tests using fast-check (TypeScript) or hypothesis (Python). " +
-        "Unlike example-based tests, PBT uses random input generation to discover edge cases that manual tests miss.",
+        "Assembles executable fast-check or Hypothesis properties from persisted requirement-bound property code. Specky validates complete REQ-ID coverage and rejects TODO, trivial, or generated system-model bodies.",
       inputSchema: generatePbtInputSchema,
       annotations: {
         readOnlyHint: false,

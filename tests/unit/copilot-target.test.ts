@@ -70,7 +70,8 @@ describe("copilot target install", () => {
         expect(countFiles(resolve(workspace, ".github/agents"), (n) => n.startsWith("specky-") && n.endsWith(".md"))).toBe(13);
         expect(countFiles(resolve(workspace, ".github/prompts"), (n) => n.startsWith("specky-") && n.endsWith(".md"))).toBe(22);
         expect(countDirs(resolve(workspace, ".github/skills"), "specky-")).toBe(14);
-        expect(countFiles(resolve(workspace, ".github/hooks/specky/scripts"), (n) => n.endsWith(".sh") || n.endsWith(".mjs"))).toBe(16);
+        expect(countFiles(resolve(workspace, ".github/hooks/specky/scripts"), (n) => n.endsWith(".sh") || n.endsWith(".mjs"))).toBe(17);
+        expect(existsSync(resolve(workspace, ".github/hooks/specky/scripts/specky-contract-context.bash"))).toBe(true);
 
         // Only the Copilot instruction is installed
         const instructionDir = resolve(workspace, ".github/instructions");

@@ -88,7 +88,7 @@ function shellQuote(value) {
 }
 
 function resolveContext() {
-    const workspace = resolve(process.env.SDD_WORKSPACE ?? process.cwd());
+    const workspace = resolve(process.env.SPECKY_HOOK_WORKSPACE ?? process.cwd());
     const input = parseInput(readHookInput());
     const requestedSpecDir = process.env.SDD_SPEC_DIR ?? findString(input, ["spec_dir", "specDir"]);
     const requestedFeatureNumber = process.env.SDD_FEATURE_NUMBER

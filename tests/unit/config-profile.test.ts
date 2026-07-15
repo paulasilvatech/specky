@@ -39,7 +39,9 @@ describe("strict workspace configuration", () => {
         writeFileSync(join(workspace, ".specky", "config.yml"), yaml, "utf-8");
     }
 
-    it("uses an explicit standard bootstrap configuration when the file is absent", () => {
+    it("rejects a missing runtime config and requires the installer bootstrap", () => {
+        expect(() => loadConfig(workspace, NO_OVERRIDES)).toThrow(/file is required/);
+        writeConfig(createWorkspaceConfig());
         const config = loadConfig(workspace, NO_OVERRIDES);
         expect(config).toMatchObject({
             profile: "standard",
@@ -83,6 +85,7 @@ describe("strict workspace configuration", () => {
     });
 
     it("supports environment and flag profile overrides with deterministic precedence", () => {
+        writeConfig(createWorkspaceConfig());
         expect(loadConfig(workspace, {
             argv: [],
             env: { SPECKY_PROFILE: "enterprise" },

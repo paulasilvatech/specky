@@ -53,6 +53,22 @@ if [ "$SPECKY_GUARD_MODE" = "off" ]; then
   SPECKY_GUARD_MODE="advisory"
 fi
 
+# Buffer stdin once; both the context resolver and prompt parser consume this JSON.
+if [ -z "${SDD_HOOK_INPUT:-}" ] && [ ! -t 0 ]; then
+  SDD_HOOK_INPUT=$(cat 2>/dev/null || true)
+  export SDD_HOOK_INPUT
+fi
+
+# ── Extract user prompt ──────────────────────────────────
+PROMPT="${CLAUDE_USER_PROMPT:-}"
+if [ -z "$PROMPT" ] && [ -n "${SDD_HOOK_INPUT:-}" ]; then
+  if command -v jq >/dev/null 2>&1; then
+    PROMPT=$(printf '%s' "$SDD_HOOK_INPUT" | jq -r '.prompt // .user_prompt // ""' 2>/dev/null || true)
+  else
+    PROMPT="$SDD_HOOK_INPUT"
+  fi
+fi
+
 # ── Resolve explicit pipeline context ───────────────────
 specky_load_contract_context || exit $?
 if [ "${SPECKY_CONTEXT_ACTIVE:-0}" != "1" ]; then
@@ -61,21 +77,6 @@ fi
 FEATURE="${SPECKY_FEATURE_NUMBER}-${SPECKY_FEATURE_NAME}"
 PHASE="$SPECKY_PHASE"
 STATE="$SPECKY_STATE_FILE"
-
-# ── Extract user prompt ──────────────────────────────────
-# Claude Code sends the prompt as JSON on stdin: {"prompt": "..."}
-# Copilot uses $CLAUDE_USER_PROMPT. Fall back to empty.
-PROMPT=""
-if [ -n "${CLAUDE_USER_PROMPT:-}" ]; then
-  PROMPT="$CLAUDE_USER_PROMPT"
-elif [ ! -t 0 ]; then
-  # Read from stdin non-blocking
-  if command -v jq >/dev/null 2>&1; then
-    PROMPT=$(jq -r '.prompt // .user_prompt // ""' 2>/dev/null || cat || true)
-  else
-    PROMPT=$(cat 2>/dev/null || true)
-  fi
-fi
 
 # Lowercase for matching
 PROMPT_LC=$(echo "$PROMPT" | tr '[:upper:]' '[:lower:]' 2>/dev/null || true)

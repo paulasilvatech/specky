@@ -20,6 +20,8 @@ if command -v jq >/dev/null 2>&1 && [ -n "$INPUT" ]; then
 
   PROMPT=$(echo "$INPUT" | jq -r '.prompt // .user_prompt // .text // empty' 2>/dev/null || true)
   [ -n "$PROMPT" ] && export CLAUDE_USER_PROMPT="$PROMPT"
+  WORKSPACE=$(echo "$INPUT" | jq -r '.workspace // .workspace_path // .cwd // .project_dir // empty' 2>/dev/null || true)
+  [ -n "$WORKSPACE" ] && export SPECKY_HOOK_WORKSPACE="$WORKSPACE"
 fi
 
 set +e

@@ -94,7 +94,7 @@ try {
   // Absent or unreadable install.json is fine — no advisory.
 }
 
-// Load optional project config (.specky/config.yml). The profile may be
+// Load mandatory project config (.specky/config.yml). The profile may be
 // forced from outside the workspace: --profile=enterprise flag, SPECKY_PROFILE
 // env, or SPECKY_ENTERPRISE=1 shorthand.
 const config = loadConfig(workspaceRoot);

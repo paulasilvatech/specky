@@ -8,7 +8,7 @@ import { z } from "zod";
 export const generateTestsInputSchema = z.object({
   feature_number: featureNumberSchema,
   spec_dir: specDirSchema,
-}).strict().describe("Generate test stubs from acceptance criteria in SPECIFICATION.md and TASKS.md. Each stub traces to a requirement.");
+}).strict().describe("Generate executable tests from the feature's persisted TDD bindings.");
 
 export const verifyTestsInputSchema = z.object({
   feature_number: featureNumberSchema,

@@ -28,7 +28,7 @@ export function registerInfrastructureTools(
     {
       title: "Generate Infrastructure as Code",
       description:
-        "Reads DESIGN.md to detect infrastructure needs and generates Terraform or Bicep files. Returns generated file contents, variables, and a Mermaid diagram of the infrastructure topology.",
+        "Requires DESIGN.md evidence and generates Terraform for the exact cloud and concrete resources persisted in the IaC capability. No provider, module, or cloud inference is performed.",
       inputSchema: generateIacInputSchema,
       annotations: {
         readOnlyHint: false,
