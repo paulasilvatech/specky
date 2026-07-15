@@ -61,7 +61,7 @@
     <tspan font-weight="600" fill="rgba(255,255,255,0.85)">The complete SDD toolkit</tspan> that keeps your requirements, code, and tests in sync.
   </text>
   <text x="600" y="326" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="17" fill="rgba(255,255,255,0.55)">13 agents, 58 MCP tools, 22 prompts, 14 skills, 16 hooks.</text>
-  <text x="600" y="352" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="17" fill="rgba(255,255,255,0.55)">Six compliance frameworks. One install, everything works.</text>
+  <text x="600" y="352" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="17" fill="rgba(255,255,255,0.55)">Signed per-feature contracts. Five evidence-backed compliance packs.</text>
 
   <!-- CTA Button -->
   <rect x="478" y="385" width="244" height="48" rx="10" fill="url(#btnGrad)"/>
@@ -88,9 +88,9 @@
     <text x="330" y="568" font-size="28" font-weight="800" fill="#7c3aed">58</text>
     <text x="330" y="590" font-size="10" font-weight="500" fill="rgba(255,255,255,0.35)" letter-spacing="1.5">MCP TOOLS</text>
 
-    <!-- 10 Phases -->
-    <text x="510" y="568" font-size="28" font-weight="800" fill="#7c3aed">10</text>
-    <text x="510" y="590" font-size="10" font-weight="500" fill="rgba(255,255,255,0.35)" letter-spacing="1.5">PHASES</text>
+    <!-- 54 Named Contracts -->
+    <text x="510" y="568" font-size="28" font-weight="800" fill="#7c3aed">54</text>
+    <text x="510" y="590" font-size="10" font-weight="500" fill="rgba(255,255,255,0.35)" letter-spacing="1.5">CONTRACTS</text>
 
     <!-- 22 Prompts -->
     <text x="690" y="568" font-size="28" font-weight="800" fill="#7c3aed">22</text>
@@ -100,8 +100,8 @@
     <text x="870" y="568" font-size="28" font-weight="800" fill="#7c3aed">16</text>
     <text x="870" y="590" font-size="10" font-weight="500" fill="rgba(255,255,255,0.35)" letter-spacing="1.5">HOOKS</text>
 
-    <!-- 6 Compliance -->
-    <text x="1060" y="568" font-size="28" font-weight="800" fill="#7c3aed">6</text>
+    <!-- 5 Compliance Packs -->
+    <text x="1060" y="568" font-size="28" font-weight="800" fill="#7c3aed">5</text>
     <text x="1060" y="590" font-size="10" font-weight="500" fill="rgba(255,255,255,0.35)" letter-spacing="1.5">COMPLIANCE</text>
   </g>
 
