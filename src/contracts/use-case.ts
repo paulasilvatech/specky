@@ -317,7 +317,7 @@ function canonicalize(value: unknown): unknown {
         }, {});
 }
 
-function validateCapabilityConfig(selection: UseCaseSelection): void {
+function validateCapabilityKeys(selection: UseCaseSelection): void {
     const capabilities = [...new Set(selection.capabilities)].sort((left, right) => left.localeCompare(right));
     const configured = Object.keys(selection.capability_config)
         .sort((left, right) => left.localeCompare(right));
@@ -327,37 +327,49 @@ function validateCapabilityConfig(selection: UseCaseSelection): void {
         );
     }
 
+}
+
+function validateWorkItemConfig(selection: UseCaseSelection): void {
     const workItems = selection.capability_config["work-items"];
     if (workItems?.platform === "jira" && !workItems.project_key) {
         throw new Error("Jira work-items capability requires project_key.");
     }
+}
 
+function validateDocumentationConfig(selection: UseCaseSelection): void {
     const documentation = selection.capability_config.release?.documentation;
-    if (documentation?.types.includes("api")) {
-        if (selection.workload !== "api") {
-            throw new Error("API documentation is available only for the api workload.");
-        }
-        if (!documentation.api_base_url) {
-            throw new Error("API documentation requires api_base_url.");
-        }
+    if (!documentation?.types.includes("api")) return;
+    if (selection.workload !== "api") {
+        throw new Error("API documentation is available only for the api workload.");
     }
+    if (!documentation.api_base_url) {
+        throw new Error("API documentation requires api_base_url.");
+    }
+}
 
+function validateTddConfig(selection: UseCaseSelection): void {
     const tdd = selection.capability_config.tdd;
-    if (tdd) {
-        for (const binding of tdd.bindings) {
-            if (/(?:\/\/|#|\/\*|\[)\s*TODO\b|expect\(true\)|assert\s+True|assertTrue\(true\)|Assert\.True\(true\)|toBeTruthy\(\)/i.test(binding.body)) {
-                throw new Error(`TDD binding ${binding.requirement_id} contains a placeholder or trivial assertion.`);
-            }
-        }
-        for (const binding of tdd.property_bindings) {
-            if (!binding.body.includes(binding.requirement_id)) {
-                throw new Error(`Property binding ${binding.requirement_id} must carry its requirement ID in executable code.`);
-            }
-            if (/(?:\/\/|#|\/\*|\[)\s*TODO\b|return\s+true\b|assert\s+True\b/i.test(binding.body)) {
-                throw new Error(`Property binding ${binding.requirement_id} contains a placeholder or trivial property.`);
-            }
+    if (!tdd) return;
+    for (const binding of tdd.bindings) {
+        if (/(?:\/\/|#|\/\*|\[)\s*TODO\b|expect\(true\)|assert\s+True|assertTrue\(true\)|Assert\.True\(true\)|toBeTruthy\(\)/i.test(binding.body)) {
+            throw new Error(`TDD binding ${binding.requirement_id} contains a placeholder or trivial assertion.`);
         }
     }
+    for (const binding of tdd.property_bindings) {
+        if (!binding.body.includes(binding.requirement_id)) {
+            throw new Error(`Property binding ${binding.requirement_id} must carry its requirement ID in executable code.`);
+        }
+        if (/(?:\/\/|#|\/\*|\[)\s*TODO\b|return\s+true\b|assert\s+True\b/i.test(binding.body)) {
+            throw new Error(`Property binding ${binding.requirement_id} contains a placeholder or trivial property.`);
+        }
+    }
+}
+
+function validateCapabilityConfig(selection: UseCaseSelection): void {
+    validateCapabilityKeys(selection);
+    validateWorkItemConfig(selection);
+    validateDocumentationConfig(selection);
+    validateTddConfig(selection);
 }
 
 export function resolveUseCaseContract(selection: UseCaseSelection): ResolvedUseCaseContract {

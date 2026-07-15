@@ -6,6 +6,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { writeTestWorkspaceConfig } from "../helpers/runtime-workspace.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 const SERVER = resolve(REPO, "dist/index.js");
@@ -63,18 +64,11 @@ describe("MCP tool enforcement", () => {
   beforeEach(() => {
     ws = mkdtempSync(resolve(tmpdir(), "specky-mcp-enforcement-"));
     spawnSync("git", ["init", "-q"], { cwd: ws });
-    mkdirSync(resolve(ws, ".specky"), { recursive: true });
-    writeFileSync(
-      resolve(ws, ".specky", "config.yml"),
-      [
-        "audit_enabled: true",
-        "rbac:",
-        "  enabled: true",
-        "  default_role: viewer",
-        "",
-      ].join("\n"),
-      "utf8",
-    );
+    writeTestWorkspaceConfig(ws, (config) => {
+      config.audit_enabled = true;
+      config.rbac.enabled = true;
+      config.rbac.default_role = "viewer";
+    });
   });
 
   afterEach(() => {
@@ -82,10 +76,10 @@ describe("MCP tool enforcement", () => {
   });
 
   it("allows viewer read-only tools and writes audit entries", () => {
-    const response = callTool(ws, "sdd_get_status", { spec_dir: ".specs" }, "viewer");
+    const response = callTool(ws, "sdd_get_status", { view: "workspace", spec_dir: ".specs" }, "viewer");
     const text = extractText(response);
 
-    expect(text).toContain("current_phase");
+    expect(text).toContain("workspace_status");
     expect(existsSync(resolve(ws, ".specs", ".audit.jsonl"))).toBe(true);
 
     const entries = readAuditEntries(ws);
@@ -102,7 +96,18 @@ describe("MCP tool enforcement", () => {
   });
 
   it("blocks viewer write tools before execution and records denial", () => {
-    const response = callTool(ws, "sdd_init", { project_name: "demo", spec_dir: ".specs" }, "viewer");
+    const response = callTool(ws, "sdd_init", {
+      project_name: "demo",
+      spec_dir: ".specs",
+      feature_number: "001",
+      use_case: {
+        lifecycle: "greenfield",
+        workload: "service",
+        execution_mode: "full",
+        capabilities: [],
+        capability_config: {},
+      },
+    }, "viewer");
     const payload = JSON.parse(extractText(response)) as { error: string; active_role: string };
 
     expect(payload.error).toBe("access_denied");

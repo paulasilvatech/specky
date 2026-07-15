@@ -13,6 +13,7 @@ import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { writeTestWorkspaceConfig } from "../helpers/runtime-workspace.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 const SERVER = resolve(REPO, "dist/index.js");
@@ -90,6 +91,7 @@ describe("happy path through MCP with a mismatched display name", () => {
   beforeEach(() => {
     ws = mkdtempSync(resolve(tmpdir(), "specky-happy-path-"));
     spawnSync("git", ["init", "-q"], { cwd: ws });
+    writeTestWorkspaceConfig(ws);
   });
 
   afterEach(() => {
@@ -98,13 +100,37 @@ describe("happy path through MCP with a mismatched display name", () => {
 
   it("writes the spec into the init directory and advances past specify", async () => {
     const [, , , writeSpec, advance] = await driveSequence(ws, [
-      { name: "sdd_init", args: { project_name: "user-auth" } },
-      { name: "sdd_discover", args: { project_idea: "Email/password auth with JWT sessions" } },
-      { name: "sdd_advance_phase", args: {} },
+      {
+        name: "sdd_init",
+        args: {
+          project_name: "user-auth",
+          spec_dir: ".specs",
+          feature_number: "001",
+          use_case: {
+            lifecycle: "greenfield",
+            workload: "service",
+            execution_mode: "full",
+            capabilities: [],
+            capability_config: {},
+          },
+        },
+      },
+      {
+        name: "sdd_discover",
+        args: {
+          spec_dir: ".specs",
+          feature_number: "001",
+          project_idea: "Email/password auth with JWT sessions",
+        },
+      },
+      { name: "sdd_advance_phase", args: { spec_dir: ".specs", feature_number: "001" } },
       {
         name: "sdd_write_spec",
         args: {
           feature_name: "User Authentication", // deliberately different from "user-auth"
+          feature_number: "001",
+          spec_dir: ".specs",
+          force: false,
           discovery_answers: { Q1: "v1 login" },
           requirements: [
             {
@@ -116,7 +142,7 @@ describe("happy path through MCP with a mismatched display name", () => {
           ],
         },
       },
-      { name: "sdd_advance_phase", args: {} },
+      { name: "sdd_advance_phase", args: { spec_dir: ".specs", feature_number: "001" } },
     ]);
 
     // Spec written into the SAME directory init created — no fork.

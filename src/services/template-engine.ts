@@ -94,8 +94,10 @@ export class TemplateEngine {
       return value;
     });
 
-    const unresolved = result.match(/\{\{[^}]+\}\}/)?.[0];
-    if (unresolved) {
+    const unresolvedStart = result.indexOf("{{");
+    const unresolvedEnd = unresolvedStart === -1 ? -1 : result.indexOf("}}", unresolvedStart + 2);
+    if (unresolvedStart !== -1 && unresolvedEnd !== -1) {
+      const unresolved = result.slice(unresolvedStart, unresolvedEnd + 2);
       throw new Error(`Template ${templateName} contains unresolved expression ${unresolved}.`);
     }
 
@@ -109,8 +111,8 @@ export class TemplateEngine {
     itemPath: string,
   ): string {
     if (typeof item === "string") {
-      const rendered = body.replace(/\{\{this\}\}/g, item);
-      const named = rendered.match(/\{\{(\w+)\}\}/)?.[1];
+      const rendered = body.replaceAll("{{this}}", item);
+      const named = /\{\{(\w+)\}\}/.exec(rendered)?.[1];
       if (named) throw new TemplateRenderError(templateName, `${itemPath}.${named}`, "string");
       return rendered;
     }

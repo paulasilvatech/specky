@@ -337,7 +337,8 @@ export function registerIntegrationTools(
           content += `**Context**: ${source.context}\n\n`;
           content += `**Status**: ${entry.status}\n\n`;
           content += `### Findings\n\n${entry.findings}\n\n`;
-          content += `### Sources\n\n${entry.sources.map((item) => `- ${item}`).join("\n")}\n\n`;
+          const sourceList = entry.sources.map((item) => `- ${item}`).join("\n");
+          content += `### Sources\n\n${sourceList}\n\n`;
           content += `### Recommendation\n\n${entry.recommendation}\n\n`;
           content += `---\n\n`;
         }

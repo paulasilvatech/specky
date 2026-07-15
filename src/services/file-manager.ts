@@ -9,6 +9,13 @@ import { randomUUID } from "node:crypto";
 import { MAX_SCAN_DEPTH } from "../constants.js";
 import type { DirectoryTree, FeatureInfo } from "../types.js";
 
+interface BulkWriteTarget {
+  directory: string;
+  fileName: string;
+  content: string;
+  absolutePath: string;
+}
+
 export class FileManager {
   private readonly root: string;
 
@@ -114,6 +121,23 @@ export class FileManager {
       throw new Error("Bulk write contains duplicate target paths.");
     }
 
+    const snapshots = await this.preflightBulkWrite(targets, force);
+    const temporaryPaths = await this.stageBulkWrite(targets);
+    try {
+      for (let index = 0; index < targets.length; index++) {
+        await rename(temporaryPaths[index], targets[index].absolutePath);
+      }
+      return targets.map((target) => target.absolutePath);
+    } catch (error) {
+      await this.rollbackBulkWrite(temporaryPaths, snapshots);
+      throw error;
+    }
+  }
+
+  private async preflightBulkWrite(
+    targets: BulkWriteTarget[],
+    force: boolean,
+  ): Promise<Map<string, Buffer | null>> {
     const snapshots = new Map<string, Buffer | null>();
     for (const target of targets) {
       const exists = await this.pathExists(target.absolutePath);
@@ -124,7 +148,10 @@ export class FileManager {
       }
       snapshots.set(target.absolutePath, exists ? await readFile(target.absolutePath) : null);
     }
+    return snapshots;
+  }
 
+  private async stageBulkWrite(targets: BulkWriteTarget[]): Promise<string[]> {
     const temporaryPaths: string[] = [];
     try {
       for (const target of targets) {
@@ -133,23 +160,29 @@ export class FileManager {
         temporaryPaths.push(temporaryPath);
         await writeFile(temporaryPath, target.content, "utf-8");
       }
-      for (let index = 0; index < targets.length; index++) {
-        await rename(temporaryPaths[index], targets[index].absolutePath);
-      }
-      return targets.map((target) => target.absolutePath);
+      return temporaryPaths;
     } catch (error) {
       for (const temporaryPath of temporaryPaths) {
-        try { await unlink(temporaryPath); } catch { /* already renamed or absent */ }
-      }
-      for (const [absolutePath, original] of snapshots) {
-        if (original === null) {
-          try { await unlink(absolutePath); } catch { /* absent */ }
-        } else {
-          await mkdir(dirname(absolutePath), { recursive: true });
-          await writeFile(absolutePath, original);
-        }
+        try { await unlink(temporaryPath); } catch { /* absent */ }
       }
       throw error;
+    }
+  }
+
+  private async rollbackBulkWrite(
+    temporaryPaths: string[],
+    snapshots: Map<string, Buffer | null>,
+  ): Promise<void> {
+    for (const temporaryPath of temporaryPaths) {
+      try { await unlink(temporaryPath); } catch { /* already renamed or absent */ }
+    }
+    for (const [absolutePath, original] of snapshots) {
+      if (original === null) {
+        try { await unlink(absolutePath); } catch { /* absent */ }
+        continue;
+      }
+      await mkdir(dirname(absolutePath), { recursive: true });
+      await writeFile(absolutePath, original);
     }
   }
 

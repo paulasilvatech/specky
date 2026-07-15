@@ -33,7 +33,10 @@ import { artifactMetadata } from "../utils/artifact-metadata.js";
  * trailing backslash in the input neutralize the escape (CodeQL
  * js/incomplete-sanitization).
  */
-const escapeTableCell = (s: string): string => s.replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
+const escapeTableCell = (value: string): string => {
+  const slash = String.fromCodePoint(92);
+  return value.split(slash).join(slash + slash).split("|").join(`${slash}|`);
+};
 
 /** Domain-specific checklist definitions */
 const DOMAIN_CHECKS: Record<ChecklistDomain, Array<{ id: string; category: string; check: string; mandatory: boolean }>> = {
@@ -198,7 +201,7 @@ export function registerQualityTools(
 
         // Render and write CHECKLIST.md — the per-item table, totals, date, and
         // gate decision are all passed to the template so the persisted file
-        // carries the real data instead of unrendered [TODO: …] placeholders.
+        // carries the computed data instead of unresolved template markers.
         const itemRows = items.map((item) =>
           `| ${item.id} | ${escapeTableCell(item.check)} | ${item.mandatory ? "Yes" : "No"} | ${item.status} | ${escapeTableCell(item.evidence ?? "—")} |`
         );
@@ -334,7 +337,9 @@ export function registerQualityTools(
         const verifiedCount = results.filter((r) => r.verified_status === "verified").length;
         const phantomCount = results.filter((r) => r.phantom).length;
         const passRate = tasks.length > 0 ? Math.round((verifiedCount / tasks.length) * 100) : 0;
-        const gateDecision = phantomCount > 0 ? "CHANGES_NEEDED" : passRate >= 80 ? "APPROVE" : "CHANGES_NEEDED";
+        const gateDecision = phantomCount === 0 && passRate >= 80
+          ? "APPROVE"
+          : "CHANGES_NEEDED";
 
         // Generate verification diagram
         const diagramLines = ["flowchart TD"];
@@ -518,7 +523,7 @@ export function registerQualityTools(
 
         // Write CROSS_ANALYSIS.md — alignment tables and the recommendation are
         // rendered into the persisted file so it carries the real analysis data
-        // instead of unrendered [TODO: …] placeholders.
+        // instead of unresolved template markers.
         const alignmentRow = (check: { source_id: string; status: string; detail: string }): string =>
           `| ${check.source_id} | ${check.status === "aligned" ? "Yes" : "No"} | ${escapeTableCell(check.detail)} |`;
         const specDesignRows = analysisResult.spec_design_alignment.map(alignmentRow);

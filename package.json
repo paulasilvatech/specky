@@ -10,7 +10,7 @@
   },
   "scripts": {
     "audit": "node scripts/check-manifest-sync.mjs && node scripts/audit-agent-frontmatter.mjs",
-    "build": "node scripts/check-manifest-sync.mjs && node scripts/audit-agent-frontmatter.mjs && tsc && rm -rf dist/templates && cp -r templates dist/templates && node scripts/build-hook-manifests.mjs && node scripts/finalize-build.mjs",
+    "build": "node scripts/check-manifest-sync.mjs && node scripts/audit-agent-frontmatter.mjs && rm -rf dist && tsc && cp -r templates dist/templates && node scripts/build-hook-manifests.mjs && node scripts/finalize-build.mjs",
     "start": "node dist/cli/index.js serve",
     "dev": "tsx watch src/index.ts",
     "clean": "rm -rf dist",

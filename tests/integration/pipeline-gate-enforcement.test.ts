@@ -6,6 +6,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { writeSignedFeatureState, writeTestWorkspaceConfig } from "../helpers/runtime-workspace.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 const SERVER = resolve(REPO, "dist/index.js");
@@ -61,37 +62,20 @@ describe("pipeline gate enforcement via MCP", () => {
 
   beforeEach(() => {
     ws = mkdtempSync(resolve(tmpdir(), "specky-gate-mcp-"));
-    mkdirSync(resolve(ws, ".specs"), { recursive: true });
-    writeFileSync(
-      resolve(ws, ".specs", ".sdd-state.json"),
-      JSON.stringify({
-        version: "4.0.0",
-        project_name: "gate-mcp",
-        current_phase: "analyze",
-        phases: {
-          init: { status: "completed" },
-          discover: { status: "completed" },
-          specify: { status: "completed" },
-          clarify: { status: "completed" },
-          design: { status: "completed" },
-          tasks: { status: "completed" },
-          analyze: { status: "in_progress", started_at: new Date().toISOString() },
-          implement: { status: "pending" },
-          verify: { status: "pending" },
-          release: { status: "pending" },
-        },
-        features: [".specs/001-gate"],
-        amendments: [],
-        gate_decision: {
-          decision: "BLOCK",
-          reasons: ["gaps"],
-          coverage_percent: 40,
-          gaps: ["REQ-001"],
-          decided_at: new Date().toISOString(),
-        },
-      }, null, 2),
-    );
-    mkdirSync(resolve(ws, ".specs/001-gate"), { recursive: true });
+    writeTestWorkspaceConfig(ws);
+    writeSignedFeatureState(ws, {
+      number: "001",
+      name: "gate",
+      currentPhase: "analyze",
+      completed: ["init", "discover", "specify", "clarify", "design", "tasks"],
+      gateDecision: {
+        decision: "BLOCK",
+        reasons: ["gaps"],
+        coverage_percent: 40,
+        gaps: ["REQ-CORE-001"],
+        decided_at: "2026-07-15T00:00:00.000Z",
+      },
+    });
     writeFileSync(resolve(ws, ".specs/001-gate/TASKS.md"), "# Tasks\n");
   });
 
@@ -100,7 +84,12 @@ describe("pipeline gate enforcement via MCP", () => {
   });
 
   it("blocks sdd_implement when analysis gate is BLOCK", () => {
-    const response = callTool(ws, "sdd_implement", { feature_number: "001", spec_dir: ".specs" });
+    const response = callTool(ws, "sdd_implement", {
+      feature_number: "001",
+      spec_dir: ".specs",
+      task_ids: [],
+      checkpoint: false,
+    });
     expect(isToolError(response)).toBe(true);
     const text = extractText(response);
     expect(text).toContain("gate_blocked");

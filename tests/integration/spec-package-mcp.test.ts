@@ -6,6 +6,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { writeSignedFeatureState, writeTestWorkspaceConfig } from "../helpers/runtime-workspace.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 const SERVER = resolve(REPO, "dist/index.js");
@@ -60,31 +61,13 @@ describe("spec package generation through MCP", () => {
   beforeEach(() => {
     ws = mkdtempSync(resolve(tmpdir(), "specky-spec-package-"));
     spawnSync("git", ["init", "-q"], { cwd: ws });
-    mkdirSync(resolve(ws, ".specky"), { recursive: true });
-    writeFileSync(resolve(ws, ".specky", "config.yml"), "audit_enabled: false\n", "utf8");
-
-    mkdirSync(resolve(ws, ".specs", "001-complete-feature"), { recursive: true });
-    const state = {
-      version: "4.0.0",
-      project_name: "complete-feature",
-      current_phase: "discover",
-      phases: {
-        init: { status: "completed" },
-        discover: { status: "in_progress" },
-        specify: { status: "pending" },
-        clarify: { status: "pending" },
-        design: { status: "pending" },
-        tasks: { status: "pending" },
-        analyze: { status: "pending" },
-        implement: { status: "pending" },
-        verify: { status: "pending" },
-        release: { status: "pending" }
-      },
-      features: [".specs/001-complete-feature"],
-      amendments: [],
-      gate_decision: null
-    };
-    writeFileSync(resolve(ws, ".specs", ".sdd-state.json"), JSON.stringify(state, null, 2), "utf8");
+    writeTestWorkspaceConfig(ws);
+    writeSignedFeatureState(ws, {
+      number: "001",
+      name: "complete-feature",
+      currentPhase: "discover",
+      completed: ["init"],
+    });
     writeFileSync(resolve(ws, ".specs", "001-complete-feature", "CONSTITUTION.md"), "# Constitution\n", "utf8");
   });
 
