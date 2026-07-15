@@ -53,7 +53,7 @@ Capabilities are opt-in. `capabilities` and `capability_config` must have exactl
 | `transcript-import` | Allowed transcript formats and speaker-attribution policy |
 | `figma` | Extraction scope, component-property requirement, permitted FigJam diagram types |
 | `work-items` | Platform, subtask policy, Jira project or Azure Boards paths |
-| `release` | Branch prefix, base branch, draft PR, checkpoint policy |
+| `release` | Branch prefix, base branch, draft PR, checkpoint policy, enabled documentation types/version, API base URL where applicable, deployment, health, monitoring, troubleshooting, rollback, support, and onboarding procedures |
 
 Capability parameters are part of the feature fingerprint. A later tool call cannot override them.
 
@@ -133,6 +133,14 @@ Transcript import may parse source material. Auto/batch orchestration additional
 ### Compliance
 
 Compliance evaluates every configured control pack using evidence keyed by control ID. Keyword presence in prose is not evidence. Missing evidence fails a control; no generic compliance framework fallback exists.
+
+### Research and Turnkey Assembly
+
+`sdd_research` writes only resolved or explicitly deferred entries with context, evidence-based findings, at least one reviewed source, recommendation, status, and explicit overwrite intent. `sdd_turnkey_spec` assembles caller-authored EARS requirements and rejects missing evidence, criteria, duplicate IDs, invalid EARS text, or a declared pattern that differs from validator output. Neither tool creates placeholder findings or inferred requirements.
+
+### Documentation
+
+Documentation is enabled and parameterized by `capability_config.release.documentation`. Individual tools reject disabled types. Full docs require Specification, Design, Tasks, and Analysis; API docs require API workload, a persisted base URL, and complete request/response blocks; runbooks and onboarding use persisted procedures and contacts. `sdd_generate_all_docs` prevalidates every enabled type and writes the complete set atomically, so generation or file conflicts leave prior docs unchanged.
 
 ### IaC and Development Environments
 

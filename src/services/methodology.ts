@@ -275,7 +275,7 @@ export class MethodologyGuide {
         common_mistakes: ["Trying to skip phases", "Not creating required files first", "Ignoring gate decisions"],
       },
       sdd_generate_diagram: {
-        what_it_does: "Generates a specific Mermaid diagram from specification artifacts. Supports 17 diagram types.",
+        what_it_does: "Validates explicit Mermaid code and source evidence for a diagram required by the feature workload contract.",
         why_it_matters: "Diagrams communicate architecture visually. They catch design issues that text alone might miss.",
         common_mistakes: ["Only generating one diagram type", "Not generating from all artifact sources"],
       },

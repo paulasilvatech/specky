@@ -38,7 +38,7 @@ export function registerMetricsTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number }) => {
+    async ({ feature_number, force }) => {
       try {
         const context = requireExecutionContext("sdd_metrics");
         const feature = context.feature!;
@@ -48,6 +48,7 @@ export function registerMetricsTools(
         const metricsResult = await metricsGenerator.generateMetrics(
           feature.directory,
           feature_number,
+          force,
         );
 
         const result = {

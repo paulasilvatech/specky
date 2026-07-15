@@ -17,6 +17,7 @@ export const checklistInputSchema = z.object({
 export const verifyTasksInputSchema = z.object({
   feature_number: featureNumberSchema,
   spec_dir: specDirSchema,
+  force: forceSchema,
   code_paths: z
     .array(z.string().min(1))
     .min(1)
@@ -26,6 +27,7 @@ export const verifyTasksInputSchema = z.object({
 export const complianceCheckInputSchema = z.object({
   feature_number: featureNumberSchema,
   spec_dir: specDirSchema,
+  force: forceSchema,
   evidence: z
     .record(z.string().min(1), z.array(z.string().min(3)).min(1))
     .describe("Explicit evidence excerpts keyed by control ID for every configured framework"),
@@ -34,6 +36,7 @@ export const complianceCheckInputSchema = z.object({
 export const crossAnalyzeInputSchema = z.object({
   feature_number: featureNumberSchema,
   spec_dir: specDirSchema,
+  force: forceSchema,
 }).strict().describe("Cross-artifact consistency analysis: checks alignment between SPECIFICATION.md, DESIGN.md, and TASKS.md. Finds orphaned requirements, missing designs, and untraced tasks. Writes CROSS_ANALYSIS.md.");
 
 export const validateEarsInputSchema = z.object({

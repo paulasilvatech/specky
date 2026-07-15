@@ -30,9 +30,9 @@ export interface MetricsResult {
 }
 
 export class MetricsGenerator {
-  constructor(private fileManager: FileManager) {}
+  constructor(private fileManager: FileManager) { }
 
-  async generateMetrics(featureDir: string, featureNumber: string): Promise<MetricsResult> {
+  async generateMetrics(featureDir: string, featureNumber: string, force: boolean): Promise<MetricsResult> {
     const spec = await this.safeRead(featureDir, "SPECIFICATION.md");
     const analysis = await this.safeRead(featureDir, "ANALYSIS.md");
     const verification = await this.safeRead(featureDir, "VERIFICATION.md");
@@ -61,7 +61,7 @@ export class MetricsGenerator {
     });
 
     const htmlPath = `${featureDir}/metrics-dashboard.html`;
-    await this.fileManager.writeSpecFile(featureDir, "metrics-dashboard.html", htmlContent, true);
+    await this.fileManager.writeSpecFile(featureDir, "metrics-dashboard.html", htmlContent, force);
 
     return {
       feature_dir: featureDir,

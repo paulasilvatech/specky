@@ -441,6 +441,7 @@ describe("export & quality-report regressions", () => {
     const res = await callTool(h.client, "sdd_compliance_check", {
       feature_number: "001",
       spec_dir: ".specs",
+      force: false,
       evidence: {
         "SOC2-CC6.1": ["SPECIFICATION.md#REQ-CORE-001"],
         "SOC2-CC7.2": ["DESIGN.md#Monitoring"],
@@ -472,6 +473,7 @@ describe("export & quality-report regressions", () => {
     const res = await callTool(h.client, "sdd_verify_tasks", {
       feature_number: "001",
       spec_dir: ".specs",
+      force: false,
       code_paths: ["payment.ts"],
     });
     expect(res.isError).toBe(false);
@@ -498,6 +500,7 @@ describe("export & quality-report regressions", () => {
     const res = await callTool(h.client, "sdd_cross_analyze", {
       feature_number: "001",
       spec_dir: ".specs",
+      force: false,
     });
     expect(res.isError).toBe(false);
 

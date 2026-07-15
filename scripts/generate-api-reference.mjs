@@ -7,7 +7,8 @@
  *        node scripts/generate-api-reference.mjs --check (fails if out of date)
  */
 import { spawnSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -20,14 +21,33 @@ function listTools() {
     JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "api-ref", version: "1" } } }) + "\n" +
     JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n" +
     JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list" }) + "\n";
-  const res = spawnSync("node", [SERVER], { input, encoding: "utf8", timeout: 20000 });
-  for (const line of (res.stdout ?? "").split("\n").filter(Boolean)) {
-    try {
-      const parsed = JSON.parse(line);
-      if (parsed.id === 2) return parsed.result.tools;
-    } catch { /* ignore */ }
+  const workspace = mkdtempSync(resolve(tmpdir(), "specky-api-reference-"));
+  try {
+    mkdirSync(resolve(workspace, ".specky"), { recursive: true });
+    const configUrl = new URL("../dist/config.js", import.meta.url);
+    return import(configUrl.href).then(({ createWorkspaceConfig, serializeWorkspaceConfig }) => {
+      writeFileSync(
+        resolve(workspace, ".specky/config.yml"),
+        serializeWorkspaceConfig(createWorkspaceConfig()),
+      );
+      const res = spawnSync(process.execPath, [SERVER], {
+        input,
+        encoding: "utf8",
+        timeout: 20000,
+        env: { SDD_WORKSPACE: workspace },
+      });
+      for (const line of (res.stdout ?? "").split("\n").filter(Boolean)) {
+        try {
+          const parsed = JSON.parse(line);
+          if (parsed.id === 2) return parsed.result.tools;
+        } catch { /* ignore */ }
+      }
+      throw new Error(`tools/list failed. stderr=${res.stderr?.slice(0, 400)}`);
+    }).finally(() => rmSync(workspace, { recursive: true, force: true }));
+  } catch (error) {
+    rmSync(workspace, { recursive: true, force: true });
+    throw error;
   }
-  throw new Error(`tools/list failed. stderr=${res.stderr?.slice(0, 400)}`);
 }
 
 function render(tools) {
@@ -35,7 +55,8 @@ function render(tools) {
   const rows = sorted.map((t) => {
     const required = Array.isArray(t.inputSchema?.required) ? t.inputSchema.required : [];
     const inputs = required.length ? required.map((r) => `\`${r}\``).join(", ") : "—";
-    const desc = (t.description ?? "").replace(/\s+/g, " ").replace(/\|/g, "\\|").trim();
+    const slash = String.fromCodePoint(92);
+    const desc = (t.description ?? "").replaceAll(/\s+/g, " ").replaceAll("|", `${slash}|`).trim();
     return `| \`${t.name}\` | ${t.title ?? ""} | ${desc} | ${inputs} |`;
   });
   return [
@@ -53,7 +74,7 @@ function render(tools) {
   ].join("\n");
 }
 
-const content = render(listTools());
+const content = render(await listTools());
 const check = process.argv.includes("--check");
 
 if (check) {

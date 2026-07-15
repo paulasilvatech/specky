@@ -411,7 +411,7 @@ Context: 4 screens — cart, address, payment, confirmation
 Still needs defining: shipping rules, session timeout, API error states
 ```
 
-**Important:** Figma covers happy paths. Specky will automatically identify edge cases not mapped in the design (errors, timeouts, empty states) and generate questions to fill them.
+**Important:** Figma evidence does not define missing edge cases. The caller must provide explicit error, timeout, empty-state, accessibility, and responsive requirements before specification assembly.
 
 ---
 
@@ -427,7 +427,7 @@ Participants: Ana (PO — final decision), Carlos (CTO), dev team
 Decisions I remember: "ACH is P1, not MVP" and "must integrate with existing Stripe"
 ```
 
-**What happens:** Specky imports the transcript, extracts decisions vs. open questions, validates your memories against what was actually said, and produces RESEARCH.md with everything documented.
+**What happens:** Specky parses the transcript as source material. Artifact orchestration additionally requires explicit source quotes, requirements, architecture, tasks, and gates. `sdd_research` accepts only resolved or explicitly deferred entries with findings, sources, and recommendations.
 
 ---
 

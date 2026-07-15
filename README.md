@@ -835,7 +835,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_validate_ears` | Batch EARS requirement validation |
 | `sdd_check_sync` | Spec-vs-implementation drift detection report |
 
-### Diagrams and Visualization (4) -- 17 Diagram Types
+### Diagrams and Visualization (4) — Workload-Contracted Payloads
 
 | Tool | Description |
 |------|-------------|
@@ -903,7 +903,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 
 | Tool | Description |
 |------|-------------|
-| `sdd_turnkey_spec` | Refine an already initialized feature from an explicit description and clarification responses; never creates state or Constitution implicitly |
+| `sdd_turnkey_spec` | Assemble caller-authored EARS requirements, criteria, evidence, discovery context, and clarification responses for an initialized feature; never infers requirements or creates state |
 
 ### Checkpointing (3)
 
@@ -1285,7 +1285,7 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 | 12-section system design template (C4 model, security, infrastructure) | Stable |
 | Enriched interactive responses on all tools (progress, handoff, education) | Stable |
 | Parallel documentation generation (5 types via Promise.all) | Stable |
-| Turnkey spec from natural language (`sdd_turnkey_spec`) | Stable |
+| Explicit turnkey specification assembly (`sdd_turnkey_spec`) | Stable |
 | Property-based testing with fast-check and Hypothesis (`sdd_generate_pbt`) | Stable |
 | Checkpoint/restore for spec artifacts | Stable |
 | Intelligence layer: model routing hints on all tools | Stable |

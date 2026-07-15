@@ -261,7 +261,7 @@ export function registerQualityTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir, code_paths }) => {
+    async ({ feature_number, spec_dir, code_paths, force }) => {
       try {
         const features = await fileManager.listFeatures(spec_dir);
         const feature = features.find((f) => f.number === feature_number);
@@ -366,7 +366,7 @@ export function registerQualityTools(
           gate_decision: gateDecision,
         });
 
-        await fileManager.writeSpecFile(featureDir, "VERIFICATION.md", content, true);
+        await fileManager.writeSpecFile(featureDir, "VERIFICATION.md", content, force);
 
         const report = {
           feature_number,
@@ -409,7 +409,7 @@ export function registerQualityTools(
         openWorldHint: false,
       },
     },
-    async ({ evidence }) => {
+    async ({ evidence, force }) => {
       try {
         const context = requireExecutionContext("sdd_compliance_check");
         const feature = context.feature!;
@@ -460,7 +460,7 @@ export function registerQualityTools(
           recommendation,
         });
 
-        await fileManager.writeSpecFile(featureDir, "COMPLIANCE.md", content, true);
+        await fileManager.writeSpecFile(featureDir, "COMPLIANCE.md", content, force);
 
         const result = {
           control_pack_version: compliance.control_pack_version,
@@ -500,7 +500,7 @@ export function registerQualityTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir }) => {
+    async ({ feature_number, spec_dir, force }) => {
       try {
         const features = await fileManager.listFeatures(spec_dir);
         const feature = features.find((f) => f.number === feature_number);
@@ -538,7 +538,7 @@ export function registerQualityTools(
           recommendation,
         });
 
-        await fileManager.writeSpecFile(featureDir, "CROSS_ANALYSIS.md", content, true);
+        await fileManager.writeSpecFile(featureDir, "CROSS_ANALYSIS.md", content, force);
 
         const result = {
           ...analysisResult,

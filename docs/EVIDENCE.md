@@ -69,7 +69,7 @@ stash@{0}: On develop: specky-pre-branch-reset-develop-dirty-20260617T205947Z
 | Fresh install | `npm pack` plus fresh workspace `npx specky install`, `doctor`, `status` | Passed on 2026-06-17 |
 | RBAC enforcement | Viewer/contributor/admin integration tests | In progress; viewer allow/deny verified through MCP |
 | Audit chain | Hash-chain generated and verification detects tampering | In progress; global tool execution writes audit entries and `sdd_verify_audit` verifies chain integrity |
-| Determinism | Same input and fixed clock generate identical artifacts | In progress; fixed clock tested for frontmatter, docs, and test stubs |
+| Determinism | Same input and fixed clock generate identical artifacts | Fixed clock tested for frontmatter, strict docs, and executable test bindings |
 | Filesystem boundary | Path traversal and outside-workspace paths rejected | Passed for document import |
 | ID contracts | Shared requirement/task ID helpers and parser tests | In progress; core parsers now accept canonical `T-001` and legacy `T001` |
 | Semantic gate | Orphaned requirements/tests/compliance failures block approval | In progress; EARS/design/task mapping gate tested |

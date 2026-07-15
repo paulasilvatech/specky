@@ -235,7 +235,7 @@ export function registerUtilityTools(
         openWorldHint: false,
       },
     },
-    async ({ bug_title, current_behavior, expected_behavior, unchanged_behavior, root_cause, test_plan, severity, related_requirements }) => {
+    async ({ bug_title, current_behavior, expected_behavior, unchanged_behavior, root_cause, test_plan, severity, related_requirements, force }) => {
       try {
         const context = requireExecutionContext("sdd_write_bugfix");
         const feature = context.feature!;
@@ -255,7 +255,7 @@ export function registerUtilityTools(
           related_requirements: related_requirements.join(", "),
         });
 
-        const filePath = await fileManager.writeSpecFile(featureDir, "BUGFIX_SPEC.md", content, true);
+        const filePath = await fileManager.writeSpecFile(featureDir, "BUGFIX_SPEC.md", content, force);
 
         const result = {
           status: "bugfix_spec_written",
@@ -320,7 +320,7 @@ export function registerUtilityTools(
         openWorldHint: false,
       },
     },
-    async ({ rationale, articles_affected, changes_description }) => {
+    async ({ rationale, articles_affected, changes_description, force }) => {
       try {
         const context = requireExecutionContext("sdd_amend");
         const feature = context.feature!;
@@ -374,7 +374,7 @@ export function registerUtilityTools(
           );
         }
 
-        await fileManager.writeSpecFile(feature.directory, "CONSTITUTION.md", updatedConstitution, true);
+        await fileManager.writeSpecFile(feature.directory, "CONSTITUTION.md", updatedConstitution, force);
 
         // Update state
         const state = await stateMachine.loadState(stateDir);

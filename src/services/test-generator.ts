@@ -1,5 +1,5 @@
 /**
- * TestGenerator — Generates test stubs from SPECIFICATION.md and TASKS.md.
+ * TestGenerator — Assembles executable tests from persisted requirement bindings.
  * Reads acceptance criteria and produces framework-specific test files.
  */
 import type { FileManager } from "./file-manager.js";

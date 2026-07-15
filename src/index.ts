@@ -123,12 +123,12 @@ const server = new McpServer(
     name: SERVER_NAME,
     version: VERSION,
     title: "Specky",
-    description: "Agentic Spec-Driven Development plugin — 13 agents, 58 MCP tools, 10-phase enforced pipeline, EARS notation, 22 prompts, 8 skills, 16 hooks.",
+    description: "Agentic Spec-Driven Development plugin — 13 agents, 58 MCP tools, signed per-feature use-case contracts, EARS validation, 22 prompts, 14 skills, and 16 hooks.",
     websiteUrl: "https://getspecky.ai",
     ...(serverIcons.length > 0 ? { icons: serverIcons } : {}),
   },
   {
-    instructions: "Specky is a Spec-Driven Development engine. Start with sdd_init to create a project, then follow the 10-phase pipeline: Init → Discover → Specify → Clarify → Design → Tasks → Analyze → Implement → Verify → Release. Use sdd_get_status to check current phase. Reply LGTM at quality gates to advance.",
+    instructions: "Specky executes one explicit signed contract per feature. Start with sdd_init using lifecycle, workload, execution mode, capabilities, capability_config, spec_dir, and feature_number. Follow only the phase graph persisted in feature state. Use sdd_get_status with an explicit workspace or feature view. LGTM blocks only when workspace policy enables it.",
   },
 );
 

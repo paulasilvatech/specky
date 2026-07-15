@@ -37,7 +37,7 @@ Call `sdd_validate_ears` with `spec_dir` and `feature_number`. The tool is alway
 
 ## Turnkey Refinement
 
-`sdd_turnkey_spec` operates only on an already initialized feature. Required: `feature_name`, `description`, `feature_number`, `spec_dir`, explicit `force`; optional `clarification_responses`. It cannot auto-create Constitution or state.
+`sdd_turnkey_spec` operates only on an already initialized feature. Required: matching `feature_name`, `feature_number`, `spec_dir`, explicit `force`, complete `discovery_context`, explicit `clarification_responses`, and one or more caller-authored requirements containing ID, declared EARS pattern, title, EARS text, measurable acceptance criteria, and source evidence. It validates and assembles these inputs; it does not infer requirements, NFRs, criteria, or clarification questions and cannot create Constitution or state.
 
 ## Figma
 

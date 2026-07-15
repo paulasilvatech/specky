@@ -489,7 +489,7 @@ Tests live in `tests/unit/` and cover all services except `file-manager.ts` (whi
 | `compliance-engine.test.ts` | ComplianceEngine | 6 frameworks, control matching, status classification |
 | `state-machine.test.ts` | StateMachine | Phase transitions, blocking, file gates, state persistence |
 | `cross-analyzer.test.ts` | CrossAnalyzer | Alignment scoring, orphaned detection, empty spec handling |
-| `diagram-generator.test.ts` | DiagramGenerator | 17 diagram types, user story flows, batch generation |
+| `diagram-contracts.test.ts` | Visualization MCP tools | Exact workload diagram set, Mermaid headers, source evidence, no partial writes |
 | `template-engine.test.ts` | TemplateEngine | Variable replacement, frontmatter, `{{#each}}` loops |
 | `codebase-scanner.test.ts` | CodebaseScanner | Tech stack detection (Node, Python, Go, Rust, Java) |
 

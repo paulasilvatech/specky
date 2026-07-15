@@ -3,7 +3,7 @@
  */
 
 import { z } from "zod";
-import { specDirSchema, featureNumberSchema } from "./common.js";
+import { specDirSchema, featureNumberSchema, forceSchema } from "./common.js";
 import { TEMPLATE_NAMES } from "../constants.js";
 
 export const getStatusInputSchema = z.discriminatedUnion("view", [
@@ -54,6 +54,7 @@ export const writeBugfixInputSchema = z.object({
   related_requirements: z.array(z.string().regex(/^REQ-[A-Z]+-\d{3}$/)).min(1),
   spec_dir: specDirSchema,
   feature_number: featureNumberSchema,
+  force: forceSchema,
 }).strict();
 
 export const checkSyncInputSchema = z.object({
@@ -92,4 +93,5 @@ export const amendInputSchema = z.object({
     .describe("Description of the changes"),
   spec_dir: specDirSchema,
   feature_number: featureNumberSchema,
+  force: forceSchema,
 }).strict();
