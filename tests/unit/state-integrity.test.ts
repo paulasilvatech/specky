@@ -63,13 +63,13 @@ describe("StateMachine v5 per-feature state", () => {
         });
     });
 
-        it("accepts Windows separators when loading a state that persists canonical POSIX separators", async () => {
-                const state = createState();
-                await stateMachine.saveState(stateDir, state);
+    it("accepts Windows separators when loading a state that persists canonical POSIX separators", async () => {
+        const state = createState();
+        await stateMachine.saveState(stateDir, state);
 
-                const loaded = await stateMachine.loadState(".specs\\001-state");
-                expect(loaded.feature.directory).toBe(stateDir);
-        });
+        const loaded = await stateMachine.loadState(".specs\\001-state");
+        expect(loaded.feature.directory).toBe(stateDir);
+    });
 
     it("signs the exact persisted JSON with the configured HMAC key", async () => {
         process.env["SDD_STATE_KEY"] = "test-key-abc";
