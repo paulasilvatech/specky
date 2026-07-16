@@ -672,7 +672,7 @@ export function registerTranscriptTools(
           error?: string;
         }> = [];
 
-        for (const { featureInput, filePath, analysis, workloadDesign } of prepared) {
+        for (const { featureInput, analysis, workloadDesign } of prepared) {
           const fileName = featureInput.file_name;
           const projectName = featureInput.project_name;
           const featureNum = featureInput.feature_number;
