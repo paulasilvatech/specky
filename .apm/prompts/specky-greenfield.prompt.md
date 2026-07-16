@@ -6,13 +6,15 @@ argument-hint: <project idea>
 Start a greenfield project with the Specky SDD pipeline.
 
 **Project:** [PROJECT NAME]
+**Feature number:** [NNN — explicit, three digits]
+**Workload:** [api | web-application | service | cli | library | infrastructure]
+**Execution mode:** [full | rapid | emergency]
 **Description:** [What the system will do in 1-2 sentences]
-**Stack:** [e.g., Node.js + PostgreSQL + React | Python + FastAPI | undecided]
-**Timeline:** [e.g., MVP in 8 weeks | no deadline]
-**Compliance:** [e.g., GDPR | HIPAA | SOC 2 | none]
+**Capabilities:** [explicit list, or none]
+**Capability parameters:** [complete configuration for every enabled capability]
 
 Please:
 1. Call @specky-requirements-engineer to extract FRD and NFRD
 2. Then @specky-sdd-init to initialize the pipeline and create CONSTITUTION.md
-3. Show me the feature number (NNN) and the path `.specs/NNN-[feature]/`
-4. Create branch `spec/NNN-[feature]` from `develop` for all pipeline work
+3. Initialize exactly the selected feature and show its contract fingerprint and signed state path
+4. Do not create a branch unless release capability is enabled and the feature reaches an allowed branch phase

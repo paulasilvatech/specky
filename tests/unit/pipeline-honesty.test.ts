@@ -17,7 +17,7 @@
  * Tests drive the REAL tool handlers over an in-memory MCP transport against
  * temp workspaces — no mocking of the pipeline itself.
  */
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, describe, expect, it } from "vitest";
@@ -35,6 +35,12 @@ import { AnalysisEngine } from "../../src/services/analysis-engine.js";
 import { registerPipelineTools } from "../../src/tools/pipeline.js";
 import { registerUtilityTools } from "../../src/tools/utility.js";
 import { registerTranscriptTools } from "../../src/tools/transcript.js";
+import { AuditLogger } from "../../src/services/audit-logger.js";
+import { RbacEngine } from "../../src/services/rbac-engine.js";
+import { ExecutionContextResolver } from "../../src/services/execution-context.js";
+import { installToolEnforcement } from "../../src/tools/tool-enforcement.js";
+import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
+import { createWorkspaceConfig, serializeWorkspaceConfig } from "../../src/config.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 // The built-in template dir resolves relative to dist/; when running from
@@ -42,6 +48,110 @@ const REPO = resolve(import.meta.dirname, "../..");
 // workspace and use the custom-templates path.
 const TEMPLATES_SRC = join(REPO, "templates");
 const CUSTOM_TEMPLATES = ".specky-test-templates";
+const USE_CASE = {
+  lifecycle: "greenfield" as const,
+  workload: "service" as const,
+  execution_mode: "full" as const,
+  capabilities: [] as const,
+  capability_config: {},
+};
+const TRANSCRIPT_USE_CASE = {
+  ...USE_CASE,
+  capabilities: ["transcript-import"] as const,
+  capability_config: {
+    "transcript-import": {
+      formats: ["txt"] as const,
+      require_speaker_attribution: true,
+    },
+  },
+};
+const FEATURE_INPUT = { spec_dir: ".specs", feature_number: "001" } as const;
+const SERVICE_DESIGN = {
+  type: "service" as const,
+  protocols: "HTTPS JSON requests from the order service with a versioned event envelope.",
+  dependencies: "PostgreSQL owns durable notification state; the email provider owns delivery.",
+  failure_modes: "Timeouts use bounded retries and idempotency keys; exhausted delivery is quarantined.",
+  operability: "The service deploys independently with health probes, autoscaling and rollback criteria.",
+  observability: "Traces correlate order events to delivery attempts; alerts identify queue and provider failures.",
+};
+const TRANSCRIPT_CONSTITUTION = {
+  author: "Notification platform team",
+  description: "Source-backed charter for the notification service discussed in the planning transcript.",
+  license: "MIT",
+  scope_in: "Order-status email notifications and retention evidence",
+  scope_out: "SMS, push notifications, and marketing campaigns",
+  principles: ["Trace every requirement to a transcript quote", "Keep delivery behavior measurable"],
+  constraints: ["Email delivery occurs within five minutes", "Notification evidence is retained for thirty days"],
+};
+const TRANSCRIPT_REQUIREMENTS = [
+  {
+    id: "REQ-FUNC-001",
+    title: "Send order status notification",
+    ears_pattern: "event_driven" as const,
+    text: "When an order status changes, the system shall send an email notification within 5 minutes.",
+    acceptance_criteria: ["A status change produces one email within five minutes"],
+    source_quote: "send email notifications within 5 minutes of an order status change",
+  },
+  {
+    id: "REQ-NFR-001",
+    title: "Retain notification evidence",
+    ears_pattern: "ubiquitous" as const,
+    text: "The system shall retain notification evidence for 30 days.",
+    acceptance_criteria: ["Evidence remains queryable for exactly thirty days"],
+    source_quote: "comply with GDPR 30-day retention",
+  },
+];
+const TRANSCRIPT_ARCHITECTURE = {
+  architecture_overview: "An independently deployed notification service consumes order changes and sends email.",
+  system_context: "The order service publishes status changes; operators inspect delivery evidence.",
+  container_architecture: "A notification worker, PostgreSQL database, and email provider form the runtime boundary.",
+  component_design: "EventConsumer validates changes, NotificationService sends mail, and EvidenceRepository stores outcomes.",
+  code_level_design: "Typed interfaces isolate the event consumer, mail adapter, and evidence repository.",
+  data_models: "NotificationEvidence contains order ID, status, recipient, delivery timestamp, and expiry timestamp.",
+  infrastructure: "The worker scales from queue depth and uses managed PostgreSQL with encrypted backups.",
+  security_architecture: "Managed identity protects dependencies; TLS protects events and email-provider calls.",
+  error_handling: "Idempotency prevents duplicate mail; bounded retries quarantine exhausted deliveries.",
+  cross_cutting: "Trace IDs, delivery metrics, structured logs, and retention jobs are mandatory.",
+  workload_design: SERVICE_DESIGN,
+  mermaid_diagrams: [{
+    title: "Notification flow",
+    type: "sequenceDiagram",
+    code: "sequenceDiagram\nOrder->>Notifier: status changed\nNotifier->>Email: send\nNotifier->>DB: store evidence",
+  }],
+  adrs: [{
+    title: "Persist delivery evidence",
+    decision: "Store notification delivery evidence in PostgreSQL.",
+    rationale: "Operators require queryable retention evidence for thirty days.",
+    consequences: "A scheduled retention job must remove expired evidence deterministically.",
+  }],
+  api_contracts: [],
+};
+const TRANSCRIPT_TASKS = [{
+  id: "T-001",
+  title: "Implement order notification delivery",
+  description: "Consume order status changes and send one idempotent email notification.",
+  effort: "M" as const,
+  dependencies: [],
+  parallel: false,
+  traces_to: ["REQ-FUNC-001"],
+}];
+const TRANSCRIPT_GATES = [{
+  id: "G-001",
+  check: "Review notification timing and idempotency evidence before implementation.",
+  constitution_article: "Keep delivery behavior measurable",
+}];
+
+function initInput(projectName: string): Record<string, unknown> {
+  return { project_name: projectName, ...FEATURE_INPUT, use_case: USE_CASE };
+}
+
+function featureInput(extra: Record<string, unknown> = {}): Record<string, unknown> {
+  return { ...FEATURE_INPUT, ...extra };
+}
+
+function featureStatusInput(): Record<string, unknown> {
+  return { view: "feature", ...FEATURE_INPUT };
+}
 
 interface Harness {
   workspace: string;
@@ -52,6 +162,11 @@ interface Harness {
 
 async function buildHarness(workspace: string): Promise<Harness> {
   cpSync(TEMPLATES_SRC, join(workspace, CUSTOM_TEMPLATES), { recursive: true });
+  const configPath = join(workspace, ".specky/config.yml");
+  if (!existsSync(configPath)) {
+    mkdirSync(join(workspace, ".specky"), { recursive: true });
+    writeFileSync(configPath, serializeWorkspaceConfig(createWorkspaceConfig()));
+  }
 
   const fileManager = new FileManager(workspace);
   const stateMachine = new StateMachine(fileManager, workspace);
@@ -61,6 +176,12 @@ async function buildHarness(workspace: string): Promise<Harness> {
   const transcriptParser = new TranscriptParser(fileManager);
 
   const server = new McpServer({ name: "specky-test", version: "0.0.0" });
+  installToolEnforcement(server, {
+    auditLogger: new AuditLogger(workspace, false),
+    rbacEngine: new RbacEngine(false, "contributor"),
+    stateMachine,
+    contextResolver: new ExecutionContextResolver(fileManager, stateMachine),
+  });
   registerPipelineTools(server, fileManager, stateMachine, templateEngine, earsValidator);
   registerUtilityTools(server, fileManager, stateMachine, templateEngine, codebaseScanner);
   registerTranscriptTools(server, fileManager, stateMachine, templateEngine, earsValidator, transcriptParser);
@@ -132,7 +253,15 @@ describe("pipeline honesty regressions", () => {
     const { isError, payload } = await callTool(h.client, "sdd_auto_pipeline", {
       raw_text: transcript,
       project_name: "notify-service",
+      ...FEATURE_INPUT,
+      use_case: TRANSCRIPT_USE_CASE,
+      constitution: TRANSCRIPT_CONSTITUTION,
+      requirements: TRANSCRIPT_REQUIREMENTS,
+      architecture: TRANSCRIPT_ARCHITECTURE,
+      tasks: TRANSCRIPT_TASKS,
+      pre_impl_gates: TRANSCRIPT_GATES,
       format: "txt",
+      force: false,
     });
     expect(isError).toBe(false);
     expect(payload["status"]).toBe("auto_pipeline_complete");
@@ -177,31 +306,85 @@ describe("pipeline honesty regressions", () => {
     expect(analysisMd).not.toContain("| CONSTITUTION.md | Present |");
 
     // The persisted .sdd-state gate event carries the computed decision too.
-    const state = await h.stateMachine.loadState(".specs");
+    const state = await h.stateMachine.loadState(".specs/001-notify-service");
     expect(state.gate_decision?.decision).toBe(expected.decision);
     expect(state.gate_decision?.coverage_percent).toBe(expected.coveragePercent);
   });
 
-  // ── Fix 2: sdd_get_status reads the state the pipeline actually persists ──
-  it("sdd_get_status headline fields move with the root pipeline state (init → advance)", async () => {
+  it("transcript orchestration rejects ungrounded source quotes before writing files", async () => {
+    const ws = makeWorkspace("specky-honesty-transcript-source-");
+    const h = await buildHarness(ws);
+    cleanups.push(h.close);
+
+    const result = await callTool(h.client, "sdd_auto_pipeline", {
+      raw_text: "Paula: The service must send email after an order changes.",
+      project_name: "ungrounded-notifier",
+      ...FEATURE_INPUT,
+      use_case: TRANSCRIPT_USE_CASE,
+      constitution: TRANSCRIPT_CONSTITUTION,
+      requirements: [{
+        ...TRANSCRIPT_REQUIREMENTS[0],
+        source_quote: "This sentence does not exist in the transcript",
+      }],
+      architecture: TRANSCRIPT_ARCHITECTURE,
+      tasks: TRANSCRIPT_TASKS,
+      pre_impl_gates: TRANSCRIPT_GATES,
+      format: "txt",
+      force: false,
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.raw).toContain("source_quote is not present in the transcript");
+    expect(existsSync(join(ws, ".specs/001-ungrounded-notifier"))).toBe(false);
+  });
+
+  it("batch transcript manifest mismatch fails before creating the specs root", async () => {
+    const ws = makeWorkspace("specky-honesty-transcript-batch-");
+    mkdirSync(join(ws, "transcripts"), { recursive: true });
+    writeFileSync(join(ws, "transcripts/meeting.txt"), "Paula: Send one email after an order changes.");
+    const h = await buildHarness(ws);
+    cleanups.push(h.close);
+
+    const result = await callTool(h.client, "sdd_batch_transcripts", {
+      transcripts_dir: "transcripts",
+      spec_dir: ".specs",
+      use_case: TRANSCRIPT_USE_CASE,
+      features: [{
+        file_name: "other.txt",
+        project_name: "other",
+        feature_number: "001",
+        constitution: TRANSCRIPT_CONSTITUTION,
+        requirements: TRANSCRIPT_REQUIREMENTS,
+        architecture: TRANSCRIPT_ARCHITECTURE,
+        tasks: TRANSCRIPT_TASKS,
+        pre_impl_gates: TRANSCRIPT_GATES,
+      }],
+      force: false,
+    });
+
+    expect(result.isError).toBe(true);
+    expect(result.raw).toContain("Batch manifest mismatch");
+    expect(existsSync(join(ws, ".specs"))).toBe(false);
+  });
+
+  // ── Fix 2: sdd_get_status reads canonical feature state ──
+  it("sdd_get_status headline fields move with canonical feature state", async () => {
     const ws = makeWorkspace("specky-honesty-status-");
     const h = await buildHarness(ws);
     cleanups.push(h.close);
 
-    const init = await callTool(h.client, "sdd_init", { project_name: "status-probe" });
+    const init = await callTool(h.client, "sdd_init", initInput("status-probe"));
     expect(init.isError).toBe(false);
 
-    const statusAtInit = await callTool(h.client, "sdd_get_status", {});
+    const statusAtInit = await callTool(h.client, "sdd_get_status", featureStatusInput());
     expect(statusAtInit.payload["current_phase"]).toBe("init");
 
-    await callTool(h.client, "sdd_discover", { project_idea: "A status probe service" });
-    const advance = await callTool(h.client, "sdd_advance_phase", {});
+    await callTool(h.client, "sdd_discover", featureInput({ project_idea: "A status probe service" }));
+    const advance = await callTool(h.client, "sdd_advance_phase", featureInput());
     expect(advance.isError).toBe(false);
     expect(advance.payload["current_phase"]).toBe("specify");
 
-    // No per-feature .sdd-state.json exists (pipeline tools persist root
-    // state only) — the headline fields must still reflect the advance.
-    const status = await callTool(h.client, "sdd_get_status", {});
+    const status = await callTool(h.client, "sdd_get_status", featureStatusInput());
     expect(status.payload["current_phase"]).toBe("specify");
     expect(status.payload["completion_percent"]).toBe(20); // init + discover completed
     expect(String(status.payload["next_action"])).toContain("specify");
@@ -219,17 +402,110 @@ describe("pipeline honesty regressions", () => {
     expect(status.payload["active_feature"]).toMatchObject({
       number: "001",
       phase: "specify",
+      state_status: "ready",
+    });
+    expect(status.payload["contract"]).toMatchObject({ id: "greenfield-service-full" });
+  });
+
+  it("sdd_clarify reads and updates only the selected feature state", async () => {
+    const ws = makeWorkspace("specky-honesty-clarify-state-");
+    const h = await buildHarness(ws);
+    cleanups.push(h.close);
+
+    const featureDir = ".specs/001-clarify-context";
+    mkdirSync(join(ws, featureDir), { recursive: true });
+    const specification = [
+      "# Clarify Context — Specification",
+      "",
+      "### REQ-API-001: Response contract",
+      "",
+      "When a client requests an item, the system shall return its representation.",
+      "",
+      "---",
+    ].join("\n");
+    writeFileSync(join(ws, featureDir, "SPECIFICATION.md"), specification);
+
+    const staleRootState = JSON.stringify({ version: "4.0.0", current_phase: "init" }, null, 2);
+    writeFileSync(join(ws, ".specs", ".sdd-state.json"), staleRootState);
+
+    const featureState = h.stateMachine.createFeatureState({
+      projectName: "clarify-context",
+      feature: { number: "001", name: "clarify-context", directory: featureDir },
+      contract: resolveUseCaseContract(USE_CASE),
+    });
+    featureState.current_phase = Phase.Specify;
+    featureState.phases[Phase.Init] = { status: "completed" };
+    featureState.phases[Phase.Discover] = { status: "completed" };
+    featureState.phases[Phase.Specify] = { status: "completed" };
+    await h.stateMachine.saveState(featureDir, featureState);
+
+    const result = await callTool(h.client, "sdd_clarify", {
+      spec_dir: ".specs",
+      feature_number: "001",
     });
 
-    // A per-feature state file, when present, still wins (batch flows).
-    const featureState = h.stateMachine.createDefaultState("status-probe");
-    featureState.current_phase = "verify" as typeof featureState.current_phase;
+    expect(result.isError).toBe(false);
+    expect(result.payload["status"]).toBe("clarification_questions");
+    expect(result.payload["phase_context"]).toMatchObject({ current_phase: "clarify" });
+
+    const updatedFeatureState = await h.stateMachine.loadState(featureDir);
+    expect(updatedFeatureState.current_phase).toBe(Phase.Clarify);
+    expect(updatedFeatureState.phases[Phase.Clarify]?.status).toBe("in_progress");
+
+    expect(readFileSync(join(ws, ".specs", ".sdd-state.json"), "utf-8")).toBe(staleRootState);
+    expect(readFileSync(join(ws, featureDir, "SPECIFICATION.md"), "utf-8")).toBe(specification);
+  });
+
+  it("sdd_write_design rejects incomplete evidence and renders a complete workload design", async () => {
+    const ws = makeWorkspace("specky-honesty-design-contract-");
+    const h = await buildHarness(ws);
+    cleanups.push(h.close);
+    await callTool(h.client, "sdd_init", initInput("design-contract"));
+    const stateDir = ".specs/001-design-contract";
     writeFileSync(
-      join(ws, ".specs", "001-status-probe", ".sdd-state.json"),
-      JSON.stringify(featureState, null, 2),
+      join(ws, stateDir, "SPECIFICATION.md"),
+      "### REQ-CORE-001: Service behavior\n\nThe system shall process requests.\n",
     );
-    const statusPerFeature = await callTool(h.client, "sdd_get_status", {});
-    expect(statusPerFeature.payload["current_phase"]).toBe("verify");
+    await h.stateMachine.mutateState(stateDir, (state) => {
+      state.current_phase = Phase.Clarify;
+      state.phases[Phase.Clarify] = { status: "completed" };
+    });
+
+    const incomplete = await callTool(h.client, "sdd_write_design", featureInput({
+      architecture_overview: "A versioned request-processing service.",
+      mermaid_diagrams: [{ title: "Context", type: "flowchart", code: "flowchart LR\nA-->B" }],
+      workload_design: SERVICE_DESIGN,
+      force: false,
+    }));
+    expect(incomplete.isError).toBe(true);
+
+    const complete = await callTool(h.client, "sdd_write_design", featureInput({
+      architecture_overview: "A versioned request-processing service with owned boundaries.",
+      mermaid_diagrams: [{ title: "Context", type: "flowchart", code: "flowchart LR\nA-->B" }],
+      workload_design: SERVICE_DESIGN,
+      adrs: [{
+        title: "Use synchronous HTTPS",
+        decision: "Expose versioned HTTPS JSON operations.",
+        rationale: "Named callers require request-response semantics.",
+        consequences: "Timeout and retry budgets become public behavior.",
+      }],
+      system_context: "Order clients call the service; identity and telemetry systems are external.",
+      container_architecture: "One API container owns request processing and one PostgreSQL database owns state.",
+      component_design: "RequestController validates input and ProcessingService applies REQ-CORE-001.",
+      code_level_design: "RequestController depends on ProcessingService through a typed interface.",
+      data_models: "RequestRecord stores request ID, status, timestamps and idempotency key.",
+      infrastructure: "The container is deployed with health probes, autoscaling and a managed database.",
+      security_architecture: "OAuth tokens authorize operations; TLS and managed identity protect boundaries.",
+      error_handling: "Typed errors map validation, dependency timeout and conflict outcomes.",
+      cross_cutting: "Trace IDs, structured logs, metrics and configuration are mandatory.",
+      force: false,
+    }));
+    expect(complete.isError).toBe(false);
+    const design = readFileSync(join(ws, stateDir, "DESIGN.md"), "utf8");
+    expect(design).toContain("## 13. Workload-Specific Design Contract");
+    expect(design).toContain("### Protocols and caller contract");
+    expect(design).toContain("REQ-CORE-001");
+    expect(design).not.toContain("TODO");
   });
 
   // ── Fix 3: featureless advance loophole ──
@@ -239,35 +515,43 @@ describe("pipeline honesty regressions", () => {
     cleanups.push(h.close);
 
     // No sdd_init — the audit walked 6 phases this way with zero artifacts.
-    const first = await callTool(h.client, "sdd_advance_phase", {});
+    const first = await callTool(h.client, "sdd_advance_phase", featureInput());
     expect(first.isError).toBe(true);
-    expect(first.raw).toContain("no feature registered");
-    expect(first.raw).toContain("sdd_init");
+    expect(first.raw).toContain("feature_not_found");
+    expect(first.raw).toContain("Feature 001 not found");
 
     // Repeated attempts must not creep forward either.
-    await callTool(h.client, "sdd_advance_phase", {});
-    await callTool(h.client, "sdd_advance_phase", {});
-    const status = await callTool(h.client, "sdd_get_status", {});
-    expect(status.payload["current_phase"]).toBe("init");
-    expect(status.payload["completion_percent"]).toBe(0);
+    await callTool(h.client, "sdd_advance_phase", featureInput());
+    await callTool(h.client, "sdd_advance_phase", featureInput());
+    const status = await callTool(h.client, "sdd_get_status", {
+      view: "workspace",
+      spec_dir: ".specs",
+    });
+    expect(status.payload["feature_count"]).toBe(0);
+    expect(status.payload["features"]).toEqual([]);
   });
 
   // ── Fix 4: opt-in server-side LGTM gate ──
   it("pipeline.require_lgtm blocks completing specify without lgtm:true and records approval", async () => {
     const ws = makeWorkspace("specky-honesty-lgtm-");
     mkdirSync(join(ws, ".specky"), { recursive: true });
-    writeFileSync(join(ws, ".specky", "config.yml"), "pipeline:\n  require_lgtm: true\n");
+    writeFileSync(
+      join(ws, ".specky", "config.yml"),
+      serializeWorkspaceConfig(createWorkspaceConfig({ requireLgtm: true })),
+    );
     const h = await buildHarness(ws);
     cleanups.push(h.close);
 
-    await callTool(h.client, "sdd_init", { project_name: "lgtm-gate" });
-    await callTool(h.client, "sdd_discover", { project_idea: "LGTM gate probe" });
+    await callTool(h.client, "sdd_init", initInput("lgtm-gate"));
+    await callTool(h.client, "sdd_discover", featureInput({ project_idea: "LGTM gate probe" }));
     // init/discover completions are NOT LGTM gates — no approval needed.
-    const toSpecify = await callTool(h.client, "sdd_advance_phase", {});
+    const toSpecify = await callTool(h.client, "sdd_advance_phase", featureInput());
     expect(toSpecify.isError).toBe(false);
 
     await callTool(h.client, "sdd_write_spec", {
+      ...FEATURE_INPUT,
       feature_name: "lgtm-gate",
+      force: false,
       discovery_answers: { Q1: "v1" },
       requirements: [
         {
@@ -280,20 +564,20 @@ describe("pipeline honesty regressions", () => {
     });
 
     // Completing specify IS an LGTM gate: blocked without lgtm:true.
-    const blocked = await callTool(h.client, "sdd_advance_phase", {});
+    const blocked = await callTool(h.client, "sdd_advance_phase", featureInput());
     expect(blocked.isError).toBe(true);
     expect(blocked.raw).toContain("lgtm_required");
     expect(blocked.raw).toContain("require_lgtm");
 
-    const stillSpecify = await callTool(h.client, "sdd_get_status", {});
+    const stillSpecify = await callTool(h.client, "sdd_get_status", featureStatusInput());
     expect(stillSpecify.payload["current_phase"]).toBe("specify");
 
     // With lgtm:true the gate opens and the approval is recorded in history.
-    const approved = await callTool(h.client, "sdd_advance_phase", { lgtm: true });
+    const approved = await callTool(h.client, "sdd_advance_phase", featureInput({ lgtm: true }));
     expect(approved.isError).toBe(false);
     expect(approved.payload["current_phase"]).toBe("clarify");
 
-    const state = await h.stateMachine.loadState(".specs");
+    const state = await h.stateMachine.loadState(".specs/001-lgtm-gate");
     const lastGate = (state.gate_history ?? []).at(-1) as
       | { phase: string; lgtm?: boolean }
       | undefined;
@@ -306,11 +590,13 @@ describe("pipeline honesty regressions", () => {
     const h = await buildHarness(ws);
     cleanups.push(h.close);
 
-    await callTool(h.client, "sdd_init", { project_name: "no-lgtm" });
-    await callTool(h.client, "sdd_discover", { project_idea: "Default behavior probe" });
-    await callTool(h.client, "sdd_advance_phase", {});
+    await callTool(h.client, "sdd_init", initInput("no-lgtm"));
+    await callTool(h.client, "sdd_discover", featureInput({ project_idea: "Default behavior probe" }));
+    await callTool(h.client, "sdd_advance_phase", featureInput());
     await callTool(h.client, "sdd_write_spec", {
+      ...FEATURE_INPUT,
       feature_name: "no-lgtm",
+      force: false,
       discovery_answers: { Q1: "v1" },
       requirements: [
         {
@@ -322,12 +608,12 @@ describe("pipeline honesty regressions", () => {
       ],
     });
 
-    const advance = await callTool(h.client, "sdd_advance_phase", {});
+    const advance = await callTool(h.client, "sdd_advance_phase", featureInput());
     expect(advance.isError).toBe(false);
     expect(advance.payload["current_phase"]).toBe("clarify");
 
     // LGTM presence is still recorded (as false) for gate-history honesty.
-    const state = await h.stateMachine.loadState(".specs");
+    const state = await h.stateMachine.loadState(".specs/001-no-lgtm");
     const lastGate = (state.gate_history ?? []).at(-1) as
       | { phase: string; lgtm?: boolean }
       | undefined;
@@ -340,10 +626,12 @@ describe("pipeline honesty regressions", () => {
     const h = await buildHarness(ws);
     cleanups.push(h.close);
 
-    await callTool(h.client, "sdd_init", { project_name: "orphan-phase" });
-    await callTool(h.client, "sdd_discover", { project_idea: "orphan probe" });
+    await callTool(h.client, "sdd_init", initInput("orphan-phase"));
+    await callTool(h.client, "sdd_discover", featureInput({ project_idea: "orphan probe" }));
     await callTool(h.client, "sdd_write_spec", {
+      ...FEATURE_INPUT,
       feature_name: "orphan-phase",
+      force: false,
       discovery_answers: { Q1: "scope answer" },
       requirements: [
         {
@@ -355,7 +643,7 @@ describe("pipeline honesty regressions", () => {
       ],
     });
 
-    const state = await h.stateMachine.loadState(".specs");
+    const state = await h.stateMachine.loadState(".specs/001-orphan-phase");
     expect(state.phases.discover.status).toBe("completed");
     expect(state.phases.specify.status).toBe("completed");
   });
@@ -365,10 +653,12 @@ describe("pipeline honesty regressions", () => {
     const h = await buildHarness(ws);
     cleanups.push(h.close);
 
-    await callTool(h.client, "sdd_init", { project_name: "discovery-ctx" });
-    await callTool(h.client, "sdd_discover", { project_idea: "discovery context" });
+    await callTool(h.client, "sdd_init", initInput("discovery-ctx"));
+    await callTool(h.client, "sdd_discover", featureInput({ project_idea: "discovery context" }));
     await callTool(h.client, "sdd_write_spec", {
+      ...FEATURE_INPUT,
       feature_name: "discovery-ctx",
+      force: false,
       discovery_answers: { Q1: "Users are developers", Q2: "Must use TypeScript" },
       requirements: [
         {
@@ -391,7 +681,7 @@ describe("pipeline honesty regressions", () => {
     const h = await buildHarness(ws);
     cleanups.push(h.close);
 
-    await callTool(h.client, "sdd_init", { project_name: "block-gate" });
+    await callTool(h.client, "sdd_init", initInput("block-gate"));
     const featureDir = join(ws, ".specs/001-block-gate");
     writeFileSync(join(featureDir, "SPECIFICATION.md"), [
       "### REQ-CORE-001: (ubiquitous)",
@@ -405,16 +695,16 @@ describe("pipeline honesty regressions", () => {
     writeFileSync(join(featureDir, "DESIGN.md"), "# Design\n");
     writeFileSync(join(featureDir, "TASKS.md"), "# Tasks\n| T-001 | Do thing | | 1h | | REQ-CORE-001 |\n");
 
-    await h.stateMachine.mutateState(".specs", (state) => {
+    await h.stateMachine.mutateState(".specs/001-block-gate", (state) => {
       state.current_phase = Phase.Tasks;
       state.phases[Phase.Tasks] = { status: "completed", completed_at: new Date().toISOString() };
     });
 
-    const analysis = await callTool(h.client, "sdd_run_analysis", { feature_number: "001" });
+    const analysis = await callTool(h.client, "sdd_run_analysis", featureInput({ force: false }));
     expect(analysis.isError).toBe(false);
     expect((analysis.payload["gate_decision"] as { decision: string }).decision).not.toBe("APPROVE");
 
-    const state = await h.stateMachine.loadState(".specs");
+    const state = await h.stateMachine.loadState(".specs/001-block-gate");
     expect(state.phases.analyze.status).not.toBe("completed");
   });
 
@@ -423,7 +713,9 @@ describe("pipeline honesty regressions", () => {
     const h = await buildHarness(ws);
     cleanups.push(h.close);
 
-    await h.stateMachine.mutateState(".specs", (state) => {
+    await callTool(h.client, "sdd_init", initInput("remediate"));
+    const stateDir = ".specs/001-remediate";
+    await h.stateMachine.mutateState(stateDir, (state) => {
       state.current_phase = Phase.Analyze;
       state.gate_decision = {
         decision: "BLOCK",
@@ -434,16 +726,16 @@ describe("pipeline honesty regressions", () => {
       };
     });
 
-    const writeDesign = await h.stateMachine.validatePhaseForTool(".specs", "sdd_write_design");
+    const writeDesign = await h.stateMachine.validatePhaseForTool(stateDir, "sdd_write_design");
     expect(writeDesign.allowed).toBe(true);
 
-    const writeSpec = await h.stateMachine.validatePhaseForTool(".specs", "sdd_write_spec");
+    const writeSpec = await h.stateMachine.validatePhaseForTool(stateDir, "sdd_write_spec");
     expect(writeSpec.allowed).toBe(true);
 
-    const writeTasks = await h.stateMachine.validatePhaseForTool(".specs", "sdd_write_tasks");
+    const writeTasks = await h.stateMachine.validatePhaseForTool(stateDir, "sdd_write_tasks");
     expect(writeTasks.allowed).toBe(true);
 
-    const gate = await h.stateMachine.validateGateForTool(".specs", "sdd_implement");
+    const gate = await h.stateMachine.validateGateForTool(stateDir, "sdd_implement");
     expect(gate.allowed).toBe(false);
     expect(gate.error_message).toContain("BLOCK");
   });
@@ -453,7 +745,9 @@ describe("pipeline honesty regressions", () => {
     const h = await buildHarness(ws);
     cleanups.push(h.close);
 
-    await h.stateMachine.mutateState(".specs", (state) => {
+    await callTool(h.client, "sdd_init", initInput("gate"));
+    const stateDir = ".specs/001-gate";
+    await h.stateMachine.mutateState(stateDir, (state) => {
       state.current_phase = Phase.Analyze;
       state.gate_decision = {
         decision: "BLOCK",
@@ -464,7 +758,7 @@ describe("pipeline honesty regressions", () => {
       };
     });
 
-    const gate = await h.stateMachine.validateGateForTool(".specs", "sdd_implement");
+    const gate = await h.stateMachine.validateGateForTool(stateDir, "sdd_implement");
     expect(gate.allowed).toBe(false);
     expect(gate.error_message).toContain("BLOCK");
   });

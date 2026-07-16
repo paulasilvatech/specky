@@ -57,16 +57,17 @@ jobs:
           cd fresh
           fail=0
           count() { find "$1" -maxdepth 1 -type f 2>/dev/null | wc -l | tr -d ' '; }
+          count_hooks() { find "$1" -maxdepth 1 -type f -name '*.sh' 2>/dev/null | wc -l | tr -d ' '; }
           countd() { find "$1" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' '; }
           assert_eq() { actual="$1"; expected="$2"; label="$3"; if [ "$actual" != "$expected" ]; then echo "::error::$label: expected $expected, got $actual"; fail=1; fi; }
           assert_eq "$(count .claude/agents)"        13 "claude agents"
           assert_eq "$(count .claude/commands)"      22 "claude commands"
           assert_eq "$(countd .claude/skills)"       14 "claude skills"
-          assert_eq "$(count .claude/hooks/scripts)" 16 "claude hooks"
+          assert_eq "$(count_hooks .claude/hooks/scripts)" 16 "claude hooks"
           assert_eq "$(count .github/agents)"        13 "copilot agents"
           assert_eq "$(count .github/prompts)"       22 "copilot prompts"
           assert_eq "$(countd .github/skills)"       14 "copilot skills"
-          assert_eq "$(count .github/hooks/specky/scripts)" 16 "copilot hooks"
+          assert_eq "$(count_hooks .github/hooks/specky/scripts)" 16 "copilot hooks"
           assert_eq "$(count .cursor/agents)"        13 "cursor agents"
           assert_eq "$(count .cursor/commands)"      22 "cursor commands"
           assert_eq "$(count .opencode/agents)"      13 "opencode agents"

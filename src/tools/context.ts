@@ -4,12 +4,12 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { truncate } from "./tool-result.js";
-import {} from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { ContextTieringEngine } from "../services/context-tiering-engine.js";
 import { contextStatusInputSchema } from "../schemas/context.js";
 import { enrichResponse } from "./response-builder.js";
+import { requireExecutionContext } from "../services/execution-context.js";
 
 export function registerContextTools(
   server: McpServer,
@@ -32,15 +32,10 @@ export function registerContextTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir }) => {
+    async ({ feature_number }) => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(
-            `Feature ${feature_number} not found in ${spec_dir}. Run sdd_init first.`,
-          );
-        }
+        const context = requireExecutionContext("sdd_context_status");
+        const feature = context.feature!;
 
         const tierTable = contextTieringEngine.getTierTable();
 
@@ -87,7 +82,7 @@ export function registerContextTools(
             "Evidence: arXiv:2602.20478 — selective context loading improves accuracy by 8.3%.",
         };
 
-        const enriched = await enrichResponse("sdd_context_status", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_context_status", result, stateMachine, context.stateDir!);
         return {
           content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };

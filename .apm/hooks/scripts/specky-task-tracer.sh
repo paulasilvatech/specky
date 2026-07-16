@@ -5,9 +5,12 @@
 # Paper: arXiv:2602.00180 — SDD traceability
 
 set -euo pipefail
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+. "$SCRIPT_DIR/specky-contract-context.bash"
+specky_load_contract_context || exit $?
+[ "${SPECKY_CONTEXT_ACTIVE:-0}" = "1" ] || exit 0
 
-LATEST=$(ls -td .specs/*/ 2>/dev/null | head -1 || true)
-[ -z "$LATEST" ] && exit 0
+LATEST="$SPECKY_FEATURE_DIR"
 TASKS="$LATEST/TASKS.md"
 [ -f "$TASKS" ] || exit 0
 

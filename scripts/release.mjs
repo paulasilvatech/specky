@@ -70,6 +70,15 @@ function countFiles(dir) {
   }
 }
 
+function countHookScripts(dir) {
+  try {
+    return readdirSync(dir, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".sh")).length;
+  } catch {
+    return 0;
+  }
+}
+
 function countDirs(dir) {
   try {
     return readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).length;
@@ -160,10 +169,10 @@ step("fresh-install smoke test", () => {
       ".claude/agents": { expected: EXPECTED.agents, got: countFiles(resolve(fresh, ".claude/agents")) },
       ".claude/commands": { expected: EXPECTED.prompts, got: countFiles(resolve(fresh, ".claude/commands")) },
       ".claude/skills": { expected: EXPECTED.skills, got: countDirs(resolve(fresh, ".claude/skills")) },
-      ".claude/hooks/scripts": { expected: EXPECTED.hooks, got: countFiles(resolve(fresh, ".claude/hooks/scripts")) },
+      ".claude/hooks/scripts": { expected: EXPECTED.hooks, got: countHookScripts(resolve(fresh, ".claude/hooks/scripts")) },
       ".github/agents": { expected: EXPECTED.agents, got: countFiles(resolve(fresh, ".github/agents")) },
       ".github/prompts": { expected: EXPECTED.prompts, got: countFiles(resolve(fresh, ".github/prompts")) },
-      ".github/hooks/specky/scripts": { expected: EXPECTED.hooks, got: countFiles(resolve(fresh, ".github/hooks/specky/scripts")) },
+      ".github/hooks/specky/scripts": { expected: EXPECTED.hooks, got: countHookScripts(resolve(fresh, ".github/hooks/specky/scripts")) },
       ".cursor/agents": { expected: EXPECTED.agents, got: countFiles(resolve(fresh, ".cursor/agents")) },
       ".cursor/commands": { expected: EXPECTED.prompts, got: countFiles(resolve(fresh, ".cursor/commands")) },
       ".opencode/agents": { expected: EXPECTED.agents, got: countFiles(resolve(fresh, ".opencode/agents")) },

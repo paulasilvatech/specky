@@ -6,14 +6,13 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { formatError, truncate } from "./tool-result.js";
 import { join } from "node:path";
-import {} from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
 import type { ComplianceEngine } from "../services/compliance-engine.js";
 import type { CrossAnalyzer } from "../services/cross-analyzer.js";
 import type { EarsValidator } from "../services/ears-validator.js";
-import type { ChecklistDomain } from "../constants.js";
+import type { ChecklistDomain, ComplianceFramework } from "../constants.js";
 import type { ChecklistItem, VerificationResult } from "../types.js";
 import { enrichResponse } from "./response-builder.js";
 import { parseTasksFromMarkdown } from "../utils/task-parser.js";
@@ -25,6 +24,8 @@ import {
   crossAnalyzeInputSchema,
   validateEarsInputSchema,
 } from "../schemas/quality.js";
+import { requireExecutionContext } from "../services/execution-context.js";
+import { artifactMetadata } from "../utils/artifact-metadata.js";
 
 /**
  * Escape free text for a markdown table cell: backslashes FIRST (so escapes
@@ -32,7 +33,10 @@ import {
  * trailing backslash in the input neutralize the escape (CodeQL
  * js/incomplete-sanitization).
  */
-const escapeTableCell = (s: string): string => s.replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
+const escapeTableCell = (value: string): string => {
+  const slash = String.fromCodePoint(92);
+  return value.split(slash).join(slash + slash).split("|").join(`${slash}|`);
+};
 
 /** Domain-specific checklist definitions */
 const DOMAIN_CHECKS: Record<ChecklistDomain, Array<{ id: string; category: string; check: string; mandatory: boolean }>> = {
@@ -197,11 +201,12 @@ export function registerQualityTools(
 
         // Render and write CHECKLIST.md — the per-item table, totals, date, and
         // gate decision are all passed to the template so the persisted file
-        // carries the real data instead of unrendered [TODO: …] placeholders.
+        // carries the computed data instead of unresolved template markers.
         const itemRows = items.map((item) =>
           `| ${item.id} | ${escapeTableCell(item.check)} | ${item.mandatory ? "Yes" : "No"} | ${item.status} | ${escapeTableCell(item.evidence ?? "—")} |`
         );
         const content = await templateEngine.renderWithFrontmatter("checklist", {
+          ...artifactMetadata({ version: "1.0.0", author: "sdd_checklist", status: gateDecision }),
           title: `${domain.charAt(0).toUpperCase() + domain.slice(1)} Quality Checklist`,
           feature_id: feature_number,
           domain,
@@ -259,7 +264,7 @@ export function registerQualityTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir, code_paths }) => {
+    async ({ feature_number, spec_dir, code_paths, force }) => {
       try {
         const features = await fileManager.listFeatures(spec_dir);
         const feature = features.find((f) => f.number === feature_number);
@@ -332,7 +337,9 @@ export function registerQualityTools(
         const verifiedCount = results.filter((r) => r.verified_status === "verified").length;
         const phantomCount = results.filter((r) => r.phantom).length;
         const passRate = tasks.length > 0 ? Math.round((verifiedCount / tasks.length) * 100) : 0;
-        const gateDecision = phantomCount > 0 ? "CHANGES_NEEDED" : passRate >= 80 ? "APPROVE" : "CHANGES_NEEDED";
+        const gateDecision = phantomCount === 0 && passRate >= 80
+          ? "APPROVE"
+          : "CHANGES_NEEDED";
 
         // Generate verification diagram
         const diagramLines = ["flowchart TD"];
@@ -351,6 +358,7 @@ export function registerQualityTools(
 
         // Write VERIFICATION.md
         const content = await templateEngine.renderWithFrontmatter("verification", {
+          ...artifactMetadata({ version: "1.0.0", author: "sdd_verify_tasks", status: gateDecision }),
           title: "Task Verification Report",
           feature_id: feature_number,
           date: currentDateString(),
@@ -363,7 +371,7 @@ export function registerQualityTools(
           gate_decision: gateDecision,
         });
 
-        await fileManager.writeSpecFile(featureDir, "VERIFICATION.md", content, true);
+        await fileManager.writeSpecFile(featureDir, "VERIFICATION.md", content, force);
 
         const report = {
           feature_number,
@@ -406,68 +414,72 @@ export function registerQualityTools(
         openWorldHint: false,
       },
     },
-    async ({ framework, feature_number, spec_dir }) => {
+    async ({ evidence, force }) => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(`Feature ${feature_number} not found in ${spec_dir}`);
-        }
+        const context = requireExecutionContext("sdd_compliance_check");
+        const feature = context.feature!;
         const featureDir = feature.directory;
+        const stateDir = context.stateDir!;
+        const compliance = context.state!.contract.capability_config.compliance!;
 
-        // Read specification
-        let specContent: string;
         try {
-          specContent = await fileManager.readSpecFile(featureDir, "SPECIFICATION.md");
+          await fileManager.readSpecFile(featureDir, "SPECIFICATION.md");
+          await fileManager.readSpecFile(featureDir, "DESIGN.md");
         } catch {
           throw new Error(
-            `SPECIFICATION.md not found in ${featureDir}.\n→ Fix: Run sdd_write_spec first.`
+            `SPECIFICATION.md and DESIGN.md are required compliance evidence sources in ${featureDir}.`
           );
         }
 
-        // Read design (optional)
-        let designContent = "";
-        try {
-          designContent = await fileManager.readSpecFile(featureDir, "DESIGN.md");
-        } catch {
-          // Design is optional for compliance check
-        }
-
-        // Run compliance check
-        const complianceResult = complianceEngine.checkCompliance(framework, specContent, designContent);
-
-        // Write COMPLIANCE.md — pre-render table rows (template engine only iterates string arrays).
-        const findingRows = complianceResult.findings.map((f) =>
-          `| ${escapeTableCell(f.control_id)} | ${escapeTableCell(f.control_name)} | ${f.status} | ${escapeTableCell(f.evidence ?? "—")} | ${escapeTableCell(f.remediation ?? "—")} |`
+        const reports = compliance.frameworks.map((framework) =>
+          complianceEngine.checkCompliance(framework as ComplianceFramework, evidence)
         );
-        const recommendation =
-          complianceResult.controls_failed > 0
-            ? `Address ${complianceResult.controls_failed} failing ${framework.toUpperCase()} control(s) in SPECIFICATION.md / DESIGN.md, then re-run sdd_compliance_check.`
-            : `All checked ${framework.toUpperCase()} controls passed or were marked N/A.`;
+        const controlsChecked = reports.reduce((sum, report) => sum + report.controls_checked, 0);
+        const controlsPassed = reports.reduce((sum, report) => sum + report.controls_passed, 0);
+        const controlsFailed = reports.reduce((sum, report) => sum + report.controls_failed, 0);
+
+        const findingRows = reports.flatMap((report) => report.findings.map((finding) =>
+          `| ${escapeTableCell(finding.control_id)} | ${escapeTableCell(finding.control_name)} | ${finding.status} | ${escapeTableCell(finding.evidence ?? "—")} | ${escapeTableCell(finding.remediation ?? "—")} |`
+        ));
+        const recommendation = controlsFailed > 0
+          ? `Provide explicit evidence for ${controlsFailed} controls, then re-run sdd_compliance_check.`
+          : "All controls in the configured compliance packs have explicit evidence.";
+        const frameworkLabel = compliance.frameworks.map((framework) => framework.toUpperCase()).join(", ");
 
         const content = await templateEngine.renderWithFrontmatter("compliance", {
-          title: `${framework.toUpperCase()} Compliance Report`,
-          feature_id: feature_number,
-          framework,
+          ...artifactMetadata({
+            version: compliance.control_pack_version,
+            author: "sdd_compliance_check",
+            status: controlsFailed === 0 ? "Compliant" : "Non-Compliant",
+          }),
+          title: `${frameworkLabel} Compliance Report`,
+          feature_id: feature.number,
+          framework: frameworkLabel,
           date: currentDateString(),
-          controls_checked: String(complianceResult.controls_checked),
-          controls_passed: String(complianceResult.controls_passed),
-          controls_failed: String(complianceResult.controls_failed),
-          controls_na: String(complianceResult.controls_na),
+          controls_checked: String(controlsChecked),
+          controls_passed: String(controlsPassed),
+          controls_failed: String(controlsFailed),
+          controls_na: "0",
           findings: findingRows,
-          overall_status: complianceResult.overall_status,
+          overall_status: controlsFailed === 0 ? "compliant" : "non_compliant",
           recommendation,
         });
 
-        await fileManager.writeSpecFile(featureDir, "COMPLIANCE.md", content, true);
+        await fileManager.writeSpecFile(featureDir, "COMPLIANCE.md", content, force);
 
         const result = {
-          ...complianceResult,
+          control_pack_version: compliance.control_pack_version,
+          frameworks: compliance.frameworks,
+          reports,
+          controls_checked: controlsChecked,
+          controls_passed: controlsPassed,
+          controls_failed: controlsFailed,
+          overall_status: controlsFailed === 0 ? "compliant" : "non_compliant",
           file_written: join(featureDir, "COMPLIANCE.md"),
-          learning_note: `Compliance checks match specification and design keywords against ${framework.toUpperCase()} controls. Failing controls indicate areas where your spec or design should explicitly address the requirement. Add relevant terms and sections, then re-run the check.`,
+          learning_note: `Compliance pack ${compliance.control_pack_version} accepts only explicit evidence keyed by control ID; prose keyword presence is not treated as proof.`,
         };
 
-        const enriched = await enrichResponse("sdd_compliance_check", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_compliance_check", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
@@ -493,7 +505,7 @@ export function registerQualityTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir }) => {
+    async ({ feature_number, spec_dir, force }) => {
       try {
         const features = await fileManager.listFeatures(spec_dir);
         const feature = features.find((f) => f.number === feature_number);
@@ -511,13 +523,14 @@ export function registerQualityTools(
 
         // Write CROSS_ANALYSIS.md — alignment tables and the recommendation are
         // rendered into the persisted file so it carries the real analysis data
-        // instead of unrendered [TODO: …] placeholders.
+        // instead of unresolved template markers.
         const alignmentRow = (check: { source_id: string; status: string; detail: string }): string =>
           `| ${check.source_id} | ${check.status === "aligned" ? "Yes" : "No"} | ${escapeTableCell(check.detail)} |`;
         const specDesignRows = analysisResult.spec_design_alignment.map(alignmentRow);
         const designTasksRows = analysisResult.design_tasks_alignment.map(alignmentRow);
         const emptyRow = "| — | — | No requirements found |";
         const content = await templateEngine.renderWithFrontmatter("cross_analysis", {
+          ...artifactMetadata({ version: "1.0.0", author: "sdd_cross_analyze", status: "Generated" }),
           title: "Cross-Artifact Consistency Analysis",
           feature_id: feature_number,
           date: currentDateString(),
@@ -530,7 +543,7 @@ export function registerQualityTools(
           recommendation,
         });
 
-        await fileManager.writeSpecFile(featureDir, "CROSS_ANALYSIS.md", content, true);
+        await fileManager.writeSpecFile(featureDir, "CROSS_ANALYSIS.md", content, force);
 
         const result = {
           ...analysisResult,

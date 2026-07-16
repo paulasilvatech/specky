@@ -67,6 +67,7 @@ import { registerRbacTools } from "./tools/rbac.js";
 import { installToolEnforcement } from "./tools/tool-enforcement.js";
 import { registerAuditTools } from "./tools/audit.js";
 import { mcpServerIcons, resolvePackageRoot } from "./utils/server-icon.js";
+import { ExecutionContextResolver } from "./services/execution-context.js";
 
 const pkgRoot = resolvePackageRoot(import.meta.url);
 const serverIcons = mcpServerIcons(pkgRoot);
@@ -93,7 +94,7 @@ try {
   // Absent or unreadable install.json is fine — no advisory.
 }
 
-// Load optional project config (.specky/config.yml). The profile may be
+// Load mandatory project config (.specky/config.yml). The profile may be
 // forced from outside the workspace: --profile=enterprise flag, SPECKY_PROFILE
 // env, or SPECKY_ENTERPRISE=1 shorthand.
 const config = loadConfig(workspaceRoot);
@@ -122,18 +123,23 @@ const server = new McpServer(
     name: SERVER_NAME,
     version: VERSION,
     title: "Specky",
-    description: "Agentic Spec-Driven Development plugin — 13 agents, 58 MCP tools, 10-phase enforced pipeline, EARS notation, 22 prompts, 8 skills, 16 hooks.",
+    description: "Agentic Spec-Driven Development plugin — 13 agents, 58 MCP tools, signed per-feature use-case contracts, EARS validation, 22 prompts, 14 skills, and 16 hooks.",
     websiteUrl: "https://getspecky.ai",
     ...(serverIcons.length > 0 ? { icons: serverIcons } : {}),
   },
   {
-    instructions: "Specky is a Spec-Driven Development engine. Start with sdd_init to create a project, then follow the 10-phase pipeline: Init → Discover → Specify → Clarify → Design → Tasks → Analyze → Implement → Verify → Release. Use sdd_get_status to check current phase. Reply LGTM at quality gates to advance.",
+    instructions: "Specky executes one explicit signed contract per feature. Start with sdd_init using lifecycle, workload, execution mode, capabilities, capability_config, spec_dir, and feature_number. Follow only the phase graph persisted in feature state. Use sdd_get_status with an explicit workspace or feature view. LGTM blocks only when workspace policy enables it.",
   },
 );
 
 // Initialize services (v1)
 const fileManager = new FileManager(workspaceRoot);
 const stateMachine = new StateMachine(fileManager, workspaceRoot);
+const executionContextResolver = new ExecutionContextResolver(
+  fileManager,
+  stateMachine,
+  () => loadConfig(workspaceRoot),
+);
 const templateEngine = new TemplateEngine(fileManager, config.templates_path || undefined);
 const earsValidator = new EarsValidator();
 const codebaseScanner = new CodebaseScanner(fileManager);
@@ -141,7 +147,7 @@ const transcriptParser = new TranscriptParser(fileManager);
 
 // Initialize services (v2)
 const documentConverter = new DocumentConverter(fileManager);
-const diagramGenerator = new DiagramGenerator(fileManager);
+const diagramGenerator = new DiagramGenerator();
 const iacGenerator = new IacGenerator(fileManager);
 const workItemExporter = new WorkItemExporter(fileManager);
 const crossAnalyzer = new CrossAnalyzer(fileManager);
@@ -172,6 +178,7 @@ installToolEnforcement(server, {
   auditLogger,
   rbacEngine,
   stateMachine,
+  contextResolver: executionContextResolver,
 });
 
 // Register all tools (58 total)

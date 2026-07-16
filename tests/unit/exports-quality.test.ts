@@ -15,7 +15,7 @@
  *   4. sdd_batch_import counted compressed (real-world) DOCX conversions —
  *      which produced binary garbage — as "successful".
  */
-import { mkdirSync, mkdtempSync, cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { deflateRawSync } from "node:zlib";
@@ -40,6 +40,13 @@ import {
 import { registerQualityTools } from "../../src/tools/quality.js";
 import { registerInputTools } from "../../src/tools/input.js";
 import { registerIntegrationTools } from "../../src/tools/integration.js";
+import { AuditLogger } from "../../src/services/audit-logger.js";
+import { RbacEngine } from "../../src/services/rbac-engine.js";
+import { ExecutionContextResolver } from "../../src/services/execution-context.js";
+import { installToolEnforcement } from "../../src/tools/tool-enforcement.js";
+import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
+import { Phase } from "../../src/constants.js";
+import { testDocumentationConfig } from "../helpers/documentation-config.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 // The built-in template dir resolves relative to dist/; when running from
@@ -47,6 +54,17 @@ const REPO = resolve(import.meta.dirname, "../..");
 // workspace and use the custom-templates path.
 const TEMPLATES_SRC = join(REPO, "templates");
 const CUSTOM_TEMPLATES = ".specky-test-templates";
+const DOCUMENT_USE_CASE = {
+  lifecycle: "greenfield" as const,
+  workload: "service" as const,
+  execution_mode: "full" as const,
+  capabilities: ["document-import"] as const,
+  capability_config: {
+    "document-import": {
+      formats: ["docx", "md"] as const,
+    },
+  },
+};
 
 interface Harness {
   workspace: string;
@@ -54,7 +72,10 @@ interface Harness {
   close: () => Promise<void>;
 }
 
-async function buildHarness(workspace: string): Promise<Harness> {
+async function buildHarness(
+  workspace: string,
+  phase: Phase = Phase.Analyze,
+): Promise<Harness> {
   cpSync(TEMPLATES_SRC, join(workspace, CUSTOM_TEMPLATES), { recursive: true });
 
   const fileManager = new FileManager(workspace);
@@ -67,7 +88,71 @@ async function buildHarness(workspace: string): Promise<Harness> {
   const workItemExporter = new WorkItemExporter(fileManager);
   const documentConverter = new DocumentConverter(fileManager);
 
+  const contract = resolveUseCaseContract({
+    lifecycle: "greenfield",
+    workload: "service",
+    execution_mode: "full",
+    capabilities: ["compliance", "figma", "work-items", "release"],
+    capability_config: {
+      compliance: {
+        frameworks: ["soc2"],
+        control_pack_version: "2026.1",
+        evidence_required: true,
+      },
+      figma: {
+        extraction_scope: "node",
+        require_component_properties: true,
+        diagram_types: ["architecture", "user_flow", "data_flow", "integration"],
+      },
+      "work-items": {
+        platform: "jira",
+        include_subtasks: true,
+        project_key: "CHK",
+      },
+      release: {
+        branch_prefix: "spec/",
+        base_branch: "develop",
+        draft_pr: false,
+        checkpoints: true,
+        documentation: testDocumentationConfig(),
+      },
+    },
+  });
+  for (const feature of await fileManager.listFeatures(".specs")) {
+    const state = stateMachine.createFeatureState({
+      projectName: feature.name,
+      feature: {
+        number: feature.number,
+        name: feature.name,
+        directory: feature.directory,
+      },
+      contract,
+    });
+    state.current_phase = phase;
+    for (const contractedPhase of contract.phases) {
+      if (contractedPhase === phase) {
+        state.phases[contractedPhase] = { status: "in_progress" };
+        break;
+      }
+      state.phases[contractedPhase] = { status: "completed" };
+    }
+    state.gate_decision = {
+      decision: "APPROVE",
+      reasons: ["Test fixture"],
+      coverage_percent: 100,
+      gaps: [],
+      decided_at: new Date().toISOString(),
+    };
+    await stateMachine.saveState(feature.directory, state);
+  }
+
   const server = new McpServer({ name: "specky-test", version: "0.0.0" });
+  installToolEnforcement(server, {
+    auditLogger: new AuditLogger(workspace, false),
+    rbacEngine: new RbacEngine(false, "contributor"),
+    stateMachine,
+    contextResolver: new ExecutionContextResolver(fileManager, stateMachine),
+  });
   registerQualityTools(server, fileManager, stateMachine, templateEngine, complianceEngine, crossAnalyzer, earsValidator);
   registerInputTools(server, fileManager, documentConverter, stateMachine);
   registerIntegrationTools(server, fileManager, stateMachine, templateEngine, gitManager, workItemExporter);
@@ -287,16 +372,14 @@ describe("export & quality-report regressions", () => {
       expect(withoutSub.metadata.include_subtasks).toBe(false);
     });
 
-    it("sdd_export_work_items tool passes documented params through to the payload", async () => {
+    it("sdd_export_work_items uses the persisted Jira contract and rejects per-call overrides", async () => {
       const { workspace } = seedExportWorkspace();
-      const h = await buildHarness(workspace);
+      const h = await buildHarness(workspace, Phase.Verify);
       cleanups.push(h.close);
 
       const res = await callTool(h.client, "sdd_export_work_items", {
-        platform: "jira",
         feature_number: "001",
         spec_dir: ".specs",
-        project_key: "CHK",
       });
 
       expect(res.isError).toBe(false);
@@ -304,13 +387,13 @@ describe("export & quality-report regressions", () => {
       expect(items[0].fields.project.key).toBe("CHK");
       expect(items[0].fields.issuetype.name).toBe("Task");
 
-      const missingKey = await callTool(h.client, "sdd_export_work_items", {
-        platform: "jira",
+      const override = await callTool(h.client, "sdd_export_work_items", {
         feature_number: "001",
         spec_dir: ".specs",
+        platform: "github",
       });
-      expect(missingKey.isError).toBe(true);
-      expect(missingKey.raw).toContain("project_key is required for the jira platform");
+      expect(override.isError).toBe(true);
+      expect(override.raw).toContain("Unrecognized key");
     });
   });
 
@@ -321,13 +404,14 @@ describe("export & quality-report regressions", () => {
       "SPECIFICATION.md": SPEC_MD,
       "DESIGN.md": "# Design\n\nREQ-CORE-001 is implemented by the PaymentService.\n",
     });
-    const h = await buildHarness(ws);
+    const h = await buildHarness(ws, Phase.Analyze);
     cleanups.push(h.close);
 
     const res = await callTool(h.client, "sdd_checklist", {
       domain: "security",
       feature_number: "001",
       spec_dir: ".specs",
+      force: false,
     });
     expect(res.isError).toBe(false);
 
@@ -351,13 +435,21 @@ describe("export & quality-report regressions", () => {
       "SPECIFICATION.md": SPEC_MD,
       "DESIGN.md": "# Design\n\nAccess control, encryption, audit logging, and monitoring.\n",
     });
-    const h = await buildHarness(ws);
+    const h = await buildHarness(ws, Phase.Analyze);
     cleanups.push(h.close);
 
     const res = await callTool(h.client, "sdd_compliance_check", {
-      framework: "soc2",
       feature_number: "001",
       spec_dir: ".specs",
+      force: false,
+      evidence: {
+        "SOC2-CC6.1": ["SPECIFICATION.md#REQ-CORE-001"],
+        "SOC2-CC7.2": ["DESIGN.md#Monitoring"],
+        "SOC2-CC8.1": ["DESIGN.md#Change-management"],
+        "SOC2-A1.2": ["DESIGN.md#Recovery"],
+        "SOC2-CC6.6": ["DESIGN.md#Encryption"],
+        "SOC2-CC7.3": ["DESIGN.md#Incident-response"],
+      },
     });
     expect(res.isError).toBe(false);
 
@@ -375,12 +467,13 @@ describe("export & quality-report regressions", () => {
       "TASKS.md": TASKS_TABLE_MD,
     });
     writeFileSync(join(ws, "payment.ts"), "// T-001 Build payment form\n", "utf8");
-    const h = await buildHarness(ws);
+    const h = await buildHarness(ws, Phase.Verify);
     cleanups.push(h.close);
 
     const res = await callTool(h.client, "sdd_verify_tasks", {
       feature_number: "001",
       spec_dir: ".specs",
+      force: false,
       code_paths: ["payment.ts"],
     });
     expect(res.isError).toBe(false);
@@ -401,12 +494,13 @@ describe("export & quality-report regressions", () => {
       "DESIGN.md": "# Design\n\nREQ-CORE-001 is implemented by the PaymentService.\n",
       "TASKS.md": "# Tasks\n\n- [ ] T-001: Build payment form (REQ-CORE-001)\n",
     });
-    const h = await buildHarness(ws);
+    const h = await buildHarness(ws, Phase.Analyze);
     cleanups.push(h.close);
 
     const res = await callTool(h.client, "sdd_cross_analyze", {
       feature_number: "001",
       spec_dir: ".specs",
+      force: false,
     });
     expect(res.isError).toBe(false);
 
@@ -425,14 +519,16 @@ describe("export & quality-report regressions", () => {
   // ── Fix: sdd_figma_to_spec references tools that actually exist ──
   it("sdd_figma_to_spec step_4 routes to sdd_write_spec/design/tasks, not nonexistent sdd_gen_* tools", async () => {
     const ws = makeWorkspace("specky-figma-");
-    const h = await buildHarness(ws);
+    seedFeature(ws, ".specs/001-checkout-ui", {});
+    const h = await buildHarness(ws, Phase.Specify);
     cleanups.push(h.close);
 
     const res = await callTool(h.client, "sdd_figma_to_spec", {
       figma_file_key: "aBc123XyZ",
       figma_node_id: "12:34",
-      project_name: "checkout-ui",
+      feature_number: "001",
       spec_dir: ".specs",
+      force: false,
     });
 
     expect(res.isError).toBe(false);
@@ -454,7 +550,12 @@ describe("export & quality-report regressions", () => {
     const h = await buildHarness(ws);
     cleanups.push(h.close);
 
-    const res = await callTool(h.client, "sdd_batch_import", { documents_dir: "docs", spec_dir: ".specs" });
+    const res = await callTool(h.client, "sdd_batch_import", {
+      documents_dir: "docs",
+      spec_dir: ".specs",
+      use_case: DOCUMENT_USE_CASE,
+      force: false,
+    });
 
     expect(res.isError).toBe(false);
     expect(res.payload["total"]).toBe(2);
@@ -473,10 +574,67 @@ describe("export & quality-report regressions", () => {
     const h = await buildHarness(ws);
     cleanups.push(h.close);
 
-    const res = await callTool(h.client, "sdd_import_document", { file_path: "docs/report.docx", spec_dir: ".specs" });
+    const res = await callTool(h.client, "sdd_import_document", {
+      file_path: "docs/report.docx",
+      format: "docx",
+      spec_dir: ".specs",
+      use_case: DOCUMENT_USE_CASE,
+    });
 
     expect(res.isError).toBe(true);
     expect(res.raw).toContain("compressed docx not supported natively");
     expect(res.raw).toContain("MarkItDown");
+  });
+
+  it("sdd_research writes only resolved evidence and reviewed sources", async () => {
+    const ws = makeWorkspace("specky-research-evidence-");
+    seedFeature(ws, ".specs/001-checkout-service", {});
+    const h = await buildHarness(ws, Phase.Discover);
+    cleanups.push(h.close);
+
+    const res = await callTool(h.client, "sdd_research", {
+      feature_number: "001",
+      spec_dir: ".specs",
+      force: false,
+      entries: [{
+        id: "RQ-001",
+        question: "Which idempotency strategy protects checkout retries?",
+        context: "The payment operation can be retried by clients and gateways.",
+        findings: "A client-supplied idempotency key uniquely identifies one payment attempt.",
+        sources: ["DESIGN.md#Payment-idempotency", "ADR-004"],
+        recommendation: "Persist idempotency keys with the payment result for the contracted retention period.",
+        status: "resolved",
+      }],
+    });
+    expect(res.isError).toBe(false);
+    const research = readFileSync(join(ws, ".specs/001-checkout-service/RESEARCH.md"), "utf8");
+    expect(research).toContain("A client-supplied idempotency key");
+    expect(research).toContain("DESIGN.md#Payment-idempotency");
+    expect(research).not.toContain("TODO");
+    expect(research).not.toContain("none yet");
+  });
+
+  it("sdd_research rejects missing sources before writing", async () => {
+    const ws = makeWorkspace("specky-research-invalid-");
+    seedFeature(ws, ".specs/001-checkout-service", {});
+    const h = await buildHarness(ws, Phase.Discover);
+    cleanups.push(h.close);
+
+    const res = await callTool(h.client, "sdd_research", {
+      feature_number: "001",
+      spec_dir: ".specs",
+      force: false,
+      entries: [{
+        id: "RQ-001",
+        question: "Which retry policy applies to checkout?",
+        context: "Retries can duplicate payment operations.",
+        findings: "The retry policy requires bounded exponential backoff.",
+        sources: [],
+        recommendation: "Use the reviewed bounded retry policy.",
+        status: "resolved",
+      }],
+    });
+    expect(res.isError).toBe(true);
+    expect(existsSync(join(ws, ".specs/001-checkout-service/RESEARCH.md"))).toBe(false);
   });
 });

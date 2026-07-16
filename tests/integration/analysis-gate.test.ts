@@ -6,36 +6,20 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { writeSignedFeatureState, writeTestWorkspaceConfig } from "../helpers/runtime-workspace.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 const SERVER = resolve(REPO, "dist/index.js");
 const PHASES = ["init", "discover", "specify", "clarify", "design", "tasks", "analyze", "implement", "verify", "release"];
 
 function writeFeature(workspace: string, mapped: boolean): void {
-  const specsDir = resolve(workspace, ".specs");
   const featureDir = resolve(workspace, ".specs", "001-analysis-gate");
-  mkdirSync(featureDir, { recursive: true });
-  const pendingPhases = new Set(["analyze", "implement", "verify", "release"]);
-  const phases = Object.fromEntries(PHASES.map((phase) => {
-    let status = "completed";
-    if (phase === "tasks") {
-      status = "in_progress";
-    } else if (pendingPhases.has(phase)) {
-      status = "pending";
-    }
-    return [phase, { status }];
-  }));
-  const state = JSON.stringify({
-    version: "4.0.0",
-    project_name: "analysis-gate",
-    current_phase: "tasks",
-    phases,
-    features: [".specs/001-analysis-gate"],
-    amendments: [],
-    gate_decision: null,
-  }, null, 2);
-  writeFileSync(resolve(specsDir, ".sdd-state.json"), state);
-  writeFileSync(resolve(featureDir, ".sdd-state.json"), state);
+  writeSignedFeatureState(workspace, {
+    number: "001",
+    name: "analysis-gate",
+    currentPhase: "tasks",
+    completed: ["init", "discover", "specify", "clarify", "design"],
+  });
   writeFileSync(resolve(featureDir, "CONSTITUTION.md"), "# Constitution\n", "utf8");
   writeFileSync(resolve(featureDir, "SPECIFICATION.md"), [
     "# Specification",
@@ -96,6 +80,7 @@ describe("sdd_run_analysis semantic gate", () => {
   beforeEach(() => {
     ws = mkdtempSync(resolve(tmpdir(), "specky-analysis-gate-"));
     spawnSync("git", ["init", "-q"], { cwd: ws });
+    writeTestWorkspaceConfig(ws);
   });
 
   afterEach(() => {

@@ -8,9 +8,8 @@ import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 import type { TemplateName } from "../constants.js";
 import { TEMPLATE_NAMES } from "../constants.js";
-import type { TemplateContext } from "../types.js";
+import type { TemplateContext, TemplateRow, TemplateValue } from "../types.js";
 import type { FileManager } from "./file-manager.js";
-import { currentDateString } from "../utils/runtime-context.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,10 +30,10 @@ export class TemplateEngine {
    */
   async render(
     templateName: TemplateName,
-    context: Record<string, string | string[]>
+    context: Record<string, TemplateValue>
   ): Promise<string> {
     const template = await this.loadTemplate(templateName);
-    return this.replaceVariables(template, context);
+    return this.replaceVariables(template, context, templateName);
   }
 
   /**
@@ -45,7 +44,7 @@ export class TemplateEngine {
     context: TemplateContext
   ): Promise<string> {
     const frontmatter = this.generateFrontmatter(context);
-    const body = await this.render(templateName, context as Record<string, string | string[]>);
+    const body = await this.render(templateName, context);
     return `${frontmatter}\n${body}`;
   }
 
@@ -58,12 +57,13 @@ export class TemplateEngine {
 
   /**
    * Replace {{variable}} placeholders with context values.
-   * Unknown variables become [TODO: variable].
-   * Supports {{#each items}}...{{/each}} for arrays.
+  * Every referenced variable must be present with the expected shape.
+  * Supports string arrays via {{this}} and object arrays via named fields.
    */
   replaceVariables(
     template: string,
-    context: Record<string, string | string[]>
+    context: Record<string, TemplateValue>,
+    templateName: string = "inline",
   ): string {
     let result = template;
 
@@ -71,25 +71,59 @@ export class TemplateEngine {
     const eachRegex = /\{\{#each\s+(\w+)\}\}([\s\S]*?)\{\{\/each\}\}/g;
     result = result.replace(eachRegex, (_match, key: string, body: string) => {
       const value = context[key];
-      if (Array.isArray(value)) {
-        return value.map((item) => body.replace(/\{\{this\}\}/g, item)).join("");
+      if (!Array.isArray(value)) {
+        throw new TemplateRenderError(templateName, key, "array");
       }
-      return `[TODO: ${key}]`;
+      return value.map((item, index) => this.renderLoopItem(
+        body,
+        item,
+        templateName,
+        `${key}[${index}]`,
+      )).join("");
     });
 
     // Handle {{variable}} replacements
     result = result.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => {
       const value = context[key];
       if (value === undefined) {
-        return `[TODO: ${key}]`;
+        throw new TemplateRenderError(templateName, key, "string");
       }
       if (Array.isArray(value)) {
-        return value.join(", ");
+        throw new TemplateRenderError(templateName, key, "string", "array");
       }
       return value;
     });
 
+    const unresolvedStart = result.indexOf("{{");
+    const unresolvedEnd = unresolvedStart === -1 ? -1 : result.indexOf("}}", unresolvedStart + 2);
+    if (unresolvedStart !== -1 && unresolvedEnd !== -1) {
+      const unresolved = result.slice(unresolvedStart, unresolvedEnd + 2);
+      throw new Error(`Template ${templateName} contains unresolved expression ${unresolved}.`);
+    }
+
     return result;
+  }
+
+  private renderLoopItem(
+    body: string,
+    item: string | TemplateRow,
+    templateName: string,
+    itemPath: string,
+  ): string {
+    if (typeof item === "string") {
+      const rendered = body.replaceAll("{{this}}", item);
+      const named = /\{\{(\w+)\}\}/.exec(rendered)?.[1];
+      if (named) throw new TemplateRenderError(templateName, `${itemPath}.${named}`, "string");
+      return rendered;
+    }
+
+    return body.replace(/\{\{(\w+)\}\}/g, (_match, key: string) => {
+      const value = item[key];
+      if (value === undefined) {
+        throw new TemplateRenderError(templateName, `${itemPath}.${key}`, "string");
+      }
+      return value;
+    });
   }
 
   /**
@@ -97,23 +131,20 @@ export class TemplateEngine {
    */
   generateFrontmatter(context: TemplateContext): string {
     const lines: string[] = ["---"];
-    const fields: Array<[string, string | string[] | undefined]> = [
+    const fields: Array<[string, string]> = [
       ["title", context.title],
       ["feature_id", context.feature_id],
-      ["version", context.version || "1.0.0"],
-      ["date", context.date || currentDateString()],
-      ["author", context.author || "SDD Pipeline"],
-      ["status", context.status || "Draft"],
+      ["version", context.version],
+      ["date", context.date],
+      ["author", context.author],
+      ["status", context.status],
     ];
 
     for (const [key, value] of fields) {
-      if (value !== undefined) {
-        if (Array.isArray(value)) {
-          lines.push(`${key}: [${value.map((v) => `"${v}"`).join(", ")}]`);
-        } else {
-          lines.push(`${key}: "${value}"`);
-        }
+      if (typeof value !== "string" || value.trim() === "") {
+        throw new TemplateRenderError("frontmatter", key, "string");
       }
+      lines.push(`${key}: "${value}"`);
     }
 
     lines.push("---");
@@ -146,5 +177,17 @@ export class TemplateEngine {
     } catch {
       throw new Error(`Template file not found: ${fileName}. Ensure templates/ directory exists.`);
     }
+  }
+}
+
+export class TemplateRenderError extends Error {
+  constructor(
+    readonly templateName: string,
+    readonly variable: string,
+    expected: "string" | "array",
+    actual: "array" | "missing" = "missing",
+  ) {
+    super(`Template ${templateName} requires ${variable} as ${expected}; received ${actual}.`);
+    this.name = "TemplateRenderError";
   }
 }

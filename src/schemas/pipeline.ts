@@ -4,6 +4,8 @@
 
 import { z } from "zod";
 import { specDirSchema, featureNumberSchema, forceSchema } from "./common.js";
+import { useCaseSelectionSchema } from "../contracts/use-case.js";
+import { workloadDesignInputSchema } from "../contracts/pipeline-profiles.js";
 
 export const initInputSchema = z.object({
   project_name: z
@@ -13,6 +15,8 @@ export const initInputSchema = z.object({
     .regex(/^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/, "Must be kebab-case (lowercase, hyphens)")
     .describe("Project name in kebab-case"),
   spec_dir: specDirSchema,
+  feature_number: featureNumberSchema,
+  use_case: useCaseSelectionSchema,
   principles: z
     .array(z.string())
     .optional()
@@ -33,6 +37,16 @@ export const discoverInputSchema = z.object({
     .string()
     .optional()
     .describe("Output from sdd_scan_codebase for context"),
+  migration_source: z
+    .string()
+    .min(10)
+    .optional()
+    .describe("Migration lifecycle only: evidence-based source-system summary"),
+  migration_target: z
+    .string()
+    .min(10)
+    .optional()
+    .describe("Migration lifecycle only: named target and target constraints"),
   spec_dir: specDirSchema,
   feature_number: featureNumberSchema,
 }).strict();
@@ -82,6 +96,9 @@ export const writeDesignInputSchema = z.object({
     )
     .min(1)
     .describe("Mermaid diagrams"),
+  workload_design: workloadDesignInputSchema.describe(
+    "Workload-specific design contract. The type must match the feature workload persisted by sdd_init.",
+  ),
   adrs: z
     .array(
       z.object({
@@ -91,7 +108,7 @@ export const writeDesignInputSchema = z.object({
         consequences: z.string().describe("Consequences of this decision"),
       }).strict()
     )
-    .optional()
+    .min(1)
     .describe("Architecture Decision Records"),
   api_contracts: z
     .array(
@@ -107,39 +124,39 @@ export const writeDesignInputSchema = z.object({
     .describe("API contracts"),
   system_context: z
     .string()
-    .optional()
+    .min(10)
     .describe("System context: who uses the system and what external systems it integrates with (C4 Level 1)"),
   container_architecture: z
     .string()
-    .optional()
+    .min(10)
     .describe("Container architecture: deployable units and communication patterns (C4 Level 2)"),
   component_design: z
     .string()
-    .optional()
+    .min(10)
     .describe("Component design: internal modules/services and responsibilities (C4 Level 3)"),
   code_level_design: z
     .string()
-    .optional()
+    .min(10)
     .describe("Code-level design: key classes, interfaces, and patterns (C4 Level 4)"),
   data_models: z
     .string()
-    .optional()
+    .min(10)
     .describe("Data model: entities, relationships, and storage strategy"),
   infrastructure: z
     .string()
-    .optional()
+    .min(10)
     .describe("Infrastructure: deployment, scaling, monitoring, and operations"),
   security_architecture: z
     .string()
-    .optional()
+    .min(10)
     .describe("Security: authentication, authorization, encryption, and threat model"),
   error_handling: z
     .string()
-    .optional()
+    .min(10)
     .describe("Error handling: detection, logging, propagation, and recovery"),
   cross_cutting: z
     .string()
-    .optional()
+    .min(10)
     .describe("Cross-cutting concerns: logging, monitoring, caching, configuration"),
   spec_dir: specDirSchema,
   feature_number: featureNumberSchema,
@@ -154,9 +171,9 @@ export const writeTasksInputSchema = z.object({
         title: z.string().describe("Task title"),
         description: z.string().describe("Task description"),
         effort: z.enum(["S", "M", "L"]).describe("Effort estimate"),
-        dependencies: z.array(z.string()).default([]).describe("Task IDs this depends on"),
-        parallel: z.boolean().default(false).describe("Can run in parallel with siblings"),
-        traces_to: z.array(z.string()).default([]).describe("Requirement IDs this implements"),
+        dependencies: z.array(z.string()).describe("Explicit task dependencies; use [] for none"),
+        parallel: z.boolean().describe("Explicit parallel-execution decision"),
+        traces_to: z.array(z.string()).min(1).describe("Requirement IDs this implements"),
       }).strict()
     )
     .min(1)
@@ -169,8 +186,7 @@ export const writeTasksInputSchema = z.object({
         constitution_article: z.string().describe("Constitution article reference"),
       }).strict()
     )
-    .default([])
-    .describe("Pre-implementation gates"),
+    .describe("Explicit pre-implementation gates; use [] only when none apply"),
   spec_dir: specDirSchema,
   feature_number: featureNumberSchema,
   force: forceSchema,

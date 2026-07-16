@@ -4,13 +4,15 @@
 # Summarizes artifact and prompts for LGTM before phase advancement
 
 set -euo pipefail
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+. "$SCRIPT_DIR/specky-contract-context.bash"
+specky_load_contract_context || exit $?
+[ "${SPECKY_CONTEXT_ACTIVE:-0}" = "1" ] || exit 0
 
 TOOL="${SDD_TOOL_NAME:-unknown}"
-LATEST=$(ls -td .specs/*/ 2>/dev/null | head -1 || true)
+LATEST="$SPECKY_FEATURE_DIR"
 
-[ -z "$LATEST" ] && exit 0
-
-FEATURE=$(basename "$LATEST")
+FEATURE="${SPECKY_FEATURE_NUMBER}-${SPECKY_FEATURE_NAME}"
 
 print_summary() {
   local file="$1" label="$2"
@@ -29,25 +31,25 @@ case "$TOOL" in
   sdd_write_spec|sdd_turnkey_spec|sdd_figma_to_spec)
     print_summary "SPECIFICATION.md" "SPECIFICATION.md"
     echo ""
-    echo "⏸  LGTM GATE — Phase 3 (Specify)"
+    echo "⏸  LGTM REVIEW — Specify ($SPECKY_CONTRACT_ID)"
     echo "   Review SPECIFICATION.md above. Are the requirements correct?"
-    echo "   Reply 'LGTM' to proceed to Phase 4 (Design)."
+    echo "   If workspace policy requires LGTM, pass lgtm:true to sdd_advance_phase."
     echo "   Reply with feedback to revise."
     ;;
   sdd_write_design)
     print_summary "DESIGN.md" "DESIGN.md"
     echo ""
-    echo "⏸  LGTM GATE — Phase 4 (Design)"
+    echo "⏸  LGTM REVIEW — Design ($SPECKY_CONTRACT_ID)"
     echo "   Review DESIGN.md above. Is the architecture sound?"
-    echo "   Reply 'LGTM' to proceed to Phase 5 (Tasks)."
+    echo "   If workspace policy requires LGTM, pass lgtm:true to sdd_advance_phase."
     echo "   Reply with feedback to revise."
     ;;
   sdd_write_tasks)
     print_summary "TASKS.md" "TASKS.md"
     echo ""
-    echo "⏸  LGTM GATE — Phase 5 (Tasks)"
+    echo "⏸  LGTM REVIEW — Tasks ($SPECKY_CONTRACT_ID)"
     echo "   Review TASKS.md above. Is the task breakdown complete?"
-    echo "   Reply 'LGTM' to proceed to Phase 6 (Implement)."
+    echo "   If workspace policy requires LGTM, pass lgtm:true to sdd_advance_phase."
     echo "   Reply with feedback to revise."
     ;;
   *)

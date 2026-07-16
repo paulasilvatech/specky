@@ -1,6 +1,6 @@
 # Specky CLI Reference
 
-> Version: v3.11.0
+> Version: v3.11.1
 
 The `specky` CLI is the single write-path for installing, validating, and upgrading Specky in a workspace. It replaces the previous ad-hoc copying done by APM and manual `.github/` / `.claude/` setup.
 
@@ -91,6 +91,8 @@ Both modes also write:
 
 Never overwrites `.specs/`, `.specky/profile.json`, or existing user-authored keys in `settings.json`.
 
+`.specky/config.yml` is mandatory for runtime commands and MCP server startup. It is complete and strict: missing files, partial documents, malformed YAML, unknown keys, and escaping paths are rejected. The installer is the bootstrap path that writes the full document.
+
 **Why `.vscode/settings.json` auto-config matters:**
 Without `chat.mcp.enabled` and `chat.mcp.discovery.enabled`, GitHub Copilot in VS Code won't discover the Specky MCP server even if `.vscode/mcp.json` is correct. Users previously had to manually toggle tools in the Copilot Chat tool selector — now it Just Works. The Specky MCP server advertises its icon via `file://` in the handshake (v3.10.2+); VS Code ignores HTTPS icon URLs on stdio transports.
 
@@ -149,6 +151,37 @@ specky status
 ```
 
 Shows version, IDE targets, asset counts per target, and any active features in `.specs/`.
+
+Status reads signed v5 state from each feature directory. It never selects an active/latest feature. Root or legacy state is reported with the exact `migrate-contracts` preflight command.
+
+---
+
+### `specky migrate-contracts`
+
+Migrate legacy/root state metadata to signed, per-feature v5 state without changing specification artifacts.
+
+```bash
+specky migrate-contracts --spec-dir=.specs --dry-run \
+  --lifecycle=greenfield --workload=api --execution-mode=full --capabilities=
+
+specky migrate-contracts --spec-dir=.specs --apply \
+  --confirm-plan=<sha256> --mapping=contracts.json
+```
+
+| Flag | Requirement | Description |
+|---|---|---|
+| `--spec-dir` | Required | Explicit workspace-relative specs root |
+| `--dry-run` | Exclusive with `--apply` | Print deterministic plan, artifact hashes, errors, and plan hash; writes nothing |
+| `--apply` | Exclusive with `--dry-run` | Apply the exact reviewed plan |
+| `--confirm-plan` | Required for apply | Exact SHA-256 emitted by dry run |
+| `--mapping` | Required for multiple features | JSON object with one complete `use_case` selection per feature number |
+| `--lifecycle` / `--workload` / `--execution-mode` | Single-feature alternative | Explicit named contract dimensions |
+| `--capabilities` | Single-feature alternative | Comma-separated capabilities; empty means none |
+| `--capability-config` | Required when capabilities are enabled | JSON file containing matching capability parameter keys |
+
+Migration preflight rejects ambiguous root state, missing mappings, unsupported current phases, invalid metadata, and plan drift. Apply backs up metadata under `.specky/migrations/<plan-hash>/`, signs and verifies v5 state, checks every non-state artifact hash, removes legacy root metadata only after success, and rolls back metadata on failure.
+
+See [Use-Case Contracts](USE-CASE-CONTRACTS.md#safe-migration).
 
 ---
 

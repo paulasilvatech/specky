@@ -22,6 +22,8 @@
 # ALL work MUST flow through @specky-orchestrator.
 
 set -euo pipefail
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/specky-contract-context.bash"
 
 # ── rc.14: Copilot compatibility guard ───────────────────
 # VS Code Copilot reads .claude/settings.json hooks and treats SessionStart/
@@ -51,39 +53,30 @@ if [ "$SPECKY_GUARD_MODE" = "off" ]; then
   SPECKY_GUARD_MODE="advisory"
 fi
 
-# ── Check if pipeline is active ──────────────────────────
-LATEST=$(ls -td .specs/*/ 2>/dev/null | head -1 || true)
-if [ -z "$LATEST" ]; then
-  exit 0
-fi
-
-STATE="$LATEST/.sdd-state.json"
-if [ ! -f "$STATE" ]; then
-  exit 0
-fi
-
-FEATURE=$(basename "$LATEST")
-
-# Try to read current phase (optional — requires jq)
-PHASE="?"
-if command -v jq >/dev/null 2>&1; then
-  PHASE=$(jq -r '.current_phase // "?"' "$STATE" 2>/dev/null || echo "?")
+# Buffer stdin once; both the context resolver and prompt parser consume this JSON.
+if [ -z "${SDD_HOOK_INPUT:-}" ] && [ ! -t 0 ]; then
+  SDD_HOOK_INPUT=$(cat 2>/dev/null || true)
+  export SDD_HOOK_INPUT
 fi
 
 # ── Extract user prompt ──────────────────────────────────
-# Claude Code sends the prompt as JSON on stdin: {"prompt": "..."}
-# Copilot uses $CLAUDE_USER_PROMPT. Fall back to empty.
-PROMPT=""
-if [ -n "${CLAUDE_USER_PROMPT:-}" ]; then
-  PROMPT="$CLAUDE_USER_PROMPT"
-elif [ ! -t 0 ]; then
-  # Read from stdin non-blocking
+PROMPT="${CLAUDE_USER_PROMPT:-}"
+if [ -z "$PROMPT" ] && [ -n "${SDD_HOOK_INPUT:-}" ]; then
   if command -v jq >/dev/null 2>&1; then
-    PROMPT=$(jq -r '.prompt // .user_prompt // ""' 2>/dev/null || cat || true)
+    PROMPT=$(printf '%s' "$SDD_HOOK_INPUT" | jq -r '.prompt // .user_prompt // ""' 2>/dev/null || true)
   else
-    PROMPT=$(cat 2>/dev/null || true)
+    PROMPT="$SDD_HOOK_INPUT"
   fi
 fi
+
+# ── Resolve explicit pipeline context ───────────────────
+specky_load_contract_context || exit $?
+if [ "${SPECKY_CONTEXT_ACTIVE:-0}" != "1" ]; then
+  exit 0
+fi
+FEATURE="${SPECKY_FEATURE_NUMBER}-${SPECKY_FEATURE_NAME}"
+PHASE="$SPECKY_PHASE"
+STATE="$SPECKY_STATE_FILE"
 
 # Lowercase for matching
 PROMPT_LC=$(echo "$PROMPT" | tr '[:upper:]' '[:lower:]' 2>/dev/null || true)

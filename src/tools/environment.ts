@@ -4,12 +4,10 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { formatError, truncate } from "./tool-result.js";
-import {} from "../constants.js";
 import type { TechStack } from "../types.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
-import type { IacGenerator, DesignTechStack } from "../services/iac-generator.js";
-import { detectServicesFromDesign, detectTechStackFromDesign } from "../services/iac-generator.js";
+import type { IacGenerator } from "../services/iac-generator.js";
 import type { CodebaseScanner } from "../services/codebase-scanner.js";
 import {
   setupLocalEnvInputSchema,
@@ -17,50 +15,34 @@ import {
   generateDevcontainerInputSchema,
 } from "../schemas/environment.js";
 import { enrichResponse } from "./response-builder.js";
+import { requireExecutionContext } from "../services/execution-context.js";
 
-/** Read the feature's DESIGN.md; returns "" when the feature or file is absent. */
-async function readFeatureDesign(
-  fileManager: FileManager,
-  specDir: string,
-  featureNumber: string
-): Promise<string> {
-  try {
-    const features = await fileManager.listFeatures(specDir);
-    const feature = features.find((f) => f.number === featureNumber);
-    if (!feature) return "";
-    return await fileManager.readSpecFile(feature.directory, "DESIGN.md");
-  } catch {
-    return "";
-  }
+function configuredTechStack(environment: {
+  language: string;
+  framework?: string;
+  runtime: string;
+  package_manager: string;
+}): TechStack {
+  return {
+    language: environment.language,
+    framework: environment.framework,
+    runtime: environment.runtime,
+    package_manager: environment.package_manager,
+  };
 }
 
-function designToTechStack(design: DesignTechStack): TechStack {
-  switch (design.language) {
-    case "Python":
-      return { language: "Python", framework: design.framework, package_manager: "pip", runtime: "Python" };
-    case "Go":
-      return { language: "Go", framework: design.framework, package_manager: "go modules", runtime: "Go" };
-    case "Java":
-      return { language: "Java", framework: design.framework, package_manager: "maven", runtime: "JVM" };
-    default:
-      return { language: design.language, framework: design.framework, package_manager: "npm", runtime: "Node.js" };
-  }
-}
-
-/**
- * Resolve the tech stack: codebase manifests first, DESIGN.md prose as the
- * fallback (the schemas promise DESIGN.md-based detection, so a DESIGN-only
- * workspace must not degrade to a generic ubuntu environment).
- */
-async function resolveTechStack(
-  codebaseScanner: CodebaseScanner,
-  designContent: string
-): Promise<{ stack: TechStack; source: "codebase" | "DESIGN.md" | "none" }> {
-  const scanned = await codebaseScanner.detectTechStack();
-  if (scanned.language !== "unknown") return { stack: scanned, source: "codebase" };
-  const fromDesign = detectTechStackFromDesign(designContent);
-  if (fromDesign) return { stack: designToTechStack(fromDesign), source: "DESIGN.md" };
-  return { stack: scanned, source: "none" };
+function applyDevcontainerContract(
+  files: Array<{ path: string; content: string; description: string }>,
+  baseImage: string,
+  port: number,
+): Array<{ path: string; content: string; description: string }> {
+  return files.map((file) => {
+    if (!file.path.includes("devcontainer.json")) return file;
+    const config = JSON.parse(file.content) as Record<string, unknown>;
+    config["image"] = baseImage;
+    config["forwardPorts"] = [port];
+    return { ...file, content: JSON.stringify(config, null, 2) };
+  });
 }
 
 export function registerEnvironmentTools(
@@ -68,7 +50,7 @@ export function registerEnvironmentTools(
   fileManager: FileManager,
   stateMachine: StateMachine,
   iacGenerator: IacGenerator,
-  codebaseScanner: CodebaseScanner
+  _codebaseScanner: CodebaseScanner
 ): void {
   // ─── sdd_setup_local_env ───
   server.registerTool(
@@ -76,7 +58,7 @@ export function registerEnvironmentTools(
     {
       title: "Setup Local Dev Environment",
       description:
-        "Detects the project tech stack (codebase manifests, falling back to DESIGN.md) and generates a Docker-based local development environment (Dockerfile + docker-compose.yml with auto-detected sidecar services). Returns a payload with routing_instructions for Docker MCP to create and manage containers.",
+        "Generates a Docker-based local environment from the persisted dev-environment capability: exact stack, services, port, compose, and multi-stage policy. Returns Docker MCP routing without starting containers.",
       inputSchema: setupLocalEnvInputSchema,
       annotations: {
         readOnlyHint: false,
@@ -85,44 +67,30 @@ export function registerEnvironmentTools(
         openWorldHint: true,
       },
     },
-    async ({ feature_number, spec_dir, services, port }) => {
+    async ({ feature_number }) => {
       try {
-        const designContent = await readFeatureDesign(fileManager, spec_dir, feature_number);
-        const { stack: techStack, source: techStackSource } = await resolveTechStack(
-          codebaseScanner,
-          designContent
-        );
-
-        // Sidecar services: explicit list wins; otherwise auto-detect from
-        // DESIGN.md keywords + package.json dependencies (as the schema promises).
-        let packageJson = "";
-        try {
-          packageJson = await fileManager.readProjectFile("package.json");
-        } catch {
-          // No package.json — DESIGN.md keywords only
-        }
-        const additionalServices =
-          services && services.length > 0
-            ? services
-            : detectServicesFromDesign(designContent, packageJson);
+        const context = requireExecutionContext("sdd_setup_local_env");
+        const stateDir = context.stateDir!;
+        const environment = context.state!.contract.capability_config["dev-environment"]!;
+        const techStack = configuredTechStack(environment);
 
         const envResult = iacGenerator.generateDockerfile(
           { language: techStack.language, framework: techStack.framework, runtime: techStack.runtime },
-          true, // includeCompose
-          true, // multiStage
-          additionalServices
+          environment.include_compose,
+          environment.multi_stage,
+          environment.services,
         );
 
         const result = {
           status: "local_env_generated",
           feature_number,
           tech_stack: techStack,
-          tech_stack_source: techStackSource,
+          tech_stack_source: "feature contract",
           type: envResult.type,
           files: envResult.files,
-          port,
-          additional_services: additionalServices,
-          services_source: services && services.length > 0 ? "explicit" : "auto-detected (DESIGN.md + package.json)",
+          port: environment.port,
+          additional_services: environment.services,
+          services_source: "feature contract",
           routing_instructions: {
             mcp_server: "docker",
             tool_name: "compose_up",
@@ -133,7 +101,7 @@ export function registerEnvironmentTools(
           learning_note: "Local dev environments use Docker Compose to orchestrate multiple services. The generated Dockerfile uses multi-stage builds for smaller production images.",
         };
 
-        const enriched = await enrichResponse("sdd_setup_local_env", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_setup_local_env", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
@@ -150,7 +118,7 @@ export function registerEnvironmentTools(
     {
       title: "Setup GitHub Codespaces",
       description:
-        "Detects the project tech stack (codebase manifests, falling back to DESIGN.md) and generates a devcontainer configuration suitable for GitHub Codespaces. Returns the devcontainer.json payload with routing_instructions to commit it via GitHub MCP, plus the GitHub UI/CLI/API steps to create the Codespace (the official GitHub MCP does not expose Codespace creation).",
+        "Generates Codespaces configuration from persisted dev-environment image, features, extensions, port, stack, and machine parameters. Returns commit and external creation routing; it does not create a Codespace.",
       inputSchema: setupCodespacesInputSchema,
       annotations: {
         readOnlyHint: false,
@@ -159,45 +127,45 @@ export function registerEnvironmentTools(
         openWorldHint: true,
       },
     },
-    async ({ feature_number, spec_dir, machine_type, extensions }) => {
+    async ({ feature_number }) => {
       try {
-        const designContent = await readFeatureDesign(fileManager, spec_dir, feature_number);
-        const { stack: techStack, source: techStackSource } = await resolveTechStack(
-          codebaseScanner,
-          designContent
-        );
+        const context = requireExecutionContext("sdd_setup_codespaces");
+        const stateDir = context.stateDir!;
+        const environment = context.state!.contract.capability_config["dev-environment"]!;
+        const techStack = configuredTechStack(environment);
 
         const envResult = iacGenerator.generateDevcontainer(
           { language: techStack.language, framework: techStack.framework },
-          undefined, // features auto-detected
-          extensions
+          environment.features,
+          environment.extensions,
         );
+        const files = applyDevcontainerContract(envResult.files, environment.base_image, environment.port);
 
         const result = {
           status: "codespaces_config_generated",
           feature_number,
           tech_stack: techStack,
-          tech_stack_source: techStackSource,
-          machine_type,
+          tech_stack_source: "feature contract",
+          machine_type: environment.codespaces_machine,
           type: envResult.type,
-          files: envResult.files,
+          files,
           routing_instructions: {
             mcp_server: "github",
             tool_name: "create_or_update_file",
             note:
               "Commit the generated config to .devcontainer/devcontainer.json on the target branch (GitHub MCP: create_or_update_file or push_files). " +
               "The official GitHub MCP exposes no Codespace-creation tool — after committing, create the Codespace via the GitHub UI (Code → Codespaces → 'Create codespace'), " +
-              `the GitHub CLI ('gh codespace create --repo <owner>/<repo> --machine ${machine_type}'), or the REST API ('POST /repos/{owner}/{repo}/codespaces').`,
+              `the GitHub CLI ('gh codespace create --repo <owner>/<repo> --machine ${environment.codespaces_machine}'), or the REST API ('POST /repos/{owner}/{repo}/codespaces').`,
           },
           explanation: envResult.explanation,
           next_steps:
             "1. Commit .devcontainer/devcontainer.json to the repository (GitHub MCP create_or_update_file or push_files). " +
-            `2. Create the Codespace with machine type '${machine_type}' via the GitHub UI (Code → Codespaces → 'Create codespace'), ` +
-            `'gh codespace create --repo <owner>/<repo> --machine ${machine_type}', or 'POST /repos/{owner}/{repo}/codespaces'.`,
+            `2. Create the Codespace with machine type '${environment.codespaces_machine}' via the GitHub UI (Code → Codespaces → 'Create codespace'), ` +
+            `'gh codespace create --repo <owner>/<repo> --machine ${environment.codespaces_machine}', or 'POST /repos/{owner}/{repo}/codespaces'.`,
           learning_note: "GitHub Codespaces provides cloud-hosted dev environments. The devcontainer.json defines the container image, extensions, and port forwarding.",
         };
 
-        const enriched = await enrichResponse("sdd_setup_codespaces", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_setup_codespaces", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {
@@ -214,7 +182,7 @@ export function registerEnvironmentTools(
     {
       title: "Generate Devcontainer Config",
       description:
-        "Generates .devcontainer/devcontainer.json from the detected tech stack (codebase manifests, falling back to DESIGN.md). Writes the file to disk for local use with VS Code Dev Containers or GitHub Codespaces.",
+        "Writes .devcontainer/devcontainer.json from the persisted dev-environment capability. Unsupported or incomplete stacks fail rather than producing a generic image.",
       inputSchema: generateDevcontainerInputSchema,
       annotations: {
         readOnlyHint: false,
@@ -223,39 +191,28 @@ export function registerEnvironmentTools(
         openWorldHint: false,
       },
     },
-    async ({ feature_number, spec_dir, base_image, features: devFeatures }) => {
+    async ({ feature_number }) => {
       try {
-        const designContent = await readFeatureDesign(fileManager, spec_dir, feature_number);
-        const { stack: techStack, source: techStackSource } = await resolveTechStack(
-          codebaseScanner,
-          designContent
-        );
+        const context = requireExecutionContext("sdd_generate_devcontainer");
+        const stateDir = context.stateDir!;
+        const environment = context.state!.contract.capability_config["dev-environment"]!;
+        const techStack = configuredTechStack(environment);
 
         const envResult = iacGenerator.generateDevcontainer(
           { language: techStack.language, framework: techStack.framework },
-          devFeatures,
-          undefined // extensions auto-detected
+          environment.features,
+          environment.extensions,
         );
+        const files = applyDevcontainerContract(envResult.files, environment.base_image, environment.port);
 
         // Write the devcontainer.json file
-        const devcontainerFile = envResult.files.find(f => f.path.includes("devcontainer.json"));
+        const devcontainerFile = files.find(f => f.path.includes("devcontainer.json"));
         let writtenPath = "";
         if (devcontainerFile) {
-          // If a custom base_image was specified, patch the config
-          let content = devcontainerFile.content;
-          if (base_image) {
-            try {
-              const config = JSON.parse(content);
-              config.image = base_image;
-              content = JSON.stringify(config, null, 2);
-            } catch {
-              // Leave content as-is if parsing fails
-            }
-          }
           writtenPath = await fileManager.writeSpecFile(
             ".devcontainer",
             "devcontainer.json",
-            content,
+            devcontainerFile.content,
             true
           );
         }
@@ -264,15 +221,15 @@ export function registerEnvironmentTools(
           status: "devcontainer_written",
           feature_number,
           tech_stack: techStack,
-          tech_stack_source: techStackSource,
+          tech_stack_source: "feature contract",
           file: writtenPath || ".devcontainer/devcontainer.json",
-          files: envResult.files,
+          files,
           explanation: envResult.explanation,
           next_steps: "Open the project in VS Code and use 'Dev Containers: Reopen in Container' or push to GitHub for Codespaces.",
           learning_note: "The devcontainer.json specification defines reproducible development environments. It supports custom features, extensions, and lifecycle hooks.",
         };
 
-        const enriched = await enrichResponse("sdd_generate_devcontainer", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_generate_devcontainer", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
       } catch (error) {
         return {

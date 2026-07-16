@@ -10,9 +10,12 @@
 # plain `set -eu` instead of bash-only `set -o pipefail`.
 
 set -eu
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+. "$SCRIPT_DIR/specky-contract-context.bash"
+specky_load_contract_context || exit $?
+[ "${SPECKY_CONTEXT_ACTIVE:-0}" = "1" ] || exit 0
 
-LATEST=$(ls -td .specs/*/ 2>/dev/null | head -1 || true)
-[ -z "$LATEST" ] && exit 0
+LATEST="$SPECKY_FEATURE_DIR"
 SPEC="$LATEST/SPECIFICATION.md"
 
 if [ ! -f "$SPEC" ] || [ ! -r "$SPEC" ]; then

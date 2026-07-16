@@ -1,10 +1,10 @@
 /**
  * init.ts — `specky init` — install Specky assets into the current workspace.
  */
-import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { VERSION } from "../../constants.js";
-import { loadConfig } from "../../config.js";
+import { createWorkspaceConfig, loadConfig, serializeWorkspaceConfig } from "../../config.js";
 import {
   copyToAgentSkills,
   copyToClaude,
@@ -127,13 +127,14 @@ function resolveInstallationConfiguration(
   opts: InitOptions,
   workspace: string,
 ): { permissionProfile: PermissionProfile; integrations: Integration[] } {
-  const workspaceConfig = loadConfig(workspace);
+  const configPath = resolve(workspace, ".specky/config.yml");
+  const workspaceConfig = existsSync(configPath) ? loadConfig(workspace) : null;
   return {
     permissionProfile: resolvePermissionProfile(
-      opts.permissionProfile ?? workspaceConfig.installation.permission_profile,
+      opts.permissionProfile ?? workspaceConfig?.installation.permission_profile,
     ),
     integrations: opts.integration === undefined
-      ? workspaceConfig.installation.integrations
+      ? (workspaceConfig?.installation.integrations ?? [])
       : resolveIntegrations(opts.integration),
   };
 }
@@ -279,9 +280,16 @@ function writeSpeckyMeta(ctx: Ctx, resolvedIde: IdeTarget | "auto", resolvedTarg
   mkdirSync(ctx.targets.shared.specky, { recursive: true });
 
   const configDest = resolve(ctx.targets.shared.specky, "config.yml");
-  if (!existsSync(configDest) && existsSync(ctx.src.configYml)) {
-    copyFileSync(ctx.src.configYml, configDest);
+  const config = createWorkspaceConfig({
+    permissionProfile: ctx.permissionProfile,
+    integrations: ctx.integrations,
+  });
+  try {
+    writeFileSync(configDest, serializeWorkspaceConfig(config), { encoding: "utf8", flag: "wx" });
     console.log(`[specky init] Wrote ${configDest}`);
+  } catch (error: unknown) {
+    const code = typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
+    if (code !== "EEXIST") throw error;
   }
 
   const meta = {

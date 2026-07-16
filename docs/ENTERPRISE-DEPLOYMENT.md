@@ -250,7 +250,7 @@ box. `GET /health` stays unauthenticated for liveness probes.
 
 ```bash
 # Public package: no login needed. Pin a release tag for reproducible deploys.
-docker pull ghcr.io/paulasilvatech/specky:3.11.0            # or :latest
+docker pull ghcr.io/paulasilvatech/specky:3.11.1            # or :latest
 
 # Hardened run: enterprise profile + token auth behind your TLS proxy
 docker run --rm -p 127.0.0.1:3200:3200 \
@@ -259,9 +259,9 @@ docker run --rm -p 127.0.0.1:3200:3200 \
   -e SDD_AUDIT_HMAC_KEY_FILE=/run/secrets/audit.key \
   -v "$PWD/workspace:/workspace" \
   -v /etc/specky:/run/secrets:ro \
-  ghcr.io/paulasilvatech/specky:3.11.0
+  ghcr.io/paulasilvatech/specky:3.11.1
 
-curl -s http://127.0.0.1:3200/health     # -> {"status":"ok","version":"3.11.0"}
+curl -s http://127.0.0.1:3200/health     # -> {"status":"ok","version":"3.11.1"}
 ```
 
 If the package is **private**, authenticate first with a token that has

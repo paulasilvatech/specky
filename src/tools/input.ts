@@ -4,8 +4,6 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { formatError, truncate } from "./tool-result.js";
-import { join } from "node:path";
-import {} from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { DocumentConverter } from "../services/document-converter.js";
 import type { StateMachine } from "../services/state-machine.js";
@@ -15,6 +13,7 @@ import {
   batchImportInputSchema,
 } from "../schemas/input.js";
 import { enrichResponse } from "./response-builder.js";
+import { requireExecutionContext } from "../services/execution-context.js";
 
 export function registerInputTools(
   server: McpServer,
@@ -37,8 +36,9 @@ export function registerInputTools(
         openWorldHint: false,
       },
     },
-    async ({ file_path, raw_text, format, spec_dir }) => {
+    async ({ file_path, raw_text, format }) => {
       try {
+        const contract = requireExecutionContext("sdd_import_document").requestedContract!;
         if (!file_path && !raw_text) {
           throw new Error("Either file_path or raw_text must be provided.");
         }
@@ -75,10 +75,11 @@ export function registerInputTools(
             status: "recommended",
             enhances: ["sdd_import_document", "sdd_batch_import"]
           }] : [],
+          contract_id: contract.id,
+          contract_fingerprint: contract.fingerprint,
         };
 
-        const enriched = await enrichResponse("sdd_import_document", output, stateMachine, spec_dir);
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(output, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_import_document", error as Error) }],
@@ -103,14 +104,17 @@ export function registerInputTools(
         openWorldHint: true,
       },
     },
-    async ({ figma_file_key, figma_node_id, project_name, spec_dir }) => {
+    async ({ figma_file_key, figma_node_id }) => {
       try {
-        const featureDir = join(spec_dir, `001-${project_name}`);
+        const context = requireExecutionContext("sdd_figma_to_spec");
+        const feature = context.feature!;
+        const featureDir = feature.directory;
 
         const output = {
           figma_file_key,
           figma_node_id: figma_node_id || null,
-          project_name,
+          project_name: feature.name,
+          feature_number: feature.number,
           feature_dir: featureDir,
           routing_instructions: {
             step_1:
@@ -135,7 +139,7 @@ export function registerInputTools(
             "Figma-to-spec conversion bridges visual design with formal requirements. The design context provides UI structure that maps to EARS requirements: components become features, interactions become behavioral requirements, and layout constraints become interface requirements.",
         };
 
-        const enriched = await enrichResponse("sdd_figma_to_spec", output, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_figma_to_spec", output, stateMachine, context.stateDir!);
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
@@ -161,8 +165,9 @@ export function registerInputTools(
         openWorldHint: false,
       },
     },
-    async ({ documents_dir, spec_dir }) => {
+    async ({ documents_dir }) => {
       try {
+        const contract = requireExecutionContext("sdd_batch_import").requestedContract!;
         const supportedExtensions = [".pdf", ".docx", ".pptx", ".md", ".txt", ".vtt", ".srt"];
         const files = await fileManager.listFilesByExtension(documents_dir, supportedExtensions);
 
@@ -235,10 +240,11 @@ export function registerInputTools(
           ],
           learning_note:
             "Batch import provides an overview of available documents. For detailed content, use sdd_import_document on specific files. This two-step approach keeps responses manageable for large document sets.",
+          contract_id: contract.id,
+          contract_fingerprint: contract.fingerprint,
         };
 
-        const enriched = await enrichResponse("sdd_batch_import", output, stateMachine, spec_dir);
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
+        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(output, null, 2)) }] };
       } catch (error) {
         return {
           content: [{ type: "text" as const, text: formatError("sdd_batch_import", error as Error) }],

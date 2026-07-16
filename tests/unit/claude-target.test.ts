@@ -66,7 +66,8 @@ describe("claude target install", () => {
         expect(countFiles(resolve(workspace, ".claude/agents"), (n) => n.startsWith("specky-") && n.endsWith(".md"))).toBe(13);
         expect(countFiles(resolve(workspace, ".claude/commands"), (n) => n.startsWith("specky-") && n.endsWith(".md"))).toBe(22);
         expect(countDirs(resolve(workspace, ".claude/skills"), "specky-")).toBe(14);
-        expect(countFiles(resolve(workspace, ".claude/hooks/scripts"), (n) => n.endsWith(".sh") || n.endsWith(".mjs"))).toBe(16);
+        expect(countFiles(resolve(workspace, ".claude/hooks/scripts"), (n) => n.endsWith(".sh") || n.endsWith(".mjs"))).toBe(17);
+        expect(existsSync(resolve(workspace, ".claude/hooks/scripts/specky-contract-context.bash"))).toBe(true);
 
         // Dedicated neutral rule — not the Copilot-named one
         expect(existsSync(resolve(workspace, ".claude/rules/specky-sdd.md"))).toBe(true);

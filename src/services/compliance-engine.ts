@@ -1,5 +1,5 @@
 /**
- * ComplianceEngine — Static compliance framework controls with keyword matching.
+ * ComplianceEngine — Versioned compliance controls with explicit evidence.
  * Pure service, no dependencies.
  */
 import type { ComplianceResult, ComplianceFinding, ComplianceFramework } from "../types.js";
@@ -53,39 +53,56 @@ const FRAMEWORKS: Record<ComplianceFramework, Control[]> = {
     { id: "ISO-A12", name: "Operations Security", description: "Ensure correct and secure operations", keywords: ["operations", "change management", "capacity", "backup", "logging"], mandatory: true },
     { id: "ISO-A16", name: "Incident Management", description: "Consistent approach to managing security incidents", keywords: ["incident", "response", "reporting", "evidence", "lessons learned"], mandatory: true },
   ],
-  general: [
-    { id: "GEN-1", name: "Input Validation", description: "Validate all user inputs", keywords: ["validation", "sanitize", "input", "xss", "injection"], mandatory: true },
-    { id: "GEN-2", name: "Authentication", description: "Implement proper authentication", keywords: ["authentication", "login", "password", "mfa", "session"], mandatory: true },
-    { id: "GEN-3", name: "Authorization", description: "Implement proper authorization", keywords: ["authorization", "permission", "role", "access control", "rbac"], mandatory: true },
-    { id: "GEN-4", name: "Logging", description: "Implement comprehensive logging", keywords: ["logging", "log", "audit", "monitoring", "observability"], mandatory: true },
-    { id: "GEN-5", name: "Error Handling", description: "Handle errors securely", keywords: ["error handling", "exception", "fallback", "graceful", "recovery"], mandatory: true },
-    { id: "GEN-6", name: "Data Protection", description: "Protect sensitive data", keywords: ["encrypt", "sensitive", "protect", "secure", "hash"], mandatory: true },
-  ],
 };
 
 export class ComplianceEngine {
-  checkCompliance(framework: ComplianceFramework, specContent: string, designContent: string): ComplianceResult {
-    const controls = FRAMEWORKS[framework] || FRAMEWORKS.general;
-    const combined = `${specContent}\n${designContent}`.toLowerCase();
+  static readonly CONTROL_PACK_VERSION = "2026.1";
+
+  checkCompliance(
+    framework: ComplianceFramework,
+    evidenceByControl: Record<string, string[]>,
+  ): ComplianceResult {
+    const controls = FRAMEWORKS[framework];
     const findings: ComplianceFinding[] = [];
-    let passed = 0, failed = 0, na = 0;
+    let passed = 0;
+    let failed = 0;
 
     for (const control of controls) {
-      const found = control.keywords.some(kw => combined.includes(kw.toLowerCase()));
-      if (found) {
-        findings.push({ control_id: control.id, control_name: control.name, description: control.description, status: "pass", evidence: `Keywords matched in specification/design` });
+      const evidence = evidenceByControl[control.id] ?? [];
+      if (evidence.length > 0) {
+        findings.push({
+          control_id: control.id,
+          control_name: control.name,
+          description: control.description,
+          status: "pass",
+          evidence: evidence.join(" | "),
+        });
         passed++;
       } else {
-        findings.push({ control_id: control.id, control_name: control.name, description: control.description, status: "fail", remediation: `Add ${control.name.toLowerCase()} requirements to specification or design.` });
+        findings.push({
+          control_id: control.id,
+          control_name: control.name,
+          description: control.description,
+          status: "fail",
+          remediation: `Provide reviewed evidence for ${control.id} (${control.name}).`,
+        });
         failed++;
       }
     }
 
-    const overall = failed === 0 ? "compliant" : (passed > failed ? "partial" : "non_compliant");
+    const overall = failed === 0 ? "compliant" : passed > failed ? "partial" : "non_compliant";
     return {
-      framework, controls_checked: controls.length, controls_passed: passed, controls_failed: failed, controls_na: na, findings, overall_status: overall,
-      explanation: `Checked ${controls.length} ${framework.toUpperCase()} controls. ${passed} passed, ${failed} need attention.`,
-      next_steps: failed > 0 ? `Address ${failed} failing controls in SPECIFICATION.md or DESIGN.md, then re-run compliance check.` : "All controls addressed. Ready to proceed.",
+      framework,
+      controls_checked: controls.length,
+      controls_passed: passed,
+      controls_failed: failed,
+      controls_na: 0,
+      findings,
+      overall_status: overall,
+      explanation: `Evaluated ${controls.length} ${framework.toUpperCase()} controls using control pack ${ComplianceEngine.CONTROL_PACK_VERSION}. ${passed} have explicit evidence; ${failed} do not.`,
+      next_steps: failed > 0
+        ? `Provide reviewed evidence for ${failed} failing controls, then re-run compliance check.`
+        : "All configured controls have explicit evidence.",
     };
   }
 
@@ -94,6 +111,6 @@ export class ComplianceEngine {
   }
 
   getControls(framework: ComplianceFramework): Control[] {
-    return FRAMEWORKS[framework] || FRAMEWORKS.general;
+    return FRAMEWORKS[framework];
   }
 }

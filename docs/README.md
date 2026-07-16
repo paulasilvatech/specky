@@ -9,6 +9,7 @@ Essential guides and reference material for Specky (`specky-sdd`). The repositor
 | [GETTING-STARTED.md](GETTING-STARTED.md) | New users | Educational walkthrough of the SDD pipeline |
 | [INSTALL.md](INSTALL.md) | Developers / teams | Install, upgrade, and target-specific setup |
 | [CLI.md](CLI.md) | Daily users | `specky` CLI command reference |
+| [USE-CASE-CONTRACTS.md](USE-CASE-CONTRACTS.md) | All users | Lifecycle/workload/mode contracts, capabilities, evidence, hooks, and migration |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | Contributors | Architecture, adding tools/templates, PR guidelines |
 
 ## Reference

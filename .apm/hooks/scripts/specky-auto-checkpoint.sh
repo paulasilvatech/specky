@@ -5,16 +5,21 @@
 # Paper: arXiv:2602.20478 — artifact preservation
 
 set -euo pipefail
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+. "$SCRIPT_DIR/specky-contract-context.bash"
+specky_load_contract_context || exit $?
+[ "${SPECKY_CONTEXT_ACTIVE:-0}" = "1" ] || exit 0
+[ "${SPECKY_CHECKPOINTS_REQUIRED:-0}" = "1" ] || exit 0
 
-# Check if a spec artifact was recently modified (last 60 seconds)
-RECENT=$(find .specs -name "*.md" -newer /tmp/.sdd-last-checkpoint 2>/dev/null | head -5 || true)
-[ -d .specs ] || exit 0
+MARKER="/tmp/.sdd-last-checkpoint-${SPECKY_CONTRACT_FINGERPRINT}"
+[ -f "$MARKER" ] || touch -t 197001010000 "$MARKER"
+RECENT=$(find "$SPECKY_FEATURE_DIR" -name "*.md" -newer "$MARKER" 2>/dev/null | head -5 || true)
 
 if [ -n "$RECENT" ]; then
   echo "💾 Spec artifacts modified:"
   echo "$RECENT"
   echo "   Consider running sdd_checkpoint to save a snapshot."
-  touch /tmp/.sdd-last-checkpoint
+  touch "$MARKER"
 fi
 
 exit 0

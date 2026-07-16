@@ -4,20 +4,20 @@
 # Ensures required artifacts exist before a phase tool runs
 
 set -euo pipefail
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/specky-contract-context.bash"
 
 TOOL="${SDD_TOOL_NAME:-unknown}"
-LATEST=$(ls -td .specs/*/ 2>/dev/null | head -1 || true)
 FAILS=0
 
-if [ -z "$LATEST" ]; then
-  if [ "$TOOL" != "sdd_init" ]; then
-    echo "❌ No .specs/ directory found. Run @specky-sdd-init first."
-    exit 2
-  fi
+if [ "$TOOL" = "sdd_init" ]; then
+  echo "✅ Artifact Validator — sdd_init has no existing feature prerequisites"
   exit 0
 fi
+specky_require_feature_context || exit $?
+LATEST="$SPECKY_FEATURE_DIR"
 
-FEATURE=$(basename "$LATEST")
+FEATURE="${SPECKY_FEATURE_NUMBER}-${SPECKY_FEATURE_NAME}"
 echo "📄 Artifact Validator — $FEATURE — before $TOOL"
 
 check_exists() {
@@ -44,7 +44,7 @@ case "$TOOL" in
   sdd_init)
     echo "  ✅ No prerequisites for sdd_init"
     ;;
-  sdd_discover|sdd_research|sdd_import_document|sdd_import_transcript|sdd_batch_import)
+  sdd_discover|sdd_research|sdd_import_transcript)
     check_exists "CONSTITUTION.md" "CONSTITUTION.md" "Run @specky-sdd-init or /specky-greenfield"
     ;;
   sdd_clarify|sdd_validate_ears)
@@ -53,7 +53,7 @@ case "$TOOL" in
   sdd_write_spec|sdd_turnkey_spec|sdd_figma_to_spec)
     check_exists "CONSTITUTION.md" "CONSTITUTION.md" "Run @specky-sdd-init"
     ;;
-  sdd_write_design|sdd_generate_all_diagrams)
+  sdd_write_design|sdd_generate_all_diagrams|sdd_generate_diagram|sdd_figma_diagram)
     check_exists "SPECIFICATION.md" "SPECIFICATION.md" "Run @specky-spec-engineer or /specky-specify"
     check_content "SPECIFICATION.md" "REQ-[A-Z]+-[0-9]+" "EARS requirements with REQ-IDs"
     ;;
@@ -70,13 +70,17 @@ case "$TOOL" in
     check_exists "TASKS.md" "TASKS.md" "Run /specky-tasks"
     ;;
   sdd_run_analysis|sdd_cross_analyze)
-    check_exists "VERIFICATION.md" "VERIFICATION.md" "Run @specky-test-verifier or /specky-verify"
     check_exists "SPECIFICATION.md" "SPECIFICATION.md" "Run /specky-specify"
     check_exists "DESIGN.md" "DESIGN.md" "Run /specky-design"
     check_exists "TASKS.md" "TASKS.md" "Run /specky-tasks"
     ;;
   sdd_compliance_check)
+    if ! specky_has_capability "compliance"; then
+      echo "🚫 Compliance capability is not enabled by $SPECKY_CONTRACT_ID"
+      FAILS=$((FAILS+1))
+    fi
     check_exists "SPECIFICATION.md" "SPECIFICATION.md" "Run /specky-specify"
+    check_exists "DESIGN.md" "DESIGN.md" "Run /specky-design"
     ;;
   sdd_create_pr|sdd_export_work_items)
     check_exists "ANALYSIS.md" "ANALYSIS.md" "Run @specky-quality-reviewer"

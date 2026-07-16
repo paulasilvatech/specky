@@ -18,9 +18,9 @@ OpenCode requires two steps after install:
 1. **EARS notation is mandatory.** Every requirement must follow one of the 6 EARS patterns.
 2. **REQ-ID traceability is non-negotiable.** Every test, task, and design decision traces to a REQ-ID.
 3. **Artifacts live in `.specs/NNN-feature/`.** CONSTITUTION.md, SPECIFICATION.md, DESIGN.md, TASKS.md, ANALYSIS.md, VERIFICATION.md.
-4. **One branch per spec.** Create `spec/NNN-feature-name` from `develop` for pipeline work (Phases 0-7).
+4. **Branch policy is explicit.** Use the persisted release branch prefix and base branch. Do not invent Gitflow branches or create a branch during Init.
 5. **Load companion SKILL.md first.** Read `.agents/skills/{skill-name}/SKILL.md` before phase work.
-6. **Orchestrator is the single entry point.** When `.specs/` has an active pipeline, route work through `@specky-orchestrator` or `/specky-orchestrate`.
+6. **Orchestrator is the single entry point.** When a feature directory has signed state, route work through `@specky-orchestrator` or `/specky-orchestrate` and follow its persisted contract.
 
 ## Available Agents
 

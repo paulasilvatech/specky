@@ -13,14 +13,14 @@ This project uses Spec-Driven Development (SDD) via the Specky pipeline.
 3. **Model routing matters.** Use a fast model class for lightweight scaffolding (Phase 0, 9), a balanced model class for iterative delivery (Phase 1, 5-7), and a reasoning-focused model class for complex analysis and design (Phase 2-4, 8). The user chooses any available model.
 4. **Never skip hooks.** Blocking hooks (specky-security-scan, specky-release-gate) must pass before release.
 5. **Artifacts live in `.specs/NNN-feature/`.** CONSTITUTION.md, RESEARCH.md, SPECIFICATION.md, DESIGN.md, TASKS.md, VERIFICATION.md, ANALYSIS.md.
-6. **One branch per spec.** Create `spec/NNN-feature-name` from `develop` for all pipeline work (Phases 0-7). All `.specs/` artifacts are created on this branch. Merge to `develop` after verification, then `stage` for QA and release gates, then `main` for production. Never commit spec work directly to develop, stage, or main.
+6. **Branch policy is explicit.** Use `capability_config.release.branch_prefix` and `base_branch` when release capability is enabled. Do not invent Gitflow branches or create a branch during Init.
 7. **Load companion SKILL.md first.** Every agent reads its companion skill file (`.claude/skills/{skill-name}/SKILL.md`) as the first workflow step. Phase agents have dedicated skills (specky-sdd-init, specky-spec-engineer, specky-sdd-clarify, specky-design-architect, specky-task-planner, specky-quality-reviewer); shared pipeline context lives in specky-sdd-pipeline.
-8. **Orchestrator is the single entry point.** When `.specs/` exists with an active pipeline (`.sdd-state.json` present), ALL work — code, branches, commits, PRs — MUST flow through `@specky-orchestrator`. Direct calls to phase agents, manual branch creation outside `spec/NNN-*`, or free-form edits bypass the quality gates and are pipeline violations. If unsure where to start, invoke `@specky-onboarding`. Starting in v3.5, `specky-pipeline-guard` hook enforces this automatically.
+8. **Orchestrator is the single entry point.** When a feature directory contains signed `.sdd-state.json`, work flows through `@specky-orchestrator` and the persisted contract. Calls that omit feature identity, capability policy, or phase gates are pipeline violations. If unsure where to start, invoke `@specky-onboarding`.
 
 ## Available Agents
 
 - @specky-onboarding — Interactive wizard and default entry point
-- @specky-orchestrator — Full pipeline coordinator (all 10 phases)
+- @specky-orchestrator — Contracted phase-graph coordinator
 - @specky-sdd-init — Initialize pipeline (Phase 0)
 - @specky-requirements-engineer — Produce FRD + NFRD
 - @specky-research-analyst — Technical research (Phase 1)

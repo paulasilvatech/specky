@@ -7,6 +7,7 @@
  *   specky compile [--target=TARGET[,TARGET...]] [--dry-run]
  *   specky doctor [--fix] [--verbose]
  *   specky status
+ *   specky migrate-contracts --dry-run|--apply
  *   specky upgrade
  *   specky hooks  <list|test|run NAME>
  *   specky apm    <validate|lock|verify-lock|policy|audit|sbom>
@@ -76,6 +77,18 @@ Commands:
 
   upgrade                Refresh installed assets (preserves .specs/)
 
+  migrate-contracts      Migrate legacy state metadata to signed per-feature v5 state
+    --spec-dir=<path>                   Explicit specs root (required)
+    --dry-run                           Print deterministic migration plan + hash
+    --apply                             Apply a previously reviewed plan
+    --confirm-plan=<sha256>             Exact hash emitted by --dry-run
+    --mapping=<json>                    Per-feature use-case mappings (required for multi-feature)
+    --lifecycle=<type>                  Single-feature: greenfield|brownfield|migration
+    --workload=<type>                   Single-feature workload contract
+    --execution-mode=<mode>             Single-feature: full|rapid|emergency
+    --capabilities=<list>               Single-feature comma-list; empty means none
+    --capability-config=<json>          Single-feature capability parameter object
+
   hooks <list|test|run NAME>
                          Manage installed hooks
 
@@ -98,26 +111,74 @@ Documentation:  https://github.com/paulasilvatech/specky
 `);
 }
 
+async function dispatchInstall(flags: ArgMap): Promise<number> {
+  const { runInit } = await import("./commands/init.js");
+  const ideRaw = flags["ide"];
+  const targetRaw = flags["target"];
+  const ide = typeof ideRaw === "string" ? (ideRaw as "claude" | "copilot" | "both" | "auto") : "auto";
+  return runInit({
+    ide,
+    target: typeof targetRaw === "string" ? targetRaw : undefined,
+    force: flags["force"] === true,
+    dryRun: flags["dry-run"] === true,
+    permissionProfile: typeof flags["permission-profile"] === "string"
+      ? flags["permission-profile"]
+      : undefined,
+    integration: typeof flags["integration"] === "string" ? flags["integration"] : undefined,
+  });
+}
+
+async function dispatchCompile(flags: ArgMap): Promise<number> {
+  const { runCompile } = await import("./commands/compile.js");
+  const targetRaw = flags["target"];
+  return runCompile({
+    target: typeof targetRaw === "string" ? targetRaw : undefined,
+    dryRun: flags["dry-run"] === true,
+  });
+}
+
+async function dispatchMigrateContracts(flags: ArgMap): Promise<number> {
+  const { runMigrateContracts } = await import("./commands/migrate-contracts.js");
+  const specDir = flags["spec-dir"];
+  if (typeof specDir !== "string") {
+    throw new TypeError("migrate-contracts requires --spec-dir=<workspace-relative path>.");
+  }
+  return runMigrateContracts({
+    specDir,
+    dryRun: flags["dry-run"] === true,
+    apply: flags["apply"] === true,
+    confirmPlan: typeof flags["confirm-plan"] === "string" ? flags["confirm-plan"] : undefined,
+    mappingFile: typeof flags["mapping"] === "string" ? flags["mapping"] : undefined,
+    lifecycle: typeof flags["lifecycle"] === "string" ? flags["lifecycle"] : undefined,
+    workload: typeof flags["workload"] === "string" ? flags["workload"] : undefined,
+    executionMode: typeof flags["execution-mode"] === "string" ? flags["execution-mode"] : undefined,
+    capabilities: typeof flags["capabilities"] === "string" ? flags["capabilities"] : undefined,
+    capabilityConfigFile: typeof flags["capability-config"] === "string" ? flags["capability-config"] : undefined,
+  });
+}
+
+async function dispatchHooks(positional: string[]): Promise<number> {
+  const { runHooks } = await import("./commands/hooks.js");
+  const action = (positional[0] ?? "list") as "list" | "test" | "run";
+  return runHooks({ action, name: positional[1] });
+}
+
+async function dispatchServe(flags: ArgMap): Promise<number> {
+  const { runServe } = await import("./commands/serve.js");
+  const portFlag = flags["port"];
+  return runServe({
+    http: flags["http"] === true,
+    port: typeof portFlag === "string" ? Number(portFlag) : undefined,
+  });
+}
+
 async function dispatch(command: string, rest: string[]): Promise<number> {
   const { positional, flags } = parseFlags(rest);
 
   switch (command) {
     case "install":
     case "init": {
-      const { runInit } = await import("./commands/init.js");
-      const ideRaw = flags["ide"];
-      const targetRaw = flags["target"];
-      const ide = typeof ideRaw === "string" ? (ideRaw as "claude" | "copilot" | "both" | "auto") : "auto";
-      return runInit({
-        ide,
-        target: typeof targetRaw === "string" ? targetRaw : undefined,
-        force: flags["force"] === true,
-        dryRun: flags["dry-run"] === true,
-        permissionProfile: typeof flags["permission-profile"] === "string"
-          ? flags["permission-profile"]
-          : undefined,
-        integration: typeof flags["integration"] === "string" ? flags["integration"] : undefined,
-      });
+      return dispatchInstall(flags);
     }
     case "doctor": {
       const { runDoctor } = await import("./commands/doctor.js");
@@ -131,33 +192,24 @@ async function dispatch(command: string, rest: string[]): Promise<number> {
       return runStatus({});
     }
     case "compile": {
-      const { runCompile } = await import("./commands/compile.js");
-      const targetRaw = flags["target"];
-      return runCompile({
-        target: typeof targetRaw === "string" ? targetRaw : undefined,
-        dryRun: flags["dry-run"] === true,
-      });
+      return dispatchCompile(flags);
     }
     case "upgrade": {
       const { runUpgrade } = await import("./commands/upgrade.js");
       return runUpgrade({ keepSpecs: flags["keep-specs"] === true });
     }
+    case "migrate-contracts": {
+      return dispatchMigrateContracts(flags);
+    }
     case "hooks": {
-      const { runHooks } = await import("./commands/hooks.js");
-      const action = (positional[0] ?? "list") as "list" | "test" | "run";
-      return runHooks({ action, name: positional[1] });
+      return dispatchHooks(positional);
     }
     case "apm": {
       const { apmCommand } = await import("./commands/apm.js");
       return apmCommand(positional);
     }
     case "serve": {
-      const { runServe } = await import("./commands/serve.js");
-      const portFlag = flags["port"];
-      return runServe({
-        http: flags["http"] === true,
-        port: typeof portFlag === "string" ? Number(portFlag) : undefined,
-      });
+      return dispatchServe(flags);
     }
     case "help":
     case "--help":
@@ -185,6 +237,7 @@ async function dispatch(command: string, rest: string[]): Promise<number> {
  */
 const UPDATE_BANNER_COMMANDS = new Set([
   "install", "init", "doctor", "status", "upgrade", "--version", "-v",
+  "migrate-contracts",
 ]);
 
 /**
@@ -196,7 +249,7 @@ async function maybePrintUpdateBanner(command: string): Promise<void> {
   if (!UPDATE_BANNER_COMMANDS.has(command)) return;
   try {
     const { loadConfig } = await import("../config.js");
-    // Workspace-level hard disable (.specky/config.yml). Absent file → default true.
+    // Workspace-level hard disable. Missing/invalid config suppresses only this best-effort banner.
     if (!loadConfig(process.cwd()).update_check) return;
     const { checkForUpdate } = await import("./lib/update-check.js");
     const latest = await checkForUpdate({});
@@ -217,7 +270,7 @@ async function main(): Promise<void> {
 
   // Legacy back-compat: `specky-sdd` with no subcommand OR with --http maps to serve
   const knownCommands = new Set([
-    "install", "init", "doctor", "status", "compile", "upgrade", "hooks", "apm", "serve",
+    "install", "init", "doctor", "status", "compile", "upgrade", "migrate-contracts", "hooks", "apm", "serve",
     "help", "--help", "-h", "--version", "-v",
   ]);
 

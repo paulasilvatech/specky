@@ -1,6 +1,6 @@
 # Contributing to Specky
 
-Thank you for your interest in contributing to Specky. This guide covers the v3.10.x architecture, development patterns, and submission process.
+Thank you for your interest in contributing to Specky. This guide covers the v3.11.1 architecture, development patterns, and submission process.
 
 ---
 
@@ -22,7 +22,7 @@ Thank you for your interest in contributing to Specky. This guide covers the v3.
 
 ## Architecture Overview
 
-Specky v3.11.0 is an MCP server that exposes **58 tools** organized into a 10-phase Spec-Driven Development pipeline. The codebase comprises **108 source files**, **22 templates**, and is structured as follows:
+Specky v3.11.1 is an MCP server that exposes **58 tools** organized around signed, per-feature use-case contracts. The codebase comprises **119 TypeScript source files**, **22 templates**, and is structured as follows:
 
 ```
 src/
@@ -30,75 +30,11 @@ src/
 ├── constants.ts              Enums, tool names, config values, type aliases
 ├── config.ts                 Project-local configuration loader (.specky/config.yml)
 ├── types.ts                  All TypeScript interfaces (zero `any`)
-├── schemas/                  15 Zod validation schemas
-│   ├── common.ts             Shared schemas (spec_dir, feature_number, force)
-│   ├── context.ts            Schemas for context tiering tools
-│   ├── environment.ts        Schemas for dev environment setup
-│   ├── infrastructure.ts     Schemas for IaC generation and validation
-│   ├── input.ts              Schemas for document import and Figma conversion
-│   ├── integration.ts        Schemas for Git, work items, PR, implement, research
-│   ├── metrics.ts            Schemas for metrics tools
-│   ├── pbt.ts                Schemas for property-based testing
-│   ├── pipeline.ts           Schemas for 8 pipeline tools
-│   ├── quality.ts            Schemas for checklist, compliance, cross-analysis
-│   ├── routing.ts            Schemas for model routing tools
-│   ├── testing.ts            Schemas for test generation and verification
-│   ├── transcript.ts         Schemas for 3 transcript tools
-│   ├── utility.ts            Schemas for 6 utility tools
-│   └── visualization.ts      Schemas for diagram generation and user stories
-├── utils/                    2 utility helpers
-│   ├── context-helper.ts     Context tiering helper functions
-│   └── routing-helper.ts     Model routing helper functions
-├── services/                 28 service classes (business logic)
-│   ├── file-manager.ts       All disk I/O (atomic writes, path sanitization)
-│   ├── state-machine.ts      10-phase pipeline enforcement with HMAC integrity
-│   ├── template-engine.ts    Markdown template rendering with {{variables}}
-│   ├── ears-validator.ts     EARS pattern detection and validation (pure, no I/O)
-│   ├── codebase-scanner.ts   Tech stack detection via file system analysis
-│   ├── transcript-parser.ts  VTT/SRT/MD/TXT parsing and requirement extraction
-│   ├── document-converter.ts PDF/DOCX/PPTX import and conversion
-│   ├── diagram-generator.ts  Mermaid diagram generation (17 types) from spec artifacts
-│   ├── iac-generator.ts      Terraform, Bicep, Dockerfile, devcontainer generation
-│   ├── work-item-exporter.ts GitHub Issues, Azure Boards, Jira export payloads
-│   ├── cross-analyzer.ts     Multi-spec cross-cutting concern analysis
-│   ├── compliance-engine.ts  HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 controls
-│   ├── doc-generator.ts      Full docs, API docs, runbooks, onboarding guides
-│   ├── git-manager.ts        Branch creation and PR payload generation
-│   ├── methodology.ts        SDD methodology enforcement and guidance
-│   ├── dependency-graph.ts   Dependency graph analysis for parallel execution
-│   ├── pbt-generator.ts      Property-based test generation (fast-check/hypothesis)
-│   ├── audit-logger.ts       Hash-chained JSONL audit log with rotation and syslog export
-│   ├── cognitive-debt-engine.ts  Cognitive debt scoring at LGTM gates
-│   ├── context-tiering-engine.ts Hot/Domain/Cold artifact tier assignment
-│   ├── intent-drift-engine.ts    Constitution-to-spec drift detection
-│   ├── metrics-generator.ts  Project metrics dashboard generation
-│   ├── model-routing-engine.ts   10-phase model routing decision table
-│   ├── rate-limiter.ts       Token bucket rate limiting for HTTP transport
-│   ├── rbac-engine.ts        Role-based access control (viewer/contributor/admin)
-│   ├── test-generator.ts     Test stub generation for 6 frameworks
-│   ├── test-result-parser.ts Vitest/pytest/JUnit XML result parser
-│   └── test-traceability-mapper.ts  REQ-ID → test coverage mapping
-└── tools/                    20 tool registration files (thin handlers)
-    ├── pipeline.ts           8 pipeline tools (init through advance_phase)
-    ├── analysis.ts           1 analysis tool (sdd_check_sync)
-    ├── utility.ts            5 utility tools (status, template, bugfix, scan, amend)
-    ├── transcript.ts         3 transcript tools (import, auto-pipeline, batch)
-    ├── input.ts              3 input tools (document import, batch, Figma)
-    ├── quality.ts            5 quality tools (checklist, verify, compliance, cross, EARS)
-    ├── visualization.ts      4 visualization tools (diagram, all diagrams, stories, Figma)
-    ├── infrastructure.ts     3 infrastructure tools (IaC, validate, Dockerfile)
-    ├── environment.ts        3 environment tools (local, Codespaces, devcontainer)
-    ├── integration.ts        5 integration tools (branch, work items, PR, implement, research)
-    ├── documentation.ts      4 documentation tools (docs, API, runbook, onboarding)
-    ├── pbt.ts                1 property-based testing tool
-    ├── turnkey.ts            1 turnkey specification tool
-    ├── checkpoint.ts         3 checkpoint/restore tools
-    ├── context.ts            1 context tiering tool (sdd_context_status)
-    ├── metrics.ts            1 metrics tool (sdd_metrics)
-    ├── rbac.ts               1 RBAC tool (sdd_check_access)
-    ├── routing.ts            1 model routing tool (sdd_model_routing)
-    ├── testing.ts            2 testing tools (generate_tests, verify_tests)
-    └── response-builder.ts   Response enrichment helpers (enrichResponse, buildPhaseError)
+├── contracts/                3 use-case, tool, and pipeline-profile contracts
+├── schemas/                  16 strict Zod input schemas
+├── services/                 31 services, including state, execution-context, and generators
+├── tools/                    23 tool and enforcement/response modules for 58 MCP tools
+└── utils/                    11 focused helpers for artifact identity and validation
 
 templates/                    22 Markdown templates with {{variable}} placeholders
 ```
@@ -111,8 +47,9 @@ templates/                    22 Markdown templates with {{variable}} placeholde
 4. **All Zod schemas use `.strict()`** -- No extra fields allowed.
 5. **All tools have annotations** -- `readOnlyHint`, `destructiveHint`, `idempotentHint`, `openWorldHint`.
 6. **Logging to stderr only** -- stdout is reserved for JSON-RPC.
-7. **Educative outputs** -- Every tool response includes `next_steps` and `learning_note` fields to guide the AI client.
-8. **MCP-to-MCP routing** -- Integration tools produce payloads designed for forwarding to other MCP servers (GitHub, Docker, Terraform).
+7. **Explicit execution context** -- Feature-scoped tools resolve a signed v5 state and contract before any handler runs; ambiguous or legacy state fails closed.
+8. **Evidence before synthesis** -- Contracted documentation, diagrams, research, and turnkey specifications consume explicit caller evidence rather than inventing missing content.
+9. **MCP-to-MCP routing** -- Integration tools produce payloads designed for forwarding to other MCP servers (GitHub, Docker, Terraform).
 
 ### Project Structure
 
@@ -127,9 +64,10 @@ specky/
 ├── scripts/                     ← Build tooling (build-hook-manifests.mjs, finalize-build.mjs, release.mjs)
 ├── src/                         ← MCP engine + CLI (TypeScript, published to npm)
 │   ├── cli/                     ← Unified `specky` CLI (install, doctor, status, upgrade, hooks, serve)
-│   ├── services/                ← 28 services
-│   ├── tools/                   ← 20 MCP tool registrations
-│   └── schemas/                 ← 15 Zod validation schemas
+│   ├── contracts/               ← Explicit lifecycle/workload/mode contracts
+│   ├── services/                ← 31 services
+│   ├── tools/                   ← 23 MCP tool/enforcement modules
+│   └── schemas/                 ← 16 strict Zod schemas
 └── package.json                 ← npm package config
 ```
 
@@ -148,7 +86,7 @@ specky/
 | CodebaseScanner | `codebase-scanner.ts` | Detect tech stack, frameworks, and project structure |
 | TranscriptParser | `transcript-parser.ts` | Parse VTT, SRT, MD, TXT transcripts into structured segments |
 | DocumentConverter | `document-converter.ts` | Convert PDF, DOCX, PPTX files into Markdown for spec ingestion |
-| DiagramGenerator | `diagram-generator.ts` | Generate Mermaid diagrams from SPECIFICATION.md and DESIGN.md |
+| DiagramGenerator | `diagram-generator.ts` | Render explicit user-story flows; contracted Mermaid payloads are validated at the tool boundary |
 | IacGenerator | `iac-generator.ts` | Generate Terraform, Bicep, Dockerfile, and devcontainer configs |
 | WorkItemExporter | `work-item-exporter.ts` | Export tasks as GitHub Issues, Azure Boards work items, or Jira tickets |
 | CrossAnalyzer | `cross-analyzer.ts` | Analyze cross-cutting concerns across multiple spec directories |
@@ -489,7 +427,7 @@ Tests live in `tests/unit/` and cover all services except `file-manager.ts` (whi
 | `compliance-engine.test.ts` | ComplianceEngine | 6 frameworks, control matching, status classification |
 | `state-machine.test.ts` | StateMachine | Phase transitions, blocking, file gates, state persistence |
 | `cross-analyzer.test.ts` | CrossAnalyzer | Alignment scoring, orphaned detection, empty spec handling |
-| `diagram-generator.test.ts` | DiagramGenerator | 17 diagram types, user story flows, batch generation |
+| `diagram-contracts.test.ts` | Visualization MCP tools | Exact workload diagram set, Mermaid headers, source evidence, no partial writes |
 | `template-engine.test.ts` | TemplateEngine | Variable replacement, frontmatter, `{{#each}}` loops |
 | `codebase-scanner.test.ts` | CodebaseScanner | Tech stack detection (Node, Python, Go, Rust, Java) |
 

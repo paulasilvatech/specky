@@ -5,10 +5,14 @@ This document describes the target architecture for Specky as an enterprise-grad
 ## Design Goals
 
 - Local-first MCP server for SDD workflows.
-- Deterministic, reproducible generated artifacts.
+- Explicit per-feature lifecycle/workload/mode contracts with no hidden selection or schema defaults.
+- Deterministic, reproducible artifacts assembled from validated evidence.
 - Centralized enforcement for RBAC, phase rules, audit logging, and output normalization.
 - Evidence-based quality gates.
 - Documentation and diagrams generated in parallel with implementation.
+- Signed v5 feature state, capability-scoped tools, and rollback-safe contract migration.
+
+The complete behavioral contract is documented in [Use-Case Contracts](USE-CASE-CONTRACTS.md).
 
 ## Target Capability Compilation
 
@@ -65,7 +69,9 @@ C4Component
   Container_Boundary(mcp, "MCP Server") {
     Component(wrapper, "Tool Enforcement Wrapper", "TypeScript", "Central pre/post execution policy")
     Component(rbac, "RbacEngine", "TypeScript", "Role-based tool access")
-    Component(state, "StateMachine", "TypeScript", "Phase tracking, transition checks, HMAC state signature")
+    Component(context, "ExecutionContextResolver", "TypeScript", "Explicit tool scope, feature identity, capability and config validation")
+    Component(state, "StateMachine", "TypeScript", "Per-feature phase graph, transition checks, HMAC state signature")
+    Component(contracts, "Contract Catalog", "TypeScript + Zod", "54 named use cases, capability schemas, tool contracts, fingerprints")
     Component(audit, "AuditLogger", "TypeScript", "Hash-chained audit trail")
     Component(runtime, "RuntimeContext", "TypeScript", "Clock, locale, deterministic mode")
     Component(evidence, "EvidenceGraph", "TypeScript", "Semantic gate evidence")
@@ -74,6 +80,9 @@ C4Component
   }
 
   Rel(wrapper, rbac, "authorizes")
+  Rel(wrapper, context, "resolves exact execution context")
+  Rel(context, contracts, "validates tool/use-case contract")
+  Rel(context, state, "loads signed feature state")
   Rel(wrapper, state, "validates phase")
   Rel(wrapper, audit, "logs start and result")
   Rel(wrapper, runtime, "uses deterministic context")
@@ -99,7 +108,9 @@ sequenceDiagram
   Client->>Wrapper: tool call(input)
   Wrapper->>RBAC: checkAccess(role, tool)
   RBAC-->>Wrapper: allow or deny
-  Wrapper->>State: validatePhaseForTool(spec_dir, tool)
+  Wrapper->>State: resolve signed feature state(spec_dir, feature_number)
+  State-->>Wrapper: feature + contract + phase graph
+  Wrapper->>State: validatePhaseForTool(feature_dir, tool)
   State-->>Wrapper: allow or deny
   Wrapper->>Runtime: resolve clock and deterministic settings
   Wrapper->>Audit: log start(input hash)
@@ -113,6 +124,8 @@ sequenceDiagram
 
 ## Pipeline State Machine
 
+The diagram below is the `full` execution-mode graph. Rapid and emergency features persist smaller graphs and cannot transition into phases absent from their contract.
+
 ```mermaid
 stateDiagram-v2
   [*] --> Init
@@ -123,7 +136,7 @@ stateDiagram-v2
   Design --> Tasks
   Tasks --> Analyze
   Analyze --> Implement: gate APPROVE
-  Analyze --> Tasks: CHANGES_NEEDED or BLOCK
+  Analyze --> Tasks: remediation after CHANGES_NEEDED or BLOCK
   Implement --> Verify
   Verify --> Release
   Release --> [*]

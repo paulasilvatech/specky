@@ -1,171 +1,59 @@
 ---
 name: specky-implementer
-description: "This skill should be used when the user asks to 'generate implementation plan', 'create test stubs', 'set up infrastructure', 'generate quality checklists', 'transition from spec to code', or needs guidance on Phase 7 implementation scaffolding. Also trigger on 'sdd implement', 'implementation handoff', 'IaC generation', or 'test framework selection'."
+description: "Use for contracted implementation planning, executable TDD bindings, IaC, Docker, devcontainer, local environment, or Codespaces tools after an APPROVE analysis gate."
 ---
 
-# Implementation Orchestrator (Phase 7)
+# Implement — Persisted Capability Execution
 
-## Overview
+## Preconditions
 
-Phase 7 transforms specification and design artifacts into a structured implementation plan with code scaffolding, infrastructure definitions, and quality assurance frameworks.
+Read signed feature state, DESIGN.md, TASKS.md, and ANALYSIS.md. Implementation-sensitive tools require gate `APPROVE`. Every call includes explicit `spec_dir` and `feature_number`.
 
-## Prerequisites Check
+## Implementation Plan
 
-Before starting implementation, verify:
-- You are on the correct `spec/NNN-*` branch (not develop, stage, or main)
-- SPECIFICATION.md is complete with EARS notation requirements
-- DESIGN.md includes architecture, API contracts, and data schema
-- TASKS.md has work breakdown structure with dependencies
-- All stakeholders have approved DESIGN.md
-- Technical team has reviewed and confirmed feasibility
-- Infrastructure resources are allocated and accessible
+Call `sdd_implement` with:
 
-Run `/specky:check-phase-5` to validate prerequisites.
+- `task_ids`: explicit IDs; `[]` intentionally selects every task
+- `checkpoint`: explicit boolean
 
-## Implementation Plan Generation
+The tool orders existing tasks. It does not implement application code.
 
-Generate a phased implementation plan with four distinct stages:
+## Executable TDD
 
-### Foundation Stage
-Set up project skeleton, CI/CD pipelines, database migrations, and authentication framework. Duration typically 15-20% of total effort. Outputs:
-- Empty project structure matching DESIGN.md architecture
-- Docker/container definitions for local and production
-- Database migration system initialized
-- GitHub Actions/CI configuration from DESIGN.md
+Use only when `tdd` capability is enabled. Frameworks, output directory, threshold, trace marker, imports, example-test bindings, and property bindings are persisted in `capability_config.tdd`.
 
-### Core Stage
-Implement core business logic per TASKS.md sequencing. Focus on entities, APIs, and critical paths. Duration 40-50% of effort. Outputs:
-- Data models and ORM definitions
-- REST/GraphQL APIs matching DESIGN.md contracts
-- Business logic implementation
-- Unit test stubs for all modules
+- `sdd_generate_tests` takes only feature identity. It rejects missing/unknown requirement bindings, TODO bodies, and trivial assertions.
+- `sdd_generate_pbt` takes only feature identity. Property code must include its REQ-ID and cannot use generated model stubs.
+- Do not auto-detect or override frameworks per call.
 
-### Integration Stage
-Connect subsystems, external APIs, and third-party services. Duration 20-25% of effort. Outputs:
-- Third-party integrations (payment, auth, analytics)
-- Message queue/event system setup
-- Cross-module integration tests
-- API gateway configuration
+## IaC
 
-### Polish Stage
-Performance optimization, error handling, logging, and observability. Duration 10-15% of effort. Outputs:
-- Caching strategy implementation
-- Comprehensive error handling
-- Structured logging framework
-- Monitoring and alerting setup
+Use only when `iac` capability is enabled. `capability_config.iac` fixes:
 
-## Quality Checklist Generation
+- provider (`terraform`)
+- cloud
+- concrete `{module, service}` resource list
+- state backend
+- region policy
 
-Generate domain-specific quality checklists from SPECIFICATION.md:
+`sdd_generate_iac` requires DESIGN.md evidence and accepts no provider/cloud/module override. Run `sdd_validate_iac` before any external plan/apply. Specky returns validation routing; it does not apply infrastructure.
 
-**Security Domain:**
-- OWASP Top 10 items applicable to architecture
-- Data encryption requirements (in-transit, at-rest)
-- Authentication and authorization mechanisms
-- Input validation and sanitization rules
-- Audit logging and compliance tracking
+## Development Environment
 
-**Testing Domain:**
-- Unit test coverage targets (default 80% minimum)
-- Integration test scenarios per SPECIFICATION.md
-- End-to-end test paths for critical user flows
-- Performance benchmarks from DESIGN.md NFRs
-- Security test cases (SQL injection, XSS, CSRF)
+Use only when `dev-environment` is enabled. The persisted contract fixes language, framework, runtime, package manager, port, sidecar services, Codespaces machine, extensions, base image, features, compose, and multi-stage choices.
 
-**Conditional NFRs:**
-If SPECIFICATION.md includes scalability requirements:
-- Load testing strategy with target RPS
-- Database query optimization checklist
-- Caching strategy validation
-- Horizontal scaling test scenarios
+The local environment, Dockerfile, devcontainer, and Codespaces tools accept feature identity only. Unsupported stacks fail; no generic Ubuntu or TypeScript fallback is emitted.
 
-If high availability required:
-- Failover test procedures
-- Data consistency verification
-- Recovery time objectives (RTO) validation
-- Backup and restore procedures
+## Checklists and Evidence
 
-## Test Framework Auto-Detection
+Run checklist domains explicitly and preserve implementation/code paths for Verify. Never claim files, containers, cloud resources, or Codespaces exist unless the writing/routed tool confirms them.
 
-Analyze technology stack from DESIGN.md and recommend test frameworks:
+## Handoff
 
-**Python projects** → pytest + pytest-cov
-**Node.js projects** → Jest + Vitest for unit, Playwright for E2E
-**Go projects** → testing package + testify
-**Java projects** → JUnit 5 + Mockito + TestContainers
-**C#/.NET projects** → xUnit + Moq + SpecFlow
-**Rust projects** → built-in testing + proptest
+Report:
 
-Generate starter test configuration files and example test templates.
-
-## Infrastructure Decision Tree
-
-From DESIGN.md deployment topology, auto-generate infrastructure choices:
-
-1. **Container Runtime** — Docker recommended; Podman alternative
-2. **Orchestration** — Kubernetes if multi-replica; Docker Compose if single-node dev
-3. **Database** — SQL (PostgreSQL) vs NoSQL per DESIGN.md data schema
-4. **Caching Layer** — Redis for session/cache, memcached alternative
-5. **Message Queue** — RabbitMQ/Kafka per event volume in SPECIFICATION.md
-6. **Monitoring** — Prometheus + Grafana stack
-7. **Log Aggregation** — ELK (Elasticsearch) or Loki
-
-Generate Terraform/CloudFormation/Helm templates matching selections.
-
-## Spec-Sync During Implementation
-
-Continuous synchronization between SPECIFICATION.md and implementation:
-
-- When code deviates from SPECIFICATION.md, flag as spec drift
-- When implementation discovers missing requirement, update SPECIFICATION.md
-- If design changes needed mid-implementation, update DESIGN.md and notify stakeholders
-- Daily specky-spec-sync report comparing implemented features to SPECIFICATION.md
-
-## Implementation Handoff Template
-
-When Phase 7 completes, provide handoff document including:
-
-```
-## Implementation Status
-- Artifacts generated: [list]
-- Scaffolding complete: [yes/no]
-- Quality checklist items: [count]
-- Framework selections validated: [yes/no]
-- Infrastructure templates generated: [yes/no]
-
-## Next Phase Entry Criteria
-All Phase 7 outputs ready for Phase 8 (Verify):
-- Code compiles without errors
-- All test stubs created
-- CI/CD pipeline functional
-- Infrastructure definitions validated
-
-## Known Gaps
-- [List of incomplete items, if any]
-- Estimated effort to complete: [hours]
-
-## Recommendations
-- [Technical notes for implementation team]
-```
-
-Reference: **arXiv:2502.08235** — Use standard inference (no extended thinking) for Phase 7 scaffolding to optimize quality-cost tradeoff. Extended thinking adds 43% cost with 30% quality reduction in code generation.
-
-## MCP Tools
-
-| Tool | Purpose |
-|------|---------|
-| `sdd_implement` | Generate ordered implementation plan (Foundation → Core → Integration → Polish) |
-| `sdd_checklist` | Generate domain-specific quality checklists (security, testing, NFRs) |
-| `sdd_generate_tests` | Generate test stubs with REQ-ID traceability (vitest, jest, pytest, junit, xunit, playwright) |
-| `sdd_generate_pbt` | Generate property-based tests from EARS invariants |
-| `sdd_generate_iac` | Generate Terraform/Bicep infrastructure from DESIGN.md |
-| `sdd_validate_iac` | Validate generated IaC against best practices |
-| `sdd_generate_dockerfile` | Generate Dockerfile + docker-compose from tech stack |
-| `sdd_generate_devcontainer` | Generate devcontainer.json for Codespaces/Dev Containers |
-| `sdd_setup_local_env` | Generate local development environment setup |
-| `sdd_setup_codespaces` | Generate GitHub Codespaces configuration |
-| `sdd_create_branch` | Generate branch name following spec/NNN-feature convention |
-
-## Companion Agent
-
-**@specky-implementer** — Phase 7 agent that calls these tools in sequence. Load this skill as first step.
+- selected contract and capability fingerprints
+- task IDs included
+- generated executable test/property files
+- generated and validated IaC/environment files
+- remaining external actions and their exact routing payloads

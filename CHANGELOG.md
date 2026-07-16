@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.11.1] - 2026-07-16
+
+### Added
+
+- Signed per-feature use-case contracts for the 54 supported lifecycle, workload, and execution-mode combinations.
+- Central execution-context resolution and contract enforcement for the MCP tool surface.
+- `specky migrate-contracts` for explicit migration of legacy root state to signed v5 per-feature state.
+- Contract-aware pipeline profiles, strict capability configuration, explicit evidence payloads, and atomic multi-file writes.
+
+### Changed
+
+- Documentation, diagrams, research, and turnkey specification tools now consume caller-supplied evidence and contract configuration instead of synthesizing unspecified content.
+- Agents, prompts, skills, hooks, installer output, generated API reference, and public site content describe the signed per-feature contract model.
+- Build output is cleaned before compilation so deleted source modules cannot remain in the npm tarball.
+
+### Fixed
+
+- Cursor plugin creation now avoids the previously identified TOCTOU path race and removes unsafe `any` usage.
+- APM primitive lock material is regenerated for the current canonical assets.
+
+### Security
+
+- Feature-scoped MCP tools reject ambiguous, legacy, missing, or mismatched execution context rather than selecting a feature implicitly.
+
 ## [3.11.0] - 2026-07-13
 
 ### Added

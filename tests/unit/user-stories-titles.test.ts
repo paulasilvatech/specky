@@ -12,6 +12,11 @@ import { FileManager } from "../../src/services/file-manager.js";
 import { StateMachine } from "../../src/services/state-machine.js";
 import { DiagramGenerator } from "../../src/services/diagram-generator.js";
 import { registerVisualizationTools } from "../../src/tools/visualization.js";
+import { AuditLogger } from "../../src/services/audit-logger.js";
+import { RbacEngine } from "../../src/services/rbac-engine.js";
+import { ExecutionContextResolver } from "../../src/services/execution-context.js";
+import { installToolEnforcement } from "../../src/tools/tool-enforcement.js";
+import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 const TEMPLATES_SRC = join(REPO, "templates");
@@ -43,11 +48,35 @@ describe("sdd_generate_user_stories titles", () => {
       ].join("\n"),
       "utf8",
     );
+    writeFileSync(
+      join(ws, ".specs/001-checkout/DESIGN.md"),
+      "# Design\n\n## UI State Model\nCheckout form states.\n\n## Web Container Architecture\nBrowser and API containers.\n",
+      "utf8",
+    );
 
     const fileManager = new FileManager(ws);
     const stateMachine = new StateMachine(fileManager, ws);
+    const stateDir = ".specs/001-checkout";
+    const state = stateMachine.createFeatureState({
+      projectName: "checkout",
+      feature: { number: "001", name: "checkout", directory: stateDir },
+      contract: resolveUseCaseContract({
+        lifecycle: "greenfield",
+        workload: "web-application",
+        execution_mode: "full",
+        capabilities: [],
+        capability_config: {},
+      }),
+    });
+    await stateMachine.saveState(stateDir, state);
     const diagramGenerator = new DiagramGenerator();
     const server = new McpServer({ name: "specky-test", version: "0.0.0" });
+    installToolEnforcement(server, {
+      auditLogger: new AuditLogger(ws, false),
+      rbacEngine: new RbacEngine(false, "contributor"),
+      stateMachine,
+      contextResolver: new ExecutionContextResolver(fileManager, stateMachine),
+    });
     registerVisualizationTools(server, fileManager, stateMachine, diagramGenerator);
 
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
@@ -60,7 +89,20 @@ describe("sdd_generate_user_stories titles", () => {
 
     const raw = await client.callTool({
       name: "sdd_generate_user_stories",
-      arguments: { feature_number: "001", spec_dir: ".specs", max_stories: 5 },
+      arguments: {
+        feature_number: "001",
+        spec_dir: ".specs",
+        stories: [{
+          requirement_id: "REQ-CORE-001",
+          role: "a checkout customer",
+          goal: "validate card input before payment",
+          benefit: "invalid payment details are corrected before submission",
+          priority: "P1",
+          acceptance_criteria: ["Invalid card input is rejected with a field-specific message"],
+          independent_test: "Submit invalid card data and verify the field-specific validation result.",
+          flow_steps: ["Enter card details", "Validate fields", "Show validation result"],
+        }],
+      },
     });
     const text = (raw.content as Array<{ type: string; text?: string }>)
       .map((c) => c.text ?? "")
@@ -74,5 +116,31 @@ describe("sdd_generate_user_stories titles", () => {
     const titles = stories.map((s) => s.title ?? "").join(" | ");
     expect(titles).not.toMatch(/\(event_driven\)/);
     expect(titles.toLowerCase()).toMatch(/payment|card|validate|customer/);
+
+    const grounded = await client.callTool({
+      name: "sdd_generate_diagram",
+      arguments: {
+        feature_number: "001",
+        spec_dir: ".specs",
+        diagram_type: "activity",
+        mermaid_code: "flowchart LR\nSubmit[Submit payment] --> Validate[Validate card input]",
+        evidence_refs: ["REQ-CORE-001"],
+      },
+    });
+    expect(grounded.isError).not.toBe(true);
+
+    const irrelevant = await client.callTool({
+      name: "sdd_generate_diagram",
+      arguments: {
+        feature_number: "001",
+        spec_dir: ".specs",
+        diagram_type: "er",
+        mermaid_code: "erDiagram\nCARD ||--o{ PAYMENT : funds",
+        evidence_refs: ["REQ-CORE-001"],
+      },
+    });
+    expect(String((irrelevant.content as Array<{ text?: string }>)[0]?.text)).toContain(
+      "is not required by greenfield-web-application-full",
+    );
   });
 });

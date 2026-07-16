@@ -82,7 +82,8 @@ describe("cursor target install", () => {
         expect(countFiles(resolve(workspace, ".cursor/agents"), (n) => n.startsWith("specky-") && n.endsWith(".md"))).toBe(13);
         expect(countFiles(resolve(workspace, ".cursor/commands"), (n) => n.startsWith("specky-") && n.endsWith(".md"))).toBe(22);
         expect(countDirs(resolve(workspace, ".agents/skills"), "specky-")).toBe(14);
-        expect(countFiles(resolve(workspace, ".cursor/hooks/scripts"), (n) => n.endsWith(".sh") || n.endsWith(".mjs"))).toBe(16);
+        expect(countFiles(resolve(workspace, ".cursor/hooks/scripts"), (n) => n.endsWith(".sh") || n.endsWith(".mjs"))).toBe(17);
+        expect(existsSync(resolve(workspace, ".cursor/hooks/scripts/specky-contract-context.bash"))).toBe(true);
 
         const rule = readFileSync(resolve(workspace, ".cursor/rules/specky-sdd.mdc"), "utf8");
         expect(rule).toContain("alwaysApply: true");

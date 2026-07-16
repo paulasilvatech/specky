@@ -8,19 +8,20 @@
 #   "hooks": { "PostToolUse": ["bash .claude/hooks/specky-spec-sync.sh"] }
 
 set -euo pipefail
-SPECS_DIR=".specs"
-[ -d "$SPECS_DIR" ] || exit 0
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+. "$SCRIPT_DIR/specky-contract-context.bash"
+specky_load_contract_context || exit $?
+[ "${SPECKY_CONTEXT_ACTIVE:-0}" = "1" ] || exit 0
 
 DRIFT=0
-for dir in "$SPECS_DIR"/*/; do
-  [ -f "$dir/SPECIFICATION.md" ] || continue
-  REQS=$(grep -oE 'REQ-[A-Z]+-[0-9]+' "$dir/SPECIFICATION.md" 2>/dev/null | sort -u)
-  for req in $REQS; do
-    if ! grep -rq "$req" src/ tests/ test/ __tests__/ 2>/dev/null; then
-      echo "⚠️  DRIFT: $req ($(basename "$dir")) — not found in code or tests"
-      DRIFT=1
-    fi
-  done
+dir="$SPECKY_FEATURE_DIR"
+[ -f "$dir/SPECIFICATION.md" ] || exit 0
+REQS=$(grep -oE 'REQ-[A-Z]+-[0-9]+' "$dir/SPECIFICATION.md" 2>/dev/null | sort -u)
+for req in $REQS; do
+  if ! grep -rq "$req" src/ tests/ test/ __tests__/ 2>/dev/null; then
+    echo "⚠️  DRIFT: $req (${SPECKY_FEATURE_NUMBER}-${SPECKY_FEATURE_NAME}) — not found in code or tests"
+    DRIFT=1
+  fi
 done
 
 [ "$DRIFT" -eq 1 ] && echo "📋 Run sdd_check_sync for details. If intentional, run sdd_amend."

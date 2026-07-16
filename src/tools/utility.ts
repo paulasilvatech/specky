@@ -6,12 +6,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { formatError, truncate } from "./tool-result.js";
 import { join } from "node:path";
 import { z } from "zod";
-import { routingEngine } from "../utils/routing-helper.js";
-import { tieringEngine } from "../utils/context-helper.js";
-import { CognitiveDebtEngine } from "../services/cognitive-debt-engine.js";
-
-const cognitiveDebtEngine = new CognitiveDebtEngine();
-import { PHASE_ORDER, DEFAULT_EXCLUDE_PATTERNS, STATE_FILE, VERSION, MCP_ECOSYSTEM, TOTAL_TOOLS } from "../constants.js";
+import { STATE_FILE, VERSION, MCP_ECOSYSTEM, TOTAL_TOOLS } from "../constants.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
@@ -23,10 +18,76 @@ import {
   scanCodebaseInputSchema,
   amendInputSchema,
 } from "../schemas/utility.js";
-import { MethodologyGuide } from "../services/methodology.js";
-import { DependencyGraph } from "../services/dependency-graph.js";
-import { enrichResponse, enrichStateless } from "./response-builder.js";
+import { buildToolResponse, enrichResponse, enrichStateless } from "./response-builder.js";
 import type { IntentDriftEngine } from "../services/intent-drift-engine.js";
+import type { FeatureInfo, SddState } from "../types.js";
+import { requireExecutionContext } from "../services/execution-context.js";
+import { artifactMetadata } from "../utils/artifact-metadata.js";
+
+interface FeatureStatus {
+  number: string;
+  name: string;
+  directory: string;
+  files: string[];
+  state_status: "ready" | "missing" | "invalid";
+  phase?: string;
+  phase_progress?: string;
+  gate_decision?: SddState["gate_decision"];
+  contract_id?: string;
+  contract_version?: string;
+  contract_fingerprint?: string;
+  state_error?: string;
+  state?: SddState;
+}
+
+async function resolveFeatureStatus(
+  fileManager: FileManager,
+  stateMachine: StateMachine,
+  feature: FeatureInfo,
+): Promise<FeatureStatus> {
+  const base = {
+    number: feature.number,
+    name: feature.name,
+    directory: feature.directory,
+    files: feature.files,
+  };
+  if (!(await fileManager.fileExists(join(feature.directory, STATE_FILE)))) {
+    return {
+      ...base,
+      state_status: "missing",
+      state_error: `Canonical state is missing at ${join(feature.directory, STATE_FILE)}.`,
+    };
+  }
+
+  try {
+    const state = await stateMachine.loadState(feature.directory);
+    const completed = state.contract.phases.filter(
+      (phase) => state.phases[phase]?.status === "completed",
+    ).length;
+    return {
+      ...base,
+      state_status: "ready",
+      phase: state.current_phase,
+      phase_progress: `${completed}/${state.contract.phases.length}`,
+      gate_decision: state.gate_decision,
+      contract_id: state.contract.id,
+      contract_version: state.contract.version,
+      contract_fingerprint: state.contract.fingerprint,
+      state,
+    };
+  } catch (error) {
+    return {
+      ...base,
+      state_status: "invalid",
+      state_error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+function publicFeatureStatus(status: FeatureStatus): Omit<FeatureStatus, "state"> {
+  const { state: _state, ...summary } = status;
+  return summary;
+}
 
 export function registerUtilityTools(
   server: McpServer,
@@ -51,137 +112,75 @@ export function registerUtilityTools(
         openWorldHint: false,
       },
     },
-    async ({ spec_dir, feature_number }) => {
+    async (input) => {
       try {
-        // Scan .specs/ for feature directories — source of truth for what
-        // features exist on disk.
-        const featuresOnDisk = await fileManager.listFeatures(spec_dir);
-
-        // Root pipeline state at <spec_dir>/.sdd-state.json — this is the
-        // state the pipeline tools (sdd_init, sdd_advance_phase,
-        // sdd_run_analysis, sdd_auto_pipeline) actually persist.
-        const rootState = await stateMachine.loadState(spec_dir);
-
-        // A per-feature state file (<feature-dir>/.sdd-state.json) is only
-        // written by batch flows (sdd_batch_transcripts). Use it when it
-        // exists; otherwise fall back to the ROOT state — never to a silently
-        // fresh default that freezes the headline fields at init/0% while the
-        // real pipeline has long moved on.
-        const featuresWithState = await Promise.all(
-          featuresOnDisk.map(async (f) => {
-            const hasOwnState = await fileManager.fileExists(join(f.directory, STATE_FILE));
-            const fstate = hasOwnState ? await stateMachine.loadState(f.directory) : rootState;
-            return {
-              number: f.number,
-              name: f.name,
-              directory: f.directory,
-              files: f.files,
-              phase: fstate.current_phase,
-              phase_progress: `${
-                PHASE_ORDER.filter((p) => fstate.phases[p]?.status === "completed").length
-              }/${PHASE_ORDER.length}`,
-              gate_decision: fstate.gate_decision,
-              state: fstate,
-            };
-          }),
+        const featuresOnDisk = await fileManager.listFeatures(input.spec_dir);
+        const statuses = await Promise.all(
+          featuresOnDisk.map((feature) => resolveFeatureStatus(fileManager, stateMachine, feature)),
         );
+        const featureSummaries = statuses.map(publicFeatureStatus);
 
-        // Resolve active feature: explicit feature_number wins; otherwise
-        // the most recently modified feature (first sort by dir mtime).
-        const targetFeature = feature_number
-          ? featuresWithState.find((f) => f.number === feature_number)
-          : featuresWithState.at(-1);
-
-        // Aggregate state: the target feature's resolved state (its own file
-        // when present, root state otherwise); root state for pre-feature
-        // workflows.
-        const state = targetFeature ? targetFeature.state : rootState;
-
-        const filesFound = targetFeature ? targetFeature.files : [];
-        const completedPhases = PHASE_ORDER.filter(
-          (p) => state.phases[p]?.status === "completed"
-        );
-        const completionPercent = Math.round(
-          (completedPhases.length / PHASE_ORDER.length) * 100
-        );
-
-        // Determine next action
-        const currentIndex = PHASE_ORDER.indexOf(state.current_phase);
-        const nextPhase =
-          currentIndex < PHASE_ORDER.length - 1
-            ? PHASE_ORDER[currentIndex + 1]
-            : null;
-
-        let nextAction: string;
-        if (state.current_phase === "init" && state.phases.init?.status === "completed") {
-          nextAction = "Call sdd_discover with your project idea.";
-        } else if (nextPhase) {
-          nextAction = `Complete ${state.current_phase} phase, then advance to ${nextPhase}.`;
-        } else {
-          nextAction = "Pipeline complete. Proceed to implementation.";
+        if (input.view === "workspace") {
+          const result = {
+            status: "workspace_status",
+            view: "workspace",
+            spec_directory: input.spec_dir,
+            feature_count: featureSummaries.length,
+            ready_features: featureSummaries.filter((feature) => feature.state_status === "ready").length,
+            features_requiring_attention: featureSummaries.filter((feature) => feature.state_status !== "ready").length,
+            features: featureSummaries,
+            active_feature: null,
+          };
+          return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
         }
 
-        // Enhanced status with methodology and execution plan
-        const progress = MethodologyGuide.getProgressIndicator(state.current_phase, state.phases);
-        const phaseExplanation = MethodologyGuide.getPhaseExplanation(state.current_phase);
-        const executionPlan = DependencyGraph.getExecutionPlan(state.current_phase);
-        const parallelGroups = DependencyGraph.getParallelGroups(state.current_phase);
+        const target = statuses.find((feature) => feature.number === input.feature_number);
+        if (!target) {
+          throw new Error(`Feature ${input.feature_number} not found in ${input.spec_dir}.`);
+        }
+        if (!target.state) {
+          return {
+            content: [{
+              type: "text" as const, text: JSON.stringify({
+                error: "feature_state_unavailable",
+                feature: publicFeatureStatus(target),
+                fix: target.state_status === "invalid"
+                  ? "Run specky migrate-contracts for legacy state, or restore a valid signed v5 state."
+                  : "Initialize this feature with sdd_init before invoking feature tools.",
+              }, null, 2)
+            }],
+            isError: true,
+          };
+        }
 
-        const featureSummaries = featuresWithState.map(
-          ({ state: _state, ...summary }) => summary,
-        );
-
+        const state = target.state;
+        const completed = state.contract.phases.filter(
+          (phase) => state.phases[phase]?.status === "completed",
+        ).length;
+        const currentIndex = state.contract.phases.indexOf(state.current_phase);
+        const nextPhase = currentIndex < state.contract.phases.length - 1
+          ? state.contract.phases[currentIndex + 1]
+          : null;
         const result = {
+          status: "feature_status",
+          view: "feature",
           current_phase: state.current_phase,
-          phase_progress: progress.progress_bar,
           phases: state.phases,
-          // Features discovered on disk with their resolved phase state
-          // (per-feature file when present, root pipeline state otherwise).
-          // Takes precedence over root state.features which only lists
-          // features initialized via sdd_init in the current session.
-          features: featureSummaries.length > 0 ? featureSummaries : state.features,
-          active_feature: targetFeature
-            ? {
-                number: targetFeature.number,
-                name: targetFeature.name,
-                phase: targetFeature.phase,
-                directory: targetFeature.directory,
-              }
-            : null,
-          files_found: filesFound,
-          completion_percent: completionPercent,
+          active_feature: publicFeatureStatus(target),
+          files_found: target.files,
+          completion_percent: Math.round((completed / state.contract.phases.length) * 100),
           gate_decision: state.gate_decision,
-          next_action: nextAction,
-          // Educational context
-          current_phase_explanation: {
-            what: phaseExplanation.what,
-            why: phaseExplanation.why,
-            best_practices: phaseExplanation.best_practices,
-          },
-          // Execution guidance
-          execution_plan: executionPlan.next_steps,
-          parallel_opportunities: {
-            sequential_tools: parallelGroups.sequential,
-            parallel_groups: parallelGroups.parallel_groups,
-          },
-          routing_savings: routingEngine.calculateCostSavings(10),
-          context_tier_summary: tieringEngine.getTierTable(),
-          ...((() => {
-            const debtMetrics = cognitiveDebtEngine.computeMetrics(state.gate_history ?? []);
-            if (debtMetrics.lgtm_without_modification_rate > 70) {
-              return {
-                cognitive_debt_alert: {
-                  rate: debtMetrics.lgtm_without_modification_rate,
-                  message: "High cognitive surrender rate detected. Developers are approving AI-generated artifacts without modification. Review spec artifacts manually before next phase advance. Evidence: arXiv:2603.22106.",
-                  recommended_action: "Review spec artifacts manually before next phase advance",
-                },
-              };
-            }
-            return {};
-          })()),
+          contract: state.contract,
+          next_action: nextPhase
+            ? `Complete ${state.current_phase}, then advance to ${nextPhase}.`
+            : "The contracted pipeline is complete.",
         };
-
-        const enriched = await enrichResponse("sdd_get_status", result, stateMachine, spec_dir);
+        const enriched = buildToolResponse(
+          "sdd_get_status",
+          result,
+          state.current_phase,
+          state.phases,
+        );
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
@@ -236,26 +235,27 @@ export function registerUtilityTools(
         openWorldHint: false,
       },
     },
-    async ({ bug_title, current_behavior, expected_behavior, unchanged_behavior, root_cause, test_plan, spec_dir, feature_number }) => {
+    async ({ bug_title, current_behavior, expected_behavior, unchanged_behavior, root_cause, test_plan, severity, related_requirements, force }) => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        const featureDir = feature?.directory || join(spec_dir, `${feature_number}-bugfix`);
+        const context = requireExecutionContext("sdd_write_bugfix");
+        const feature = context.feature!;
+        const featureDir = feature.directory;
 
         const content = await templateEngine.renderWithFrontmatter("bugfix", {
+          ...artifactMetadata({ version: "1.0.0", author: "sdd_write_bugfix", status: "Draft" }),
           title: `Bugfix: ${bug_title}`,
-          feature_id: feature?.name || "bugfix",
+          feature_id: `${feature.number}-${feature.name}`,
           bug_title,
           current_behavior,
           expected_behavior,
-          unchanged_behavior: unchanged_behavior || ["No regressions in existing functionality"],
-          root_cause: root_cause || "[TODO: Investigate root cause]",
-          test_plan: test_plan || "[TODO: Define test plan]",
-          severity: "Medium",
-          related_requirements: "[TODO: Link to affected requirements]",
+          unchanged_behavior,
+          root_cause,
+          test_plan,
+          severity,
+          related_requirements: related_requirements.join(", "),
         });
 
-        const filePath = await fileManager.writeSpecFile(featureDir, "BUGFIX_SPEC.md", content, true);
+        const filePath = await fileManager.writeSpecFile(featureDir, "BUGFIX_SPEC.md", content, force);
 
         const result = {
           status: "bugfix_spec_written",
@@ -264,7 +264,7 @@ export function registerUtilityTools(
           sections: ["Current Behavior", "Expected Behavior", "Unchanged Behavior", "Root Cause Analysis", "Test Plan"],
         };
 
-        const enriched = await enrichResponse("sdd_write_bugfix", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_write_bugfix", result, stateMachine, context.stateDir!);
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {
@@ -292,8 +292,7 @@ export function registerUtilityTools(
     },
     async ({ depth, exclude }) => {
       try {
-        const excludePatterns = exclude || [...DEFAULT_EXCLUDE_PATTERNS];
-        const summary = await codebaseScanner.scan(depth, excludePatterns);
+        const summary = await codebaseScanner.scan(depth, exclude);
         const enriched = enrichStateless("sdd_scan_codebase", summary as unknown as Record<string, unknown>);
 
         return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
@@ -321,13 +320,11 @@ export function registerUtilityTools(
         openWorldHint: false,
       },
     },
-    async ({ rationale, articles_affected, changes_description, spec_dir, feature_number }) => {
+    async ({ rationale, articles_affected, changes_description, force }) => {
       try {
-        const features = await fileManager.listFeatures(spec_dir);
-        const feature = features.find((f) => f.number === feature_number);
-        if (!feature) {
-          throw new Error(`Feature ${feature_number} not found in ${spec_dir}`);
-        }
+        const context = requireExecutionContext("sdd_amend");
+        const feature = context.feature!;
+        const stateDir = context.stateDir!;
 
         // Read existing constitution
         let constitution: string;
@@ -377,10 +374,10 @@ export function registerUtilityTools(
           );
         }
 
-        await fileManager.writeSpecFile(feature.directory, "CONSTITUTION.md", updatedConstitution, true);
+        await fileManager.writeSpecFile(feature.directory, "CONSTITUTION.md", updatedConstitution, force);
 
         // Update state
-        const state = await stateMachine.loadState(spec_dir);
+        const state = await stateMachine.loadState(stateDir);
         state.amendments.push({
           number: nextNumber,
           date: today,
@@ -388,13 +385,13 @@ export function registerUtilityTools(
           rationale,
           articles_affected,
         });
-        await stateMachine.saveState(spec_dir, state);
+        await stateMachine.saveState(stateDir, state);
 
         // Drift-aware amendment suggestion
         let driftAmendmentSuggestion: Record<string, unknown> | undefined;
         if (intentDriftEngine) {
           try {
-            const freshState = await stateMachine.loadState(spec_dir);
+            const freshState = await stateMachine.loadState(stateDir);
             const lastSnapshot = (freshState.drift_history ?? []).at(-1);
             if (lastSnapshot && lastSnapshot.score > 40) {
               const principles = intentDriftEngine.extractPrinciples(constitution);
@@ -425,7 +422,7 @@ export function registerUtilityTools(
           ...(driftAmendmentSuggestion ? { drift_amendment_suggestion: driftAmendmentSuggestion } : {}),
         };
 
-        const enriched = await enrichResponse("sdd_amend", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse("sdd_amend", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return {

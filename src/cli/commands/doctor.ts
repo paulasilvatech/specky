@@ -9,7 +9,7 @@
  */
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
-import { VERSION } from "../../constants.js";
+import { STATE_FILE, VERSION } from "../../constants.js";
 import { hashFile } from "../lib/asset-copier.js";
 import { detectIde } from "../lib/ide-detect.js";
 import type { HarnessTarget } from "../lib/harness/index.js";
@@ -21,6 +21,7 @@ import {
   type PermissionProfile,
 } from "../lib/settings-merger.js";
 import { SPECKY_VSCODE_SETTINGS } from "../lib/vscode-settings-writer.js";
+import { loadConfig } from "../../config.js";
 
 export interface DoctorOptions {
   fix: boolean;
@@ -485,6 +486,24 @@ function runConfigChecks(
   installMeta: InstallMeta | null,
 ): Check[] {
   const checks: Check[] = [];
+  let specRoot = ".specs";
+  try {
+    const config = loadConfig(workspace, { argv: [], env: {} });
+    specRoot = config.spec_root;
+    checks.push({
+      name: "Workspace config",
+      pass: true,
+      detail: `strict schema; ${config.contracts.enabled.length} enabled contracts`,
+    });
+  } catch (error) {
+    checks.push({
+      name: "Workspace config",
+      pass: false,
+      detail: (error as Error).message,
+    });
+  }
+
+  checks.push(checkStateLayout(workspace, specRoot));
 
   if (installTargets.includes("claude")) {
     checks.push(...checkClaudeInstall(targets, workspace, installTargets, installMeta));
@@ -514,6 +533,43 @@ function runConfigChecks(
   }
 
   return checks;
+}
+
+function checkStateLayout(workspace: string, specRoot: string): Check {
+  const root = resolve(workspace, specRoot);
+  if (!existsSync(root)) {
+    return { name: "Feature state v5", pass: true, detail: "no feature workspace yet" };
+  }
+  if (existsSync(resolve(root, STATE_FILE))) {
+    return {
+      name: "Feature state v5",
+      pass: false,
+      detail: `legacy root state detected; run specky migrate-contracts --spec-dir=${specRoot} --dry-run`,
+    };
+  }
+
+  const invalid: string[] = [];
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    if (!entry.isDirectory() || !/^\d{3}-.+/.test(entry.name)) continue;
+    const statePath = resolve(root, entry.name, STATE_FILE);
+    const signaturePath = resolve(root, entry.name, `${STATE_FILE}.sig`);
+    if (!existsSync(statePath) || !existsSync(signaturePath)) {
+      invalid.push(`${entry.name}: missing signed state`);
+      continue;
+    }
+    try {
+      const state = JSON.parse(readFileSync(statePath, "utf8")) as { version?: unknown };
+      if (state.version !== "5.0.0") {
+        const version = typeof state.version === "string" ? state.version : "unknown";
+        invalid.push(`${entry.name}: version ${version}`);
+      }
+    } catch {
+      invalid.push(`${entry.name}: unreadable state`);
+    }
+  }
+  return invalid.length === 0
+    ? { name: "Feature state v5", pass: true, detail: "canonical per-feature layout" }
+    : { name: "Feature state v5", pass: false, detail: invalid.join("; ") };
 }
 
 function printIntegrity(report: IntegrityReport, verbose: boolean): void {

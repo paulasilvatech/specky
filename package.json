@@ -1,6 +1,6 @@
 {
   "name": "specky-sdd",
-  "version": "3.11.0",
+  "version": "3.11.1",
   "description": "Specky — Spec-Driven Development CLI toolkit. 58 MCP tools, 13 agents, 22 prompts, 14 skills, 16 hooks. Unified `specky` CLI installs to Claude Code, GitHub Copilot, Cursor, or OpenCode on macOS, Linux, and Windows.",
   "type": "module",
   "main": "dist/index.js",
@@ -10,7 +10,7 @@
   },
   "scripts": {
     "audit": "node scripts/check-manifest-sync.mjs && node scripts/audit-agent-frontmatter.mjs",
-    "build": "node scripts/check-manifest-sync.mjs && node scripts/audit-agent-frontmatter.mjs && tsc && rm -rf dist/templates && cp -r templates dist/templates && node scripts/build-hook-manifests.mjs && node scripts/finalize-build.mjs",
+    "build": "node scripts/check-manifest-sync.mjs && node scripts/audit-agent-frontmatter.mjs && rm -rf dist && tsc && cp -r templates dist/templates && node scripts/build-hook-manifests.mjs && node scripts/finalize-build.mjs",
     "start": "node dist/cli/index.js serve",
     "dev": "tsx watch src/index.ts",
     "clean": "rm -rf dist",

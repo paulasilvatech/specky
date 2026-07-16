@@ -8,10 +8,13 @@
  *   - No behavior when no pipeline is active (greenfield users are not harmed)
  */
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { createHash, createHmac } from "node:crypto";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
+import { testDocumentationConfig } from "../helpers/documentation-config.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 const GUARD = resolve(REPO, ".apm/hooks/scripts/specky-pipeline-guard.sh");
@@ -39,8 +42,6 @@ function makeWorkspace(): string {
 function activatePipeline(workspace: string, phase = 7, feature = "001-test"): void {
   const dir = resolve(workspace, ".specs", feature);
   mkdirSync(dir, { recursive: true });
-  // Match the real runtime state shape: `.sdd-state.json` stores
-  // `current_phase` as a string phase name (see src/services/state-machine.ts).
   const PHASE_NAMES = [
     "init",
     "discover",
@@ -54,9 +55,42 @@ function activatePipeline(workspace: string, phase = 7, feature = "001-test"): v
     "release",
   ];
   const current_phase = PHASE_NAMES[phase] ?? "implement";
+  const number = feature.slice(0, 3);
+  const name = feature.slice(4);
+  const directory = `.specs/${feature}`;
+  const contract = resolveUseCaseContract({
+    lifecycle: "greenfield",
+    workload: "service",
+    execution_mode: "full",
+    capabilities: ["release"],
+    capability_config: {
+      release: {
+        branch_prefix: "spec/",
+        base_branch: "develop",
+        draft_pr: false,
+        checkpoints: true,
+        documentation: testDocumentationConfig(),
+      },
+    },
+  });
+  const phases = Object.fromEntries(PHASE_NAMES.map((phaseName) => [phaseName, { status: "pending" }]));
+  const state = {
+    version: "5.0.0",
+    project_name: name,
+    feature: { number, name, directory },
+    contract,
+    current_phase,
+    phases,
+    amendments: [],
+    gate_decision: null,
+  };
+  const raw = JSON.stringify(state, null, 2);
+  const key = process.env["SDD_STATE_KEY"]
+    ?? createHash("sha256").update(`specky-state-v1:${workspace}`).digest("hex");
+  writeFileSync(resolve(dir, ".sdd-state.json"), raw);
   writeFileSync(
-    resolve(dir, ".sdd-state.json"),
-    JSON.stringify({ current_phase, feature }),
+    resolve(dir, ".sdd-state.json.sig"),
+    createHmac("sha256", key).update(raw).digest("hex"),
   );
 }
 
@@ -64,15 +98,33 @@ function checkoutBranch(workspace: string, branch: string): void {
   run("git", ["checkout", "-qb", branch], workspace);
 }
 
+function hookFeatureContext(workspace: string): Record<string, string> {
+  const specRoot = resolve(workspace, ".specs");
+  if (!existsSync(specRoot)) return {};
+  const feature = readdirSync(specRoot).find((name) =>
+    name.startsWith("001-") &&
+    existsSync(resolve(specRoot, name, ".sdd-state.json")) &&
+    existsSync(resolve(specRoot, name, ".sdd-state.json.sig"))
+  );
+  return feature
+    ? {
+      SPECKY_HOOK_WORKSPACE: workspace,
+      SDD_SPEC_DIR: ".specs",
+      SDD_FEATURE_NUMBER: "001",
+    }
+    : {};
+}
+
 function runGuard(
   workspace: string,
   prompt: string,
   env: Record<string, string> = {},
 ): { code: number; stderr: string } {
+  const featureContext = hookFeatureContext(workspace);
   const res = spawnSync("bash", [GUARD], {
     cwd: workspace,
     input: JSON.stringify({ prompt }),
-    env: { ...process.env, ...env },
+    env: { ...process.env, ...featureContext, ...env },
     encoding: "utf8",
   });
   return { code: res.status ?? -1, stderr: res.stderr };
@@ -83,9 +135,10 @@ function runBranch(
   toolName: string,
   env: Record<string, string> = {},
 ): { code: number; stderr: string } {
+  const featureContext = hookFeatureContext(workspace);
   const res = spawnSync("bash", [BRANCH], {
     cwd: workspace,
-    env: { ...process.env, SDD_TOOL_NAME: toolName, ...env },
+    env: { ...process.env, ...featureContext, SDD_TOOL_NAME: toolName, ...env },
     encoding: "utf8",
   });
   return { code: res.status ?? -1, stderr: res.stderr };
@@ -224,15 +277,15 @@ describe("branch-validator.sh (Write|Edit|MultiEdit enforcement)", { timeout: IN
     expect(runBranch(ws, "sdd_write_spec").code).toBe(0);
   });
 
-  it("strict mode: BLOCKS Write on wrong branch during P8 (expects develop)", () => {
+  it("strict mode: BLOCKS Write on a branch that violates persisted policy during Verify", () => {
     activatePipeline(ws, 8);
     checkoutBranch(ws, "impl/001");
     expect(runBranch(ws, "Write", { SPECKY_GUARD: "strict" }).code).toBe(2);
   });
 
-  it("ALLOWS Write on develop during P8", () => {
+  it("ALLOWS Write on the persisted feature branch during Verify", () => {
     activatePipeline(ws, 8);
-    checkoutBranch(ws, "develop");
+    checkoutBranch(ws, "spec/001-test");
     expect(runBranch(ws, "Write").code).toBe(0);
     expect(runBranch(ws, "Write", { SPECKY_GUARD: "strict" }).code).toBe(0);
   });

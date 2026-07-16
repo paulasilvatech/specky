@@ -2,109 +2,131 @@
  * status.ts — `specky status` — show pipeline state and install summary.
  */
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { resolve } from "node:path";
+import { join, resolve } from "node:path";
 import { VERSION } from "../../constants.js";
 import { targetPaths } from "../lib/paths.js";
+import { loadConfig } from "../../config.js";
+import type { SpeckyConfig } from "../../config.js";
+import { FileManager } from "../../services/file-manager.js";
+import { StateMachine, StateMigrationRequiredError } from "../../services/state-machine.js";
 
 export interface StatusOptions {
   workspace?: string;
 }
 
-export async function runStatus(opts: StatusOptions): Promise<number> {
-  const workspace = opts.workspace ?? process.cwd();
-  const t = targetPaths(workspace);
+interface InstallStatusMeta {
+  version?: string;
+  ide?: string;
+  installed_at?: string;
+}
 
-  console.log(`Specky v${VERSION}`);
-  console.log(`Workspace: ${workspace}`);
-  console.log("");
-
-  // Install info (read defensively — a corrupt install.json must not crash status)
-  const installJson = resolve(t.shared.specky, "install.json");
-  let meta: { version?: string; ide?: string; installed_at?: string } | null = null;
+function printInstallStatus(installJson: string): void {
+  let meta: InstallStatusMeta | null = null;
   if (existsSync(installJson)) {
     try {
-      meta = JSON.parse(readFileSync(installJson, "utf8")) as {
-        version?: string;
-        ide?: string;
-        installed_at?: string;
-      };
+      meta = JSON.parse(readFileSync(installJson, "utf8")) as InstallStatusMeta;
     } catch {
       meta = null;
     }
   }
   if (meta) {
     console.log(`Install: v${meta.version}, ide=${meta.ide}, at=${meta.installed_at}`);
-    // Version-drift advisory (zero network): installed assets vs running CLI.
     if (meta.version && meta.version !== VERSION) {
-      console.log(
-        `⚠️  Installed assets are v${meta.version} but this CLI is v${VERSION} — run \`specky upgrade\` to refresh.`,
-      );
+      console.log(`⚠️  Installed assets are v${meta.version} but this CLI is v${VERSION} — run \`specky upgrade\` to refresh.`);
     }
   } else if (existsSync(installJson)) {
     console.log("Install: metadata unreadable — run `npx specky doctor`");
   } else {
     console.log("Install: NOT DETECTED — run `npx specky init`");
   }
+}
 
-  // IDE presence
+function printIdeStatus(workspace: string, targets: ReturnType<typeof targetPaths>): void {
   console.log("");
   console.log("IDE targets:");
-  if (existsSync(t.claude.root)) {
-    const agents = safeCount(t.claude.agents);
-    const commands = safeCount(t.claude.commands);
-    const skills = safeCountDirs(t.claude.skills);
-    const hooks = safeCount(t.claude.hooksScripts);
-    console.log(`  .claude/      agents=${agents}, commands=${commands}, skills=${skills}, hooks=${hooks}`);
+  if (existsSync(targets.claude.root)) {
+    console.log(
+      `  .claude/      agents=${safeCount(targets.claude.agents)}, commands=${safeCount(targets.claude.commands)}, ` +
+      `skills=${safeCountDirs(targets.claude.skills)}, hooks=${safeCount(targets.claude.hooksScripts)}`,
+    );
   }
   if (existsSync(resolve(workspace, ".github/agents")) || existsSync(resolve(workspace, ".github/prompts"))) {
-    const agents = safeCount(t.copilot.agents);
-    const prompts = safeCount(t.copilot.prompts);
-    const skills = safeCountDirs(t.copilot.skills);
-    const hooks = safeCount(t.copilot.hooksScripts);
-    console.log(`  .github/      agents=${agents}, prompts=${prompts}, skills=${skills}, hooks=${hooks}`);
+    console.log(
+      `  .github/      agents=${safeCount(targets.copilot.agents)}, prompts=${safeCount(targets.copilot.prompts)}, ` +
+      `skills=${safeCountDirs(targets.copilot.skills)}, hooks=${safeCount(targets.copilot.hooksScripts)}`,
+    );
   }
+}
 
-  // Pipeline state
+async function printPipelineStatus(workspace: string, config: SpeckyConfig): Promise<void> {
   console.log("");
   console.log("Pipeline:");
-  if (!existsSync(t.shared.specs)) {
-    console.log("  No .specs/ directory — no active pipeline.");
+  const specsRoot = resolve(workspace, config.spec_root);
+  if (!existsSync(specsRoot)) {
+    console.log(`  No ${config.spec_root}/ directory — no active pipeline.`);
     console.log("  Start: invoke @specky-onboarding (Copilot) or /specky-onboarding (Claude)");
-    return 0;
+    return;
+  }
+  if (existsSync(resolve(specsRoot, ".sdd-state.json"))) {
+    console.log("  Legacy root state detected.");
+    console.log(`  Run: specky migrate-contracts --spec-dir=${config.spec_root} --dry-run ...`);
   }
 
-  const features = readdirSync(t.shared.specs).filter((d) => {
-    const p = resolve(t.shared.specs, d);
-    return existsSync(resolve(p, ".sdd-state.json"));
-  });
-
+  const features = readdirSync(specsRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && /^\d{3}-.+/.test(entry.name))
+    .map((entry) => entry.name)
+    .sort((left, right) => left.localeCompare(right));
   if (features.length === 0) {
-    console.log("  .specs/ exists but no active features.");
-    return 0;
+    console.log(`  ${config.spec_root}/ exists but has no feature directories.`);
+    return;
   }
 
-  for (const feat of features) {
-    const statePath = resolve(t.shared.specs, feat, ".sdd-state.json");
-    try {
-      const state = JSON.parse(readFileSync(statePath, "utf8")) as {
-        current_phase?: string;
-        phase?: number | string;
-        gate_decision?: string | null;
-        feature?: string;
-        phases?: Record<string, { status?: string }>;
-      };
-      // Primary key is `current_phase` (schema v4); fall back to legacy `phase`.
-      const phase = state.current_phase ?? state.phase ?? "unknown";
-      const completed = state.phases
-        ? Object.values(state.phases).filter((p) => p?.status === "completed").length
-        : 0;
-      const total = state.phases ? Object.keys(state.phases).length : 10;
-      const gate = state.gate_decision ? ` gate=${state.gate_decision}` : "";
-      console.log(`  ${feat}: phase=${phase} (${completed}/${total})${gate}`);
-    } catch {
-      console.log(`  ${feat}: (unreadable state)`);
-    }
+  const stateMachine = new StateMachine(new FileManager(workspace), workspace);
+  for (const feature of features) {
+    await printFeatureStatus(stateMachine, config.spec_root, feature);
   }
+}
+
+async function printFeatureStatus(
+  stateMachine: StateMachine,
+  specRoot: string,
+  feature: string,
+): Promise<void> {
+  try {
+    const state = await stateMachine.loadState(join(specRoot, feature));
+    const completed = state.contract.phases.filter(
+      (phase) => state.phases[phase]?.status === "completed",
+    ).length;
+    const gate = state.gate_decision ? ` gate=${state.gate_decision.decision}` : "";
+    console.log(
+      `  ${feature}: phase=${state.current_phase} (${completed}/${state.contract.phases.length})` +
+      ` contract=${state.contract.id}@${state.contract.version}${gate}`,
+    );
+  } catch (error) {
+    const label = error instanceof StateMigrationRequiredError ? "migration required" : "invalid state";
+    console.log(`  ${feature}: ${label} — ${(error as Error).message}`);
+  }
+}
+
+export async function runStatus(opts: StatusOptions): Promise<number> {
+  const workspace = opts.workspace ?? process.cwd();
+  const t = targetPaths(workspace);
+  let config;
+  try {
+    config = loadConfig(workspace, { argv: [], env: {} });
+  } catch (error) {
+    console.error(`Workspace config: INVALID — ${(error as Error).message}`);
+    return 1;
+  }
+
+  console.log(`Specky v${VERSION}`);
+  console.log(`Workspace: ${workspace}`);
+  console.log("");
+
+  const installJson = resolve(t.shared.specky, "install.json");
+  printInstallStatus(installJson);
+  printIdeStatus(workspace, t);
+  await printPipelineStatus(workspace, config);
 
   return 0;
 }

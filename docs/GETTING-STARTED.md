@@ -1,6 +1,6 @@
 # Specky SDD — Getting Started
 
-> **Spec-Driven Development** is the practice of writing formal specifications (in EARS notation) *before* writing code. Specky is a **CLI toolkit** that automates this 10-phase pipeline, ensuring full traceability from requirement to PR.
+> **Spec-Driven Development** is the practice of writing formal specifications (in EARS notation) *before* writing code. Specky is a **CLI toolkit** that executes an explicit, signed use-case contract per feature and preserves traceability from requirement to delivery evidence.
 
 ---
 
@@ -10,10 +10,10 @@ Specky is a CLI toolkit that installs specialized agents, prompts, skills, hooks
 
 | What you get | What it does |
 |-------------|-------------|
-| **13 Agents** | Specialized AI personas — `@specky-orchestrator` runs the full pipeline, `@specky-onboarding` guides setup, `@specky-spec-engineer` writes specs, etc. |
+| **13 Agents** | Lean workflow routers. Every phase agent reads its rich companion skill first. |
 | **22 Prompts** | Slash commands — `/specky-greenfield`, `/specky-specify`, `/specky-release`. One command activates the right agent. |
 | **14 Skills** | Domain knowledge loaded into agents — phase playbooks, EARS patterns, implementation rules, test criteria, release gate protocol. |
-| **16 Hooks** | Pre/post validation scripts + `specky-pipeline-guard` (UserPromptSubmit) + `specky-session-banner` (SessionStart) — check artifacts, validate branch, enforce gates, block out-of-flow prompts. |
+| **16 Hooks** | Pre/post validation scripts plus shared signed-contract context support. Feature hooks require explicit feature identity and do not choose the newest feature. |
 | **58 MCP Tools** | The engine underneath — validates, generates, and enforces. Agents call it; hooks guard it. |
 
 **Why does this matter?** Instead of calling raw MCP tools and hoping you're in the right phase with the right prerequisites, you call an agent and it does everything correctly — validates, routes, enforces hooks, and pauses for review.
@@ -62,6 +62,7 @@ npx -y specky-sdd@latest install --target=copilot
 | `.github/prompts/*.prompt.md` (22) | Copilot slash prompts | ❌ gitignored |
 | `.github/skills/*/SKILL.md` (14) | Copilot skills | ❌ gitignored |
 | `.github/hooks/specky/scripts/*.sh` (16) | Copilot hook scripts | ❌ gitignored |
+| `.github/hooks/specky/scripts/specky-contract-context.{mjs,bash}` | Signed feature-contract hook support | ❌ gitignored |
 | `.github/hooks/specky/sdd-hooks.json` | Copilot hook manifest | ❌ gitignored |
 | `.mcp.json`, `.vscode/mcp.json` | MCP server registration | ✅ **commit** |
 | `.vscode/settings.json` | Copilot MCP enablement | ✅ **commit** |
@@ -79,6 +80,7 @@ Copilot agents and prompts are generated with GitHub Copilot-native frontmatter.
 | `.claude/commands/*.md` (22) | Claude slash commands | ❌ gitignored |
 | `.claude/skills/*/SKILL.md` (14) | Claude skills | ❌ gitignored |
 | `.claude/hooks/scripts/*.sh` (16) | Claude hook scripts | ❌ gitignored |
+| `.claude/hooks/scripts/specky-contract-context.{mjs,bash}` | Signed feature-contract hook support | ❌ gitignored |
 | `.claude/settings.json` | Hooks + 11 permission rules | ✅ **commit** (team-shared) |
 | `.mcp.json` | MCP server registration | ✅ **commit** |
 | `.specky/config.yml` | Pipeline config | ✅ **commit** |
@@ -113,7 +115,7 @@ specky doctor
 
 ### Server-enforced analysis gates (v3.10+)
 
-The MCP server blocks implement and release tools until Phase 6 (Analyze) returns `APPROVE`:
+The MCP server blocks implementation-sensitive tools until the selected feature reaches Analyze and returns `APPROVE`:
 
 - `sdd_run_analysis` with `BLOCK` or `CHANGES_NEEDED` keeps Analyze **in progress** — it does not advance to Implement.
 - Tools such as `sdd_implement`, `sdd_generate_iac`, and `sdd_create_branch` return `gate_blocked` until analysis approves.
@@ -165,7 +167,15 @@ Ready-to-use prompts (slash commands):
 
 ---
 
-## The SDD Pipeline — 10 Phases
+## Contracted Phase Graphs
+
+Specky uses a ten-phase vocabulary, but each feature persists one execution-mode graph:
+
+- `full`: all ten phases;
+- `rapid`: omits Clarify;
+- `emergency`: Init, Specify, Tasks, Analyze, Implement, Verify, Release.
+
+See [Use-Case Contracts](USE-CASE-CONTRACTS.md) before initializing a feature. The graph, workload design fields, required diagrams, capabilities, and evidence rules are fixed in signed state.
 
 ```
 [Pre-pipeline]
@@ -401,7 +411,7 @@ Context: 4 screens — cart, address, payment, confirmation
 Still needs defining: shipping rules, session timeout, API error states
 ```
 
-**Important:** Figma covers happy paths. Specky will automatically identify edge cases not mapped in the design (errors, timeouts, empty states) and generate questions to fill them.
+**Important:** Figma evidence does not define missing edge cases. The caller must provide explicit error, timeout, empty-state, accessibility, and responsive requirements before specification assembly.
 
 ---
 
@@ -417,7 +427,7 @@ Participants: Ana (PO — final decision), Carlos (CTO), dev team
 Decisions I remember: "ACH is P1, not MVP" and "must integrate with existing Stripe"
 ```
 
-**What happens:** Specky imports the transcript, extracts decisions vs. open questions, validates your memories against what was actually said, and produces RESEARCH.md with everything documented.
+**What happens:** Specky parses the transcript as source material. Artifact orchestration additionally requires explicit source quotes, requirements, architecture, tasks, and gates. `sdd_research` accepts only resolved or explicitly deferred entries with findings, sources, and recommendations.
 
 ---
 
@@ -507,7 +517,7 @@ You don't need to call these hooks — they fire automatically on the right even
 | `specky-security-scan.sh` ★ BLOCKING | Before creating PR / end of session | Scans for secrets in `.specs/` |
 | `specky-release-gate.sh` ★ BLOCKING | Before creating PR | Validates all artifacts exist |
 | `specky-spec-sync.sh` | After Write/Edit on specs | Detects drift between artifacts |
-| `specky-auto-checkpoint.sh` | After Write/Edit on specs | Creates automatic git commit |
+| `specky-auto-checkpoint.sh` | After contracted artifact writes | Suggests a feature checkpoint only when release policy enables checkpoints |
 | `specky-spec-quality.sh` | After writing spec | EARS quality score |
 | `specky-ears-validator.sh` | After writing spec | Validates EARS notation |
 | `specky-task-tracer.sh` | After writing tasks | Validates REQ ↔ Task traceability |
@@ -520,7 +530,7 @@ You don't need to call these hooks — they fire automatically on the right even
 ## FAQ
 
 **Q: Do I need to use all 10 phases?**
-A: No. For small features, you can move quickly through the core phases (Init → Specify → Design → Tasks → Implement → Release). The Clarify and Analyze phases are highly recommended but lighter-weight for small changes. The Discover phase is especially valuable for brownfield projects, where scanning the existing codebase informs the specification.
+A: Select an execution mode during initialization. `full`, `rapid`, and `emergency` persist different ordered graphs. You cannot omit phases ad hoc after signing the contract.
 
 **Q: What is EARS notation?**
 A: Easy Approach to Requirements Syntax — 6 patterns for writing requirements that eliminate ambiguity:
@@ -532,14 +542,14 @@ A: Easy Approach to Requirements Syntax — 6 patterns for writing requirements 
 - *Unwanted behavior:* "If [condition], then the system shall..."
 - *Complex:* "While [state], when [event], the system shall..."
 
-**Q: Why no extended thinking during implementation?**
-A: arXiv:2502.08235 demonstrated that extended thinking during implementation phases reduces quality by 30% and increases cost by 43%. Thinking is reserved for reasoning phases (Clarify, Specify, Design) where the cost-benefit ratio is positive.
+**Q: Which model should I use?**
+A: Specky recommends capability classes such as fast, balanced, coding, or reasoning-focused. The host/user selects an available model; the feature contract does not hardcode vendor model IDs.
 
 **Q: Can I use Specky without GitHub?**
 A: Yes. The `.github/agents/` and `.github/prompts/` require GitHub Copilot. But you can use Claude Code with `.claude/commands/` and `.claude/hooks/` without any GitHub dependency. Use `specky install --target=claude` to install Claude-only.
 
 **Q: Does Specky write the code for me?**
-A: The `@specky-implementer` (Phase 7) generates detailed implementation plans, test stubs, and IaC scaffolding. The production code is written by your IDE's AI tool (Claude Code, Copilot) following the plan generated by Specky. Specky ensures that what is implemented matches exactly what was specified.
+A: The `@specky-implementer` assembles implementation plans, executable requirement-bound tests/properties, and only the IaC/development artifacts enabled and configured in signed state. Application code remains an IDE/agent action governed by Tasks, Design, and verification evidence.
 
 ---
 

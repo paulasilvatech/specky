@@ -13,14 +13,14 @@ This project uses Spec-Driven Development (SDD) via the Specky pipeline.
 3. **Model routing matters.** Use a fast model class for lightweight scaffolding (Phase 0, 9), a balanced model class for iterative delivery (Phase 1, 5-7), and a reasoning-focused model class for complex analysis and design (Phase 2-4, 8).
 4. **Never skip hooks.** Blocking hooks (specky-security-scan, specky-release-gate, specky-artifact-validator, specky-phase-gate) must pass before release.
 5. **Artifacts live in `.specs/NNN-feature/`.** CONSTITUTION.md, RESEARCH.md, SPECIFICATION.md, DESIGN.md, TASKS.md, VERIFICATION.md, ANALYSIS.md.
-6. **One branch per spec.** Create `spec/NNN-feature-name` from `develop` for all pipeline work (Phases 0-7). Merge to `develop` after verification, then `stage` for QA, then `main` for production.
+6. **Branch policy is explicit.** Use the persisted release branch prefix and base branch. Do not invent Gitflow branches or create a branch during Init.
 7. **Load companion SKILL.md first.** Every agent reads `.agents/skills/{skill-name}/SKILL.md` as the first workflow step. Phase agents have dedicated skills (specky-sdd-init, specky-spec-engineer, specky-sdd-clarify, specky-design-architect, specky-task-planner, specky-quality-reviewer); shared pipeline context lives in specky-sdd-pipeline.
-8. **Orchestrator is the single entry point.** When `.specs/` exists with an active pipeline (`.sdd-state.json` present), ALL work MUST flow through `@specky-orchestrator`. If unsure where to start, invoke `@specky-onboarding`.
+8. **Orchestrator is the single entry point.** When a feature directory contains signed `.sdd-state.json`, work follows its persisted contract through `@specky-orchestrator`. If unsure where to start, invoke `@specky-onboarding`.
 
 ## Available Agents
 
 - @specky-onboarding — Interactive wizard and default entry point
-- @specky-orchestrator — Full pipeline coordinator (all 10 phases)
+- @specky-orchestrator — Contracted phase-graph coordinator
 - @specky-sdd-init — Initialize pipeline (Phase 0)
 - @specky-requirements-engineer — Produce FRD + NFRD
 - @specky-research-analyst — Technical research (Phase 1)

@@ -3,28 +3,34 @@ name: specky-orchestrator
 description: "This skill should be used when the user asks to 'orchestrate pipeline', 'run full pipeline', 'coordinate phases', 'advance phase', or needs guidance on end-to-end pipeline execution. Also trigger on 'specky orchestrate', 'phase transition', 'LGTM gate', 'pipeline status', or 'which agent for this phase'."
 ---
 
-# Pipeline Orchestrator
+# Contracted Pipeline Orchestrator
 
-## Overview
+The orchestrator follows the selected feature’s signed phase graph. Full, rapid, and emergency modes have different graphs; the runtime, not a hardcoded table, determines the next phase.
 
-The orchestrator coordinates the full 10-phase SDD pipeline, routing to the correct agent per phase, validating artifacts between transitions, and enforcing LGTM gates.
+Start every operation with:
 
-Model guidance is capability-based: fast, balanced, and reasoning-focused. Do not hardcode vendor-specific model IDs. Let the user choose any available model.
+```json
+{"view":"feature","spec_dir":".specs","feature_number":"001"}
+```
+
+Never choose “latest,” “first,” or `001` implicitly.
 
 ## Agent Routing Table
 
 | Phase | Agent | Recommended Class | MCP Tools | Required Input | Output Artifact |
 |-------|-------|-------------------|-----------|----------------|-----------------|
-| 0 Init | @specky-sdd-init | Fast | sdd_init, sdd_scan_codebase | — | CONSTITUTION.md, .sdd-state.json |
-| 1 Discover | @specky-research-analyst | Balanced | sdd_discover, sdd_research, sdd_import_document, sdd_import_transcript, sdd_check_ecosystem | CONSTITUTION.md | RESEARCH.md |
-| 2 Specify | @specky-spec-engineer | Reasoning-focused | sdd_write_spec, sdd_turnkey_spec, sdd_validate_ears, sdd_figma_to_spec | RESEARCH.md | SPECIFICATION.md |
-| 3 Clarify | @specky-sdd-clarify | Reasoning-focused | sdd_clarify, sdd_validate_ears, sdd_turnkey_spec | SPECIFICATION.md | Updates to SPECIFICATION.md |
-| 4 Design | @specky-design-architect | Reasoning-focused | sdd_write_design, sdd_generate_all_diagrams, sdd_generate_diagram | SPECIFICATION.md | DESIGN.md |
-| 5 Tasks | @specky-task-planner | Balanced | sdd_write_tasks, sdd_checklist | DESIGN.md | TASKS.md, CHECKLIST.md |
-| 6 Analyze | @specky-quality-reviewer | Balanced | sdd_run_analysis, sdd_cross_analyze, sdd_compliance_check, sdd_check_sync | TASKS.md, CHECKLIST.md | ANALYSIS.md, COMPLIANCE.md |
-| 7 Implement | @specky-implementer | Balanced | sdd_implement, sdd_generate_tests, sdd_generate_pbt, sdd_generate_iac, sdd_generate_dockerfile | ANALYSIS.md | Code scaffolding, test stubs |
-| 8 Verify | @specky-test-verifier | Reasoning-focused | sdd_verify_tests, sdd_verify_tasks, sdd_check_sync, sdd_validate_ears | SPECIFICATION.md, TASKS.md | VERIFICATION.md, CROSS_ANALYSIS.md |
-| 9 Release | @specky-release-engineer | Fast | sdd_create_pr, sdd_generate_all_docs, sdd_export_work_items | ANALYSIS.md (APPROVE) | PR, docs, work items |
+| Init | @specky-sdd-init | Fast | `sdd_init`, `sdd_scan_codebase` | explicit use-case selection | Constitution + signed v5 feature state |
+| Discover | @specky-research-analyst | Balanced | `sdd_discover`, import/research tools | lifecycle-specific evidence | Research/discovery evidence |
+| Specify | @specky-spec-engineer | Reasoning-focused | write/validate spec | discovery answers | Specification |
+| Clarify | @specky-sdd-clarify | Reasoning-focused | clarify/validate | Specification | questions and revisions |
+| Design | @specky-design-architect | Reasoning-focused | design + grounded diagrams | complete common/workload design | Design + contracted diagrams |
+| Tasks | @specky-task-planner | Balanced | tasks/checklists | Design | traced task graph |
+| Analyze | @specky-quality-reviewer | Balanced | analysis/compliance/sync | task and evidence artifacts | computed gate |
+| Implement | @specky-implementer | Balanced | implementation, executable tests, IaC/env | `APPROVE` gate and capabilities | implementation evidence |
+| Verify | @specky-test-verifier | Reasoning-focused | verify tests/tasks/sync | machine results and code paths | Verification |
+| Release | @specky-release-engineer | Fast | PR/docs/work items | release/work-item capabilities | release payloads |
+
+Only route a phase if it appears in `contract.phases`. Only route capability tools when that capability and its complete parameter object are persisted.
 
 ## Hook Enforcement Matrix
 
@@ -56,7 +62,7 @@ Model guidance is capability-based: fast, balanced, and reasoning-focused. Do no
 
 ## LGTM Gate Protocol
 
-Phases 2 (Specify), 4 (Design), and 5 (Tasks) require human LGTM before advancing:
+When `.specky/config.yml` sets `pipeline.require_lgtm: true`, Specify, Design, and Tasks require `lgtm: true` on advancement:
 
 1. Phase agent completes and writes artifact
 2. specky-lgtm-gate.sh runs → prints artifact summary
@@ -65,22 +71,18 @@ Phases 2 (Specify), 4 (Design), and 5 (Tasks) require human LGTM before advancin
 5. If feedback → route back to phase agent for revision
 6. Loop until LGTM received
 
-## Branch Validation per Phase
+If the flag is false, do not fabricate an approval requirement. Approval evidence is still useful, but the server policy controls blocking.
 
-| Phase | Expected Branch | Action |
-|-------|----------------|--------|
-| 0 (Init) | develop | Create spec/NNN-* from develop |
-| 1-7 | spec/NNN-* | All spec work on feature branch |
-| 8 (Verify) | develop | After merge from spec branch |
-| 9 (Release) | stage | After merge from develop |
-| Production | main | After PR merge from stage |
+## Branch and Checkpoint Policy
+
+Branch prefix/base/draft and checkpoint policy come from `capability_config.release`. Branch tools are not available in Init. Do not assume `develop`, `stage`, `main`, or `spec/` unless persisted in the release contract.
 
 ## Phase Transition Checklist
 
 Before calling sdd_advance_phase, verify:
 1. ✅ Required artifact exists (PHASE_REQUIRED_FILES)
 2. ✅ Artifact has minimum quality (specky-phase-gate.sh passed)
-3. ✅ LGTM received (if phase 2, 4, or 5)
-4. ✅ Branch matches expectations
-5. ✅ Checkpoint created (sdd_checkpoint)
+3. ✅ LGTM supplied when configuration requires it
+4. ✅ Branch matches persisted release policy when release capability is enabled
+5. ✅ Checkpoint created when persisted policy requires it
 6. ✅ No blocking hook failures

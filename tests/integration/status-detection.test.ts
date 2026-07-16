@@ -14,32 +14,25 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { writeSignedFeatureState, writeTestWorkspaceConfig } from "../helpers/runtime-workspace.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 const SERVER = resolve(REPO, "dist/index.js");
 
-function writeValidState(featureDir: string, currentPhase: string, completed: string[]): void {
-  mkdirSync(featureDir, { recursive: true });
-  const phases: Record<string, { status: string }> = {};
-  for (const p of ["init", "discover", "specify", "clarify", "design", "tasks", "analyze", "implement", "verify", "release"]) {
-    phases[p] = { status: completed.includes(p) ? "completed" : p === currentPhase ? "in_progress" : "pending" };
-  }
-  writeFileSync(
-    resolve(featureDir, ".sdd-state.json"),
-    JSON.stringify({
-      version: "4.0.0",
-      feature_number: "001",
-      feature_name: "test",
-      current_phase: currentPhase,
-      phases,
-      features: [],
-      gate_decision: null,
-    }, null, 2),
-  );
+function writeValidState(
+  workspace: string,
+  number: string,
+  name: string,
+  currentPhase: Parameters<typeof writeSignedFeatureState>[1]["currentPhase"],
+  completed: string[],
+): void {
+  writeSignedFeatureState(workspace, { number, name, currentPhase, completed });
 }
 
 function callGetStatus(cwd: string, featureNumber?: string): Record<string, unknown> {
-  const args = featureNumber ? { feature_number: featureNumber } : {};
+  const args = featureNumber
+    ? { view: "feature", spec_dir: ".specs", feature_number: featureNumber }
+    : { view: "workspace", spec_dir: ".specs" };
   const input =
     JSON.stringify({
       jsonrpc: "2.0", id: 1, method: "initialize",
@@ -78,6 +71,7 @@ describe("sdd_get_status — feature detection regression (rc.8 fix)", () => {
   beforeEach(() => {
     ws = mkdtempSync(resolve(tmpdir(), "specky-status-"));
     spawnSync("git", ["init", "-q"], { cwd: ws });
+    writeTestWorkspaceConfig(ws);
   });
   afterEach(() => {
     rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
@@ -87,12 +81,15 @@ describe("sdd_get_status — feature detection regression (rc.8 fix)", () => {
     const res = callGetStatus(ws);
     expect(res["features"]).toEqual([]);
     expect(res["active_feature"]).toBeNull();
-    expect(res["current_phase"]).toBe("init");
+    expect(res["view"]).toBe("workspace");
+    expect(res["feature_count"]).toBe(0);
   });
 
   it("detects a feature with state file and reports its phase", () => {
     writeValidState(
-      resolve(ws, ".specs/001-sifap"),
+      ws,
+      "001",
+      "sifap",
       "implement",
       ["init", "discover", "specify", "clarify", "design", "tasks", "analyze"],
     );
@@ -105,18 +102,12 @@ describe("sdd_get_status — feature detection regression (rc.8 fix)", () => {
     expect(features[0]!["phase"]).toBe("implement");
     expect(features[0]!["phase_progress"]).toBe("7/10");
 
-    expect(res["active_feature"]).toMatchObject({
-      number: "001",
-      name: "sifap",
-      phase: "implement",
-    });
-    expect(res["current_phase"]).toBe("implement");
-    expect(res["completion_percent"]).toBe(70);
+    expect(res["active_feature"]).toBeNull();
   });
 
   it("aggregates multiple features independently", () => {
-    writeValidState(resolve(ws, ".specs/001-foo"), "design", ["init", "discover", "specify", "clarify"]);
-    writeValidState(resolve(ws, ".specs/002-bar"), "verify", ["init", "discover", "specify", "clarify", "design", "tasks", "analyze", "implement"]);
+    writeValidState(ws, "001", "foo", "design", ["init", "discover", "specify", "clarify"]);
+    writeValidState(ws, "002", "bar", "verify", ["init", "discover", "specify", "clarify", "design", "tasks", "analyze", "implement"]);
 
     const res = callGetStatus(ws);
     const features = res["features"] as Array<Record<string, unknown>>;
@@ -130,8 +121,8 @@ describe("sdd_get_status — feature detection regression (rc.8 fix)", () => {
   });
 
   it("selects specific feature when feature_number provided", () => {
-    writeValidState(resolve(ws, ".specs/001-foo"), "design", ["init", "discover", "specify", "clarify"]);
-    writeValidState(resolve(ws, ".specs/002-bar"), "verify", ["init", "discover", "specify", "clarify", "design", "tasks", "analyze", "implement"]);
+    writeValidState(ws, "001", "foo", "design", ["init", "discover", "specify", "clarify"]);
+    writeValidState(ws, "002", "bar", "verify", ["init", "discover", "specify", "clarify", "design", "tasks", "analyze", "implement"]);
 
     const res = callGetStatus(ws, "001");
     expect(res["active_feature"]).toMatchObject({ number: "001", phase: "design" });

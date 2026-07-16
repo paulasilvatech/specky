@@ -275,7 +275,7 @@ Structure the research artifact as:
 |------|---------|
 | `sdd_scan_codebase` | Detect language, framework, package manager, folder structure |
 | `sdd_discover` | Generate 7 structured discovery questions |
-| `sdd_research` | Investigate technical unknowns and produce findings |
+| `sdd_research` | Persist resolved/deferred entries with context, evidence-based findings, reviewed sources, recommendation, status, and explicit force |
 | `sdd_import_document` | Import PDF/DOCX/MD documents as research context |
 | `sdd_import_transcript` | Import VTT/SRT meeting transcripts |
 | `sdd_batch_import` | Batch import multiple documents |

@@ -1,305 +1,229 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync, mkdirSync, utimesSync } from "node:fs";
+import { createHash, createHmac } from "node:crypto";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { createHmac, createHash } from "node:crypto";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { Phase } from "../../src/constants.js";
-import { SPECKY_SCAFFOLD_MARKER } from "../../src/services/feature-package-generator.js";
-import { StateMachine } from "../../src/services/state-machine.js";
+import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
 import { FileManager } from "../../src/services/file-manager.js";
+import { SPECKY_SCAFFOLD_MARKER } from "../../src/services/feature-package-generator.js";
+import {
+    StateMachine,
+    StateMigrationRequiredError,
+    StateNotFoundError,
+} from "../../src/services/state-machine.js";
 
-describe("StateMachine — state file integrity (HMAC-SHA256)", () => {
-  let tempDir: string;
-  let fileManager: FileManager;
-  let stateMachine: StateMachine;
-  const specDir = ".specs";
+describe("StateMachine v5 per-feature state", () => {
+    let tempDir: string;
+    let fileManager: FileManager;
+    let stateMachine: StateMachine;
+    const stateDir = ".specs/001-state";
+    const contract = resolveUseCaseContract({
+        lifecycle: "greenfield",
+        workload: "service",
+        execution_mode: "full",
+        capabilities: [],
+        capability_config: {},
+    });
 
-  beforeEach(() => {
-    tempDir = mkdtempSync(join(tmpdir(), "specky-state-"));
-    fileManager = new FileManager(tempDir);
-    stateMachine = new StateMachine(fileManager, tempDir);
-  });
+    beforeEach(() => {
+        tempDir = mkdtempSync(join(tmpdir(), "specky-state-v5-"));
+        fileManager = new FileManager(tempDir);
+        stateMachine = new StateMachine(fileManager, tempDir);
+    });
 
-  afterEach(() => {
-    rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-    delete process.env["SDD_STATE_KEY"];
-  });
+    afterEach(() => {
+        rmSync(tempDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+        delete process.env["SDD_STATE_KEY"];
+    });
 
-  it("writes a .sig file alongside .sdd-state.json on saveState", async () => {
-    const state = stateMachine.createDefaultState("test-project");
-    await stateMachine.saveState(specDir, state);
-    const sigFile = join(tempDir, specDir, ".sdd-state.json.sig");
-    expect(existsSync(sigFile)).toBe(true);
-  });
+    function createState(
+        projectName = "state",
+        directory = stateDir,
+        number = "001",
+    ) {
+        return stateMachine.createFeatureState({
+            projectName,
+            feature: { number, name: projectName, directory },
+            contract,
+        });
+    }
 
-  it("sig file contains valid HMAC-SHA256 of the state JSON", async () => {
-    process.env["SDD_STATE_KEY"] = "test-key-abc";
-    const state = stateMachine.createDefaultState("test-project");
-    await stateMachine.saveState(specDir, state);
+    it("writes a signed v5 state inside the owning feature directory", async () => {
+        const state = createState();
+        await stateMachine.saveState(stateDir, state);
 
-    const stateJson = readFileSync(join(tempDir, specDir, ".sdd-state.json"), "utf-8");
-    const storedSig = readFileSync(join(tempDir, specDir, ".sdd-state.json.sig"), "utf-8").trim();
-    const expectedSig = createHmac("sha256", "test-key-abc").update(stateJson).digest("hex");
-    expect(storedSig).toBe(expectedSig);
-  });
+        expect(existsSync(join(tempDir, stateDir, ".sdd-state.json"))).toBe(true);
+        expect(existsSync(join(tempDir, stateDir, ".sdd-state.json.sig"))).toBe(true);
+        const loaded = await stateMachine.loadState(stateDir);
+        expect(loaded).toMatchObject({
+            version: "5.0.0",
+            feature: { number: "001", directory: stateDir },
+            contract: { id: "greenfield-service-full" },
+        });
+    });
 
-  it("loadState succeeds when .sig matches", async () => {
-    process.env["SDD_STATE_KEY"] = "valid-key";
-    const state = stateMachine.createDefaultState("matching");
-    await stateMachine.saveState(specDir, state);
-    const loaded = await stateMachine.loadState(specDir);
-    expect(loaded.project_name).toBe("matching");
-  });
+    it("accepts Windows separators when loading a state that persists canonical POSIX separators", async () => {
+        const state = createState();
+        await stateMachine.saveState(stateDir, state);
 
-  it("loadState emits stderr warning when .sig does not match", async () => {
-    process.env["SDD_STATE_KEY"] = "original-key";
-    const state = stateMachine.createDefaultState("tamperable");
-    await stateMachine.saveState(specDir, state);
+        const loaded = await stateMachine.loadState(".specs\\001-state");
+        expect(loaded.feature.directory).toBe(stateDir);
+    });
 
-    // Tamper with sig file
-    writeFileSync(join(tempDir, specDir, ".sdd-state.json.sig"), "badsignature");
+    it("signs the exact persisted JSON with the configured HMAC key", async () => {
+        process.env["SDD_STATE_KEY"] = "test-key-abc";
+        await stateMachine.saveState(stateDir, createState());
 
-    const stderrSpy = vi.spyOn(console, "error");
-    await stateMachine.loadState(specDir);
-    expect(stderrSpy).toHaveBeenCalledWith(
-      expect.stringContaining("tamper"),
-    );
-    stderrSpy.mockRestore();
-  });
+        const stateJson = readFileSync(join(tempDir, stateDir, ".sdd-state.json"), "utf-8");
+        const storedSig = readFileSync(join(tempDir, stateDir, ".sdd-state.json.sig"), "utf-8").trim();
+        expect(storedSig).toBe(createHmac("sha256", "test-key-abc").update(stateJson).digest("hex"));
+    });
 
-  it("loadState does NOT warn when .sig file is absent (pre-v3.2.0 state)", async () => {
-    const state = stateMachine.createDefaultState("legacy");
-    // Write state JSON without sig (pre-v3.2.0 — directory must exist)
-    const stateJson = JSON.stringify(state, null, 2);
-    const specsDir = join(tempDir, specDir);
-    mkdirSync(specsDir, { recursive: true });
-    writeFileSync(join(specsDir, ".sdd-state.json"), stateJson);
+    it("derives a workspace-specific key when SDD_STATE_KEY is absent", async () => {
+        await stateMachine.saveState(stateDir, createState());
+        const stateJson = readFileSync(join(tempDir, stateDir, ".sdd-state.json"), "utf-8");
+        const storedSig = readFileSync(join(tempDir, stateDir, ".sdd-state.json.sig"), "utf-8").trim();
+        const derivedKey = createHash("sha256").update(`specky-state-v1:${tempDir}`).digest("hex");
+        expect(storedSig).toBe(createHmac("sha256", derivedKey).update(stateJson).digest("hex"));
+    });
 
-    const stderrSpy = vi.spyOn(console, "error");
-    await stateMachine.loadState(specDir);
-    // Should not warn about tamper for missing .sig
-    const tamperCalls = stderrSpy.mock.calls.filter((c) =>
-      String(c[0]).includes("tamper"),
-    );
-    expect(tamperCalls).toHaveLength(0);
-    stderrSpy.mockRestore();
-  });
+    it("fails closed when state content or signature is changed", async () => {
+        await stateMachine.saveState(stateDir, createState());
+        writeFileSync(join(tempDir, stateDir, ".sdd-state.json.sig"), "invalid");
+        await expect(stateMachine.loadState(stateDir)).rejects.toThrow(/integrity check failed/);
+    });
 
-  it("sig changes when state content changes", async () => {
-    process.env["SDD_STATE_KEY"] = "change-key";
-    const state1 = stateMachine.createDefaultState("v1");
-    await stateMachine.saveState(specDir, state1);
-    const sig1 = readFileSync(join(tempDir, specDir, ".sdd-state.json.sig"), "utf-8").trim();
+    it("requires a signature for every v5 state", async () => {
+        mkdirSync(join(tempDir, stateDir), { recursive: true });
+        writeFileSync(
+            join(tempDir, stateDir, ".sdd-state.json"),
+            JSON.stringify(createState(), null, 2),
+        );
+        await expect(stateMachine.loadState(stateDir)).rejects.toThrow(/signature not found/);
+    });
 
-    const state2 = stateMachine.createDefaultState("v2");
-    await stateMachine.saveState(specDir, state2);
-    const sig2 = readFileSync(join(tempDir, specDir, ".sdd-state.json.sig"), "utf-8").trim();
+    it("reports missing and legacy state without creating or migrating files", async () => {
+        await expect(stateMachine.loadState(stateDir)).rejects.toBeInstanceOf(StateNotFoundError);
 
-    expect(sig1).not.toBe(sig2);
-  });
+        mkdirSync(join(tempDir, stateDir), { recursive: true });
+        const legacy = JSON.stringify({ version: "4.0.0", current_phase: "specify" }, null, 2);
+        writeFileSync(join(tempDir, stateDir, ".sdd-state.json"), legacy);
+        await expect(stateMachine.loadState(stateDir)).rejects.toBeInstanceOf(StateMigrationRequiredError);
+        expect(readFileSync(join(tempDir, stateDir, ".sdd-state.json"), "utf-8")).toBe(legacy);
+    });
 
-  it("uses derived key when SDD_STATE_KEY is not set", async () => {
-    delete process.env["SDD_STATE_KEY"];
-    const state = stateMachine.createDefaultState("derived");
-    await stateMachine.saveState(specDir, state);
+    it("refuses to save a feature state outside its declared directory", async () => {
+        const state = createState();
+        await expect(stateMachine.saveState(".specs/002-other", state)).rejects.toThrow(
+            /Refusing to save feature 001 state outside/,
+        );
+    });
 
-    const stateJson = readFileSync(join(tempDir, specDir, ".sdd-state.json"), "utf-8");
-    const storedSig = readFileSync(join(tempDir, specDir, ".sdd-state.json.sig"), "utf-8").trim();
-    const derivedKey = createHash("sha256").update(`specky-state-v1:${tempDir}`).digest("hex");
-    const expectedSig = createHmac("sha256", derivedKey).update(stateJson).digest("hex");
-    expect(storedSig).toBe(expectedSig);
-  });
+    it("isolates phase transitions between feature states", async () => {
+        const firstDir = ".specs/001-first";
+        const secondDir = ".specs/002-second";
+        mkdirSync(join(tempDir, firstDir), { recursive: true });
+        mkdirSync(join(tempDir, secondDir), { recursive: true });
+        writeFileSync(join(tempDir, firstDir, "CONSTITUTION.md"), "# First\n");
+        writeFileSync(join(tempDir, secondDir, "CONSTITUTION.md"), "# Second\n");
+        await stateMachine.saveState(firstDir, createState("first", firstDir, "001"));
+        await stateMachine.saveState(secondDir, createState("second", secondDir, "002"));
 
-  it("loadState still returns valid state even when tampered (graceful degradation)", async () => {
-    process.env["SDD_STATE_KEY"] = "degrade-key";
-    const state = stateMachine.createDefaultState("degrade-test");
-    await stateMachine.saveState(specDir, state);
-    writeFileSync(join(tempDir, specDir, ".sdd-state.json.sig"), "wrongsig");
+        const advanced = await stateMachine.advancePhase(secondDir);
+        expect(advanced.current_phase).toBe(Phase.Discover);
+        expect((await stateMachine.loadState(firstDir)).current_phase).toBe(Phase.Init);
+    });
 
-    vi.spyOn(console, "error").mockImplementation(() => { });
-    const loaded = await stateMachine.loadState(specDir);
-    expect(loaded.project_name).toBe("degrade-test");
-  });
+    it("follows the phase graph persisted by the selected execution mode", async () => {
+        const rapidDir = ".specs/001-rapid";
+        const rapidContract = resolveUseCaseContract({
+            lifecycle: "greenfield",
+            workload: "service",
+            execution_mode: "rapid",
+            capabilities: [],
+            capability_config: {},
+        });
+        const state = stateMachine.createFeatureState({
+            projectName: "rapid",
+            feature: { number: "001", name: "rapid", directory: rapidDir },
+            contract: rapidContract,
+        });
+        mkdirSync(join(tempDir, rapidDir), { recursive: true });
+        writeFileSync(join(tempDir, rapidDir, "CONSTITUTION.md"), "# Constitution\n");
+        state.current_phase = Phase.Specify;
+        state.phases[Phase.Specify] = { status: "in_progress" };
+        writeFileSync(join(tempDir, rapidDir, "SPECIFICATION.md"), "# Specification\n");
+        await stateMachine.saveState(rapidDir, state);
 
-  it("refuses to advance when no feature is registered (featureless loophole)", async () => {
-    // Audit finding: with state.features empty every required-file check was
-    // silently skipped, letting 6 phases complete with zero artifacts on disk.
-    const state = stateMachine.createDefaultState("featureless");
-    await stateMachine.saveState(specDir, state);
+        expect((await stateMachine.advancePhase(rapidDir)).current_phase).toBe(Phase.Design);
+    });
 
-    const transition = await stateMachine.canTransition(specDir, Phase.Discover);
-    expect(transition.allowed).toBe(false);
-    expect(transition.error_message).toContain("no feature registered");
-    expect(transition.error_message).toContain("sdd_init");
+    it("blocks transitions when required artifacts are absent or scaffolds", async () => {
+        const state = createState("scaffold", stateDir);
+        state.current_phase = Phase.Design;
+        state.phases[Phase.Design] = { status: "in_progress" };
+        mkdirSync(join(tempDir, stateDir), { recursive: true });
+        await stateMachine.saveState(stateDir, state);
 
-    await expect(stateMachine.advancePhase(specDir, "001")).rejects.toThrow(
-      /no feature registered/,
-    );
+        const missing = await stateMachine.canTransition(stateDir, Phase.Tasks);
+        expect(missing.allowed).toBe(false);
+        expect(missing.error_message).toContain("missing required files");
 
-    // Phase must not have moved.
-    const after = await stateMachine.loadState(specDir);
-    expect(after.current_phase).toBe(Phase.Init);
-  });
+        writeFileSync(
+            join(tempDir, stateDir, "DESIGN.md"),
+            `---\n${SPECKY_SCAFFOLD_MARKER}\n---\n# Scaffold\n`,
+        );
+        const scaffold = await stateMachine.canTransition(stateDir, Phase.Tasks);
+        expect(scaffold.allowed).toBe(false);
+        expect(scaffold.error_message).toContain("scaffold artifacts must be completed");
+    });
 
-  it("still allows advancing once a feature is registered and artifacts exist", async () => {
-    const featureDir = `${specDir}/001-registered`;
-    mkdirSync(join(tempDir, featureDir), { recursive: true });
-    writeFileSync(join(tempDir, featureDir, "CONSTITUTION.md"), "# Constitution\n");
+    it("enforces analysis gates and clears stale approvals", async () => {
+        const state = createState("gate");
+        state.current_phase = Phase.Analyze;
+        state.gate_decision = {
+            decision: "BLOCK",
+            reasons: ["incomplete"],
+            coverage_percent: 50,
+            gaps: ["missing tests"],
+            decided_at: new Date().toISOString(),
+        };
+        await stateMachine.saveState(stateDir, state);
 
-    const state = stateMachine.createDefaultState("registered");
-    state.features = [featureDir];
-    await stateMachine.saveState(specDir, state);
+        const blocked = await stateMachine.validateGateForTool(stateDir, "sdd_implement");
+        expect(blocked.allowed).toBe(false);
+        expect(blocked.gate_decision).toBe("BLOCK");
 
-    const advanced = await stateMachine.advancePhase(specDir, "001");
-    expect(advanced.current_phase).toBe(Phase.Discover);
-  });
+        await stateMachine.invalidateGateDecision(stateDir);
+        expect((await stateMachine.loadState(stateDir)).gate_decision).toBeNull();
+    });
 
-  it("validates the requested feature instead of always using the first feature", async () => {
-    const incompleteFeature = `${specDir}/001-incomplete`;
-    const completeFeature = `${specDir}/002-complete`;
-    mkdirSync(join(tempDir, incompleteFeature), { recursive: true });
-    mkdirSync(join(tempDir, completeFeature), { recursive: true });
-    writeFileSync(join(tempDir, completeFeature, "CONSTITUTION.md"), "# Constitution\n");
+    it("records artifact modification and LGTM evidence in feature gate history", async () => {
+        const artifactPath = `${stateDir}/SPECIFICATION.md`;
+        mkdirSync(join(tempDir, stateDir), { recursive: true });
+        writeFileSync(join(tempDir, artifactPath), "# Spec\n");
+        const past = new Date(Date.now() - 60_000);
+        utimesSync(join(tempDir, artifactPath), past, past);
 
-    const state = stateMachine.createDefaultState("multi-feature");
-    state.features = [incompleteFeature, completeFeature];
-    await stateMachine.saveState(specDir, state);
+        const state = createState("evidence");
+        state.current_phase = Phase.Specify;
+        state.phases[Phase.Specify] = {
+            status: "in_progress",
+            started_at: new Date().toISOString(),
+        };
+        await stateMachine.saveState(stateDir, state);
 
-    const advanced = await stateMachine.advancePhase(specDir, "002");
-    expect(advanced.current_phase).toBe(Phase.Discover);
-  });
-
-  it("throws when feature_number does not match any registered feature", async () => {
-    const featureDir = `${specDir}/001-only`;
-    mkdirSync(join(tempDir, featureDir), { recursive: true });
-    writeFileSync(join(tempDir, featureDir, "CONSTITUTION.md"), "# Constitution\n");
-
-    const state = stateMachine.createDefaultState("single-feature");
-    state.features = [featureDir];
-    await stateMachine.saveState(specDir, state);
-
-    await expect(stateMachine.advancePhase(specDir, "003")).rejects.toThrow(
-      /Feature 003 not found/,
-    );
-  });
-
-  it("validateGateForTool denies gate-sensitive tools without APPROVE", async () => {
-    const state = stateMachine.createDefaultState("gate");
-    state.current_phase = Phase.Analyze;
-    state.gate_decision = {
-      decision: "BLOCK",
-      reasons: ["incomplete"],
-      coverage_percent: 50,
-      gaps: ["missing tests"],
-      decided_at: new Date().toISOString(),
-    };
-    await stateMachine.saveState(specDir, state);
-
-    const blocked = await stateMachine.validateGateForTool(specDir, "sdd_implement");
-    expect(blocked.allowed).toBe(false);
-
-    const allowed = await stateMachine.validateGateForTool(specDir, "sdd_get_status");
-    expect(allowed.allowed).toBe(true);
-  });
-
-  it("invalidateGateDecision clears stale approval", async () => {
-    const state = stateMachine.createDefaultState("stale");
-    state.gate_decision = {
-      decision: "APPROVE",
-      reasons: [],
-      coverage_percent: 100,
-      gaps: [],
-      decided_at: new Date().toISOString(),
-    };
-    await stateMachine.saveState(specDir, state);
-    await stateMachine.invalidateGateDecision(specDir);
-    const loaded = await stateMachine.loadState(specDir);
-    expect(loaded.gate_decision).toBeNull();
-  });
-
-  it("recordGateEvent resolves workspace-relative artifact paths against the workspace root, not cwd", async () => {
-    // Audit finding (cognitive debt): recordGateEvent stat'ed the
-    // workspace-RELATIVE artifact path against process.cwd(). In hosted mode
-    // (cwd != SDD_WORKSPACE — exactly this test's setup, cwd is the repo but
-    // the workspace is a temp dir) the stat always threw and was_modified
-    // silently defaulted to true, so unmodified-approval warnings never fired.
-    expect(process.cwd()).not.toBe(tempDir);
-
-    const featureDir = `${specDir}/001-debt`;
-    const artifactRel = `${featureDir}/SPECIFICATION.md`;
-    mkdirSync(join(tempDir, featureDir), { recursive: true });
-    writeFileSync(join(tempDir, artifactRel), "# Spec\n");
-    // Artifact last modified one minute BEFORE the phase started.
-    const past = new Date(Date.now() - 60_000);
-    utimesSync(join(tempDir, artifactRel), past, past);
-
-    const state = stateMachine.createDefaultState("debt");
-    state.features = [featureDir];
-    state.current_phase = Phase.Specify;
-    state.phases[Phase.Specify] = {
-      status: "in_progress",
-      started_at: new Date().toISOString(),
-    };
-    await stateMachine.saveState(specDir, state);
-
-    const entry = await stateMachine.recordGateEvent(specDir, Phase.Specify, artifactRel);
-    expect(entry.was_modified).toBe(false);
-
-    // Counter-case: touching the artifact after phase start flips the signal.
-    const future = new Date(Date.now() + 1_000);
-    utimesSync(join(tempDir, artifactRel), future, future);
-    const modifiedEntry = await stateMachine.recordGateEvent(specDir, Phase.Specify, artifactRel);
-    expect(modifiedEntry.was_modified).toBe(true);
-  });
-
-  it("recordGateEvent records the lgtm flag in the gate history entry", async () => {
-    const featureDir = `${specDir}/001-lgtm`;
-    mkdirSync(join(tempDir, featureDir), { recursive: true });
-    writeFileSync(join(tempDir, featureDir, "SPECIFICATION.md"), "# Spec\n");
-
-    const state = stateMachine.createDefaultState("lgtm");
-    state.features = [featureDir];
-    state.current_phase = Phase.Specify;
-    state.phases[Phase.Specify] = { status: "in_progress", started_at: new Date().toISOString() };
-    await stateMachine.saveState(specDir, state);
-
-    const approved = await stateMachine.recordGateEvent(
-      specDir,
-      Phase.Specify,
-      `${featureDir}/SPECIFICATION.md`,
-      { lgtm: true },
-    );
-    expect(approved.lgtm).toBe(true);
-
-    const unapproved = await stateMachine.recordGateEvent(
-      specDir,
-      Phase.Specify,
-      `${featureDir}/SPECIFICATION.md`,
-      { lgtm: false },
-    );
-    expect(unapproved.lgtm).toBe(false);
-
-    // Both entries persisted with their lgtm flags.
-    const persisted = await stateMachine.loadState(specDir);
-    const history = (persisted.gate_history ?? []) as Array<{ lgtm?: boolean }>;
-    expect(history.at(-2)?.lgtm).toBe(true);
-    expect(history.at(-1)?.lgtm).toBe(false);
-  });
-
-  it("does not allow phase advancement with scaffold design artifacts", async () => {
-    const featureDir = `${specDir}/001-scaffolded`;
-    mkdirSync(join(tempDir, featureDir), { recursive: true });
-    writeFileSync(join(tempDir, featureDir, "DESIGN.md"), `---\n${SPECKY_SCAFFOLD_MARKER}\n---\n# Scaffold\n`);
-
-    const state = stateMachine.createDefaultState("scaffolded");
-    state.features = [featureDir];
-    state.current_phase = Phase.Design;
-    state.phases[Phase.Design] = { status: "in_progress" };
-    await stateMachine.saveState(specDir, state);
-
-    const result = await stateMachine.canTransition(specDir, Phase.Tasks);
-
-    expect(result.allowed).toBe(false);
-    expect(result.error_message).toContain("scaffold artifacts must be completed");
-  });
+        const entry = await stateMachine.recordGateEvent(
+            stateDir,
+            Phase.Specify,
+            artifactPath,
+            { lgtm: true },
+        );
+        expect(entry).toMatchObject({ was_modified: false, lgtm: true });
+        expect((await stateMachine.loadState(stateDir)).gate_history?.at(-1)).toMatchObject({
+            phase: Phase.Specify,
+            lgtm: true,
+        });
+    });
 });

@@ -5,14 +5,17 @@
 # Paper: arXiv:2602.20478, arXiv:2603.22106
 
 set -euo pipefail
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+. "$SCRIPT_DIR/specky-contract-context.bash"
+specky_load_contract_context || exit $?
+[ "${SPECKY_CONTEXT_ACTIVE:-0}" = "1" ] || exit 0
 
-LATEST=$(ls -td .specs/*/ 2>/dev/null | head -1 || true)
-[ -z "$LATEST" ] && exit 0
+LATEST="$SPECKY_FEATURE_DIR"
 CONST="$LATEST/CONSTITUTION.md"
 SPEC="$LATEST/SPECIFICATION.md"
 [ -f "$CONST" ] && [ -f "$SPEC" ] || exit 0
 
-echo "🧭 Drift Monitor: $(basename "$LATEST")"
+echo "🧭 Drift Monitor: ${SPECKY_FEATURE_NUMBER}-${SPECKY_FEATURE_NAME} ($SPECKY_CONTRACT_ID)"
 
 # Simple drift: compare key terms in constitution vs spec (POSIX ERE for portability)
 CONST_TERMS=$(grep -oE '[A-Z][a-z]+([[:space:]][A-Z][a-z]+)+' "$CONST" 2>/dev/null | sort -u | wc -l)

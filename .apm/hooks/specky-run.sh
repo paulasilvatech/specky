@@ -6,6 +6,7 @@ SCRIPT="${1:?usage: specky-run.sh <script-name> [--blocking]}"
 BLOCKING="${2:-}"
 HOOK=".cursor/hooks/scripts/${SCRIPT}"
 INPUT=$(cat || true)
+[ -n "$INPUT" ] && export SDD_HOOK_INPUT="$INPUT"
 
 if command -v jq >/dev/null 2>&1 && [ -n "$INPUT" ]; then
   RAW=$(echo "$INPUT" | jq -r '
@@ -19,6 +20,8 @@ if command -v jq >/dev/null 2>&1 && [ -n "$INPUT" ]; then
 
   PROMPT=$(echo "$INPUT" | jq -r '.prompt // .user_prompt // .text // empty' 2>/dev/null || true)
   [ -n "$PROMPT" ] && export CLAUDE_USER_PROMPT="$PROMPT"
+  WORKSPACE=$(echo "$INPUT" | jq -r '.workspace // .workspace_path // .cwd // .project_dir // empty' 2>/dev/null || true)
+  [ -n "$WORKSPACE" ] && export SPECKY_HOOK_WORKSPACE="$WORKSPACE"
 fi
 
 set +e

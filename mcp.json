@@ -4,7 +4,7 @@
       "command": "npx",
       "args": [
         "-y",
-        "specky-sdd@3.11.0",
+        "specky-sdd@3.11.1",
         "serve"
       ]
     }
