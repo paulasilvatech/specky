@@ -20,6 +20,10 @@ import { getToolContract } from "../contracts/tool-contracts.js";
 
 const SIG_FILE = ".sdd-state.json.sig";
 
+function normalizeFeatureDirectory(directory: string): string {
+  return directory.replaceAll("\\", "/").replace(/^\.\//, "");
+}
+
 /** Phases whose completion requires explicit LGTM when pipeline.require_lgtm is enabled. */
 const LGTM_GATE_PHASES = new Set<Phase>([Phase.Specify, Phase.Design, Phase.Tasks]);
 
@@ -205,6 +209,7 @@ export class StateMachine {
    * Load and validate a signed v5 feature state.
    */
   async loadState(stateDir: string): Promise<SddState> {
+    stateDir = normalizeFeatureDirectory(stateDir);
     const statePath = join(stateDir, STATE_FILE);
     let raw: string;
     try {
@@ -238,7 +243,7 @@ export class StateMachine {
     }
 
     const parsed = stateSchema.parse(untrusted) as SddState;
-    if (parsed.feature.directory !== stateDir) {
+    if (normalizeFeatureDirectory(parsed.feature.directory) !== normalizeFeatureDirectory(stateDir)) {
       throw new Error(`Feature state directory mismatch: state declares ${parsed.feature.directory}, loaded from ${stateDir}`);
     }
     assertUseCaseContractFingerprint(parsed.contract);
@@ -252,7 +257,8 @@ export class StateMachine {
    * Save state to .sdd-state.json and write HMAC-SHA256 signature to .sdd-state.json.sig.
    */
   async saveState(stateDir: string, state: SddState): Promise<void> {
-    if (state.feature.directory !== stateDir) {
+    stateDir = normalizeFeatureDirectory(stateDir);
+    if (normalizeFeatureDirectory(state.feature.directory) !== normalizeFeatureDirectory(stateDir)) {
       throw new Error(`Refusing to save feature ${state.feature.number} state outside ${state.feature.directory}`);
     }
     assertUseCaseContractFingerprint(state.contract);

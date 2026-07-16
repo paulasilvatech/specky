@@ -280,13 +280,16 @@ function writeSpeckyMeta(ctx: Ctx, resolvedIde: IdeTarget | "auto", resolvedTarg
   mkdirSync(ctx.targets.shared.specky, { recursive: true });
 
   const configDest = resolve(ctx.targets.shared.specky, "config.yml");
-  if (!existsSync(configDest)) {
-    const config = createWorkspaceConfig({
-      permissionProfile: ctx.permissionProfile,
-      integrations: ctx.integrations,
-    });
-    writeFileSync(configDest, serializeWorkspaceConfig(config), "utf8");
+  const config = createWorkspaceConfig({
+    permissionProfile: ctx.permissionProfile,
+    integrations: ctx.integrations,
+  });
+  try {
+    writeFileSync(configDest, serializeWorkspaceConfig(config), { encoding: "utf8", flag: "wx" });
     console.log(`[specky init] Wrote ${configDest}`);
+  } catch (error: unknown) {
+    const code = typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
+    if (code !== "EEXIST") throw error;
   }
 
   const meta = {
