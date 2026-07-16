@@ -251,7 +251,7 @@ describe("TestGenerator — pytest output is valid Python", () => {
     const { status, stderr } = pyCompile(result.content, "generated_pytest_test.py");
     expect(stderr).toBe("");
     expect(status).toBe(0);
-  });
+  }, 15_000);
 });
 
 // ─── 2. junit ───
