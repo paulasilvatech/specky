@@ -42,6 +42,10 @@ function requiredString(input: Record<string, unknown>, key: string, toolName: s
     return value;
 }
 
+function normalizeFeatureDirectory(directory: string): string {
+    return directory.replaceAll("\\", "/").replace(/^\.\//, "");
+}
+
 export class ExecutionContextResolver {
     constructor(
         private readonly fileManager: FileManager,
@@ -126,7 +130,7 @@ export class ExecutionContextResolver {
         if (
             state.feature.number !== feature.number ||
             state.feature.name !== feature.name ||
-            state.feature.directory !== feature.directory
+            normalizeFeatureDirectory(state.feature.directory) !== normalizeFeatureDirectory(feature.directory)
         ) {
             throw new ExecutionContextError(
                 "contract_mismatch",
