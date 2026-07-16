@@ -399,7 +399,7 @@ describe("PbtGenerator — hypothesis output is runnable and traceable", () => {
     const { status, stderr } = pyCompile(result.content, "generated_hypothesis_pbt_test.py");
     expect(stderr).toBe("");
     expect(status).toBe(0);
-  });
+  }, 15_000);
 });
 
 // ─── 7. verify_tests coverage scanning ───

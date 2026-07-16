@@ -218,7 +218,7 @@ describe("strict documentation generation", () => {
     });
 
     afterEach(() => {
-        rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+        rmSync(workspace, { recursive: true, force: true, maxRetries: 20, retryDelay: 200 });
     });
 
     it("assembles full docs from required requirement, design, task, and analysis evidence", async () => {
