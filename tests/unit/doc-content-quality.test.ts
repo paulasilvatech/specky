@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -217,8 +218,8 @@ describe("strict documentation generation", () => {
         docGenerator = new DocGenerator(fileManager, stateMachine);
     });
 
-    afterEach(() => {
-        rmSync(workspace, { recursive: true, force: true, maxRetries: 20, retryDelay: 200 });
+    afterEach(async () => {
+        await rm(workspace, { recursive: true, force: true, maxRetries: 20, retryDelay: 200 });
     });
 
     it("assembles full docs from required requirement, design, task, and analysis evidence", async () => {
