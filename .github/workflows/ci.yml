@@ -37,7 +37,7 @@ jobs:
       - name: Run tests with coverage thresholds
         run: npm run test:coverage
 
-      - name: 'Check for : any usage in src/'
+      - name: "Check for : any usage in src/"
         run: |
           if grep -r ": any" src/; then
             echo "::error::Found : any in src/ -- please use explicit types"
@@ -46,12 +46,28 @@ jobs:
 
       - name: MCP initialize handshake test
         run: |
-          RESPONSE=$(echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"0.1.0"}}}' | node dist/index.js 2>/dev/null || true)
-          if echo "$RESPONSE" | grep -qi "specky"; then
-            echo "MCP handshake OK — response contains 'specky'"
-          else
-            echo "::error::MCP handshake failed — response does not contain 'specky'"
-            echo "Response was: $RESPONSE"
-            exit 1
-          fi
+          export WORKSPACE=$(mktemp -d)
+          git -C "$WORKSPACE" init -q
+          (
+            cd "$WORKSPACE"
+            node "$GITHUB_WORKSPACE/dist/cli/index.js" init --target=agent-skills
+          )
+          node --input-type=module <<'NODE'
+          import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+          import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+          import { join } from "node:path";
 
+          const client = new Client({ name: "ci-handshake", version: "1.0.0" }, { capabilities: {} });
+          const transport = new StdioClientTransport({
+            command: "node",
+            args: [join(process.env.GITHUB_WORKSPACE, "dist/index.js")],
+            cwd: process.env.WORKSPACE,
+          });
+          await client.connect(transport);
+          const tools = await client.listTools();
+          if (!tools.tools.some((tool) => tool.name === "sdd_init")) {
+            throw new Error("MCP handshake succeeded but sdd_init was not exposed.");
+          }
+          await client.close();
+          console.log(`MCP handshake OK — ${tools.tools.length} tools exposed.`);
+          NODE

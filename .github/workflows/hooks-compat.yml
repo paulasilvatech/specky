@@ -4,16 +4,16 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - '.apm/hooks/specky-run.sh'
-      - '.apm/hooks/scripts/**'
-      - 'scripts/build-hook-manifests.mjs'
-      - '.github/workflows/hooks-compat.yml'
+      - ".apm/hooks/specky-run.sh"
+      - ".apm/hooks/scripts/**"
+      - "scripts/build-hook-manifests.mjs"
+      - ".github/workflows/hooks-compat.yml"
   pull_request:
     paths:
-      - '.apm/hooks/specky-run.sh'
-      - '.apm/hooks/scripts/**'
-      - 'scripts/build-hook-manifests.mjs'
-      - '.github/workflows/hooks-compat.yml'
+      - ".apm/hooks/specky-run.sh"
+      - ".apm/hooks/scripts/**"
+      - "scripts/build-hook-manifests.mjs"
+      - ".github/workflows/hooks-compat.yml"
 
 permissions:
   contents: read
@@ -93,7 +93,8 @@ jobs:
             name=$(basename "$f")
             bash "$f" >/dev/null 2>&1
             rc=$?
-            # Blocking hooks may exit 2 when prerequisites missing; advisory must be 0 or 1
+            # Contextual hooks may exit 2 when no signed feature context exists.
+            # In a real hook event they receive SDD_SPEC_DIR + SDD_FEATURE_NUMBER.
             case "$name" in
               artifact-validator.sh|phase-gate.sh|release-gate.sh|security-scan.sh)
                 if [ $rc -ne 0 ] && [ $rc -ne 1 ] && [ $rc -ne 2 ]; then
@@ -102,8 +103,8 @@ jobs:
                 fi
                 ;;
               *)
-                if [ $rc -gt 1 ]; then
-                  echo "::error file=$f::Advisory hook exit $rc (expected 0 or 1)"
+                if [ $rc -gt 2 ]; then
+                  echo "::error file=$f::Advisory hook exit $rc (expected 0, 1, or 2)"
                   FAIL=1
                 fi
                 ;;
