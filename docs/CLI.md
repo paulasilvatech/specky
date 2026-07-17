@@ -261,28 +261,28 @@ This is the canonical replacement for `npx specky-sdd`. The legacy `specky-sdd` 
 
 ## Invocation patterns
 
+### Global (default for individuals)
+
+```bash
+npm install -g specky-sdd@latest
+specky install --target=copilot
+```
+
+Convenient for individual use; CLI on PATH. Version is not pinned per project.
+
 ### Project-local (recommended for teams)
 
 ```bash
 npm install --save-dev specky-sdd@latest
-npx specky init --target=copilot
+npx specky install --target=copilot
 ```
 
 Pins the version in `package.json` — reproducible across teammates.
 
-### Global install
-
-```bash
-npm install -g specky-sdd@latest
-specky init --target=copilot
-```
-
-Convenient for individual use; version not pinned per project.
-
 ### Zero install via npx
 
 ```bash
-npx -y specky-sdd@latest init --target=copilot
+npx -y specky-sdd@latest install --target=copilot
 ```
 
 No prior install required. Each invocation downloads fresh.
@@ -336,4 +336,4 @@ Opt out with `SPECKY_NO_UPDATE_CHECK=1` in the environment or `update_check: fal
 | 1 | Advisory failure (drift, warnings) |
 | 2 | Hard failure (install missing, invalid args, blocking hook failed) |
 
-`specky init` always exits 0 on success, even if individual files were skipped due to user edits (use `--force` to override).
+`specky install` (alias `specky init`) always exits 0 on success, even if individual files were skipped due to user edits (use `--force` to override).

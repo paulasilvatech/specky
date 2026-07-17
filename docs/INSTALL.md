@@ -35,7 +35,7 @@ specky install --target=opencode     # OpenCode
 specky install --target=agent-skills # Skills-only shared .agents/skills bundle
 ```
 
-> **Important:** Prefer `--target=...`. The legacy `--ide` flag still works for `copilot`, `claude`, `both`, and `auto`, but new installs should use APM-style targets. When Copilot is installed in the same workspace, Specky strips Claude hooks from `.claude/settings.json` to prevent Copilot cross-read blocks. See [Target-specific install](#target-specific-install) below.
+> **Important:** Prefer `--target=...`. The legacy `--ide` flag still works for `copilot`, `claude`, `both`, and `auto`, but new installs should use APM-style targets. Copilot + Claude in the same workspace is supported (`--target=both` or `all`); Specky strips Claude hooks from `.claude/settings.json` so Copilot cannot cross-read them. Prefer a **single** target if you need Claude lifecycle hooks. See [Target-specific install](#target-specific-install) below.
 
 **After the global install, you never type `npx` or `npm` again for day-to-day Specky commands:**
 
@@ -75,7 +75,7 @@ full container model, secrets layout, and private-package login guidance.
 | --- | --- | --- |
 | **Global** (default) | `npm install -g specky-sdd` | Individual developers, CLI-first workflow, multiple projects. CLI always in PATH. |
 | **Project-local** | `npm install --save-dev specky-sdd` | Teams that want version pinning via `package.json`. Reproducible across teammates. Use `npx specky` instead of `specky`. |
-| **Zero-install** | `npx -y specky-sdd@latest init` | One-shot bootstrap, no persistent install. Downloads fresh each time. |
+| **Zero-install** | `npx -y specky-sdd@latest install` | One-shot bootstrap, no persistent install. Downloads fresh each time. |
 | **Offline** | `npm pack` + `npm install ./specky-sdd-*.tgz` | Air-gapped environments. |
 
 **Both modes produce the same target-specific workspace layout** (`.github/`, `.claude/`, `.cursor/`, `.opencode/`, `.agents/skills/`, and `.specky/` as applicable). The only difference is where the `specky` binary lives. Add `--permission-profile=prompt` to keep every target action behind host confirmation, or use the default `scoped` profile for narrow Claude allow rules. GitHub routing is opt-in with `--integration=github`; credentials are never stored by Specky. See [Target Capabilities](TARGET-CAPABILITIES.md).
@@ -95,12 +95,14 @@ full container model, secrets layout, and private-package login guidance.
 ```bash
 # Homebrew Node (recommended)
 brew install node
+npm install -g specky-sdd@latest
 cd your-project
-npm install --save-dev specky-sdd@latest
-npx specky init --target=copilot
+specky install --target=copilot
 ```
 
 **Apple Silicon + Intel**: both supported. Node is universal2 via Homebrew.
+
+For teams that pin Specky in `package.json`, use `npm install --save-dev specky-sdd@latest` and `npx specky install --target=copilot` instead.
 
 ### Linux (Ubuntu/Debian)
 
@@ -109,9 +111,9 @@ npx specky init --target=copilot
 curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
 sudo apt-get install -y nodejs git
 
+npm install -g specky-sdd@latest
 cd your-project
-npm install --save-dev specky-sdd@latest
-npx specky init --target=copilot
+specky install --target=copilot
 ```
 
 Alpine (musl libc) and other distros work the same as long as Node ≥20 is installed.
@@ -122,9 +124,9 @@ Alpine (musl libc) and other distros work the same as long as Node ≥20 is inst
 # Node via winget (or download from nodejs.org)
 winget install OpenJS.NodeJS.LTS
 
+npm install -g specky-sdd@latest
 cd your-project
-npm install --save-dev specky-sdd@latest
-npx specky init --target=copilot
+specky install --target=copilot
 ```
 
 Specky hooks run under Node (no bash required on Windows). Path separators are auto-normalized.
@@ -132,8 +134,9 @@ Specky hooks run under Node (no bash required on Windows). Path separators are a
 ### Windows (cmd.exe)
 
 ```cmd
-npm install --save-dev specky-sdd@latest
-npx specky init --target=copilot
+npm install -g specky-sdd@latest
+cd your-project
+specky install --target=copilot
 ```
 
 ### Windows Subsystem for Linux (WSL)
@@ -143,37 +146,39 @@ Treat as Linux. Install in the WSL workspace, not from the Windows host — othe
 ```bash
 # Inside WSL
 sudo apt-get install -y nodejs git
+npm install -g specky-sdd@latest
 cd your-project
-npm install --save-dev specky-sdd@latest
-npx specky init --target=copilot
+specky install --target=copilot
 ```
 
 ---
 
 ## Install modes
 
-### Project-local (recommended)
-
-```bash
-npm install --save-dev specky-sdd@latest
-npx specky init --target=copilot
-```
-
-Version pinned in `package.json`; reproducible across teammates.
-
-### Global (individual use)
+### Global (default for individuals)
 
 ```bash
 npm install -g specky-sdd@latest
 cd your-project
-specky init --target=copilot
+specky install --target=copilot
 ```
+
+CLI on PATH; bootstrap each project with `specky install`. Same layout as every other mode.
+
+### Project-local (recommended for teams)
+
+```bash
+npm install --save-dev specky-sdd@latest
+npx specky install --target=copilot
+```
+
+Version pinned in `package.json`; reproducible across teammates. Use `npx specky` instead of a global binary.
 
 ### Zero-install
 
 ```bash
 cd your-project
-npx -y specky-sdd@latest init --target=copilot
+npx -y specky-sdd@latest install --target=copilot
 ```
 
 No prior setup. Each invocation downloads the latest.
@@ -192,7 +197,7 @@ Transfer the tarball to the air-gapped machine, then:
 ```bash
 cd your-project
 npm install ./specky-sdd-<version>.tgz
-npx specky init --target=copilot
+npx specky install --target=copilot
 ```
 
 ---
@@ -279,7 +284,7 @@ If `doctor` reports drift:
 npx specky doctor --fix
 ```
 
-Repairs missing/corrupted files by re-running `init --force`.
+Repairs missing/corrupted files by re-running `specky install --force`.
 
 ---
 
@@ -341,8 +346,9 @@ Alternative: use `npx specky` instead of `specky`.
 
 1. Restart the Claude Code session — hooks are loaded on session start.
 2. Check `.claude/settings.json` contains a `hooks` section with `mcp__specky__` prefixes.
-3. Run `npx specky doctor --verbose` to confirm hook files are present.
-4. Manually test: `bash .claude/hooks/scripts/specky-branch-validator.sh`.
+3. If Copilot is also installed in this workspace (`--target=both` / `all` / `copilot`), Specky intentionally omits Claude hooks — reinstall with `--target=claude` alone if you need them.
+4. Run `npx specky doctor --verbose` to confirm hook files are present.
+5. Manually test: `bash .claude/hooks/scripts/specky-branch-validator.sh`.
 
 ### `settings.json hooks is empty {}`
 

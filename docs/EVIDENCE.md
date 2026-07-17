@@ -168,7 +168,7 @@ Commands:
 ```bash
 npm pack
 npm install /path/to/specky-sdd-3.4.0-rc.15.tgz
-npx specky install --ide=copilot
+npx specky install --target=copilot
 npx specky doctor
 npx specky status
 ```
@@ -434,7 +434,7 @@ mkdir /tmp/specky-evidence
 cd /tmp/specky-evidence
 npm init -y
 npm install /path/to/specky-sdd-*.tgz --silent
-npx specky install --ide=copilot
+npx specky install --target=copilot
 npx specky doctor
 npx specky status
 ```

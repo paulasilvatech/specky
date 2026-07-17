@@ -18,6 +18,10 @@ Specky authors agents once in `.apm/agents` with canonical `capabilities:` front
 
 `agent-skills` is intentionally not in the table: it installs the shared `.agents/skills` bundle only. It does not install agents, prompts, hooks, MCP registrations, or executable permissions.
 
+## Multi-target workspaces
+
+`--target=both` and `--target=all` install multiple harnesses into one workspace. When Copilot is included, Specky strips Claude lifecycle hooks from `.claude/settings.json` so VS Code Copilot cannot cross-read them and block tool calls. Prefer a **single** target (`claude` alone) if you need Claude lifecycle hooks.
+
 ## Permission Profiles
 
 `specky install` accepts `--permission-profile=scoped|prompt`.

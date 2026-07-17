@@ -106,7 +106,7 @@ specky install --target=opencode     # OpenCode
 specky install --target=agent-skills # Skills-only shared .agents/skills bundle
 ```
 
-> **Important:** Prefer `--target=...`. The legacy `--ide` flag still works for `copilot`, `claude`, `both`, and `auto`, but it is deprecated in favor of APM-style targets. If Copilot is installed in a workspace, Specky strips Claude hooks from `.claude/settings.json` to prevent Copilot cross-read blocks. See [docs/INSTALL.md](docs/INSTALL.md) for details.
+> **Important:** Prefer `--target=...`. The legacy `--ide` flag still works for `copilot`, `claude`, `both`, and `auto`, but it is deprecated in favor of APM-style targets. Copilot + Claude in the same workspace is supported (`--target=both` or `all`); Specky strips Claude hooks from `.claude/settings.json` so Copilot cannot cross-read them. Prefer a **single** target if you need Claude lifecycle hooks. See [docs/INSTALL.md](docs/INSTALL.md) for details.
 
 Or per-project (for teams — pins version in `package.json`, run via `npx`):
 
