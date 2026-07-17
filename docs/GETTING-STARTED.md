@@ -37,7 +37,7 @@ specky install --target=opencode     # OpenCode
 specky install --target=agent-skills # Skills-only shared .agents/skills bundle
 ```
 
-> **Important:** Prefer `--target=<harness>` (the canonical APM-aligned selector). The legacy `--ide=copilot` / `--ide=claude` flag still works as a deprecated alias. Do NOT install both Copilot and Claude into the same project — Copilot reads `.claude/settings.json` hooks, causing cross-read conflicts that block tool calls.
+> **Important:** Prefer `--target=<harness>` (the canonical APM-aligned selector). The legacy `--ide` flag still works for `copilot`, `claude`, `both`, and `auto`, but it is deprecated. Copilot + Claude in the same workspace is supported (`--target=both` or `all`); Specky strips Claude hooks from `.claude/settings.json` so Copilot cannot cross-read them. Prefer a **single** target if you need Claude lifecycle hooks.
 
 The CLI installs agents, prompts, skills, hooks, and MCP registration to the correct IDE-specific locations. It also generates the correct primitive syntax for the selected IDE: GitHub Copilot receives `.github/agents/*.agent.md` and `.github/prompts/*.prompt.md` with `search`, `agent`, `specky/sdd_*`, and `agent: agent`; Claude Code receives `.claude/agents/*.md` and `.claude/commands/*.md` with `Read`, `Glob`, `Grep`, `Task`, and `mcp__specky__sdd_*`.
 

@@ -144,7 +144,7 @@ Deeper check:
 ```bash
 mkdir /tmp/verify && cd /tmp/verify && npm init -y
 npm install specky-sdd@X.Y.Z --silent
-npx specky --version && npx specky init --dry-run
+npx specky --version && npx specky install --dry-run
 ```
 
 If the install is broken you have ~72h to `npm unpublish specky-sdd@X.Y.Z`;
