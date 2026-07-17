@@ -2,9 +2,10 @@
 /**
  * check-manifest-sync.mjs — fail the build if release metadata drifts.
  *
- * The APM manifest, project config, and plugin MCP registration must all
- * declare the same package version as package.json. This guard runs during
- * `npm run build` so a version bump can never ship stale runtime metadata.
+ * The APM manifest, project config, plugin MCP registration, APM lockfile,
+ * and Cursor plugin scaffold must all declare the same package version as
+ * package.json. This guard runs during `npm run build` so a version bump can
+ * never ship stale runtime metadata.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -16,15 +17,25 @@ function readYamlScalar(text, key) {
     return match ? match[1].replace(/^["']|["']$/g, "") : null;
 }
 
+function readApmLockPackageVersion(text) {
+    const match = text.match(/^package:[\s\S]*?^\s+version:\s*(.+?)\s*$/m);
+    return match ? match[1].replace(/^["']|["']$/g, "") : null;
+}
+
 function main() {
     const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
     const apm = readFileSync(join(ROOT, "apm.yml"), "utf8");
     const config = readFileSync(join(ROOT, "config.yml"), "utf8");
+    const apmLock = readFileSync(join(ROOT, "apm.lock.yaml"), "utf8");
     const mcp = JSON.parse(readFileSync(join(ROOT, "mcp.json"), "utf8"));
+    const cursorPlugin = JSON.parse(
+        readFileSync(join(ROOT, ".cursor-plugin/plugin.json"), "utf8"),
+    );
 
     const apmName = readYamlScalar(apm, "name");
     const apmVersion = readYamlScalar(apm, "version");
     const configVersion = readYamlScalar(config, "version");
+    const apmLockVersion = readApmLockPackageVersion(apmLock);
     const mcpArgs = mcp.mcpServers?.specky?.args;
     const mcpPackage = Array.isArray(mcpArgs)
         ? mcpArgs.find((arg) => typeof arg === "string" && arg.startsWith("specky-sdd@"))
@@ -59,18 +70,28 @@ function main() {
             errors.push(`apm.yml runtime pin "specky-sdd@${pin}" != "${expectedRuntime}"`);
         }
     }
+    if (apmLockVersion !== pkg.version) {
+        errors.push(
+            `apm.lock.yaml package version "${apmLockVersion ?? "missing"}" != package.json version "${pkg.version}"`,
+        );
+    }
+    if (cursorPlugin.version !== pkg.version) {
+        errors.push(
+            `.cursor-plugin/plugin.json version "${cursorPlugin.version ?? "missing"}" != package.json version "${pkg.version}"`,
+        );
+    }
 
     if (errors.length > 0) {
         console.error("Manifest sync check failed:");
         for (const error of errors) console.error(`- ${error}`);
         console.error(
-            "Update package, APM, config, and MCP runtime metadata to the same version and rebuild.",
+            "Update package, APM, config, lockfile, Cursor plugin, and MCP runtime metadata to the same version and rebuild.",
         );
         process.exit(2);
     }
 
     console.log(
-        `Manifest sync check passed (${pkg.name}@${pkg.version} == APM/config/MCP metadata).`,
+        `Manifest sync check passed (${pkg.name}@${pkg.version} == APM/config/lock/Cursor plugin/MCP metadata).`,
     );
 }
 
