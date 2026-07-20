@@ -10,9 +10,9 @@
  * gibberish or empty text presented as success.
  */
 
-import { extname, basename } from "node:path";
-import type { FileManager } from "./file-manager.js";
+import { basename, extname } from "node:path";
 import type { DocumentConversionResult, DocumentFormat } from "../types.js";
+import type { FileManager } from "./file-manager.js";
 
 /** Strip XML/HTML tags iteratively until none remain (CodeQL-safe) */
 function stripXmlTags(input: string): string {
@@ -39,7 +39,7 @@ function decodeXmlEntities(input: string): string {
 function unsupportedCompressedError(format: string): Error {
   return new Error(
     `compressed ${format} not supported natively — convert to md/txt or use the MarkItDown MCP integration (add to MCP settings: uvx markitdown-mcp). ` +
-    `Specky's built-in extractor only reads uncompressed (stored) ${format} content; real-world ${format} files from Office/PDF exporters are compressed and would otherwise yield garbage.`
+      `Specky's built-in extractor only reads uncompressed (stored) ${format} content; real-world ${format} files from Office/PDF exporters are compressed and would otherwise yield garbage.`,
   );
 }
 
@@ -91,8 +91,7 @@ function extractXmlRunText(xml: string, tag: string): string {
   const escaped = tag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const runRegex = new RegExp(`<${escaped}(?:\\s[^>]*)?>([^<]*)</${escaped}>`, "g");
   const parts: string[] = [];
-  let match;
-  while ((match = runRegex.exec(xml)) !== null) {
+  for (const match of xml.matchAll(runRegex)) {
     if (match[1]) parts.push(decodeXmlEntities(match[1]));
   }
   return parts.join(" ").replace(/\s+/g, " ").trim();
@@ -104,7 +103,10 @@ export class DocumentConverter {
   /**
    * Auto-detect format and convert to Markdown.
    */
-  async convert(filePath: string, format: DocumentFormat = "auto"): Promise<DocumentConversionResult> {
+  async convert(
+    filePath: string,
+    format: DocumentFormat = "auto",
+  ): Promise<DocumentConversionResult> {
     const detectedFormat = format === "auto" ? this.detectFormat(filePath) : format;
 
     switch (detectedFormat) {
@@ -122,7 +124,9 @@ export class DocumentConverter {
       case "srt":
         return this.convertTranscript(filePath, detectedFormat);
       default:
-        throw new Error(`Unsupported format: ${detectedFormat}. Supported: pdf, docx, pptx, md, txt, vtt, srt`);
+        throw new Error(
+          `Unsupported format: ${detectedFormat}. Supported: pdf, docx, pptx, md, txt, vtt, srt`,
+        );
     }
   }
 
@@ -146,11 +150,15 @@ export class DocumentConverter {
   private detectFormat(filePath: string): DocumentFormat {
     const ext = extname(filePath).toLowerCase().replace(".", "");
     const formatMap: Record<string, DocumentFormat> = {
-      md: "md", markdown: "md",
-      txt: "txt", text: "txt",
+      md: "md",
+      markdown: "md",
+      txt: "txt",
+      text: "txt",
       pdf: "pdf",
-      docx: "docx", doc: "docx",
-      pptx: "pptx", ppt: "pptx",
+      docx: "docx",
+      doc: "docx",
+      pptx: "pptx",
+      ppt: "pptx",
       vtt: "vtt",
       srt: "srt",
     };
@@ -196,26 +204,34 @@ export class DocumentConverter {
   private async convertDocx(filePath: string): Promise<DocumentConversionResult> {
     try {
       // Try mammoth first if available
-      // @ts-ignore -- optional dependency, gracefully handled
+      // @ts-expect-error -- optional dependency, gracefully handled
       const mammoth = await import("mammoth").catch(() => null);
       if (mammoth) {
-        const result = await mammoth.convertToMarkdown({ path: this.fileManager.sanitizePath(filePath) });
+        const result = await mammoth.convertToMarkdown({
+          path: this.fileManager.sanitizePath(filePath),
+        });
         const sections = this.extractSections(result.value);
         return {
           format: "docx",
           markdown: result.value,
-          metadata: { title: sections[0] || basename(filePath, ".docx"), sections, source_file: filePath },
+          metadata: {
+            title: sections[0] || basename(filePath, ".docx"),
+            sections,
+            source_file: filePath,
+          },
           word_count: this.countWords(result.value),
         };
       }
-    } catch { /* fall through to basic extraction */ }
+    } catch {
+      /* fall through to basic extraction */
+    }
 
     // Basic extraction: parse the zip's local headers and read the stored document body
     const content = await this.fileManager.readProjectFileBuffer(filePath);
     const entry = parseZipEntries(content).find((e) => e.name === "word/document.xml");
     if (!entry) {
       throw new Error(
-        `No word/document.xml found in '${filePath}' — this is not a readable DOCX file. Convert it to md/txt or use the MarkItDown MCP integration (uvx markitdown-mcp).`
+        `No word/document.xml found in '${filePath}' — this is not a readable DOCX file. Convert it to md/txt or use the MarkItDown MCP integration (uvx markitdown-mcp).`,
       );
     }
     if (entry.compressionMethod !== 0) {
@@ -227,7 +243,7 @@ export class DocumentConverter {
     const text = runText || stripXmlTags(xml).replace(/\s+/g, " ").trim();
     if (!text) {
       throw new Error(
-        `No readable text extracted from '${filePath}'. The document body is empty or uses features the built-in extractor cannot handle — use the MarkItDown MCP integration (uvx markitdown-mcp).`
+        `No readable text extracted from '${filePath}'. The document body is empty or uses features the built-in extractor cannot handle — use the MarkItDown MCP integration (uvx markitdown-mcp).`,
       );
     }
 
@@ -248,7 +264,7 @@ export class DocumentConverter {
    */
   private async convertPdf(filePath: string): Promise<DocumentConversionResult> {
     try {
-      // @ts-ignore -- optional dependency, gracefully handled
+      // @ts-expect-error -- optional dependency, gracefully handled
       const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs").catch(() => null);
       if (pdfjs) {
         const data = new Uint8Array(await this.fileManager.readProjectFileBuffer(filePath));
@@ -273,7 +289,9 @@ export class DocumentConverter {
           word_count: this.countWords(text),
         };
       }
-    } catch { /* fall through */ }
+    } catch {
+      /* fall through */
+    }
 
     // Fallback: basic text extraction from PDF bytes.
     // Fails honestly when nothing can be extracted — a compressed or image-only
@@ -286,7 +304,7 @@ export class DocumentConverter {
         throw unsupportedCompressedError("pdf");
       }
       throw new Error(
-        `No extractable text found in '${filePath}'. The PDF has no uncompressed text layer (it may be scanned or image-only) — convert it to md/txt or use the MarkItDown MCP integration (uvx markitdown-mcp).`
+        `No extractable text found in '${filePath}'. The PDF has no uncompressed text layer (it may be scanned or image-only) — convert it to md/txt or use the MarkItDown MCP integration (uvx markitdown-mcp).`,
       );
     }
     const title = basename(filePath, ".pdf");
@@ -318,7 +336,7 @@ export class DocumentConverter {
 
     if (slideEntries.length === 0) {
       throw new Error(
-        `No slides found in '${filePath}' — this is not a readable PPTX file. Convert it to md/txt or use the MarkItDown MCP integration (uvx markitdown-mcp).`
+        `No slides found in '${filePath}' — this is not a readable PPTX file. Convert it to md/txt or use the MarkItDown MCP integration (uvx markitdown-mcp).`,
       );
     }
     if (slideEntries.some((s) => s.entry.compressionMethod !== 0)) {
@@ -335,7 +353,7 @@ export class DocumentConverter {
 
     if (slides.length === 0) {
       throw new Error(
-        `No readable slide text extracted from '${filePath}'. The slides are empty or use features the built-in extractor cannot handle — use the MarkItDown MCP integration (uvx markitdown-mcp).`
+        `No readable slide text extracted from '${filePath}'. The slides are empty or use features the built-in extractor cannot handle — use the MarkItDown MCP integration (uvx markitdown-mcp).`,
       );
     }
 
@@ -353,7 +371,10 @@ export class DocumentConverter {
   /**
    * Transcript (VTT/SRT) → Markdown.
    */
-  private async convertTranscript(filePath: string, format: DocumentFormat): Promise<DocumentConversionResult> {
+  private async convertTranscript(
+    filePath: string,
+    format: DocumentFormat,
+  ): Promise<DocumentConversionResult> {
     const content = await this.fileManager.readProjectFile(filePath);
     // Strip VTT/SRT timestamps and formatting, keep speaker text
     const lines = content.split("\n");
@@ -389,18 +410,20 @@ export class DocumentConverter {
 
     // Extract text from PDF text objects (between BT and ET)
     const btEtRegex = /BT\s([\s\S]*?)ET/g;
-    let match;
-    while ((match = btEtRegex.exec(content)) !== null) {
+    for (const match of content.matchAll(btEtRegex)) {
       const block = match[1];
       // Extract text from Tj and TJ operators
       const tjRegex = /\(([^)]*)\)\s*Tj/g;
-      let tjMatch;
-      while ((tjMatch = tjRegex.exec(block)) !== null) {
+      for (const tjMatch of block.matchAll(tjRegex)) {
         textParts.push(tjMatch[1]);
       }
     }
 
-    return textParts.join(" ").replace(/[^\x20-\x7E\n\r\t]/g, " ").replace(/\s+/g, " ").trim();
+    return textParts
+      .join(" ")
+      .replace(/[^\x20-\x7E\n\r\t]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
   /**
@@ -409,8 +432,7 @@ export class DocumentConverter {
   private extractSections(markdown: string): string[] {
     const sections: string[] = [];
     const headingRegex = /^#{1,3}\s+(.+)$/gm;
-    let match;
-    while ((match = headingRegex.exec(markdown)) !== null) {
+    for (const match of markdown.matchAll(headingRegex)) {
       sections.push(match[1].trim());
     }
     return sections;
@@ -420,6 +442,6 @@ export class DocumentConverter {
    * Count words in text.
    */
   private countWords(text: string): number {
-    return text.split(/\s+/).filter(w => w.length > 0).length;
+    return text.split(/\s+/).filter((w) => w.length > 0).length;
   }
 }

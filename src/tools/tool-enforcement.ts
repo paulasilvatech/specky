@@ -1,14 +1,14 @@
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { createHash } from "node:crypto";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { AuditLogger } from "../services/audit-logger.js";
-import { type RbacRole, RbacEngine } from "../services/rbac-engine.js";
-import type { StateMachine } from "../services/state-machine.js";
 import {
-  ExecutionContextError,
   type ExecutionContext,
+  ExecutionContextError,
   type ExecutionContextResolver,
   runWithExecutionContext,
 } from "../services/execution-context.js";
+import type { RbacEngine, RbacRole } from "../services/rbac-engine.js";
+import type { StateMachine } from "../services/state-machine.js";
 
 interface RegisterableServer {
   registerTool: (name: string, config: unknown, handler: ToolHandler) => unknown;
@@ -217,10 +217,7 @@ async function resolveContextOrDeny(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     const code = error instanceof ExecutionContextError ? error.code : "context_resolution_failed";
-    await auditBestEffort(
-      auditError(options.auditLogger, context, message),
-      context.toolName,
-    );
+    await auditBestEffort(auditError(options.auditLogger, context, message), context.toolName);
     return buildDeniedResponse({ error: code, tool: context.toolName, message });
   }
 }
@@ -244,7 +241,9 @@ async function validateStateContext(
     context.toolName,
   );
   if (!phaseCheck.allowed) {
-    const message = phaseCheck.error_message ?? `Tool ${context.toolName} is not allowed in phase ${phaseCheck.current_phase}.`;
+    const message =
+      phaseCheck.error_message ??
+      `Tool ${context.toolName} is not allowed in phase ${phaseCheck.current_phase}.`;
     await auditBestEffort(
       auditError(options.auditLogger, context, message, phaseCheck.current_phase),
       context.toolName,
@@ -361,21 +360,11 @@ function wrapToolHandler(
     const validation = await validateStateContext(resolved, context, options);
     if (validation.denied) return validation.denied;
 
-    return executeWithAudit(
-      resolved,
-      context,
-      handler,
-      args,
-      options,
-      validation.currentPhase,
-    );
+    return executeWithAudit(resolved, context, handler, args, options, validation.currentPhase);
   };
 }
 
-export function installToolEnforcement(
-  server: McpServer,
-  options: ToolEnforcementOptions,
-): void {
+export function installToolEnforcement(server: McpServer, options: ToolEnforcementOptions): void {
   const target = server as unknown as RegisterableServer & { [ENFORCEMENT_INSTALLED]?: boolean };
   if (target[ENFORCEMENT_INSTALLED]) return;
 

@@ -13,25 +13,37 @@ const v = new EarsValidator();
 describe("EarsValidator.detectPattern", () => {
   it("detects each of the six EARS patterns", () => {
     expect(v.detectPattern("The system shall encrypt all data at rest.")).toBe("ubiquitous");
-    expect(v.detectPattern("When a user submits login, the system shall validate credentials.")).toBe("event_driven");
+    expect(
+      v.detectPattern("When a user submits login, the system shall validate credentials."),
+    ).toBe("event_driven");
     expect(v.detectPattern("While offline, the system shall queue requests.")).toBe("state_driven");
-    expect(v.detectPattern("Where 2FA is enabled, the system shall require an OTP.")).toBe("optional");
-    expect(v.detectPattern("If the session expires, then the system shall redirect to login.")).toBe("unwanted");
+    expect(v.detectPattern("Where 2FA is enabled, the system shall require an OTP.")).toBe(
+      "optional",
+    );
+    expect(
+      v.detectPattern("If the session expires, then the system shall redirect to login."),
+    ).toBe("unwanted");
   });
 
   it("reaches the complex pattern for a genuine compound (regression)", () => {
     // Before the fix the greedy state-driven rule matched first and complex
     // was unreachable.
     expect(
-      v.detectPattern("While in maintenance mode, when a request arrives, the system shall queue it."),
+      v.detectPattern(
+        "While in maintenance mode, when a request arrives, the system shall queue it.",
+      ),
     ).toBe("complex");
     expect(
-      v.detectPattern("When a payment fails, if retries are exhausted, then the system shall alert the operator."),
+      v.detectPattern(
+        "When a payment fails, if retries are exhausted, then the system shall alert the operator.",
+      ),
     ).toBe("complex");
   });
 
   it("does not misclassify simple event/state requirements as complex", () => {
-    expect(v.detectPattern("When a user logs in, the system shall record the timestamp.")).toBe("event_driven");
+    expect(v.detectPattern("When a user logs in, the system shall record the timestamp.")).toBe(
+      "event_driven",
+    );
     expect(v.detectPattern("While syncing, the system shall show a spinner.")).toBe("state_driven");
   });
 
@@ -43,7 +55,9 @@ describe("EarsValidator.detectPattern", () => {
 
 describe("EarsValidator.validate", () => {
   it("passes a well-formed, measurable requirement", () => {
-    const r = v.validate("When a user submits valid credentials, the system shall issue a JWT within 500ms.");
+    const r = v.validate(
+      "When a user submits valid credentials, the system shall issue a JWT within 500ms.",
+    );
     expect(r.valid).toBe(true);
     expect(r.issues).toBeUndefined();
   });
@@ -55,7 +69,9 @@ describe("EarsValidator.validate", () => {
   });
 
   it("does not false-positive vague terms inside longer words", () => {
-    const r = v.validate("When a user orders breakfast, the system shall record the order within 300ms.");
+    const r = v.validate(
+      "When a user orders breakfast, the system shall record the order within 300ms.",
+    );
     expect(r.valid).toBe(true);
   });
 

@@ -7,9 +7,9 @@
  * Evidence: arXiv:2603.22106 (LGTM without modification as cognitive surrender signal)
  */
 
-import type { GateHistoryEntry } from "../types.js";
-import { writeFile, mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import type { GateHistoryEntry } from "../types.js";
 
 export interface CognitiveDebtMetrics {
   lgtm_without_modification_rate: number;
@@ -65,6 +65,10 @@ export class CognitiveDebtEngine {
     const metricsDir = join(specDir, ".specky");
     await mkdir(metricsDir, { recursive: true });
     const metricsPath = join(metricsDir, "metrics.json");
-    await writeFile(metricsPath, JSON.stringify({ ...metrics, persisted_at: new Date().toISOString() }, null, 2), "utf8");
+    await writeFile(
+      metricsPath,
+      JSON.stringify({ ...metrics, persisted_at: new Date().toISOString() }, null, 2),
+      "utf8",
+    );
   }
 }

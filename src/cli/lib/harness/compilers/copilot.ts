@@ -10,30 +10,30 @@ import type { HarnessCompiler } from "../types.js";
 import { transformAgentTools } from "./common.js";
 
 export const copilotCompiler: HarnessCompiler = {
-    target: "copilot",
+  target: "copilot",
 
-    compileAgent(content, opts) {
-        return transformAgentTools(content, "copilot", "json-array", opts);
-    },
+  compileAgent(content, opts) {
+    return transformAgentTools(content, "copilot", "json-array", opts);
+  },
 
-    compilePrompt(content) {
-        // `.apm` prompts already use `agent: agent`; keep them and drop any stray
-        // legacy `mode: agent` line. If only a legacy line exists, upgrade it.
-        if (/^agent:/m.test(content)) {
-            return content.replace(/^mode:\s*agent\s*$/m, "");
-        }
-        return content.replace(/^mode:\s*agent\s*$/m, "agent: agent");
-    },
+  compilePrompt(content) {
+    // `.apm` prompts already use `agent: agent`; keep them and drop any stray
+    // legacy `mode: agent` line. If only a legacy line exists, upgrade it.
+    if (/^agent:/m.test(content)) {
+      return content.replace(/^mode:\s*agent\s*$/m, "");
+    }
+    return content.replace(/^mode:\s*agent\s*$/m, "agent: agent");
+  },
 
-    compileInstruction(content) {
-        return content;
-    },
+  compileInstruction(content) {
+    return content;
+  },
 
-    renameAgent(fileName) {
-        return fileName;
-    },
+  renameAgent(fileName) {
+    return fileName;
+  },
 
-    renamePrompt(fileName) {
-        return fileName;
-    },
+  renamePrompt(fileName) {
+    return fileName;
+  },
 };

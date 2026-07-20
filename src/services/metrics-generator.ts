@@ -3,8 +3,11 @@
  * Reads SPECIFICATION.md, ANALYSIS.md, VERIFICATION.md, CHECKLIST.md and
  * .sdd-state.json to produce a self-contained local HTML report.
  */
-import type { FileManager } from "./file-manager.js";
+
+import { REQUIREMENT_REF_PATTERN } from "../utils/id-contracts.js";
 import { currentTimestamp, formatTimestampForDisplay } from "../utils/runtime-context.js";
+import { readSpecFileOrEmpty } from "../utils/safe-read.js";
+import type { FileManager } from "./file-manager.js";
 
 export interface PhaseMetric {
   phase: string;
@@ -30,19 +33,27 @@ export interface MetricsResult {
 }
 
 export class MetricsGenerator {
-  constructor(private fileManager: FileManager) { }
+  constructor(private fileManager: FileManager) {}
 
-  async generateMetrics(featureDir: string, featureNumber: string, force: boolean): Promise<MetricsResult> {
-    const spec = await this.safeRead(featureDir, "SPECIFICATION.md");
-    const analysis = await this.safeRead(featureDir, "ANALYSIS.md");
-    const verification = await this.safeRead(featureDir, "VERIFICATION.md");
-    const checklist = await this.safeRead(featureDir, "CHECKLIST.md");
+  async generateMetrics(
+    featureDir: string,
+    featureNumber: string,
+    force: boolean,
+  ): Promise<MetricsResult> {
+    const spec = await readSpecFileOrEmpty(this.fileManager, featureDir, "SPECIFICATION.md");
+    const analysis = await readSpecFileOrEmpty(this.fileManager, featureDir, "ANALYSIS.md");
+    const verification = await readSpecFileOrEmpty(this.fileManager, featureDir, "VERIFICATION.md");
+    const checklist = await readSpecFileOrEmpty(this.fileManager, featureDir, "CHECKLIST.md");
     const state = await this.readState(featureDir);
 
     const requirementsCount = this.countRequirements(spec);
     const acCount = this.countAcceptanceCriteria(spec);
     const complianceScore = this.extractComplianceScore(analysis);
-    const { total: tasksTotal, verified: tasksVerified, coveragePercent } = this.extractVerificationStats(verification);
+    const {
+      total: tasksTotal,
+      verified: tasksVerified,
+      coveragePercent,
+    } = this.extractVerificationStats(verification);
     const checklistPassRate = this.extractChecklistPassRate(checklist);
     const phases = this.extractPhaseMetrics(state);
     const featureName = featureDir.replace(/.*\/\d{3}-/, "");
@@ -79,14 +90,6 @@ export class MetricsGenerator {
     };
   }
 
-  private async safeRead(featureDir: string, file: string): Promise<string> {
-    try {
-      return await this.fileManager.readSpecFile(featureDir, file);
-    } catch {
-      return "";
-    }
-  }
-
   private async readState(featureDir: string): Promise<Record<string, unknown>> {
     try {
       const raw = await this.fileManager.readSpecFile(featureDir, ".sdd-state.json");
@@ -97,7 +100,7 @@ export class MetricsGenerator {
   }
 
   private countRequirements(spec: string): number {
-    const matches = spec.match(/^##?\s+REQ-\d+|^\|\s*REQ-\d+/gm);
+    const matches = spec.match(REQUIREMENT_REF_PATTERN);
     if (matches) return matches.length;
     // Fallback: count EARS patterns
     const ears = spec.match(/\b(WHEN|IF|WHILE|WHERE|THE SYSTEM SHALL|SHALL)\b/gi);
@@ -113,11 +116,16 @@ export class MetricsGenerator {
     const match = analysis.match(/compliance.*?(\d+)%|(\d+)%.*?compliance/i);
     if (match) return parseInt(match[1] || match[2] || "0", 10);
     const passMatch = analysis.match(/(\d+)\/(\d+)\s+controls?\s+pass/i);
-    if (passMatch) return Math.round((parseInt(passMatch[1], 10) / parseInt(passMatch[2], 10)) * 100);
+    if (passMatch)
+      return Math.round((parseInt(passMatch[1], 10) / parseInt(passMatch[2], 10)) * 100);
     return analysis.length > 100 ? 80 : 0;
   }
 
-  private extractVerificationStats(verification: string): { total: number; verified: number; coveragePercent: number } {
+  private extractVerificationStats(verification: string): {
+    total: number;
+    verified: number;
+    coveragePercent: number;
+  } {
     const passRateMatch = verification.match(/pass.?rate[:\s]+(\d+)%/i);
     const totalMatch = verification.match(/total.?tasks?[:\s]+(\d+)/i);
     const verifiedMatch = verification.match(/verified[:\s]+(\d+)/i);
@@ -126,7 +134,9 @@ export class MetricsGenerator {
     const verified = verifiedMatch ? parseInt(verifiedMatch[1], 10) : 0;
     const coveragePercent = passRateMatch
       ? parseInt(passRateMatch[1], 10)
-      : total > 0 ? Math.round((verified / total) * 100) : 0;
+      : total > 0
+        ? Math.round((verified / total) * 100)
+        : 0;
 
     return { total, verified, coveragePercent };
   }
@@ -138,7 +148,9 @@ export class MetricsGenerator {
   }
 
   private extractPhaseMetrics(state: Record<string, unknown>): PhaseMetric[] {
-    const phases = state["phases"] as Record<string, { status: string; started_at?: string; completed_at?: string }> | undefined;
+    const phases = state["phases"] as
+      | Record<string, { status: string; started_at?: string; completed_at?: string }>
+      | undefined;
     if (!phases) return [];
 
     return Object.entries(phases).map(([phase, data]) => {
@@ -147,7 +159,13 @@ export class MetricsGenerator {
         const ms = new Date(data.completed_at).getTime() - new Date(data.started_at).getTime();
         durationMinutes = Math.round(ms / 60000);
       }
-      return { phase, status: data.status, started_at: data.started_at, completed_at: data.completed_at, duration_minutes: durationMinutes };
+      return {
+        phase,
+        status: data.status,
+        started_at: data.started_at,
+        completed_at: data.completed_at,
+        duration_minutes: durationMinutes,
+      };
     });
   }
 
@@ -163,18 +181,23 @@ export class MetricsGenerator {
     checklistPassRate: number;
     phases: PhaseMetric[];
   }): string {
-    const phasesHtml = data.phases.length > 0
-      ? data.phases.map(p => `
+    const phasesHtml =
+      data.phases.length > 0
+        ? data.phases
+            .map(
+              (p) => `
         <tr>
           <td>${p.phase}</td>
           <td><span class="badge badge-${p.status}">${p.status}</span></td>
           <td>${p.started_at ? formatTimestampForDisplay(p.started_at) : "—"}</td>
           <td>${p.completed_at ? formatTimestampForDisplay(p.completed_at) : "—"}</td>
           <td>${p.duration_minutes !== undefined ? `${p.duration_minutes}m` : "—"}</td>
-        </tr>`).join("")
-      : `<tr><td colspan="5" style="text-align:center;color:#888">No phase data available</td></tr>`;
+        </tr>`,
+            )
+            .join("")
+        : `<tr><td colspan="5" style="text-align:center;color:#888">No phase data available</td></tr>`;
 
-    const scoreColor = (n: number) => n >= 80 ? "#22c55e" : n >= 60 ? "#f59e0b" : "#ef4444";
+    const scoreColor = (n: number) => (n >= 80 ? "#22c55e" : n >= 60 ? "#f59e0b" : "#ef4444");
 
     return `<!DOCTYPE html>
 <html lang="en">

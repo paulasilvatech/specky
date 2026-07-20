@@ -3,8 +3,8 @@
  * Single helper used by all 53+ tools to avoid duplicating routing logic.
  */
 
-import { ModelRoutingEngine } from "../services/model-routing-engine.js";
 import type { ComplexitySignal } from "../services/model-routing-engine.js";
+import { ModelRoutingEngine } from "../services/model-routing-engine.js";
 
 const engine = new ModelRoutingEngine();
 

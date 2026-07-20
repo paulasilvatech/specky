@@ -75,7 +75,7 @@ SESSION_LOG_*.md
 apm_modules/
 
 # ── SDD process artifacts (per-project, not repo) ────────
-.specs/
+# .specs/ is kept in git for dogfooding — Specky's own spec packages.
 .specky/
 
 # ── Local workspace assets / sibling checkouts ───────────

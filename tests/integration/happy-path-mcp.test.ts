@@ -18,25 +18,38 @@ import { writeTestWorkspaceConfig } from "../helpers/runtime-workspace.js";
 const REPO = resolve(import.meta.dirname, "../..");
 const SERVER = resolve(REPO, "dist/index.js");
 
-interface Rpc { id?: number; result?: { content?: Array<{ text?: string }> }; error?: unknown }
+interface Rpc {
+  id?: number;
+  result?: { content?: Array<{ text?: string }> };
+  error?: unknown;
+}
 
 /**
  * Drive an ordered tool sequence through one server process the way a real
  * MCP client does: send a request, await its response, then send the next.
  */
-async function driveSequence(cwd: string, calls: Array<{ name: string; args: Record<string, unknown> }>): Promise<Record<string, unknown>[]> {
+async function driveSequence(
+  cwd: string,
+  calls: Array<{ name: string; args: Record<string, unknown> }>,
+): Promise<Record<string, unknown>[]> {
   const server = spawn("node", [SERVER], {
     cwd,
-    env: { ...process.env, SDD_WORKSPACE: cwd, SDD_ROLE: "admin", SDD_FIXED_NOW: "2026-06-17T12:00:00.000Z" },
+    env: {
+      ...process.env,
+      SDD_WORKSPACE: cwd,
+      SDD_ROLE: "admin",
+      SDD_FIXED_NOW: "2026-06-17T12:00:00.000Z",
+    },
   });
   let buf = "";
   const pending = new Map<number, (r: Rpc) => void>();
   server.stdout.on("data", (chunk: Buffer) => {
     buf += chunk.toString();
-    let idx: number;
-    while ((idx = buf.indexOf("\n")) >= 0) {
+    let idx = buf.indexOf("\n");
+    while (idx >= 0) {
       const line = buf.slice(0, idx);
       buf = buf.slice(idx + 1);
+      idx = buf.indexOf("\n");
       if (!line.trim()) continue;
       try {
         const parsed = JSON.parse(line) as Rpc;
@@ -56,8 +69,14 @@ async function driveSequence(cwd: string, calls: Array<{ name: string; args: Rec
     });
 
   try {
-    await rpc(1, "initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "happy-path", version: "1" } });
-    server.stdin.write(JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n");
+    await rpc(1, "initialize", {
+      protocolVersion: "2025-06-18",
+      capabilities: {},
+      clientInfo: { name: "happy-path", version: "1" },
+    });
+    server.stdin.write(
+      JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n",
+    );
     const out: Record<string, unknown>[] = [];
     for (let i = 0; i < calls.length; i++) {
       const r = await rpc(100 + i, "tools/call", { name: calls[i].name, arguments: calls[i].args });

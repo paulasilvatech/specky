@@ -4,61 +4,61 @@
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { getCompiler, SUPPORTED_TARGETS, type HarnessTarget } from "../lib/harness/index.js";
+import { getCompiler, type HarnessTarget, SUPPORTED_TARGETS } from "../lib/harness/index.js";
 import { packageRoot, sourcePaths } from "../lib/paths.js";
 
 export interface CompileOptions {
-    target?: string;
-    dryRun: boolean;
-    workspace?: string;
+  target?: string;
+  dryRun: boolean;
+  workspace?: string;
 }
 
 const TARGET_ALIASES: Record<string, HarnessTarget | "all" | "both"> = {
-    "github-copilot": "copilot",
-    vscode: "copilot",
-    "claude-code": "claude",
-    both: "both",
-    all: "all",
+  "github-copilot": "copilot",
+  vscode: "copilot",
+  "claude-code": "claude",
+  both: "both",
+  all: "all",
 };
 
 function uniqueTargets(targets: HarnessTarget[]): HarnessTarget[] {
-    return [...new Set(targets)];
+  return [...new Set(targets)];
 }
 
 function parseTargetToken(token: string): HarnessTarget[] {
-    const normalized = token.trim().toLowerCase();
-    const aliased = TARGET_ALIASES[normalized] ?? normalized;
-    if (aliased === "both") return ["claude", "copilot"];
-    if (aliased === "all") return SUPPORTED_TARGETS.filter((target) => target !== "agent-skills");
-    if (SUPPORTED_TARGETS.includes(aliased as HarnessTarget)) return [aliased as HarnessTarget];
-    throw new Error(
-        `[specky compile] Unknown target "${token}". Supported targets: ${SUPPORTED_TARGETS.join(", ")}, both, all`,
-    );
+  const normalized = token.trim().toLowerCase();
+  const aliased = TARGET_ALIASES[normalized] ?? normalized;
+  if (aliased === "both") return ["claude", "copilot"];
+  if (aliased === "all") return SUPPORTED_TARGETS.filter((target) => target !== "agent-skills");
+  if (SUPPORTED_TARGETS.includes(aliased as HarnessTarget)) return [aliased as HarnessTarget];
+  throw new Error(
+    `[specky compile] Unknown target "${token}". Supported targets: ${SUPPORTED_TARGETS.join(", ")}, both, all`,
+  );
 }
 
 function resolveTargets(target?: string): HarnessTarget[] {
-    if (!target || target === "auto") return ["copilot"];
-    return uniqueTargets(target.split(",").flatMap(parseTargetToken));
+  if (!target || target === "auto") return ["copilot"];
+  return uniqueTargets(target.split(",").flatMap(parseTargetToken));
 }
 
 function stripFrontmatter(content: string): string {
-    if (!content.startsWith("---\n")) return content;
-    const end = content.indexOf("\n---\n", 4);
-    if (end < 0) return content;
-    return content.slice(end + "\n---\n".length).trimStart();
+  if (!content.startsWith("---\n")) return content;
+  const end = content.indexOf("\n---\n", 4);
+  if (end < 0) return content;
+  return content.slice(end + "\n---\n".length).trimStart();
 }
 
 function instructionFileForTarget(target: HarnessTarget): string {
-    switch (target) {
-        case "claude":
-            return "claude-instructions.instructions.md";
-        case "cursor":
-            return "cursor-instructions.instructions.md";
-        case "opencode":
-            return "opencode-instructions.instructions.md";
-        default:
-            return "copilot-instructions.instructions.md";
-    }
+  switch (target) {
+    case "claude":
+      return "claude-instructions.instructions.md";
+    case "cursor":
+      return "cursor-instructions.instructions.md";
+    case "opencode":
+      return "opencode-instructions.instructions.md";
+    default:
+      return "copilot-instructions.instructions.md";
+  }
 }
 
 /**
@@ -67,76 +67,73 @@ function instructionFileForTarget(target: HarnessTarget): string {
  * primitives — that would leak cross-target naming and duplicate content.
  */
 function readInstructionForTarget(instructionsDir: string, target: HarnessTarget): string | null {
-    if (!existsSync(instructionsDir)) return null;
-    const candidates = [
-        instructionFileForTarget(target),
-        "copilot-instructions.instructions.md",
-    ];
-    for (const candidate of candidates) {
-        const path = resolve(instructionsDir, candidate);
-        if (existsSync(path) && statSync(path).isFile()) {
-            return readFileSync(path, "utf8");
-        }
+  if (!existsSync(instructionsDir)) return null;
+  const candidates = [instructionFileForTarget(target), "copilot-instructions.instructions.md"];
+  for (const candidate of candidates) {
+    const path = resolve(instructionsDir, candidate);
+    if (existsSync(path) && statSync(path).isFile()) {
+      return readFileSync(path, "utf8");
     }
-    return null;
+  }
+  return null;
 }
 
 function outputPathForTarget(workspace: string, target: HarnessTarget): string | null {
-    switch (target) {
-        case "copilot":
-            return resolve(workspace, ".github/copilot-instructions.md");
-        case "claude":
-            return resolve(workspace, "CLAUDE.md");
-        case "cursor":
-        case "opencode":
-            return resolve(workspace, "AGENTS.md");
-        case "agent-skills":
-            return null;
-    }
+  switch (target) {
+    case "copilot":
+      return resolve(workspace, ".github/copilot-instructions.md");
+    case "claude":
+      return resolve(workspace, "CLAUDE.md");
+    case "cursor":
+    case "opencode":
+      return resolve(workspace, "AGENTS.md");
+    case "agent-skills":
+      return null;
+  }
 }
 
 function writeCompiled(path: string, content: string, dryRun: boolean): void {
-    if (dryRun) return;
-    mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, content, "utf8");
+  if (dryRun) return;
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, content, "utf8");
 }
 
 export async function runCompile(opts: CompileOptions): Promise<number> {
-    const workspace = opts.workspace ?? process.cwd();
-    const pkg = packageRoot();
-    const src = sourcePaths(pkg);
-    const targets = resolveTargets(opts.target);
+  const workspace = opts.workspace ?? process.cwd();
+  const pkg = packageRoot();
+  const src = sourcePaths(pkg);
+  const targets = resolveTargets(opts.target);
 
-    if (!existsSync(src.instructionsDir) || readdirSync(src.instructionsDir).length === 0) {
-        console.error(`[specky compile] No instruction primitives found at ${src.instructionsDir}`);
-        return 1;
+  if (!existsSync(src.instructionsDir) || readdirSync(src.instructionsDir).length === 0) {
+    console.error(`[specky compile] No instruction primitives found at ${src.instructionsDir}`);
+    return 1;
+  }
+
+  const written = new Set<string>();
+  for (const target of targets) {
+    const out = outputPathForTarget(workspace, target);
+    if (!out) {
+      console.log(`[specky compile] ${target}: no root context output`);
+      continue;
+    }
+    if (written.has(out)) {
+      console.log(`[specky compile] ${target}: already covered by ${out}`);
+      continue;
     }
 
-    const written = new Set<string>();
-    for (const target of targets) {
-        const out = outputPathForTarget(workspace, target);
-        if (!out) {
-            console.log(`[specky compile] ${target}: no root context output`);
-            continue;
-        }
-        if (written.has(out)) {
-            console.log(`[specky compile] ${target}: already covered by ${out}`);
-            continue;
-        }
-
-        const content = readInstructionForTarget(src.instructionsDir, target);
-        if (!content) {
-            console.error(`[specky compile] ${target}: no instruction primitive found`);
-            continue;
-        }
-
-        const compiler = getCompiler(target);
-        const body = stripFrontmatter(compiler.compileInstruction(content));
-        const compiled = `<!-- Generated by Specky CLI from .apm/instructions -->\n\n${body}`;
-        writeCompiled(out, compiled, opts.dryRun);
-        written.add(out);
-        console.log(`[specky compile] ${target}: ${opts.dryRun ? "would write" : "wrote"} ${out}`);
+    const content = readInstructionForTarget(src.instructionsDir, target);
+    if (!content) {
+      console.error(`[specky compile] ${target}: no instruction primitive found`);
+      continue;
     }
 
-    return 0;
+    const compiler = getCompiler(target);
+    const body = stripFrontmatter(compiler.compileInstruction(content));
+    const compiled = `<!-- Generated by Specky CLI from .apm/instructions -->\n\n${body}`;
+    writeCompiled(out, compiled, opts.dryRun);
+    written.add(out);
+    console.log(`[specky compile] ${target}: ${opts.dryRun ? "would write" : "wrote"} ${out}`);
+  }
+
+  return 0;
 }

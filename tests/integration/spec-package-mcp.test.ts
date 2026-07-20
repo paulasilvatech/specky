@@ -2,7 +2,7 @@
  * spec-package-mcp.test.ts — validates that spec creation produces a complete feature package.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -11,27 +11,43 @@ import { writeSignedFeatureState, writeTestWorkspaceConfig } from "../helpers/ru
 const REPO = resolve(import.meta.dirname, "../..");
 const SERVER = resolve(REPO, "dist/index.js");
 
-function callTool(cwd: string, toolName: string, args: Record<string, unknown>): Record<string, unknown> {
+function callTool(
+  cwd: string,
+  toolName: string,
+  args: Record<string, unknown>,
+): Record<string, unknown> {
   const input =
     JSON.stringify({
       jsonrpc: "2.0",
       id: 1,
       method: "initialize",
-      params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "spec-package-test", version: "1" } },
-    }) + "\n" +
-    JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n" +
+      params: {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: { name: "spec-package-test", version: "1" },
+      },
+    }) +
+    "\n" +
+    JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) +
+    "\n" +
     JSON.stringify({
       jsonrpc: "2.0",
       id: 2,
       method: "tools/call",
       params: { name: toolName, arguments: args },
-    }) + "\n";
+    }) +
+    "\n";
 
   const res = spawnSync("node", [SERVER], {
     cwd,
     input,
     encoding: "utf8",
-    env: { ...process.env, SDD_WORKSPACE: cwd, SDD_ROLE: "admin", SDD_FIXED_NOW: "2026-06-17T12:00:00.000Z" },
+    env: {
+      ...process.env,
+      SDD_WORKSPACE: cwd,
+      SDD_ROLE: "admin",
+      SDD_FIXED_NOW: "2026-06-17T12:00:00.000Z",
+    },
     timeout: 10000,
   });
 
@@ -68,7 +84,11 @@ describe("spec package generation through MCP", () => {
       currentPhase: "discover",
       completed: ["init"],
     });
-    writeFileSync(resolve(ws, ".specs", "001-complete-feature", "CONSTITUTION.md"), "# Constitution\n", "utf8");
+    writeFileSync(
+      resolve(ws, ".specs", "001-complete-feature", "CONSTITUTION.md"),
+      "# Constitution\n",
+      "utf8",
+    );
   });
 
   afterEach(() => {
@@ -87,9 +107,9 @@ describe("spec package generation through MCP", () => {
           id: "REQ-CORE-001",
           ears_pattern: "ubiquitous",
           text: "The system shall create a complete feature package for every specification.",
-          acceptance_criteria: ["All companion artifacts exist"]
-        }
-      ]
+          acceptance_criteria: ["All companion artifacts exist"],
+        },
+      ],
     });
 
     const payload = extractPayload(response);
@@ -109,14 +129,31 @@ describe("spec package generation through MCP", () => {
     });
 
     const featureDir = resolve(ws, ".specs", "001-complete-feature");
-    for (const fileName of ["SPECIFICATION.md", "README.md", "DESIGN.md", "TASKS.md", "ADR.md", "PLAYBOOK.md", "DIAGRAMS.md", "TDD_STATUS.md", "EVIDENCE.md", "SPEC_PACKAGE.json"]) {
+    for (const fileName of [
+      "SPECIFICATION.md",
+      "README.md",
+      "DESIGN.md",
+      "TASKS.md",
+      "ADR.md",
+      "PLAYBOOK.md",
+      "DIAGRAMS.md",
+      "TDD_STATUS.md",
+      "EVIDENCE.md",
+      "SPEC_PACKAGE.json",
+    ]) {
       expect(existsSync(resolve(featureDir, fileName)), `${fileName} should exist`).toBe(true);
     }
 
-    expect(readFileSync(resolve(featureDir, "DESIGN.md"), "utf8")).toContain("specky_scaffold: true");
-    expect(readFileSync(resolve(featureDir, "TASKS.md"), "utf8")).toContain("specky_scaffold: true");
+    expect(readFileSync(resolve(featureDir, "DESIGN.md"), "utf8")).toContain(
+      "specky_scaffold: true",
+    );
+    expect(readFileSync(resolve(featureDir, "TASKS.md"), "utf8")).toContain(
+      "specky_scaffold: true",
+    );
     expect(readFileSync(resolve(featureDir, "TDD_STATUS.md"), "utf8")).toContain("REQ-CORE-001");
-    expect(JSON.parse(readFileSync(resolve(featureDir, "SPEC_PACKAGE.json"), "utf8"))).toMatchObject({
+    expect(
+      JSON.parse(readFileSync(resolve(featureDir, "SPEC_PACKAGE.json"), "utf8")),
+    ).toMatchObject({
       feature_number: "001",
       feature_name: "complete-feature",
       source_tool: "sdd_write_spec",

@@ -8,8 +8,8 @@
  */
 import { createHash, createHmac } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { AuditLogger, resolveAuditHmacKey } from "../../src/services/audit-logger.js";
 
@@ -160,9 +160,9 @@ describe("resolveAuditHmacKey", () => {
       ).toBe("env-key");
       expect(resolveAuditHmacKey({ SDD_AUDIT_HMAC_KEY_FILE: keyFile })).toBe("file-key");
       expect(resolveAuditHmacKey({})).toBe("");
-      expect(
-        resolveAuditHmacKey({ SDD_AUDIT_HMAC_KEY_FILE: join(workspace, "missing.key") }),
-      ).toBe("");
+      expect(resolveAuditHmacKey({ SDD_AUDIT_HMAC_KEY_FILE: join(workspace, "missing.key") })).toBe(
+        "",
+      );
     } finally {
       rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }

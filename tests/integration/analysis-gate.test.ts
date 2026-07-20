@@ -2,7 +2,7 @@
  * analysis-gate.test.ts — validates semantic sdd_run_analysis evidence gates.
  */
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -10,7 +10,6 @@ import { writeSignedFeatureState, writeTestWorkspaceConfig } from "../helpers/ru
 
 const REPO = resolve(import.meta.dirname, "../..");
 const SERVER = resolve(REPO, "dist/index.js");
-const PHASES = ["init", "discover", "specify", "clarify", "design", "tasks", "analyze", "implement", "verify", "release"];
 
 function writeFeature(workspace: string, mapped: boolean): void {
   const featureDir = resolve(workspace, ".specs", "001-analysis-gate");
@@ -21,19 +20,33 @@ function writeFeature(workspace: string, mapped: boolean): void {
     completed: ["init", "discover", "specify", "clarify", "design"],
   });
   writeFileSync(resolve(featureDir, "CONSTITUTION.md"), "# Constitution\n", "utf8");
-  writeFileSync(resolve(featureDir, "SPECIFICATION.md"), [
-    "# Specification",
-    "",
-    "### REQ-CORE-001: Requirement",
-    "",
-    "The system shall enforce semantic gates.",
-    "",
-    "**Acceptance Criteria:**",
-    "- Confirm gate output is evidence-based.",
-    "",
-  ].join("\n"), "utf8");
-  writeFileSync(resolve(featureDir, "DESIGN.md"), mapped ? "# Design\n\nREQ-CORE-001 maps to GateEngine.\n" : "# Design\n\nNo mapping.\n", "utf8");
-  writeFileSync(resolve(featureDir, "TASKS.md"), mapped ? "# Tasks\n\n- [ ] T-001: Implement gate REQ-CORE-001\n" : "# Tasks\n\n- [ ] T-001: Implement gate\n", "utf8");
+  writeFileSync(
+    resolve(featureDir, "SPECIFICATION.md"),
+    [
+      "# Specification",
+      "",
+      "### REQ-CORE-001: Requirement",
+      "",
+      "The system shall enforce semantic gates.",
+      "",
+      "**Acceptance Criteria:**",
+      "- Confirm gate output is evidence-based.",
+      "",
+    ].join("\n"),
+    "utf8",
+  );
+  writeFileSync(
+    resolve(featureDir, "DESIGN.md"),
+    mapped ? "# Design\n\nREQ-CORE-001 maps to GateEngine.\n" : "# Design\n\nNo mapping.\n",
+    "utf8",
+  );
+  writeFileSync(
+    resolve(featureDir, "TASKS.md"),
+    mapped
+      ? "# Tasks\n\n- [ ] T-001: Implement gate REQ-CORE-001\n"
+      : "# Tasks\n\n- [ ] T-001: Implement gate\n",
+    "utf8",
+  );
 }
 
 function callRunAnalysis(cwd: string): Record<string, unknown> {
@@ -42,15 +55,25 @@ function callRunAnalysis(cwd: string): Record<string, unknown> {
       jsonrpc: "2.0",
       id: 1,
       method: "initialize",
-      params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "analysis-gate", version: "1" } },
-    }) + "\n" +
-    JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n" +
+      params: {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: { name: "analysis-gate", version: "1" },
+      },
+    }) +
+    "\n" +
+    JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) +
+    "\n" +
     JSON.stringify({
       jsonrpc: "2.0",
       id: 2,
       method: "tools/call",
-      params: { name: "sdd_run_analysis", arguments: { spec_dir: ".specs", feature_number: "001", force: true } },
-    }) + "\n";
+      params: {
+        name: "sdd_run_analysis",
+        arguments: { spec_dir: ".specs", feature_number: "001", force: true },
+      },
+    }) +
+    "\n";
 
   const res = spawnSync("node", [SERVER], {
     cwd,
@@ -63,7 +86,10 @@ function callRunAnalysis(cwd: string): Record<string, unknown> {
   const lines = (res.stdout ?? "").split("\n").filter(Boolean);
   for (const line of lines) {
     try {
-      const parsed = JSON.parse(line) as { id?: number; result?: { content?: Array<{ text?: string }> } };
+      const parsed = JSON.parse(line) as {
+        id?: number;
+        result?: { content?: Array<{ text?: string }> };
+      };
       if (parsed.id === 2 && parsed.result?.content?.[0]?.text) {
         return JSON.parse(parsed.result.content[0].text) as Record<string, unknown>;
       }
@@ -71,7 +97,9 @@ function callRunAnalysis(cwd: string): Record<string, unknown> {
       // Ignore non-JSON lines.
     }
   }
-  throw new Error(`No analysis response. status=${res.status}; stderr=${res.stderr?.slice(0, 500)}`);
+  throw new Error(
+    `No analysis response. status=${res.status}; stderr=${res.stderr?.slice(0, 500)}`,
+  );
 }
 
 describe("sdd_run_analysis semantic gate", () => {
@@ -91,7 +119,11 @@ describe("sdd_run_analysis semantic gate", () => {
     writeFeature(ws, true);
 
     const result = callRunAnalysis(ws);
-    const gateDecision = result["gate_decision"] as { decision: string; coverage_percent: number; gaps: string[] };
+    const gateDecision = result["gate_decision"] as {
+      decision: string;
+      coverage_percent: number;
+      gaps: string[];
+    };
 
     expect(gateDecision.decision).toBe("APPROVE");
     expect(gateDecision.coverage_percent).toBe(100);

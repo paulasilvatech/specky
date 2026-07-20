@@ -10,8 +10,8 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BINS = [
-  resolve(ROOT, "dist/index.js"),           // legacy MCP server entry
-  resolve(ROOT, "dist/cli/index.js"),       // unified CLI
+  resolve(ROOT, "dist/index.js"), // legacy MCP server entry
+  resolve(ROOT, "dist/cli/index.js"), // unified CLI
 ];
 
 for (const file of BINS) {

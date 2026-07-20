@@ -3,22 +3,34 @@
  * State persists in each feature directory at .specs/<NNN-name>/.sdd-state.json.
  */
 
-import { Phase, PHASE_ORDER, PHASE_REQUIRED_FILES, STATE_FILE } from "../constants.js";
-import type { SddState, PhaseStatus, TransitionResult, GateHistoryEntry, FeatureIdentity } from "../types.js";
-import type { FileManager } from "./file-manager.js";
-import { join, resolve } from "node:path";
+import { createHash, createHmac } from "node:crypto";
 import { stat } from "node:fs/promises";
-import { createHmac, createHash } from "node:crypto";
+import { join, resolve } from "node:path";
 import { z } from "zod";
-import { SPECKY_SCAFFOLD_MARKER } from "./feature-package-generator.js";
+import { PHASE_ORDER, PHASE_REQUIRED_FILES, Phase, STATE_FILE } from "../constants.js";
+import { getToolContract } from "../contracts/tool-contracts.js";
 import {
   assertUseCaseContractFingerprint,
-  resolvedUseCaseContractSchema,
   type ResolvedUseCaseContract,
+  resolvedUseCaseContractSchema,
 } from "../contracts/use-case.js";
-import { getToolContract } from "../contracts/tool-contracts.js";
+import type {
+  FeatureIdentity,
+  GateHistoryEntry,
+  PhaseStatus,
+  SddState,
+  TransitionResult,
+} from "../types.js";
+import { validateDesignCompleteness } from "./design-completeness.js";
+import { SPECKY_SCAFFOLD_MARKER } from "./feature-package-generator.js";
+import type { FileManager } from "./file-manager.js";
 
 const SIG_FILE = ".sdd-state.json.sig";
+const STATE_BAK_FILE = `${STATE_FILE}.bak`;
+const SIG_BAK_FILE = `${SIG_FILE}.bak`;
+
+/** True once the derived-key warning has been printed (process-wide dedupe). */
+let derivedKeyWarningEmitted = false;
 
 function normalizeFeatureDirectory(directory: string): string {
   return directory.replaceAll("\\", "/").replace(/^\.\//, "");
@@ -40,51 +52,76 @@ const phaseSchema = z.enum([
   Phase.Release,
 ]);
 
-const phaseStatusSchema = z.object({
-  status: z.enum(["pending", "in_progress", "completed"]),
-  started_at: z.string().optional(),
-  completed_at: z.string().optional(),
-}).strict();
+const phaseStatusSchema = z
+  .object({
+    status: z.enum(["pending", "in_progress", "completed"]),
+    started_at: z.string().optional(),
+    completed_at: z.string().optional(),
+  })
+  .strict();
 
-const stateSchema = z.object({
-  version: z.literal("5.0.0"),
-  project_name: z.string().min(1),
-  feature: z.object({
-    number: z.string().regex(/^\d{3}$/),
-    name: z.string().min(1),
-    directory: z.string().min(1),
-  }).strict(),
-  contract: resolvedUseCaseContractSchema,
-  current_phase: phaseSchema,
-  phases: z.record(phaseSchema, phaseStatusSchema),
-  amendments: z.array(z.object({
-    number: z.number().int().positive(),
-    date: z.string(),
-    author: z.string(),
-    rationale: z.string(),
-    articles_affected: z.array(z.string()),
-  }).strict()),
-  gate_decision: z.object({
-    decision: z.enum(["APPROVE", "CHANGES_NEEDED", "BLOCK"]),
-    reasons: z.array(z.string()),
-    coverage_percent: z.number(),
-    gaps: z.array(z.string()),
-    decided_at: z.string(),
-  }).strict().nullable(),
-  gate_history: z.array(z.object({
-    phase: z.string(),
-    timestamp: z.string(),
-    artifact: z.string(),
-    was_modified: z.boolean(),
-    req_count: z.number().optional(),
-    lgtm: z.boolean().optional(),
-  }).strict()).optional(),
-  drift_history: z.array(z.object({
-    timestamp: z.string(),
-    score: z.number(),
-    orphaned_count: z.number(),
-  }).strict()).optional(),
-}).strict();
+const stateSchema = z
+  .object({
+    version: z.literal("5.0.0"),
+    project_name: z.string().min(1),
+    feature: z
+      .object({
+        number: z.string().regex(/^\d{3}$/),
+        name: z.string().min(1),
+        directory: z.string().min(1),
+      })
+      .strict(),
+    contract: resolvedUseCaseContractSchema,
+    current_phase: phaseSchema,
+    phases: z.record(phaseSchema, phaseStatusSchema),
+    amendments: z.array(
+      z
+        .object({
+          number: z.number().int().positive(),
+          date: z.string(),
+          author: z.string(),
+          rationale: z.string(),
+          articles_affected: z.array(z.string()),
+        })
+        .strict(),
+    ),
+    gate_decision: z
+      .object({
+        decision: z.enum(["APPROVE", "CHANGES_NEEDED", "BLOCK"]),
+        reasons: z.array(z.string()),
+        coverage_percent: z.number(),
+        gaps: z.array(z.string()),
+        decided_at: z.string(),
+      })
+      .strict()
+      .nullable(),
+    gate_history: z
+      .array(
+        z
+          .object({
+            phase: z.string(),
+            timestamp: z.string(),
+            artifact: z.string(),
+            was_modified: z.boolean(),
+            req_count: z.number().optional(),
+            lgtm: z.boolean().optional(),
+          })
+          .strict(),
+      )
+      .optional(),
+    drift_history: z
+      .array(
+        z
+          .object({
+            timestamp: z.string(),
+            score: z.number(),
+            orphaned_count: z.number(),
+          })
+          .strict(),
+      )
+      .optional(),
+  })
+  .strict();
 
 export class StateNotFoundError extends Error {
   constructor(stateDir: string) {
@@ -96,7 +133,9 @@ export class StateNotFoundError extends Error {
 export class StateMigrationRequiredError extends Error {
   constructor(stateDir: string, version: unknown) {
     const versionLabel = typeof version === "string" ? version : "unknown";
-    super(`State at ${join(stateDir, STATE_FILE)} uses version ${versionLabel}; run specky migrate-contracts before invoking pipeline tools.`);
+    super(
+      `State at ${join(stateDir, STATE_FILE)} uses version ${versionLabel}; run specky migrate-contracts before invoking pipeline tools.`,
+    );
     this.name = "StateMigrationRequiredError";
   }
 }
@@ -150,7 +189,7 @@ export class StateMachine {
   constructor(
     private fileManager: FileManager,
     private workspaceRoot: string = process.cwd(),
-  ) { }
+  ) {}
 
   /**
    * Per-workspace-and-spec-dir serialization queue. Tool handlers can run
@@ -167,7 +206,19 @@ export class StateMachine {
     const prev = StateMachine.locks.get(key) ?? Promise.resolve();
     const run = prev.then(fn, fn);
     // Keep the chain alive regardless of individual success/failure.
-    StateMachine.locks.set(key, run.then(() => undefined, () => undefined));
+    const tail = run.then(
+      () => undefined,
+      () => undefined,
+    );
+    StateMachine.locks.set(key, tail);
+    // Drop the entry once this key's queue drains so the map cannot grow
+    // unboundedly; a newer queued operation replaces the tail, and only the
+    // latest tail deletes the key.
+    void tail.then(() => {
+      if (StateMachine.locks.get(key) === tail) {
+        StateMachine.locks.delete(key);
+      }
+    });
     return run;
   }
 
@@ -183,7 +234,10 @@ export class StateMachine {
    * Atomically load state, apply a mutation, and persist it — the safe path
    * for tool handlers that need to touch state outside the phase helpers.
    */
-  async mutateState(specDir: string, mutator: (state: SddState) => void | Promise<void>): Promise<SddState> {
+  async mutateState(
+    specDir: string,
+    mutator: (state: SddState) => void | Promise<void>,
+  ): Promise<SddState> {
     return this.withLock(specDir, async () => {
       const state = await this.loadState(specDir);
       await mutator(state);
@@ -194,9 +248,14 @@ export class StateMachine {
 
   /** Derive a workspace-specific HMAC key when SDD_STATE_KEY is not set */
   private deriveKey(): string {
-    return createHash("sha256")
-      .update(`specky-state-v1:${this.workspaceRoot}`)
-      .digest("hex");
+    if (!derivedKeyWarningEmitted) {
+      derivedKeyWarningEmitted = true;
+      console.error(
+        "[specky] SDD_STATE_KEY is not set — signing feature state with a key derived from the workspace path. " +
+          "Anyone with read access to the workspace can forge this signature; set SDD_STATE_KEY to a secret value for tamper-evident state.",
+      );
+    }
+    return createHash("sha256").update(`specky-state-v1:${this.workspaceRoot}`).digest("hex");
   }
 
   /** Compute HMAC-SHA256 signature for state JSON */
@@ -224,9 +283,10 @@ export class StateMachine {
     } catch {
       throw new Error(`Invalid JSON in feature state at ${statePath}`);
     }
-    const version = typeof untrusted === "object" && untrusted !== null
-      ? (untrusted as Record<string, unknown>)["version"]
-      : undefined;
+    const version =
+      typeof untrusted === "object" && untrusted !== null
+        ? (untrusted as Record<string, unknown>)["version"]
+        : undefined;
     if (version !== "5.0.0") {
       throw new StateMigrationRequiredError(stateDir, version);
     }
@@ -235,22 +295,80 @@ export class StateMachine {
     try {
       storedSig = await this.fileManager.readProjectFile(join(stateDir, SIG_FILE));
     } catch {
-      throw new Error(`Feature state signature not found at ${join(stateDir, SIG_FILE)}`);
+      return this.recoverFromBackup(
+        stateDir,
+        `Feature state signature not found at ${join(stateDir, SIG_FILE)}`,
+      );
     }
     const expectedSig = this.computeSig(raw);
     if (storedSig.trim() !== expectedSig) {
-      throw new Error(`Feature state integrity check failed at ${statePath}`);
+      return this.recoverFromBackup(
+        stateDir,
+        `Feature state integrity check failed at ${statePath}`,
+      );
     }
 
     const parsed = stateSchema.parse(untrusted) as SddState;
-    if (normalizeFeatureDirectory(parsed.feature.directory) !== normalizeFeatureDirectory(stateDir)) {
-      throw new Error(`Feature state directory mismatch: state declares ${parsed.feature.directory}, loaded from ${stateDir}`);
+    if (
+      normalizeFeatureDirectory(parsed.feature.directory) !== normalizeFeatureDirectory(stateDir)
+    ) {
+      throw new Error(
+        `Feature state directory mismatch: state declares ${parsed.feature.directory}, loaded from ${stateDir}`,
+      );
     }
     assertUseCaseContractFingerprint(parsed.contract);
     if (!parsed.contract.phases.includes(parsed.current_phase)) {
-      throw new Error(`Current phase ${parsed.current_phase} is not enabled by contract ${parsed.contract.id}`);
+      throw new Error(
+        `Current phase ${parsed.current_phase} is not enabled by contract ${parsed.contract.id}`,
+      );
     }
     return parsed;
+  }
+
+  /**
+   * Read a state/signature pair and verify its HMAC. Returns the raw state
+   * JSON and trimmed signature when the pair verifies, null when either file
+   * is missing or the signature does not match.
+   */
+  private async readVerifiedPair(
+    stateDir: string,
+    stateFileName: string,
+    sigFileName: string,
+  ): Promise<{ raw: string; sig: string } | null> {
+    let raw: string;
+    let sig: string;
+    try {
+      raw = await this.fileManager.readProjectFile(join(stateDir, stateFileName));
+      sig = await this.fileManager.readProjectFile(join(stateDir, sigFileName));
+    } catch {
+      return null;
+    }
+    const trimmed = sig.trim();
+    return trimmed === this.computeSig(raw) ? { raw, sig: trimmed } : null;
+  }
+
+  /**
+   * Recover from a torn state pair — a crash between the state and signature
+   * renames in saveState leaves a pair that can never verify, and without
+   * recovery every later loadState fails. When the .bak snapshot written by
+   * the previous saveState passes its own integrity check, restore it as the
+   * live pair and continue from it; otherwise fail with manual recovery
+   * instructions.
+   */
+  private async recoverFromBackup(stateDir: string, failure: string): Promise<SddState> {
+    const backup = await this.readVerifiedPair(stateDir, STATE_BAK_FILE, SIG_BAK_FILE);
+    if (!backup) {
+      throw new Error(
+        `${failure}. No valid backup pair (${STATE_BAK_FILE}/${SIG_BAK_FILE}) is available — the state may be torn from an interrupted save. ` +
+          `Recover manually by restoring both ${STATE_FILE} and ${SIG_FILE} in ${stateDir} from version control or another verified copy, or delete the pair and re-initialize the feature.`,
+      );
+    }
+    await this.fileManager.writeSpecFile(stateDir, STATE_FILE, backup.raw, true);
+    await this.fileManager.writeSpecFile(stateDir, SIG_FILE, backup.sig, true);
+    console.error(
+      `[specky] ${failure}. Restored ${join(stateDir, STATE_FILE)} from the verified backup pair (${STATE_BAK_FILE}/${SIG_BAK_FILE}).`,
+    );
+    return this.loadState(stateDir);
   }
 
   /**
@@ -258,15 +376,28 @@ export class StateMachine {
    */
   async saveState(stateDir: string, state: SddState): Promise<void> {
     stateDir = normalizeFeatureDirectory(stateDir);
-    if (normalizeFeatureDirectory(state.feature.directory) !== normalizeFeatureDirectory(stateDir)) {
-      throw new Error(`Refusing to save feature ${state.feature.number} state outside ${state.feature.directory}`);
+    if (
+      normalizeFeatureDirectory(state.feature.directory) !== normalizeFeatureDirectory(stateDir)
+    ) {
+      throw new Error(
+        `Refusing to save feature ${state.feature.number} state outside ${state.feature.directory}`,
+      );
     }
     assertUseCaseContractFingerprint(state.contract);
     const validated = stateSchema.parse(state) as SddState;
     const json = JSON.stringify(validated, null, 2);
-    await this.fileManager.writeSpecFile(stateDir, STATE_FILE, json, true);
-    // Write tamper-detection signature
     const sig = this.computeSig(json);
+    // Snapshot the current pair to .bak siblings before overwriting, but only
+    // when it still verifies — a corrupt backup fails its own integrity check
+    // on recovery and is no better than none.
+    const current = await this.readVerifiedPair(stateDir, STATE_FILE, SIG_FILE);
+    if (current) {
+      await this.fileManager.writeSpecFile(stateDir, STATE_BAK_FILE, current.raw, true);
+      await this.fileManager.writeSpecFile(stateDir, SIG_BAK_FILE, current.sig, true);
+    }
+    // Each write is a temp file + rename; a crash between the two renames
+    // leaves a torn pair that loadState recovers from the snapshot above.
+    await this.fileManager.writeSpecFile(stateDir, STATE_FILE, json, true);
     await this.fileManager.writeSpecFile(stateDir, SIG_FILE, sig, true);
   }
 
@@ -288,9 +419,10 @@ export class StateMachine {
 
     // Can only advance to the next phase
     if (targetIndex !== currentIndex + 1) {
-      const nextPhase = currentIndex < state.contract.phases.length - 1
-        ? state.contract.phases[currentIndex + 1]
-        : undefined;
+      const nextPhase =
+        currentIndex < state.contract.phases.length - 1
+          ? state.contract.phases[currentIndex + 1]
+          : undefined;
       return {
         allowed: false,
         from_phase: state.current_phase,
@@ -366,7 +498,10 @@ export class StateMachine {
    * Block implement/verify/release tools until sdd_run_analysis records APPROVE.
    * Enforced centrally from tool-enforcement.ts for all gate-sensitive tools.
    */
-  async validateGateForTool(specDir: string, toolName: string): Promise<{
+  async validateGateForTool(
+    specDir: string,
+    toolName: string,
+  ): Promise<{
     allowed: boolean;
     error_message?: string;
     gate_decision?: string | null;
@@ -473,17 +608,17 @@ export class StateMachine {
     if (state.current_phase === Phase.Analyze) {
       if (!state.gate_decision) {
         throw new Error(
-          "Cannot advance past Analyze phase: no gate decision recorded. Run sdd_run_analysis first."
+          "Cannot advance past Analyze phase: no gate decision recorded. Run sdd_run_analysis first.",
         );
       }
       if (state.gate_decision.decision === "BLOCK") {
         throw new Error(
-          `Gate decision is BLOCK. Reasons: ${state.gate_decision.reasons.join("; ")}. Gaps: ${state.gate_decision.gaps.join(", ")}. Address these before advancing.`
+          `Gate decision is BLOCK. Reasons: ${state.gate_decision.reasons.join("; ")}. Gaps: ${state.gate_decision.gaps.join(", ")}. Address these before advancing.`,
         );
       }
       if (state.gate_decision.decision === "CHANGES_NEEDED") {
         throw new Error(
-          `Gate decision is CHANGES_NEEDED. Gaps: ${state.gate_decision.gaps.join(", ")}. Address changes and re-run sdd_run_analysis.`
+          `Gate decision is CHANGES_NEEDED. Gaps: ${state.gate_decision.gaps.join(", ")}. Address changes and re-run sdd_run_analysis.`,
         );
       }
     }
@@ -624,7 +759,10 @@ export class StateMachine {
    * are restricted to their mapped phases. Unknown tools are allowed for
    * forward compatibility.
    */
-  async validatePhaseForTool(specDir: string, toolName: string): Promise<{
+  async validatePhaseForTool(
+    specDir: string,
+    toolName: string,
+  ): Promise<{
     allowed: boolean;
     current_phase: Phase;
     expected_phases: Phase[];
@@ -679,56 +817,6 @@ export class StateMachine {
     found_sections: string[];
     missing_sections: string[];
   }> {
-    const DESIGN_SECTIONS: { name: string; patterns: string[] }[] = [
-      { name: "System Context", patterns: ["system context", "c4 level 1", "context"] },
-      { name: "Container", patterns: ["container", "c4 level 2"] },
-      { name: "Component", patterns: ["component", "c4 level 3"] },
-      { name: "Data Model", patterns: ["data model", "data", "entity"] },
-      { name: "API Contract", patterns: ["api contract", "api", "endpoint"] },
-      { name: "Infrastructure", patterns: ["infrastructure", "deployment"] },
-      { name: "Security", patterns: ["security", "authentication", "authorization"] },
-      { name: "Architecture Decision", patterns: ["architecture decision", "adr"] },
-      { name: "Error Handling", patterns: ["error handling", "error"] },
-      { name: "Diagrams", patterns: ["diagrams", "system diagrams"] },
-      { name: "Cross-Cutting", patterns: ["cross-cutting", "logging", "monitoring"] },
-      { name: "Code-Level", patterns: ["code-level", "class", "interface"] },
-    ];
-
-    let content: string;
-    try {
-      content = await this.fileManager.readSpecFile(featureDir, "DESIGN.md");
-    } catch {
-      return {
-        score: 0,
-        total_sections: DESIGN_SECTIONS.length,
-        found_sections: [],
-        missing_sections: DESIGN_SECTIONS.map((s) => s.name),
-      };
-    }
-
-    const contentLower = content.toLowerCase();
-    const foundSections: string[] = [];
-    const missingSections: string[] = [];
-
-    for (const section of DESIGN_SECTIONS) {
-      const found = section.patterns.some((pattern) => contentLower.includes(pattern));
-      if (found) {
-        foundSections.push(section.name);
-      } else {
-        missingSections.push(section.name);
-      }
-    }
-
-    const totalSections = DESIGN_SECTIONS.length;
-    const score = totalSections > 0
-      ? Math.round((foundSections.length / totalSections) * 100)
-      : 0;
-
-    return {
-      score,
-      total_sections: totalSections,
-      found_sections: foundSections,
-      missing_sections: missingSections,
-    };
+    return validateDesignCompleteness(this.fileManager, featureDir);
   }
 }

@@ -10,11 +10,12 @@
  * the rendered body/description), and the documented inputs — jira project_key,
  * azure area_path/iteration_path, include_subtasks — are honored.
  */
-import type { FileManager } from "./file-manager.js";
-import type { WorkItemMetadata, WorkItemPlatform, RoutingInstructions } from "../types.js";
+
+import type { RoutingInstructions, WorkItemMetadata, WorkItemPlatform } from "../types.js";
 import { extractRequirementIds } from "../utils/id-contracts.js";
-import { parseTasksFromMarkdown } from "../utils/task-parser.js";
 import { currentTimestamp } from "../utils/runtime-context.js";
+import { parseTasksFromMarkdown } from "../utils/task-parser.js";
+import type { FileManager } from "./file-manager.js";
 
 /** A task parsed from TASKS.md, including any indented subtask bullets. */
 interface ParsedTask {
@@ -84,7 +85,7 @@ export interface PlatformWorkItemExportResult {
 
 /** Trailing REQ suffix strip for display titles. */
 const TRAILING_TRACE_SUFFIX =
-  /\s*[(\[]?\s*(?:traces?(?:_to)?\s*:\s*)?REQ-[A-Z]+-\d{3}(?:\s*,\s*REQ-[A-Z]+-\d{3})*\s*[)\]]?\s*$/i;
+  /\s*[([]?\s*(?:traces?(?:_to)?\s*:\s*)?REQ-[A-Z]+-\d{3}(?:\s*,\s*REQ-[A-Z]+-\d{3})*\s*[)\]]?\s*$/i;
 
 export class WorkItemExporter {
   constructor(private fileManager: FileManager) {}
@@ -94,11 +95,11 @@ export class WorkItemExporter {
     _specDir: string,
     featureDir: string,
     includeSubtasks: boolean,
-    options?: WorkItemExportOptions
+    options?: WorkItemExportOptions,
   ): Promise<PlatformWorkItemExportResult> {
     if (platform === "jira" && !options?.project_key) {
       throw new Error(
-        "project_key is required for the jira platform. Pass the Jira project key (e.g. 'CHK') so issues are created in the right project."
+        "project_key is required for the jira platform. Pass the Jira project key (e.g. 'CHK') so issues are created in the right project.",
       );
     }
 
@@ -133,32 +134,42 @@ export class WorkItemExporter {
     tasks: ParsedTask[],
     featureNumber: string,
     includeSubtasks: boolean,
-    options?: WorkItemExportOptions
+    options?: WorkItemExportOptions,
   ): PlatformWorkItem[] {
     switch (platform) {
       case "github":
         return tasks.map((task) => this.toGitHubItem(task, featureNumber, includeSubtasks));
       case "jira":
         return tasks.map((task) =>
-          this.toJiraItem(task, featureNumber, includeSubtasks, options?.project_key ?? "")
+          this.toJiraItem(task, featureNumber, includeSubtasks, options?.project_key ?? ""),
         );
       case "azure_boards":
         return tasks.map((task) =>
-          this.toAzureBoardsItem(task, featureNumber, includeSubtasks, options?.area_path, options?.iteration_path)
+          this.toAzureBoardsItem(
+            task,
+            featureNumber,
+            includeSubtasks,
+            options?.area_path,
+            options?.iteration_path,
+          ),
         );
     }
   }
 
-  private toGitHubItem(task: ParsedTask, featureNumber: string, includeSubtasks: boolean): GitHubWorkItem {
-    const subtaskSection = includeSubtasks && task.subtasks.length > 0
-      ? `\n\n## Subtasks\n${task.subtasks.map((s) => `- [ ] ${s}`).join("\n")}`
-      : "";
+  private toGitHubItem(
+    task: ParsedTask,
+    featureNumber: string,
+    includeSubtasks: boolean,
+  ): GitHubWorkItem {
+    const subtaskSection =
+      includeSubtasks && task.subtasks.length > 0
+        ? `\n\n## Subtasks\n${task.subtasks.map((s) => `- [ ] ${s}`).join("\n")}`
+        : "";
     return {
       task_id: task.id,
       traces_to: task.traces_to,
       title: `[${task.id}] ${task.title}`,
-      body:
-        `## Description\n${task.description}${subtaskSection}\n\n## Traces To\n${this.tracesLine(task)}`,
+      body: `## Description\n${task.description}${subtaskSection}\n\n## Traces To\n${this.tracesLine(task)}`,
       labels: ["sdd", `feature/${featureNumber}`, ...task.traces_to],
     };
   }
@@ -167,19 +178,19 @@ export class WorkItemExporter {
     task: ParsedTask,
     featureNumber: string,
     includeSubtasks: boolean,
-    projectKey: string
+    projectKey: string,
   ): JiraWorkItem {
-    const subtaskSection = includeSubtasks && task.subtasks.length > 0
-      ? `\n\nh2. Subtasks\n${task.subtasks.map((s) => `* ${s}`).join("\n")}`
-      : "";
+    const subtaskSection =
+      includeSubtasks && task.subtasks.length > 0
+        ? `\n\nh2. Subtasks\n${task.subtasks.map((s) => `* ${s}`).join("\n")}`
+        : "";
     return {
       task_id: task.id,
       traces_to: task.traces_to,
       fields: {
         project: { key: projectKey },
         summary: `[${task.id}] ${task.title}`,
-        description:
-          `h2. Description\n${task.description}${subtaskSection}\n\nh2. Traces To\n${this.tracesLine(task)}`,
+        description: `h2. Description\n${task.description}${subtaskSection}\n\nh2. Traces To\n${this.tracesLine(task)}`,
         issuetype: { name: "Task" },
         labels: ["sdd", `feature-${featureNumber}`, ...task.traces_to],
       },
@@ -191,19 +202,19 @@ export class WorkItemExporter {
     featureNumber: string,
     includeSubtasks: boolean,
     areaPath?: string,
-    iterationPath?: string
+    iterationPath?: string,
   ): AzureBoardsWorkItem {
-    const subtaskSection = includeSubtasks && task.subtasks.length > 0
-      ? `<h2>Subtasks</h2><ul>${task.subtasks.map((s) => `<li>${s}</li>`).join("")}</ul>`
-      : "";
+    const subtaskSection =
+      includeSubtasks && task.subtasks.length > 0
+        ? `<h2>Subtasks</h2><ul>${task.subtasks.map((s) => `<li>${s}</li>`).join("")}</ul>`
+        : "";
     return {
       task_id: task.id,
       traces_to: task.traces_to,
       work_item_type: "Task",
       fields: {
         "System.Title": `[${task.id}] ${task.title}`,
-        "System.Description":
-          `<h2>Description</h2><p>${task.description}</p>${subtaskSection}<h2>Traces To</h2><p>${this.tracesLine(task)}</p>`,
+        "System.Description": `<h2>Description</h2><p>${task.description}</p>${subtaskSection}<h2>Traces To</h2><p>${this.tracesLine(task)}</p>`,
         "System.Tags": ["sdd", `feature/${featureNumber}`, ...task.traces_to].join("; "),
         ...(areaPath !== undefined && { "System.AreaPath": areaPath }),
         ...(iterationPath !== undefined && { "System.IterationPath": iterationPath }),

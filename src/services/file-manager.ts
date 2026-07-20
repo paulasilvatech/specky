@@ -3,9 +3,18 @@
  * Path sanitization, atomic writes, directory scanning.
  */
 
-import { mkdir, readFile, writeFile, readdir, stat, rename, access, unlink } from "node:fs/promises";
-import { join, resolve, relative, basename, dirname, sep } from "node:path";
 import { randomUUID } from "node:crypto";
+import {
+  access,
+  mkdir,
+  readdir,
+  readFile,
+  rename,
+  stat,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { MAX_SCAN_DEPTH } from "../constants.js";
 import type { DirectoryTree, FeatureInfo } from "../types.js";
 
@@ -71,7 +80,7 @@ export class FileManager {
     featureDir: string,
     fileName: string,
     content: string,
-    force: boolean
+    force: boolean,
   ): Promise<string> {
     const absPath = this.sanitizePath(join(featureDir, fileName));
 
@@ -79,7 +88,7 @@ export class FileManager {
       const exists = await this.pathExists(absPath);
       if (exists) {
         throw new Error(
-          `File already exists: ${relative(this.root, absPath)}. Use force: true to overwrite.`
+          `File already exists: ${relative(this.root, absPath)}. Use force: true to overwrite.`,
         );
       }
     }
@@ -163,7 +172,11 @@ export class FileManager {
       return temporaryPaths;
     } catch (error) {
       for (const temporaryPath of temporaryPaths) {
-        try { await unlink(temporaryPath); } catch { /* absent */ }
+        try {
+          await unlink(temporaryPath);
+        } catch {
+          /* absent */
+        }
       }
       throw error;
     }
@@ -174,11 +187,19 @@ export class FileManager {
     snapshots: Map<string, Buffer | null>,
   ): Promise<void> {
     for (const temporaryPath of temporaryPaths) {
-      try { await unlink(temporaryPath); } catch { /* already renamed or absent */ }
+      try {
+        await unlink(temporaryPath);
+      } catch {
+        /* already renamed or absent */
+      }
     }
     for (const [absolutePath, original] of snapshots) {
       if (original === null) {
-        try { await unlink(absolutePath); } catch { /* absent */ }
+        try {
+          await unlink(absolutePath);
+        } catch {
+          /* absent */
+        }
         continue;
       }
       await mkdir(dirname(absolutePath), { recursive: true });
@@ -253,7 +274,7 @@ export class FileManager {
   async scanDirectory(
     dir: string,
     depth: number,
-    exclude: readonly string[]
+    exclude: readonly string[],
   ): Promise<DirectoryTree> {
     const clampedDepth = Math.min(depth, MAX_SCAN_DEPTH);
     const absPath = this.sanitizePath(dir);
@@ -279,10 +300,7 @@ export class FileManager {
   /**
    * List files in a directory matching given extensions.
    */
-  async listFilesByExtension(
-    dir: string,
-    extensions: readonly string[]
-  ): Promise<string[]> {
+  async listFilesByExtension(dir: string, extensions: readonly string[]): Promise<string[]> {
     const absPath = this.sanitizePath(dir);
     try {
       const entries = await readdir(absPath, { withFileTypes: true });
@@ -317,7 +335,7 @@ export class FileManager {
     absPath: string,
     name: string,
     depth: number,
-    exclude: readonly string[]
+    exclude: readonly string[],
   ): Promise<DirectoryTree> {
     const stats = await stat(absPath);
 
@@ -337,9 +355,7 @@ export class FileManager {
         continue;
       }
       const childPath = join(absPath, entry.name);
-      children.push(
-        await this.scanRecursive(childPath, entry.name, depth - 1, exclude)
-      );
+      children.push(await this.scanRecursive(childPath, entry.name, depth - 1, exclude));
     }
 
     children.sort((a, b) => {

@@ -49,7 +49,12 @@ export class TestTraceabilityMapper {
       const reqIds = this.findReqsForTest(result.test_name, testToReq);
       for (const reqId of reqIds) {
         if (!coverage[reqId]) {
-          coverage[reqId] = { status: "untested", test_count: 0, passing_tests: [], failing_tests: [] };
+          coverage[reqId] = {
+            status: "untested",
+            test_count: 0,
+            passing_tests: [],
+            failing_tests: [],
+          };
         }
         const entry = coverage[reqId]!;
         entry.test_count++;
@@ -74,11 +79,18 @@ export class TestTraceabilityMapper {
     const passing = Object.values(coverage).filter((e) => e.status === "passing").length;
     const overall_percent = total > 0 ? Math.round((passing / total) * 100) : 0;
     const failing_requirements = Object.entries(coverage)
-      .filter(([, e]) => e.status === "failing").map(([id]) => id);
+      .filter(([, e]) => e.status === "failing")
+      .map(([id]) => id);
     const untested_requirements = Object.entries(coverage)
-      .filter(([, e]) => e.status === "untested").map(([id]) => id);
+      .filter(([, e]) => e.status === "untested")
+      .map(([id]) => id);
 
-    return { per_requirement: coverage, overall_percent, failing_requirements, untested_requirements };
+    return {
+      per_requirement: coverage,
+      overall_percent,
+      failing_requirements,
+      untested_requirements,
+    };
   }
 
   buildFailureDetails(

@@ -15,37 +15,45 @@
  *   4. sdd_batch_import counted compressed (real-world) DOCX conversions —
  *      which produced binary garbage — as "successful".
  */
-import { existsSync, mkdirSync, mkdtempSync, cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { deflateRawSync } from "node:zlib";
-import { afterEach, describe, expect, it } from "vitest";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { FileManager } from "../../src/services/file-manager.js";
-import { StateMachine } from "../../src/services/state-machine.js";
-import { TemplateEngine } from "../../src/services/template-engine.js";
-import { EarsValidator } from "../../src/services/ears-validator.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { afterEach, describe, expect, it } from "vitest";
+import { Phase } from "../../src/constants.js";
+import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
+import { AuditLogger } from "../../src/services/audit-logger.js";
 import { ComplianceEngine } from "../../src/services/compliance-engine.js";
 import { CrossAnalyzer } from "../../src/services/cross-analyzer.js";
-import { GitManager } from "../../src/services/git-manager.js";
 import { DocumentConverter } from "../../src/services/document-converter.js";
+import { EarsValidator } from "../../src/services/ears-validator.js";
+import { ExecutionContextResolver } from "../../src/services/execution-context.js";
+import { FileManager } from "../../src/services/file-manager.js";
+import { GitManager } from "../../src/services/git-manager.js";
+import { RbacEngine } from "../../src/services/rbac-engine.js";
+import { StateMachine } from "../../src/services/state-machine.js";
+import { TemplateEngine } from "../../src/services/template-engine.js";
 import {
-  WorkItemExporter,
+  type AzureBoardsWorkItem,
   type GitHubWorkItem,
   type JiraWorkItem,
-  type AzureBoardsWorkItem,
+  WorkItemExporter,
 } from "../../src/services/work-item-exporter.js";
-import { registerQualityTools } from "../../src/tools/quality.js";
 import { registerInputTools } from "../../src/tools/input.js";
 import { registerIntegrationTools } from "../../src/tools/integration.js";
-import { AuditLogger } from "../../src/services/audit-logger.js";
-import { RbacEngine } from "../../src/services/rbac-engine.js";
-import { ExecutionContextResolver } from "../../src/services/execution-context.js";
+import { registerQualityTools } from "../../src/tools/quality.js";
 import { installToolEnforcement } from "../../src/tools/tool-enforcement.js";
-import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
-import { Phase } from "../../src/constants.js";
 import { testDocumentationConfig } from "../helpers/documentation-config.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
@@ -72,10 +80,7 @@ interface Harness {
   close: () => Promise<void>;
 }
 
-async function buildHarness(
-  workspace: string,
-  phase: Phase = Phase.Analyze,
-): Promise<Harness> {
+async function buildHarness(workspace: string, phase: Phase = Phase.Analyze): Promise<Harness> {
   cpSync(TEMPLATES_SRC, join(workspace, CUSTOM_TEMPLATES), { recursive: true });
 
   const fileManager = new FileManager(workspace);
@@ -153,9 +158,24 @@ async function buildHarness(
     stateMachine,
     contextResolver: new ExecutionContextResolver(fileManager, stateMachine),
   });
-  registerQualityTools(server, fileManager, stateMachine, templateEngine, complianceEngine, crossAnalyzer, earsValidator);
+  registerQualityTools(
+    server,
+    fileManager,
+    stateMachine,
+    templateEngine,
+    complianceEngine,
+    crossAnalyzer,
+    earsValidator,
+  );
   registerInputTools(server, fileManager, documentConverter, stateMachine);
-  registerIntegrationTools(server, fileManager, stateMachine, templateEngine, gitManager, workItemExporter);
+  registerIntegrationTools(
+    server,
+    fileManager,
+    stateMachine,
+    templateEngine,
+    gitManager,
+    workItemExporter,
+  );
 
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const client = new Client({ name: "exports-quality", version: "0.0.0" });
@@ -256,7 +276,8 @@ describe("export & quality-report regressions", () => {
 
   afterEach(async () => {
     for (const close of cleanups.splice(0)) await close();
-    for (const ws of workspaces.splice(0)) rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    for (const ws of workspaces.splice(0))
+      rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   // ── Fix: sdd_export_work_items produces target-specific payload shapes ──
@@ -273,13 +294,19 @@ describe("export & quality-report regressions", () => {
     it("github, jira, and azure_boards payloads are NOT byte-identical", async () => {
       const { exporter } = seedExportWorkspace();
       const featureDir = ".specs/001-checkout-service";
-      const options = { project_key: "CHK", area_path: "Shop\\Checkout", iteration_path: "Shop\\Sprint 1" };
+      const options = {
+        project_key: "CHK",
+        area_path: "Shop\\Checkout",
+        iteration_path: "Shop\\Sprint 1",
+      };
 
       const github = await exporter.export("github", ".specs", featureDir, true, options);
       const jira = await exporter.export("jira", ".specs", featureDir, true, options);
       const azure = await exporter.export("azure_boards", ".specs", featureDir, true, options);
 
-      const [g, j, a] = [github.items, jira.items, azure.items].map((items) => JSON.stringify(items));
+      const [g, j, a] = [github.items, jira.items, azure.items].map((items) =>
+        JSON.stringify(items),
+      );
       expect(g).not.toBe(j);
       expect(g).not.toBe(a);
       expect(j).not.toBe(a);
@@ -309,7 +336,12 @@ describe("export & quality-report regressions", () => {
         "TASKS.md": TASKS_TABLE_MD,
       });
       const exporter = new WorkItemExporter(new FileManager(ws));
-      const result = await exporter.export("github", ".specs", ".specs/001-checkout-service", false);
+      const result = await exporter.export(
+        "github",
+        ".specs",
+        ".specs/001-checkout-service",
+        false,
+      );
 
       expect(result.items).toHaveLength(2);
       expect((result.items[0] as GitHubWorkItem).title).toBe("[T-001] Build payment form");
@@ -320,7 +352,9 @@ describe("export & quality-report regressions", () => {
 
     it("jira items use {fields: {project.key, summary, description, issuetype.name}} honoring project_key", async () => {
       const { exporter } = seedExportWorkspace();
-      const result = await exporter.export("jira", ".specs", ".specs/001-checkout-service", true, { project_key: "CHK" });
+      const result = await exporter.export("jira", ".specs", ".specs/001-checkout-service", true, {
+        project_key: "CHK",
+      });
       const item = result.items[0] as JiraWorkItem;
 
       expect(item.fields.project.key).toBe("CHK");
@@ -334,16 +368,22 @@ describe("export & quality-report regressions", () => {
     it("jira export FAILS without a project_key instead of silently discarding it", async () => {
       const { exporter } = seedExportWorkspace();
       await expect(
-        exporter.export("jira", ".specs", ".specs/001-checkout-service", true)
+        exporter.export("jira", ".specs", ".specs/001-checkout-service", true),
       ).rejects.toThrow(/project_key is required for the jira platform/);
     });
 
     it("azure_boards items use System.* fields honoring area_path and iteration_path", async () => {
       const { exporter } = seedExportWorkspace();
-      const result = await exporter.export("azure_boards", ".specs", ".specs/001-checkout-service", true, {
-        area_path: "Shop\\Checkout",
-        iteration_path: "Shop\\Sprint 1",
-      });
+      const result = await exporter.export(
+        "azure_boards",
+        ".specs",
+        ".specs/001-checkout-service",
+        true,
+        {
+          area_path: "Shop\\Checkout",
+          iteration_path: "Shop\\Sprint 1",
+        },
+      );
       const item = result.items[0] as AzureBoardsWorkItem;
 
       expect(item.work_item_type).toBe("Task");
@@ -355,7 +395,12 @@ describe("export & quality-report regressions", () => {
 
     it("azure_boards items omit AreaPath/IterationPath when not provided", async () => {
       const { exporter } = seedExportWorkspace();
-      const result = await exporter.export("azure_boards", ".specs", ".specs/001-checkout-service", true);
+      const result = await exporter.export(
+        "azure_boards",
+        ".specs",
+        ".specs/001-checkout-service",
+        true,
+      );
       const item = result.items[0] as AzureBoardsWorkItem;
 
       expect(item.fields).not.toHaveProperty("System.AreaPath");
@@ -364,11 +409,23 @@ describe("export & quality-report regressions", () => {
 
     it("include_subtasks=false excludes the subtask bullets", async () => {
       const { exporter } = seedExportWorkspace();
-      const withSub = await exporter.export("github", ".specs", ".specs/001-checkout-service", true);
-      const withoutSub = await exporter.export("github", ".specs", ".specs/001-checkout-service", false);
+      const withSub = await exporter.export(
+        "github",
+        ".specs",
+        ".specs/001-checkout-service",
+        true,
+      );
+      const withoutSub = await exporter.export(
+        "github",
+        ".specs",
+        ".specs/001-checkout-service",
+        false,
+      );
 
       expect((withSub.items[0] as GitHubWorkItem).body).toContain("Add card number validation");
-      expect((withoutSub.items[0] as GitHubWorkItem).body).not.toContain("Add card number validation");
+      expect((withoutSub.items[0] as GitHubWorkItem).body).not.toContain(
+        "Add card number validation",
+      );
       expect(withoutSub.metadata.include_subtasks).toBe(false);
     });
 
@@ -504,7 +561,10 @@ describe("export & quality-report regressions", () => {
     });
     expect(res.isError).toBe(false);
 
-    const persisted = readFileSync(join(ws, ".specs/001-checkout-service/CROSS_ANALYSIS.md"), "utf8");
+    const persisted = readFileSync(
+      join(ws, ".specs/001-checkout-service/CROSS_ANALYSIS.md"),
+      "utf8",
+    );
     expect(persisted).not.toContain("[TODO:");
     // Spec → Design table: REQ-CORE-001 aligned, REQ-CORE-002 missing.
     expect(persisted).toContain("| REQ-CORE-001 | Yes | REQ-CORE-001 referenced in DESIGN.md |");
@@ -545,8 +605,15 @@ describe("export & quality-report regressions", () => {
   it("sdd_batch_import counts a compressed DOCX as failed with the actionable reason", async () => {
     const ws = makeWorkspace("specky-batchimport-");
     mkdirSync(join(ws, "docs"), { recursive: true });
-    writeFileSync(join(ws, "docs", "good.md"), "# PRD\n\nThe system shall export invoices.\n", "utf8");
-    writeFileSync(join(ws, "docs", "report.docx"), makeCompressedDocx("The wizard shall collect the tax identifier."));
+    writeFileSync(
+      join(ws, "docs", "good.md"),
+      "# PRD\n\nThe system shall export invoices.\n",
+      "utf8",
+    );
+    writeFileSync(
+      join(ws, "docs", "report.docx"),
+      makeCompressedDocx("The wizard shall collect the tax identifier."),
+    );
     const h = await buildHarness(ws);
     cleanups.push(h.close);
 
@@ -561,7 +628,11 @@ describe("export & quality-report regressions", () => {
     expect(res.payload["total"]).toBe(2);
     expect(res.payload["successful"]).toBe(1);
     expect(res.payload["failed"]).toBe(1);
-    const results = res.payload["results"] as Array<{ file: string; status: string; error?: string }>;
+    const results = res.payload["results"] as Array<{
+      file: string;
+      status: string;
+      error?: string;
+    }>;
     const docxResult = results.find((r) => r.file.endsWith("report.docx"));
     expect(docxResult?.status).toBe("error");
     expect(docxResult?.error).toMatch(/compressed docx not supported natively/);
@@ -570,7 +641,10 @@ describe("export & quality-report regressions", () => {
   it("sdd_import_document errors (isError) on a compressed DOCX instead of reporting success with garbage", async () => {
     const ws = makeWorkspace("specky-importdoc-");
     mkdirSync(join(ws, "docs"), { recursive: true });
-    writeFileSync(join(ws, "docs", "report.docx"), makeCompressedDocx("The wizard shall collect the tax identifier."));
+    writeFileSync(
+      join(ws, "docs", "report.docx"),
+      makeCompressedDocx("The wizard shall collect the tax identifier."),
+    );
     const h = await buildHarness(ws);
     cleanups.push(h.close);
 
@@ -596,15 +670,18 @@ describe("export & quality-report regressions", () => {
       feature_number: "001",
       spec_dir: ".specs",
       force: false,
-      entries: [{
-        id: "RQ-001",
-        question: "Which idempotency strategy protects checkout retries?",
-        context: "The payment operation can be retried by clients and gateways.",
-        findings: "A client-supplied idempotency key uniquely identifies one payment attempt.",
-        sources: ["DESIGN.md#Payment-idempotency", "ADR-004"],
-        recommendation: "Persist idempotency keys with the payment result for the contracted retention period.",
-        status: "resolved",
-      }],
+      entries: [
+        {
+          id: "RQ-001",
+          question: "Which idempotency strategy protects checkout retries?",
+          context: "The payment operation can be retried by clients and gateways.",
+          findings: "A client-supplied idempotency key uniquely identifies one payment attempt.",
+          sources: ["DESIGN.md#Payment-idempotency", "ADR-004"],
+          recommendation:
+            "Persist idempotency keys with the payment result for the contracted retention period.",
+          status: "resolved",
+        },
+      ],
     });
     expect(res.isError).toBe(false);
     const research = readFileSync(join(ws, ".specs/001-checkout-service/RESEARCH.md"), "utf8");
@@ -624,15 +701,17 @@ describe("export & quality-report regressions", () => {
       feature_number: "001",
       spec_dir: ".specs",
       force: false,
-      entries: [{
-        id: "RQ-001",
-        question: "Which retry policy applies to checkout?",
-        context: "Retries can duplicate payment operations.",
-        findings: "The retry policy requires bounded exponential backoff.",
-        sources: [],
-        recommendation: "Use the reviewed bounded retry policy.",
-        status: "resolved",
-      }],
+      entries: [
+        {
+          id: "RQ-001",
+          question: "Which retry policy applies to checkout?",
+          context: "Retries can duplicate payment operations.",
+          findings: "The retry policy requires bounded exponential backoff.",
+          sources: [],
+          recommendation: "Use the reviewed bounded retry policy.",
+          status: "resolved",
+        },
+      ],
     });
     expect(res.isError).toBe(true);
     expect(existsSync(join(ws, ".specs/001-checkout-service/RESEARCH.md"))).toBe(false);

@@ -60,7 +60,7 @@ describe("enterprise documentation baseline", () => {
   it("keeps release container assets present", () => {
     expect(existsSync(resolve(ROOT, "Dockerfile"))).toBe(true);
     expect(existsSync(resolve(ROOT, ".dockerignore"))).toBe(true);
-    expect(read("Dockerfile")).toContain("serve\", \"--http");
+    expect(read("Dockerfile")).toContain('serve", "--http');
     expect(read("Dockerfile")).toContain("EXPOSE 3200");
   });
 });

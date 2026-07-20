@@ -23,8 +23,13 @@ describe("AnalysisEngine.analyze", () => {
     const design = "Design references REQ-CORE-001 and REQ-CORE-002.";
     const tasks = "T-001 traces REQ-CORE-001. T-002 traces REQ-CORE-002.";
     const r = engine.analyze({
-      hasConstitution: true, hasSpec: true, hasDesign: true, hasTasks: true,
-      specContent: SPEC, designContent: design, tasksContent: tasks,
+      hasConstitution: true,
+      hasSpec: true,
+      hasDesign: true,
+      hasTasks: true,
+      specContent: SPEC,
+      designContent: design,
+      tasksContent: tasks,
     });
     expect(r.decision).toBe("APPROVE");
     expect(r.coveragePercent).toBeGreaterThanOrEqual(90);
@@ -36,8 +41,13 @@ describe("AnalysisEngine.analyze", () => {
     const design = "Design references REQ-CORE-001 and REQ-CORE-002.";
     const tasks = "T-001 traces REQ-CORE-001."; // REQ-CORE-002 orphaned in tasks
     const r = engine.analyze({
-      hasConstitution: true, hasSpec: true, hasDesign: true, hasTasks: true,
-      specContent: SPEC, designContent: design, tasksContent: tasks,
+      hasConstitution: true,
+      hasSpec: true,
+      hasDesign: true,
+      hasTasks: true,
+      specContent: SPEC,
+      designContent: design,
+      tasksContent: tasks,
     });
     expect(r.decision).not.toBe("APPROVE");
     expect(r.orphanCount).toBeGreaterThan(0);
@@ -46,8 +56,13 @@ describe("AnalysisEngine.analyze", () => {
 
   it("BLOCKs when core documents are missing", () => {
     const r = engine.analyze({
-      hasConstitution: true, hasSpec: true, hasDesign: false, hasTasks: false,
-      specContent: SPEC, designContent: "", tasksContent: "",
+      hasConstitution: true,
+      hasSpec: true,
+      hasDesign: false,
+      hasTasks: false,
+      specContent: SPEC,
+      designContent: "",
+      tasksContent: "",
     });
     expect(r.decision).toBe("BLOCK");
     expect(r.gaps).toContain("DESIGN.md missing");

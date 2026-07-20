@@ -16,8 +16,8 @@ interface ExecutionGroup {
   parallel_groups: string[][];
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: static utility API is intentional
 export class DependencyGraph {
-
   /** Get which tools can run in parallel for a given phase */
   static getParallelGroups(phase: Phase): ExecutionGroup {
     const groups: Record<Phase, ExecutionGroup> = {
@@ -49,9 +49,7 @@ export class DependencyGraph {
       },
       [Phase.Tasks]: {
         sequential: ["sdd_write_tasks"],
-        parallel_groups: [
-          ["sdd_generate_diagram", "sdd_export_work_items"],
-        ],
+        parallel_groups: [["sdd_generate_diagram", "sdd_export_work_items"]],
       },
       [Phase.Analyze]: {
         sequential: ["sdd_run_analysis"],
@@ -77,7 +75,13 @@ export class DependencyGraph {
       [Phase.Release]: {
         sequential: ["sdd_create_pr"],
         parallel_groups: [
-          ["sdd_generate_docs", "sdd_generate_api_docs", "sdd_generate_runbook", "sdd_generate_onboarding", "sdd_generate_all_docs"],
+          [
+            "sdd_generate_docs",
+            "sdd_generate_api_docs",
+            "sdd_generate_runbook",
+            "sdd_generate_onboarding",
+            "sdd_generate_all_docs",
+          ],
           ["sdd_export_work_items"],
         ],
       },
@@ -112,7 +116,12 @@ export class DependencyGraph {
       },
       sdd_write_design: {
         requires: ["sdd_clarify"],
-        enables: ["sdd_write_tasks", "sdd_generate_diagram", "sdd_generate_all_diagrams", "sdd_generate_api_docs"],
+        enables: [
+          "sdd_write_tasks",
+          "sdd_generate_diagram",
+          "sdd_generate_all_diagrams",
+          "sdd_generate_api_docs",
+        ],
         parallel_with: [],
       },
       sdd_write_tasks: {
@@ -156,7 +165,12 @@ export class DependencyGraph {
       sdd_generate_docs: {
         requires: ["sdd_run_analysis"],
         enables: [],
-        parallel_with: ["sdd_generate_api_docs", "sdd_generate_runbook", "sdd_generate_onboarding", "sdd_generate_all_docs"],
+        parallel_with: [
+          "sdd_generate_api_docs",
+          "sdd_generate_runbook",
+          "sdd_generate_onboarding",
+          "sdd_generate_all_docs",
+        ],
       },
       sdd_generate_api_docs: {
         requires: ["sdd_write_design"],
@@ -239,11 +253,13 @@ export class DependencyGraph {
       },
     };
 
-    return deps[toolName] || {
-      requires: [],
-      enables: [],
-      parallel_with: [],
-    };
+    return (
+      deps[toolName] || {
+        requires: [],
+        enables: [],
+        parallel_with: [],
+      }
+    );
   }
 
   /** Get the recommended execution plan for the next steps from a given phase */
@@ -256,47 +272,153 @@ export class DependencyGraph {
       description: string;
     }>;
   } {
-    const plans: Record<Phase, ReturnType<typeof DependencyGraph.getExecutionPlan>["next_steps"]> = {
-      [Phase.Init]: [
-        { step: 1, tools: ["sdd_discover"], parallel: false, description: "Answer discovery questions" },
-        { step: 2, tools: ["sdd_scan_codebase"], parallel: true, description: "Optionally scan existing codebase" },
-      ],
-      [Phase.Discover]: [
-        { step: 1, tools: ["sdd_write_spec"], parallel: false, description: "Write EARS requirements" },
-        { step: 2, tools: ["sdd_validate_ears", "sdd_generate_diagram"], parallel: true, description: "Validate EARS + generate spec diagrams" },
-      ],
-      [Phase.Specify]: [
-        { step: 1, tools: ["sdd_clarify"], parallel: false, description: "Generate clarification questions" },
-        { step: 2, tools: ["sdd_validate_ears", "sdd_generate_diagram"], parallel: true, description: "Validate + visualize in parallel" },
-      ],
-      [Phase.Clarify]: [
-        { step: 1, tools: ["sdd_write_design"], parallel: false, description: "Write system design (12 sections)" },
-        { step: 2, tools: ["sdd_generate_all_diagrams", "sdd_generate_api_docs"], parallel: true, description: "Generate diagrams + API docs in parallel" },
-      ],
-      [Phase.Design]: [
-        { step: 1, tools: ["sdd_write_tasks"], parallel: false, description: "Break down into implementation tasks" },
-        { step: 2, tools: ["sdd_generate_diagram", "sdd_export_work_items"], parallel: true, description: "Generate task diagrams + export work items" },
-      ],
-      [Phase.Tasks]: [
-        { step: 1, tools: ["sdd_run_analysis"], parallel: false, description: "Run quality analysis and gate decision" },
-        { step: 2, tools: ["sdd_cross_analyze", "sdd_compliance_check", "sdd_checklist"], parallel: true, description: "Run all quality checks in parallel" },
-      ],
-      [Phase.Analyze]: [
-        { step: 1, tools: ["sdd_create_branch"], parallel: false, description: "Create implementation branch" },
-        { step: 2, tools: ["sdd_generate_iac", "sdd_generate_dockerfile", "sdd_setup_local_env"], parallel: true, description: "Generate IaC + dev environment in parallel" },
-        { step: 3, tools: ["sdd_implement"], parallel: false, description: "Execute implementation plan" },
-      ],
-      [Phase.Implement]: [
-        { step: 1, tools: ["sdd_generate_tests", "sdd_generate_pbt", "sdd_verify_tasks"], parallel: true, description: "Generate tests + verify tasks in parallel" },
-        { step: 2, tools: ["sdd_check_sync"], parallel: false, description: "Check spec-code drift" },
-      ],
-      [Phase.Verify]: [
-        { step: 1, tools: ["sdd_generate_docs", "sdd_generate_api_docs", "sdd_generate_runbook", "sdd_generate_onboarding"], parallel: true, description: "Generate all documentation in parallel" },
-        { step: 2, tools: ["sdd_create_pr"], parallel: false, description: "Create pull request" },
-        { step: 3, tools: ["sdd_export_work_items"], parallel: true, description: "Export work items for tracking" },
-      ],
-      [Phase.Release]: [],
-    };
+    const plans: Record<Phase, ReturnType<typeof DependencyGraph.getExecutionPlan>["next_steps"]> =
+      {
+        [Phase.Init]: [
+          {
+            step: 1,
+            tools: ["sdd_discover"],
+            parallel: false,
+            description: "Answer discovery questions",
+          },
+          {
+            step: 2,
+            tools: ["sdd_scan_codebase"],
+            parallel: true,
+            description: "Optionally scan existing codebase",
+          },
+        ],
+        [Phase.Discover]: [
+          {
+            step: 1,
+            tools: ["sdd_write_spec"],
+            parallel: false,
+            description: "Write EARS requirements",
+          },
+          {
+            step: 2,
+            tools: ["sdd_validate_ears", "sdd_generate_diagram"],
+            parallel: true,
+            description: "Validate EARS + generate spec diagrams",
+          },
+        ],
+        [Phase.Specify]: [
+          {
+            step: 1,
+            tools: ["sdd_clarify"],
+            parallel: false,
+            description: "Generate clarification questions",
+          },
+          {
+            step: 2,
+            tools: ["sdd_validate_ears", "sdd_generate_diagram"],
+            parallel: true,
+            description: "Validate + visualize in parallel",
+          },
+        ],
+        [Phase.Clarify]: [
+          {
+            step: 1,
+            tools: ["sdd_write_design"],
+            parallel: false,
+            description: "Write system design (12 sections)",
+          },
+          {
+            step: 2,
+            tools: ["sdd_generate_all_diagrams", "sdd_generate_api_docs"],
+            parallel: true,
+            description: "Generate diagrams + API docs in parallel",
+          },
+        ],
+        [Phase.Design]: [
+          {
+            step: 1,
+            tools: ["sdd_write_tasks"],
+            parallel: false,
+            description: "Break down into implementation tasks",
+          },
+          {
+            step: 2,
+            tools: ["sdd_generate_diagram", "sdd_export_work_items"],
+            parallel: true,
+            description: "Generate task diagrams + export work items",
+          },
+        ],
+        [Phase.Tasks]: [
+          {
+            step: 1,
+            tools: ["sdd_run_analysis"],
+            parallel: false,
+            description: "Run quality analysis and gate decision",
+          },
+          {
+            step: 2,
+            tools: ["sdd_cross_analyze", "sdd_compliance_check", "sdd_checklist"],
+            parallel: true,
+            description: "Run all quality checks in parallel",
+          },
+        ],
+        [Phase.Analyze]: [
+          {
+            step: 1,
+            tools: ["sdd_create_branch"],
+            parallel: false,
+            description: "Create implementation branch",
+          },
+          {
+            step: 2,
+            tools: ["sdd_generate_iac", "sdd_generate_dockerfile", "sdd_setup_local_env"],
+            parallel: true,
+            description: "Generate IaC + dev environment in parallel",
+          },
+          {
+            step: 3,
+            tools: ["sdd_implement"],
+            parallel: false,
+            description: "Execute implementation plan",
+          },
+        ],
+        [Phase.Implement]: [
+          {
+            step: 1,
+            tools: ["sdd_generate_tests", "sdd_generate_pbt", "sdd_verify_tasks"],
+            parallel: true,
+            description: "Generate tests + verify tasks in parallel",
+          },
+          {
+            step: 2,
+            tools: ["sdd_check_sync"],
+            parallel: false,
+            description: "Check spec-code drift",
+          },
+        ],
+        [Phase.Verify]: [
+          {
+            step: 1,
+            tools: [
+              "sdd_generate_docs",
+              "sdd_generate_api_docs",
+              "sdd_generate_runbook",
+              "sdd_generate_onboarding",
+            ],
+            parallel: true,
+            description: "Generate all documentation in parallel",
+          },
+          {
+            step: 2,
+            tools: ["sdd_create_pr"],
+            parallel: false,
+            description: "Create pull request",
+          },
+          {
+            step: 3,
+            tools: ["sdd_export_work_items"],
+            parallel: true,
+            description: "Export work items for tracking",
+          },
+        ],
+        [Phase.Release]: [],
+      };
 
     return {
       phase: currentPhase,

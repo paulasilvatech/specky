@@ -5,68 +5,86 @@
  * is governed only by mandatory .specky/config.yml, whose schema is complete
  * and closed. The installer is the sole bootstrap path for creating the file.
  */
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parse, stringify } from "yaml";
 import { z } from "zod";
 import { VERSION } from "./constants.js";
-import {
-  SUPPORTED_USE_CASE_CONTRACT_IDS,
-  useCaseContractIdSchema,
-} from "./contracts/use-case.js";
+import { SUPPORTED_USE_CASE_CONTRACT_IDS, useCaseContractIdSchema } from "./contracts/use-case.js";
 
-const safeRelativePath = z.string().refine(
-  (path) =>
-    !path.startsWith("/") &&
-    !path.startsWith("\\") &&
-    !/^[a-zA-Z]:/.test(path) &&
-    !path.split(/[/\\]/).includes("..") &&
-    !path.includes("\0"),
-  { message: "path must be workspace-relative (no absolute paths, no '..')." },
-);
+const safeRelativePath = z
+  .string()
+  .refine(
+    (path) =>
+      !path.startsWith("/") &&
+      !path.startsWith("\\") &&
+      !/^[a-zA-Z]:/.test(path) &&
+      !path.split(/[/\\]/).includes("..") &&
+      !path.includes("\0"),
+    { message: "path must be workspace-relative (no absolute paths, no '..')." },
+  );
 
-export const configSchema = z.object({
-  version: z.literal(VERSION),
-  profile: z.enum(["standard", "enterprise"]),
-  spec_root: safeRelativePath.min(1),
-  numbering: z.object({
-    strategy: z.literal("explicit"),
-  }).strict(),
-  contracts: z.object({
-    require_explicit_selection: z.literal(true),
-    enabled: z.array(useCaseContractIdSchema).min(1),
-  }).strict(),
-  templates_path: safeRelativePath,
-  update_check: z.boolean(),
-  audit_enabled: z.boolean(),
-  rate_limit: z.object({
-    enabled: z.boolean(),
-    max_requests_per_minute: z.number().int().positive(),
-    burst: z.number().int().positive(),
-  }).strict(),
-  audit: z.object({
-    export_format: z.enum(["jsonl", "syslog", "otlp"]),
-    max_file_size_mb: z.number().positive(),
-    fail_closed: z.boolean(),
-  }).strict(),
-  rbac: z.object({
-    enabled: z.boolean(),
-    default_role: z.enum(["viewer", "contributor", "admin"]),
-  }).strict(),
-  installation: z.object({
-    permission_profile: z.enum(["scoped", "prompt"]),
-    integrations: z.array(z.enum(["github"])),
-  }).strict(),
-  pipeline: z.object({
-    require_lgtm: z.boolean(),
-  }).strict(),
-}).strict();
+export const configSchema = z
+  .object({
+    version: z.literal(VERSION),
+    profile: z.enum(["standard", "enterprise"]),
+    spec_root: safeRelativePath.min(1),
+    numbering: z
+      .object({
+        strategy: z.literal("explicit"),
+      })
+      .strict(),
+    contracts: z
+      .object({
+        require_explicit_selection: z.literal(true),
+        enabled: z.array(useCaseContractIdSchema).min(1),
+      })
+      .strict(),
+    templates_path: safeRelativePath,
+    update_check: z.boolean(),
+    audit_enabled: z.boolean(),
+    rate_limit: z
+      .object({
+        enabled: z.boolean(),
+        max_requests_per_minute: z.number().int().positive(),
+        burst: z.number().int().positive(),
+      })
+      .strict(),
+    audit: z
+      .object({
+        export_format: z.enum(["jsonl", "syslog", "otlp"]),
+        max_file_size_mb: z.number().positive(),
+        fail_closed: z.boolean(),
+      })
+      .strict(),
+    rbac: z
+      .object({
+        enabled: z.boolean(),
+        default_role: z.enum(["viewer", "contributor", "admin"]),
+      })
+      .strict(),
+    installation: z
+      .object({
+        permission_profile: z.enum(["scoped", "prompt"]),
+        integrations: z.array(z.enum(["github"])),
+      })
+      .strict(),
+    pipeline: z
+      .object({
+        require_lgtm: z.boolean(),
+      })
+      .strict(),
+  })
+  .strict();
 
 export type SpeckyConfig = z.infer<typeof configSchema>;
 export type SpeckyProfile = SpeckyConfig["profile"];
 
 export class ConfigValidationError extends Error {
-  constructor(readonly configPath: string, message: string) {
+  constructor(
+    readonly configPath: string,
+    message: string,
+  ) {
     super(`Invalid Specky workspace config at ${configPath}: ${message}`);
     this.name = "ConfigValidationError";
   }
@@ -136,13 +154,17 @@ export function resolveProfile(
   const flagValues = argv
     .filter((arg) => arg.startsWith("--profile="))
     .map((arg) => arg.slice("--profile=".length));
-  const candidate = flagValues.at(-1)
-    ?? env["SPECKY_PROFILE"]
-    ?? (env["SPECKY_ENTERPRISE"] === "1" ? "enterprise" : undefined);
+  const candidate =
+    flagValues.at(-1) ??
+    env["SPECKY_PROFILE"] ??
+    (env["SPECKY_ENTERPRISE"] === "1" ? "enterprise" : undefined);
 
   if (candidate === undefined) return configProfile;
   if (candidate === "standard" || candidate === "enterprise") return candidate;
-  throw new ConfigValidationError("<profile override>", `unknown profile "${candidate}"; expected standard or enterprise`);
+  throw new ConfigValidationError(
+    "<profile override>",
+    `unknown profile "${candidate}"; expected standard or enterprise`,
+  );
 }
 
 export function loadConfig(workspaceRoot: string, overrides: ProfileOverrides = {}): SpeckyConfig {
@@ -188,3 +210,48 @@ export function loadConfig(workspaceRoot: string, overrides: ProfileOverrides = 
   };
 }
 
+interface ConfigCacheEntry {
+  mtimeMs: number;
+  config: SpeckyConfig;
+}
+
+const configCache = new Map<string, ConfigCacheEntry>();
+
+/**
+ * mtime-aware wrapper around loadConfig: the workspace config is re-read and
+ * re-parsed only when .specky/config.yml changes on disk. Tool invocations
+ * call this on every resolve, so without it each call would re-hit the disk.
+ *
+ * First-load behavior is identical to loadConfig (a missing or invalid file
+ * throws ConfigValidationError). Once a config has loaded successfully, a
+ * temporarily missing file (e.g. mid-rename during an atomic rewrite) keeps
+ * serving the last cached config instead of failing the process. Overrides
+ * are assumed stable per workspace root, which holds for a server process
+ * because they derive from process argv/env fixed at startup.
+ */
+export function loadConfigCached(
+  workspaceRoot: string,
+  overrides: ProfileOverrides = {},
+): SpeckyConfig {
+  const configPath = join(workspaceRoot, ".specky", "config.yml");
+  const cached = configCache.get(workspaceRoot);
+
+  let mtimeMs: number | undefined;
+  try {
+    mtimeMs = statSync(configPath).mtimeMs;
+  } catch {
+    // Missing or unreadable file: serve the cached config when available;
+    // otherwise fall through so loadConfig raises the standard bootstrap error.
+    if (cached) return cached.config;
+  }
+
+  if (cached && mtimeMs !== undefined && cached.mtimeMs === mtimeMs) {
+    return cached.config;
+  }
+
+  const config = loadConfig(workspaceRoot, overrides);
+  if (mtimeMs !== undefined) {
+    configCache.set(workspaceRoot, { mtimeMs, config });
+  }
+  return config;
+}

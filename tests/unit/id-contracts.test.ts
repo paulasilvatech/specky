@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { extractRequirementIds, extractTaskIds, formatTaskId, normalizeTaskId, TASK_LINE_PATTERN } from "../../src/utils/id-contracts.js";
+import {
+  extractRequirementIds,
+  extractTaskIds,
+  formatTaskId,
+  normalizeTaskId,
+  TASK_LINE_PATTERN,
+} from "../../src/utils/id-contracts.js";
 
 describe("ID contracts", () => {
   it("normalizes canonical and legacy task IDs to T-001", () => {

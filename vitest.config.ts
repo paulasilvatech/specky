@@ -2,6 +2,9 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    // Integration tests spawn the MCP server and run hooks in temp workspaces;
+    // the default 5s timeout is too tight for cold-start and CI variance.
+    testTimeout: 30_000,
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
@@ -13,12 +16,12 @@ export default defineConfig({
       exclude: ["src/**/*.d.ts", "src/types.ts"],
       // Honest baseline measured over the whole tree (the previous 50/40/60/50
       // was measured only over imported files and did not reflect the codebase).
-      // Ratchet these up as service/tool coverage lands.
+      // Ratcheted after Wave 3 and again after the coverage push (90 test files).
       thresholds: {
-        statements: 22,
-        branches: 16,
-        functions: 26,
-        lines: 22,
+        statements: 85,
+        branches: 71,
+        functions: 94,
+        lines: 86,
       },
     },
   },

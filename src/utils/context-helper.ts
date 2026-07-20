@@ -3,8 +3,8 @@
  * Used by buildToolResponse in response-builder.ts to cover all tools.
  */
 
-import { ContextTieringEngine } from "../services/context-tiering-engine.js";
 import type { ContextLoadSummary } from "../services/context-tiering-engine.js";
+import { ContextTieringEngine } from "../services/context-tiering-engine.js";
 
 const tieringEngine = new ContextTieringEngine();
 

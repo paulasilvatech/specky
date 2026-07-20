@@ -81,10 +81,7 @@ export interface GitignoreResult {
  * Idempotent: if the block already exists, replace it (to pick up path changes
  * across versions). Never touches other user-authored entries.
  */
-export function writeGitignoreBlock(
-  workspace: string,
-  opts: { dryRun: boolean },
-): GitignoreResult {
+export function writeGitignoreBlock(workspace: string, opts: { dryRun: boolean }): GitignoreResult {
   const path = resolve(workspace, ".gitignore");
   const block = BLOCK_BODY.join("\n");
 

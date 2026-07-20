@@ -87,9 +87,7 @@ function readSettings(path: string): VscodeSettings {
     const stripped = readJsoncStripComments(raw);
     return JSON.parse(stripped) as VscodeSettings;
   } catch (err) {
-    throw new Error(
-      `[specky] Cannot parse ${path} (preserving as-is): ${(err as Error).message}`,
-    );
+    throw new Error(`[specky] Cannot parse ${path} (preserving as-is): ${(err as Error).message}`);
   }
 }
 
@@ -103,14 +101,11 @@ export interface VsResult {
  * Merge Specky-required keys into .vscode/settings.json.
  * Only adds missing keys; never overwrites user-authored values.
  */
-export function writeVscodeSettings(
-  path: string,
-  opts: { dryRun: boolean },
-): VsResult {
+export function writeVscodeSettings(path: string, opts: { dryRun: boolean }): VsResult {
   let existing: VscodeSettings = {};
   try {
     existing = readSettings(path);
-  } catch (err) {
+  } catch {
     // If we can't parse the user's settings.json (e.g., complex JSONC with
     // trailing commas), don't touch it — emit a warning upstream.
     return { path, written: false, addedKeys: [] };

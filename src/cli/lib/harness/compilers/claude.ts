@@ -7,33 +7,28 @@
  */
 
 import type { HarnessCompiler } from "../types.js";
-import { transformAgentTools, normalizeNewlines } from "./common.js";
+import { normalizeNewlines, transformAgentTools } from "./common.js";
 
 export const claudeCompiler: HarnessCompiler = {
-    target: "claude",
+  target: "claude",
 
-    compileAgent(content, opts) {
-        return transformAgentTools(content, "claude", "comma-list", opts);
-    },
+  compileAgent(content, opts) {
+    return transformAgentTools(content, "claude", "comma-list", opts);
+  },
 
-    compilePrompt(content) {
-        return content
-            .replace(/^agent:\s*agent\s*\n/m, "")
-            .replace(/^mode:\s*agent\s*\n/m, "");
-    },
+  compilePrompt(content) {
+    return content.replace(/^agent:\s*agent\s*\n/m, "").replace(/^mode:\s*agent\s*\n/m, "");
+  },
 
-    compileInstruction(content) {
-        return normalizeNewlines(content).replace(
-            /^applyTo:\s*['"]?\*\*['"]?\s*$/m,
-            "paths: ['**']",
-        );
-    },
+  compileInstruction(content) {
+    return normalizeNewlines(content).replace(/^applyTo:\s*['"]?\*\*['"]?\s*$/m, "paths: ['**']");
+  },
 
-    renameAgent(fileName) {
-        return fileName.replace(/\.agent\.md$/, ".md");
-    },
+  renameAgent(fileName) {
+    return fileName.replace(/\.agent\.md$/, ".md");
+  },
 
-    renamePrompt(fileName) {
-        return fileName.replace(/\.prompt\.md$/, ".md");
-    },
+  renamePrompt(fileName) {
+    return fileName.replace(/\.prompt\.md$/, ".md");
+  },
 };

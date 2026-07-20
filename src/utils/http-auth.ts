@@ -11,10 +11,13 @@ import { timingSafeEqual } from "node:crypto";
  *   constant time (the token length is not secret, so a length check first is
  *   acceptable and avoids timingSafeEqual's equal-length requirement throwing).
  */
-export function isBearerAuthorized(authorizationHeader: string | undefined, token: string): boolean {
+export function isBearerAuthorized(
+  authorizationHeader: string | undefined,
+  token: string,
+): boolean {
   if (!token) return true;
   const prefix = "Bearer ";
-  if (!authorizationHeader || !authorizationHeader.startsWith(prefix)) return false;
+  if (!authorizationHeader?.startsWith(prefix)) return false;
   const presented = Buffer.from(authorizationHeader.slice(prefix.length));
   const expected = Buffer.from(token);
   return presented.length === expected.length && timingSafeEqual(presented, expected);

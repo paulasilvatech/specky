@@ -6,25 +6,25 @@
 import type { HarnessCompiler } from "../types.js";
 
 export const agentSkillsCompiler: HarnessCompiler = {
-    target: "agent-skills",
+  target: "agent-skills",
 
-    compileAgent(content) {
-        return content;
-    },
+  compileAgent(content) {
+    return content;
+  },
 
-    compilePrompt(content) {
-        return content;
-    },
+  compilePrompt(content) {
+    return content;
+  },
 
-    compileInstruction(content) {
-        return content;
-    },
+  compileInstruction(content) {
+    return content;
+  },
 
-    renameAgent(fileName) {
-        return fileName;
-    },
+  renameAgent(fileName) {
+    return fileName;
+  },
 
-    renamePrompt(fileName) {
-        return fileName;
-    },
+  renamePrompt(fileName) {
+    return fileName;
+  },
 };

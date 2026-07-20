@@ -4,14 +4,15 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { formatError, truncate } from "./tool-result.js";
+import { checkSyncInputSchema } from "../schemas/utility.js";
+import { requireExecutionContext } from "../services/execution-context.js";
 import type { FileManager } from "../services/file-manager.js";
+import type { IntentDriftEngine } from "../services/intent-drift-engine.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
-import type { IntentDriftEngine } from "../services/intent-drift-engine.js";
-import { checkSyncInputSchema } from "../schemas/utility.js";
+import { REQUIREMENT_HEADING_PATTERN } from "../utils/id-contracts.js";
 import { enrichResponse } from "./response-builder.js";
-import { requireExecutionContext } from "../services/execution-context.js";
+import { errorResult, truncate } from "./tool-result.js";
 
 export function registerAnalysisTools(
   server: McpServer,
@@ -47,17 +48,12 @@ export function registerAnalysisTools(
           specContent = await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md");
         } catch {
           throw new Error(
-            `SPECIFICATION.md not found in ${feature.directory}.\n→ Fix: Run sdd_write_spec first.`
+            `SPECIFICATION.md not found in ${feature.directory}.\n→ Fix: Run sdd_write_spec first.`,
           );
         }
 
         // Extract requirement IDs
-        const reqIds: string[] = [];
-        const reqRegex = /### (REQ-[A-Z]+-\d{3})/g;
-        let match;
-        while ((match = reqRegex.exec(specContent)) !== null) {
-          reqIds.push(match[1]);
-        }
+        const reqIds = [...specContent.matchAll(REQUIREMENT_HEADING_PATTERN)].map((m) => m[1]);
 
         // Check code files for requirement references
         const driftItems: Array<{ requirement_id: string; status: string }> = [];
@@ -91,22 +87,38 @@ export function registerAnalysisTools(
         let intentDrift: Record<string, unknown> | undefined;
         if (intentDriftEngine) {
           try {
-            const constitutionContent = await fileManager.readSpecFile(feature.directory, "CONSTITUTION.md").catch(() => "");
+            const constitutionContent = await fileManager
+              .readSpecFile(feature.directory, "CONSTITUTION.md")
+              .catch(() => "");
             let tasksContent = "";
-            try { tasksContent = await fileManager.readSpecFile(feature.directory, "TASKS.md"); } catch { /* not yet written */ }
+            try {
+              tasksContent = await fileManager.readSpecFile(feature.directory, "TASKS.md");
+            } catch {
+              /* not yet written */
+            }
             const principles = intentDriftEngine.extractPrinciples(constitutionContent);
-            const driftReport = intentDriftEngine.computeCoverage(principles, specContent, tasksContent);
+            const driftReport = intentDriftEngine.computeCoverage(
+              principles,
+              specContent,
+              tasksContent,
+            );
 
             // Store drift snapshot in state
             const state = await stateMachine.loadState(stateDir);
             const MAX_DRIFT = 100;
-            const snapshot = { timestamp: new Date().toISOString(), score: driftReport.intent_drift_score, orphaned_count: driftReport.orphaned_principles.length };
+            const snapshot = {
+              timestamp: new Date().toISOString(),
+              score: driftReport.intent_drift_score,
+              orphaned_count: driftReport.orphaned_principles.length,
+            };
             state.drift_history = [...(state.drift_history ?? []), snapshot].slice(-MAX_DRIFT);
             await stateMachine.saveState(stateDir, state);
 
             const trend = intentDriftEngine.computeTrend(state.drift_history ?? []);
             intentDrift = { ...driftReport, drift_trend: trend };
-          } catch { /* non-critical */ }
+          } catch {
+            /* non-critical */
+          }
         }
 
         const result: Record<string, unknown> = {
@@ -123,13 +135,12 @@ export function registerAnalysisTools(
         };
 
         const enriched = await enrichResponse("sdd_check_sync", result, stateMachine, stateDir);
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
-      } catch (error) {
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_check_sync", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_check_sync", error);
       }
-    }
+    },
   );
 }

@@ -3,13 +3,13 @@
  * handoff information, and parallel execution hints.
  */
 
-import { Phase, TOOL_NAMES } from "../constants.js";
-import type { PhaseStatus, HandoffContext, ParallelHint } from "../types.js";
-import { MethodologyGuide } from "../services/methodology.js";
+import { type Phase, TOOL_NAMES } from "../constants.js";
 import { DependencyGraph } from "../services/dependency-graph.js";
-import { routingEngine } from "../utils/routing-helper.js";
-import { buildDefaultContextSummary } from "../utils/context-helper.js";
 import { requireExecutionContext } from "../services/execution-context.js";
+import { MethodologyGuide } from "../services/methodology.js";
+import type { HandoffContext, ParallelHint, PhaseStatus } from "../types.js";
+import { buildDefaultContextSummary } from "../utils/context-helper.js";
+import { routingEngine } from "../utils/routing-helper.js";
 
 interface PhaseContext {
   current_phase: Phase;
@@ -18,10 +18,7 @@ interface PhaseContext {
   completion_percent: number;
 }
 
-const FEATURE_CREATION_TOOLS = new Set<string>([
-  TOOL_NAMES.INIT,
-  TOOL_NAMES.AUTO_PIPELINE,
-]);
+const FEATURE_CREATION_TOOLS = new Set<string>([TOOL_NAMES.INIT, TOOL_NAMES.AUTO_PIPELINE]);
 
 /**
  * Build an enriched tool response with phase context and educational content.
@@ -36,7 +33,7 @@ export function buildToolResponse(
     nextPhase?: Phase;
     artifactsProduced?: string[];
     summaryOfWork?: string;
-  }
+  },
 ): Record<string, unknown> {
   // Phase context
   const progress = MethodologyGuide.getProgressIndicator(currentPhase, phases);
@@ -70,10 +67,11 @@ export function buildToolResponse(
   const executionPlan = DependencyGraph.getExecutionPlan(currentPhase);
   const parallelOpportunities: ParallelHint = {
     can_run_now: deps.parallel_with,
-    must_wait_for: deps.requires.filter(r => !progress.completed_phases.includes(r as Phase)),
-    explanation: executionPlan.next_steps.length > 0
-      ? `Next: ${executionPlan.next_steps[0].description}${executionPlan.next_steps[0].parallel ? " (can run in parallel)" : ""}`
-      : "Pipeline complete.",
+    must_wait_for: deps.requires.filter((r) => !progress.completed_phases.includes(r as Phase)),
+    explanation:
+      executionPlan.next_steps.length > 0
+        ? `Next: ${executionPlan.next_steps[0].description}${executionPlan.next_steps[0].parallel ? " (can run in parallel)" : ""}`
+        : "Pipeline complete.",
   };
 
   return {
@@ -95,19 +93,25 @@ export function buildToolResponse(
 export async function enrichResponse(
   toolName: string,
   result: Record<string, unknown>,
-  stateMachine: { loadState(specDir: string): Promise<{ current_phase: Phase; phases: Record<Phase, PhaseStatus> }> },
+  stateMachine: {
+    loadState(
+      specDir: string,
+    ): Promise<{ current_phase: Phase; phases: Record<Phase, PhaseStatus> }>;
+  },
   specDir: string,
   options?: {
     completedPhase?: Phase;
     nextPhase?: Phase;
     artifactsProduced?: string[];
     summaryOfWork?: string;
-  }
+  },
 ): Promise<Record<string, unknown>> {
   const context = requireExecutionContext(toolName);
   const stateDir = context.stateDir ?? (FEATURE_CREATION_TOOLS.has(toolName) ? specDir : undefined);
   if (!stateDir) {
-    throw new Error(`${toolName} has no feature state context and cannot produce phase enrichment.`);
+    throw new Error(
+      `${toolName} has no feature state context and cannot produce phase enrichment.`,
+    );
   }
   const state = await stateMachine.loadState(stateDir);
   return buildToolResponse(toolName, result, state.current_phase, state.phases, options);
@@ -126,7 +130,8 @@ export function enrichStateless(
     ...result,
     educational_note: toolExplanation.why_it_matters,
     common_mistakes: toolExplanation.common_mistakes,
-    sdd_context: "This is a utility tool that operates independently of the SDD pipeline phase. It can be called at any time to support your workflow.",
+    sdd_context:
+      "This is a utility tool that operates independently of the SDD pipeline phase. It can be called at any time to support your workflow.",
   };
 }
 
@@ -137,7 +142,7 @@ export function buildPhaseError(
   toolName: string,
   currentPhase: Phase,
   expectedPhases: Phase[],
-  errorMessage: string
+  errorMessage: string,
 ): Record<string, unknown> {
   const phaseExplanation = MethodologyGuide.getPhaseExplanation(currentPhase);
   return {

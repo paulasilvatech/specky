@@ -1,17 +1,16 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { TOOL_NAMES } from "../constants.js";
-import type { AuditLogger } from "../services/audit-logger.js";
 import { specDirSchema } from "../schemas/common.js";
+import type { AuditLogger } from "../services/audit-logger.js";
 
-const verifyAuditInputSchema = z.object({
-  spec_dir: specDirSchema,
-}).strict();
+const verifyAuditInputSchema = z
+  .object({
+    spec_dir: specDirSchema,
+  })
+  .strict();
 
-export function registerAuditTools(
-  server: McpServer,
-  auditLogger: AuditLogger,
-): void {
+export function registerAuditTools(server: McpServer, auditLogger: AuditLogger): void {
   server.registerTool(
     TOOL_NAMES.VERIFY_AUDIT,
     {

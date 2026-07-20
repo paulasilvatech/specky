@@ -16,11 +16,7 @@ export interface DetectionResult {
 export function detectIde(workspace: string): DetectionResult {
   const signals: string[] = [];
 
-  const claudeSignals = [
-    ".claude",
-    ".mcp.json",
-    "CLAUDE.md",
-  ];
+  const claudeSignals = [".claude", ".mcp.json", "CLAUDE.md"];
   const copilotSignals = [
     ".github/copilot-instructions.md",
     ".github/agents",

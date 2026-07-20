@@ -18,8 +18,9 @@
  * throws, so the server refuses to start with broken auth instead of silently
  * accepting everyone.
  */
-import { readFileSync } from "node:fs";
+
 import { createHash, timingSafeEqual } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 import { z } from "zod";
 import type { RbacRole } from "../services/rbac-engine.js";
@@ -106,7 +107,7 @@ export function resolveBearerIdentity(
   }
 
   const prefix = "Bearer ";
-  if (!authorizationHeader || !authorizationHeader.startsWith(prefix)) {
+  if (!authorizationHeader?.startsWith(prefix)) {
     return { authorized: false };
   }
   const presented = authorizationHeader.slice(prefix.length);

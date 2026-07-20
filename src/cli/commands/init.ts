@@ -1,11 +1,12 @@
 /**
  * init.ts — `specky init` — install Specky assets into the current workspace.
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { VERSION } from "../../constants.js";
 import { createWorkspaceConfig, loadConfig, serializeWorkspaceConfig } from "../../config.js";
+import { VERSION } from "../../constants.js";
 import {
+  type CopyResult,
   copyToAgentSkills,
   copyToClaude,
   copyToCopilot,
@@ -13,18 +14,21 @@ import {
   copyToOpenCode,
   summarizeCopy,
   writeInstallLock,
-  type CopyResult,
 } from "../lib/asset-copier.js";
-import { detectIde, type IdeTarget } from "../lib/ide-detect.js";
-import { SUPPORTED_TARGETS, type HarnessTarget } from "../lib/harness/index.js";
-import { agentCapabilities } from "../lib/harness/compilers/common.js";
-import type { AgentCapability } from "../lib/harness/types.js";
-import { packageRoot, sourcePaths, targetPaths, type Targets } from "../lib/paths.js";
-import { loadClaudeHooksManifest, mergeClaudeHooks, type PermissionProfile } from "../lib/settings-merger.js";
-import { writeMcpRegistration } from "../lib/mcp-writer.js";
 import { writeCursorPluginManifest } from "../lib/cursor-plugin-writer.js";
-import { writeVscodeSettings } from "../lib/vscode-settings-writer.js";
 import { writeGitignoreBlock } from "../lib/gitignore-writer.js";
+import { agentCapabilities } from "../lib/harness/compilers/common.js";
+import { type HarnessTarget, SUPPORTED_TARGETS } from "../lib/harness/index.js";
+import type { AgentCapability } from "../lib/harness/types.js";
+import { detectIde, type IdeTarget } from "../lib/ide-detect.js";
+import { writeMcpRegistration } from "../lib/mcp-writer.js";
+import { packageRoot, sourcePaths, type Targets, targetPaths } from "../lib/paths.js";
+import {
+  loadClaudeHooksManifest,
+  mergeClaudeHooks,
+  type PermissionProfile,
+} from "../lib/settings-merger.js";
+import { writeVscodeSettings } from "../lib/vscode-settings-writer.js";
 
 export interface InitOptions {
   ide?: IdeTarget | "auto";
@@ -63,7 +67,10 @@ function uniqueTargets(targets: HarnessTarget[]): HarnessTarget[] {
   return [...new Set(targets)];
 }
 
-function targetsFromLegacyIde(ide: IdeTarget | "auto", detected: ReturnType<typeof detectIde>): HarnessTarget[] {
+function targetsFromLegacyIde(
+  ide: IdeTarget | "auto",
+  detected: ReturnType<typeof detectIde>,
+): HarnessTarget[] {
   const resolved = ide === "auto" ? detected.recommendation : ide;
   if (resolved === "both") return ["claude", "copilot"];
   return [resolved];
@@ -81,12 +88,13 @@ function parseTargetToken(token: string, detected: ReturnType<typeof detectIde>)
   );
 }
 
-function resolveInstallTargets(opts: InitOptions, detected: ReturnType<typeof detectIde>): HarnessTarget[] {
+function resolveInstallTargets(
+  opts: InitOptions,
+  detected: ReturnType<typeof detectIde>,
+): HarnessTarget[] {
   if (opts.target) {
     return uniqueTargets(
-      opts.target
-        .split(",")
-        .flatMap((token) => parseTargetToken(token, detected)),
+      opts.target.split(",").flatMap((token) => parseTargetToken(token, detected)),
     );
   }
   return targetsFromLegacyIde(opts.ide ?? "auto", detected);
@@ -100,10 +108,15 @@ function resolvePermissionProfile(profile: string | undefined): PermissionProfil
 
 function resolveIntegrations(integration: string | undefined): Integration[] {
   if (!integration) return [];
-  const requested = integration.split(",").map((value) => value.trim()).filter(Boolean);
+  const requested = integration
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
   const unknown = requested.filter((value) => value !== "github");
   if (unknown.length > 0) {
-    throw new Error(`[specky init] Unknown integration(s): ${unknown.join(", ")}. Supported: github`);
+    throw new Error(
+      `[specky init] Unknown integration(s): ${unknown.join(", ")}. Supported: github`,
+    );
   }
   return [...new Set(requested)] as Integration[];
 }
@@ -133,9 +146,10 @@ function resolveInstallationConfiguration(
     permissionProfile: resolvePermissionProfile(
       opts.permissionProfile ?? workspaceConfig?.installation.permission_profile,
     ),
-    integrations: opts.integration === undefined
-      ? (workspaceConfig?.installation.integrations ?? [])
-      : resolveIntegrations(opts.integration),
+    integrations:
+      opts.integration === undefined
+        ? (workspaceConfig?.installation.integrations ?? [])
+        : resolveIntegrations(opts.integration),
   };
 }
 
@@ -163,7 +177,9 @@ function installClaude(ctx: Ctx): CopyResult {
     });
     console.log(`  settings.json: ${merge.written ? "merged" : "dry-run"} at ${merge.path}`);
     if (merge.addedPermissions > 0) {
-      console.log(`  permissions:   ${merge.addedPermissions} allow rules added (specky MCP + native tools)`);
+      console.log(
+        `  permissions:   ${merge.addedPermissions} allow rules added (specky MCP + native tools)`,
+      );
     }
   } catch (err) {
     console.warn(`  ⚠️  ${(err as Error).message}`);
@@ -209,7 +225,9 @@ function installCopilot(ctx: Ctx): CopyResult {
   const vscodeSettingsPath = resolve(ctx.workspace, ".vscode/settings.json");
   const vs = writeVscodeSettings(vscodeSettingsPath, { dryRun: ctx.dryRun });
   if (vs.addedKeys.length > 0) {
-    console.log(`  .vscode/settings.json: +${vs.addedKeys.length} key(s) (${vs.addedKeys.join(", ")})`);
+    console.log(
+      `  .vscode/settings.json: +${vs.addedKeys.length} key(s) (${vs.addedKeys.join(", ")})`,
+    );
   } else {
     console.log(`  .vscode/settings.json: already configured`);
   }
@@ -238,7 +256,9 @@ function installCursor(ctx: Ctx): CopyResult {
   const plugin = writeCursorPluginManifest(ctx.workspace, ctx.pkg, { dryRun: ctx.dryRun });
   console.log(`  .cursor-plugin/plugin.json: ${plugin.action}`);
 
-  console.log(`  .cursor/hooks.json: ${existsSync(ctx.targets.cursor.hooksManifest) ? "installed" : "skipped"}`);
+  console.log(
+    `  .cursor/hooks.json: ${existsSync(ctx.targets.cursor.hooksManifest) ? "installed" : "skipped"}`,
+  );
   console.log("");
   return r;
 }
@@ -275,7 +295,11 @@ function installAgentSkills(ctx: Ctx): CopyResult {
   return r;
 }
 
-function writeSpeckyMeta(ctx: Ctx, resolvedIde: IdeTarget | "auto", resolvedTargets: HarnessTarget[]): void {
+function writeSpeckyMeta(
+  ctx: Ctx,
+  resolvedIde: IdeTarget | "auto",
+  resolvedTargets: HarnessTarget[],
+): void {
   if (ctx.dryRun) return;
   mkdirSync(ctx.targets.shared.specky, { recursive: true });
 
@@ -288,7 +312,8 @@ function writeSpeckyMeta(ctx: Ctx, resolvedIde: IdeTarget | "auto", resolvedTarg
     writeFileSync(configDest, serializeWorkspaceConfig(config), { encoding: "utf8", flag: "wx" });
     console.log(`[specky init] Wrote ${configDest}`);
   } catch (error: unknown) {
-    const code = typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
+    const code =
+      typeof error === "object" && error !== null && "code" in error ? error.code : undefined;
     if (code !== "EEXIST") throw error;
   }
 
@@ -338,7 +363,8 @@ function printHeader(
   console.log(`[specky init] Workspace: ${workspace}`);
   console.log(`[specky init] Target(s): ${resolvedTargets.join(", ")}${autoNote}`);
   console.log(`[specky init] Permission profile: ${permissionProfile}`);
-  if (integrations.length > 0) console.log(`[specky init] Integration(s): ${integrations.join(", ")}`);
+  if (integrations.length > 0)
+    console.log(`[specky init] Integration(s): ${integrations.join(", ")}`);
   if (opts.ide && opts.ide !== "auto") {
     console.log(`[specky init] --ide is deprecated; prefer --target=${resolvedTargets.join(",")}`);
   }
@@ -364,10 +390,7 @@ function printFooter(resolvedTargets: HarnessTarget[]): void {
 export async function runInit(opts: InitOptions): Promise<number> {
   const workspace = opts.workspace ?? process.cwd();
   const pkg = packageRoot();
-  const { permissionProfile, integrations } = resolveInstallationConfiguration(
-    opts,
-    workspace,
-  );
+  const { permissionProfile, integrations } = resolveInstallationConfiguration(opts, workspace);
   const ctx: Ctx = {
     workspace,
     pkg,

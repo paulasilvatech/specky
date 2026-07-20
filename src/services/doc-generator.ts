@@ -29,7 +29,7 @@ export class DocGenerator {
   constructor(
     private readonly fileManager: FileManager,
     private readonly stateMachine?: StateMachine,
-  ) { }
+  ) {}
 
   async generateFullDocs(
     featureDir: string,
@@ -45,7 +45,8 @@ export class DocGenerator {
     ]);
     const requirements = this.extractRequirements(spec);
     const taskRows = tasks.split("\n").filter((line) => /^\|\s*T-\d{3}\s*\|/.test(line));
-    if (requirements.length === 0) throw new Error("SPECIFICATION.md contains no documented requirements.");
+    if (requirements.length === 0)
+      throw new Error("SPECIFICATION.md contains no documented requirements.");
     if (taskRows.length === 0) throw new Error("TASKS.md contains no documented task rows.");
 
     const featureName = this.featureName(featureDir);
@@ -94,7 +95,8 @@ export class DocGenerator {
     if (!config.api_base_url) throw new Error("API documentation requires api_base_url.");
     const design = await this.requireArtifact(featureDir, "DESIGN.md");
     const endpoints = this.extractEndpoints(design);
-    if (endpoints.length === 0) throw new Error("DESIGN.md contains no structured API contract blocks.");
+    if (endpoints.length === 0)
+      throw new Error("DESIGN.md contains no structured API contract blocks.");
 
     const featureName = this.featureName(featureDir);
     const content = [
@@ -141,7 +143,8 @@ export class DocGenerator {
     const design = await this.requireArtifact(featureDir, "DESIGN.md");
     const infrastructure = this.extractSection(design, /infrastructure|deployment/i);
     const operations = this.extractSection(design, /cross-cutting|operability|observability/i);
-    if (!infrastructure) throw new Error("DESIGN.md lacks infrastructure/deployment evidence for the runbook.");
+    if (!infrastructure)
+      throw new Error("DESIGN.md lacks infrastructure/deployment evidence for the runbook.");
 
     const featureName = this.featureName(featureDir);
     const content = [
@@ -172,8 +175,9 @@ export class DocGenerator {
       "",
       "| Symptom | Cause | Resolution |",
       "|---|---|---|",
-      ...config.troubleshooting.map((item) =>
-        `| ${this.tableCell(item.symptom)} | ${this.tableCell(item.cause)} | ${this.tableCell(item.resolution)} |`
+      ...config.troubleshooting.map(
+        (item) =>
+          `| ${this.tableCell(item.symptom)} | ${this.tableCell(item.cause)} | ${this.tableCell(item.resolution)} |`,
       ),
       "",
       "## Rollback",
@@ -190,8 +194,17 @@ export class DocGenerator {
       type: "runbook",
       content,
       file_path: `docs/runbook-${featureNumber}.md`,
-      sections: ["Design Evidence", "Deployment", "Health Checks", "Monitoring", "Troubleshooting", "Rollback", "Support Contacts"],
-      explanation: "Assembled an operational runbook from DESIGN.md evidence and explicit release documentation parameters.",
+      sections: [
+        "Design Evidence",
+        "Deployment",
+        "Health Checks",
+        "Monitoring",
+        "Troubleshooting",
+        "Rollback",
+        "Support Contacts",
+      ],
+      explanation:
+        "Assembled an operational runbook from DESIGN.md evidence and explicit release documentation parameters.",
     };
   }
 
@@ -246,7 +259,13 @@ export class DocGenerator {
       type: "onboarding",
       content,
       file_path: `docs/onboarding-${featureNumber}.md`,
-      sections: ["Feature Contract", "Architecture Evidence", "Getting Started", "Traced Tasks", "Support Contacts"],
+      sections: [
+        "Feature Contract",
+        "Architecture Evidence",
+        "Getting Started",
+        "Traced Tasks",
+        "Support Contacts",
+      ],
       explanation: "Assembled onboarding from explicit release steps and feature artifacts.",
     };
   }
@@ -257,9 +276,11 @@ export class DocGenerator {
     config: DocumentationConfig,
   ): Promise<DocumentationResult> {
     this.requireType(config, "journey");
-    if (!this.stateMachine) throw new Error("Journey documentation requires the signed feature StateMachine.");
+    if (!this.stateMachine)
+      throw new Error("Journey documentation requires the signed feature StateMachine.");
     const state = await this.stateMachine.loadState(featureDir);
-    if (!state.gate_decision) throw new Error("Journey documentation requires an analysis gate decision.");
+    if (!state.gate_decision)
+      throw new Error("Journey documentation requires an analysis gate decision.");
     const [spec, design, tasks] = await Promise.all([
       this.requireArtifact(featureDir, "SPECIFICATION.md"),
       this.requireArtifact(featureDir, "DESIGN.md"),
@@ -267,7 +288,8 @@ export class DocGenerator {
     ]);
     const requirementIds = extractRequirementIds(spec);
     const taskIds = extractTaskIds(tasks);
-    const adrs = design.split("\n")
+    const adrs = design
+      .split("\n")
       .map((line) => line.trim())
       .filter((line) => line.startsWith("### ADR-") && line.includes(":"))
       .map((line) => line.slice(line.indexOf(":") + 1).trim());
@@ -315,7 +337,12 @@ export class DocGenerator {
       type: "journey",
       content,
       file_path: `docs/journey-${featureNumber}.md`,
-      sections: ["Persisted Phase Graph", "Analysis Gate", "Architecture Decisions", "Traceability Summary"],
+      sections: [
+        "Persisted Phase Graph",
+        "Analysis Gate",
+        "Architecture Decisions",
+        "Traceability Summary",
+      ],
       explanation: "Assembled journey documentation from signed state and artifact evidence.",
     };
   }
@@ -330,7 +357,10 @@ export class DocGenerator {
     total_generated: number;
     total_sections: number;
   }> {
-    const generators: Record<DocumentationConfig["types"][number], () => Promise<DocumentationResult>> = {
+    const generators: Record<
+      DocumentationConfig["types"][number],
+      () => Promise<DocumentationResult>
+    > = {
       full: () => this.generateFullDocs(featureDir, featureNumber, config),
       api: () => this.generateApiDocs(featureDir, featureNumber, config),
       runbook: () => this.generateRunbook(featureDir, featureNumber, config),
@@ -346,7 +376,10 @@ export class DocGenerator {
     };
   }
 
-  private requireType(config: DocumentationConfig, type: DocumentationConfig["types"][number]): void {
+  private requireType(
+    config: DocumentationConfig,
+    type: DocumentationConfig["types"][number],
+  ): void {
     if (!config.types.includes(type)) {
       throw new Error(`Documentation type ${type} is not enabled by the release contract.`);
     }
@@ -385,7 +418,9 @@ export class DocGenerator {
       const id = (separator === -1 ? heading.slice(4) : heading.slice(4, separator)).trim();
       const title = separator === -1 ? "" : heading.slice(separator + 1).trim();
       if (!/^REQ-[A-Z]+-\d{3}$/.test(id)) continue;
-      requirements.push(this.parseRequirementBlock(id, title, this.collectRequirementBlock(lines, index + 1)));
+      requirements.push(
+        this.parseRequirementBlock(id, title, this.collectRequirementBlock(lines, index + 1)),
+      );
     }
     return requirements;
   }
@@ -405,11 +440,13 @@ export class DocGenerator {
     const marker = block.toLowerCase().indexOf(criteriaMarker);
     const prose = marker === -1 ? block : block.slice(0, marker);
     const criteriaBlock = marker === -1 ? "" : block.slice(marker + criteriaMarker.length);
-    const text = prose.split("\n")
+    const text = prose
+      .split("\n")
       .map((line) => line.trim())
       .filter((line) => line && line !== "---" && !line.startsWith("**Source:"))
       .join(" ");
-    const acceptanceCriteria = criteriaBlock.split("\n")
+    const acceptanceCriteria = criteriaBlock
+      .split("\n")
       .map((line) => line.trim())
       .filter((line) => line.startsWith("- "))
       .map((line) => line.slice(2));
@@ -420,14 +457,18 @@ export class DocGenerator {
   }
 
   private renderRequirements(requirements: RequirementEvidence[]): string {
-    return requirements.map((requirement) => [
-      `### ${requirement.id}: ${requirement.title}`,
-      "",
-      requirement.text,
-      "",
-      "Acceptance criteria:",
-      ...requirement.acceptanceCriteria.map((criterion) => `- ${criterion}`),
-    ].join("\n")).join("\n\n");
+    return requirements
+      .map((requirement) =>
+        [
+          `### ${requirement.id}: ${requirement.title}`,
+          "",
+          requirement.text,
+          "",
+          "Acceptance criteria:",
+          ...requirement.acceptanceCriteria.map((criterion) => `- ${criterion}`),
+        ].join("\n"),
+      )
+      .join("\n\n");
   }
 
   private renderDesignEvidence(design: string): string {
@@ -475,7 +516,8 @@ export class DocGenerator {
       if (!methods.has(method) || !path?.startsWith("/")) continue;
       let end = index + 1;
       while (end < lines.length && !lines[end].trim().startsWith("### ")) end++;
-      const block = lines.slice(index + 1, end)
+      const block = lines
+        .slice(index + 1, end)
         .filter((line) => line.trim() !== "---")
         .join("\n")
         .trim();
@@ -485,10 +527,12 @@ export class DocGenerator {
         throw new Error(`${method} ${path} lacks explicit request/response markers.`);
       }
       const description = block.slice(0, requestMarker.index).trim();
-      const request = block.slice(requestMarker.index + requestMarker[0].length, responseMarker.index)
+      const request = block
+        .slice(requestMarker.index + requestMarker[0].length, responseMarker.index)
         .replace(/```(?:json)?/g, "")
         .trim();
-      const response = block.slice(responseMarker.index + responseMarker[0].length)
+      const response = block
+        .slice(responseMarker.index + responseMarker[0].length)
         .replace(/```(?:json)?/g, "")
         .trim();
       if (!description || !request || !response) {
@@ -501,6 +545,10 @@ export class DocGenerator {
 
   private tableCell(value: string): string {
     const slash = String.fromCodePoint(92);
-    return value.split(slash).join(slash + slash).split("|").join(`${slash}|`);
+    return value
+      .split(slash)
+      .join(slash + slash)
+      .split("|")
+      .join(`${slash}|`);
   }
 }

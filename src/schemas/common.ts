@@ -25,6 +25,4 @@ export const featureNumberSchema = z
   .regex(/^\d{3}$/, "Feature number must be 3 digits, e.g. '001'")
   .describe("Feature number (zero-padded, e.g. '001')");
 
-export const forceSchema = z
-  .boolean()
-  .describe("Explicit overwrite decision");
+export const forceSchema = z.boolean().describe("Explicit overwrite decision");

@@ -1248,6 +1248,10 @@ npm test
 # Run tests with coverage report
 npm run test:coverage
 
+# Lint and format with Biome
+npm run lint
+npm run format
+
 # Development mode (auto-reload on file changes)
 npm run dev
 

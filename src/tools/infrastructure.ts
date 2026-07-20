@@ -2,25 +2,25 @@
  * Infrastructure Tools — sdd_generate_iac, sdd_validate_iac, sdd_generate_dockerfile.
  */
 
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { formatError, truncate } from "./tool-result.js";
 import { join } from "node:path";
-import type { FileManager } from "../services/file-manager.js";
-import type { StateMachine } from "../services/state-machine.js";
-import type { IacGenerator } from "../services/iac-generator.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
+  generateDockerfileInputSchema,
   generateIacInputSchema,
   validateIacInputSchema,
-  generateDockerfileInputSchema,
 } from "../schemas/infrastructure.js";
+import { requireCapabilityConfig, requireFeatureContext } from "../services/execution-context.js";
+import type { FileManager } from "../services/file-manager.js";
+import type { IacGenerator } from "../services/iac-generator.js";
+import type { StateMachine } from "../services/state-machine.js";
 import { enrichResponse } from "./response-builder.js";
-import { requireExecutionContext } from "../services/execution-context.js";
+import { errorResult, truncate } from "./tool-result.js";
 
 export function registerInfrastructureTools(
   server: McpServer,
   fileManager: FileManager,
   stateMachine: StateMachine,
-  iacGenerator: IacGenerator
+  iacGenerator: IacGenerator,
 ): void {
   // ─── sdd_generate_iac ───
   server.registerTool(
@@ -39,14 +39,16 @@ export function registerInfrastructureTools(
     },
     async () => {
       try {
-        const context = requireExecutionContext("sdd_generate_iac");
-        const feature = context.feature!;
-        const stateDir = context.stateDir!;
-        const iac = context.state!.contract.capability_config.iac!;
+        const context = requireFeatureContext("sdd_generate_iac");
+        const feature = context.feature;
+        const stateDir = context.stateDir;
+        const iac = requireCapabilityConfig(context.state.contract.capability_config, "iac");
         try {
           await fileManager.readSpecFile(feature.directory, "DESIGN.md");
         } catch {
-          throw new Error(`DESIGN.md is required as evidence for the IaC contract in ${feature.directory}.`);
+          throw new Error(
+            `DESIGN.md is required as evidence for the IaC contract in ${feature.directory}.`,
+          );
         }
 
         const iacResult = await iacGenerator.generateTerraform(iac.cloud, iac.resources);
@@ -58,7 +60,7 @@ export function registerInfrastructureTools(
             feature.directory,
             file.path,
             file.content,
-            true
+            true,
           );
           writtenPaths.push(filePath);
         }
@@ -91,12 +93,9 @@ export function registerInfrastructureTools(
           content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
       } catch (error) {
-        return {
-          content: [{ type: "text" as const, text: formatError("sdd_generate_iac", error as Error) }],
-          isError: true,
-        };
+        return errorResult("sdd_generate_iac", error);
       }
-    }
+    },
   );
 
   // ─── sdd_validate_iac ───
@@ -116,16 +115,16 @@ export function registerInfrastructureTools(
     },
     async () => {
       try {
-        const context = requireExecutionContext("sdd_validate_iac");
-        const feature = context.feature!;
-        const stateDir = context.stateDir!;
-        const iac = context.state!.contract.capability_config.iac!;
+        const context = requireFeatureContext("sdd_validate_iac");
+        const feature = context.feature;
+        const stateDir = context.stateDir;
+        const iac = requireCapabilityConfig(context.state.contract.capability_config, "iac");
 
         const resolvedDir = join(feature.directory, "terraform");
         const validationResult = iacGenerator.generateValidationPayload(
           iac.provider,
           iac.cloud,
-          resolvedDir
+          resolvedDir,
         );
 
         const result = {
@@ -146,12 +145,9 @@ export function registerInfrastructureTools(
           content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
       } catch (error) {
-        return {
-          content: [{ type: "text" as const, text: formatError("sdd_validate_iac", error as Error) }],
-          isError: true,
-        };
+        return errorResult("sdd_validate_iac", error);
       }
-    }
+    },
   );
 
   // ─── sdd_generate_dockerfile ───
@@ -171,14 +167,19 @@ export function registerInfrastructureTools(
     },
     async () => {
       try {
-        const context = requireExecutionContext("sdd_generate_dockerfile");
-        const feature = context.feature!;
-        const stateDir = context.stateDir!;
-        const environment = context.state!.contract.capability_config["dev-environment"]!;
+        const context = requireFeatureContext("sdd_generate_dockerfile");
+        const feature = context.feature;
+        const stateDir = context.stateDir;
+        const environment = requireCapabilityConfig(
+          context.state.contract.capability_config,
+          "dev-environment",
+        );
         try {
           await fileManager.readSpecFile(feature.directory, "DESIGN.md");
         } catch {
-          throw new Error(`DESIGN.md is required as evidence for the development-environment contract in ${feature.directory}.`);
+          throw new Error(
+            `DESIGN.md is required as evidence for the development-environment contract in ${feature.directory}.`,
+          );
         }
 
         const techStack = {
@@ -201,7 +202,7 @@ export function registerInfrastructureTools(
             feature.directory,
             file.path,
             file.content,
-            true
+            true,
           );
           writtenPaths.push(filePath);
         }
@@ -225,17 +226,19 @@ export function registerInfrastructureTools(
             "docker-compose.yml orchestrates multiple containers (app, database, cache) as a single stack.",
         };
 
-        const enriched = await enrichResponse("sdd_generate_dockerfile", result, stateMachine, stateDir);
+        const enriched = await enrichResponse(
+          "sdd_generate_dockerfile",
+          result,
+          stateMachine,
+          stateDir,
+        );
         return {
           content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
       } catch (error) {
-        return {
-          content: [{ type: "text" as const, text: formatError("sdd_generate_dockerfile", error as Error) }],
-          isError: true,
-        };
+        return errorResult("sdd_generate_dockerfile", error);
       }
-    }
+    },
   );
 }
 

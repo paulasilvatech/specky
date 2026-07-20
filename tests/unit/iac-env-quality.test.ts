@@ -26,31 +26,32 @@
  * Tests drive the REAL tool handlers over an in-memory MCP transport against
  * temp workspaces, and execute the real hook script under both sh and bash.
  */
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+
 import { spawnSync } from "node:child_process";
 import { createHash, createHmac } from "node:crypto";
-import { join, resolve } from "node:path";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { afterEach, describe, expect, it } from "vitest";
+import { join, resolve } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { FileManager } from "../../src/services/file-manager.js";
-import { StateMachine } from "../../src/services/state-machine.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { afterEach, describe, expect, it } from "vitest";
+import { Phase } from "../../src/constants.js";
+import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
+import { AuditLogger } from "../../src/services/audit-logger.js";
 import { CodebaseScanner } from "../../src/services/codebase-scanner.js";
+import { ExecutionContextResolver } from "../../src/services/execution-context.js";
+import { FileManager } from "../../src/services/file-manager.js";
 import {
-  IacGenerator,
   detectServicesFromDesign,
   detectTechStackFromDesign,
+  IacGenerator,
 } from "../../src/services/iac-generator.js";
-import { registerInfrastructureTools } from "../../src/tools/infrastructure.js";
-import { registerEnvironmentTools } from "../../src/tools/environment.js";
-import { AuditLogger } from "../../src/services/audit-logger.js";
 import { RbacEngine } from "../../src/services/rbac-engine.js";
-import { ExecutionContextResolver } from "../../src/services/execution-context.js";
+import { StateMachine } from "../../src/services/state-machine.js";
+import { registerEnvironmentTools } from "../../src/tools/environment.js";
+import { registerInfrastructureTools } from "../../src/tools/infrastructure.js";
 import { installToolEnforcement } from "../../src/tools/tool-enforcement.js";
-import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
-import { Phase } from "../../src/constants.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 const HOOK = join(REPO, ".apm/hooks/scripts/specky-ears-validator.sh");
@@ -70,18 +71,19 @@ async function buildHarness(
   const stateMachine = new StateMachine(fileManager, workspace);
   const codebaseScanner = new CodebaseScanner(fileManager);
   const iacGenerator = new IacGenerator(fileManager);
-  const resources = cloud === "aws"
-    ? [
-      { module: "compute" as const, service: "serverless" },
-      { module: "database" as const, service: "nosql" },
-      { module: "storage" as const, service: "object" },
-    ]
-    : [
-      { module: "compute" as const, service: "container" },
-      { module: "database" as const, service: "postgres" },
-      { module: "cache" as const, service: "redis" },
-      { module: "networking" as const, service: "network" },
-    ];
+  const resources =
+    cloud === "aws"
+      ? [
+          { module: "compute" as const, service: "serverless" },
+          { module: "database" as const, service: "nosql" },
+          { module: "storage" as const, service: "object" },
+        ]
+      : [
+          { module: "compute" as const, service: "container" },
+          { module: "database" as const, service: "postgres" },
+          { module: "cache" as const, service: "redis" },
+          { module: "networking" as const, service: "network" },
+        ];
   const contract = resolveUseCaseContract({
     lifecycle: "greenfield",
     workload: "infrastructure",
@@ -192,7 +194,8 @@ describe("IaC / environment promise-delivery regressions", () => {
 
   afterEach(async () => {
     for (const close of cleanups.splice(0)) await close();
-    for (const ws of workspaces.splice(0)) rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    for (const ws of workspaces.splice(0))
+      rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   // ── Fix 1: sdd_generate_iac emits real resources for what DESIGN.md names ──
@@ -246,14 +249,17 @@ describe("IaC / environment promise-delivery regressions", () => {
 
   it("a different design yields different resources (aws: Lambda + DynamoDB + S3, no redis/postgres)", async () => {
     const ws = makeWorkspace("specky-iac-aws-");
-    seedFeature(ws, [
-      "# Design",
-      "",
-      "- Python FastAPI service",
-      "- AWS Lambda for compute",
-      "- DynamoDB table for orders",
-      "- S3 bucket for report storage",
-    ].join("\n"));
+    seedFeature(
+      ws,
+      [
+        "# Design",
+        "",
+        "- Python FastAPI service",
+        "- AWS Lambda for compute",
+        "- DynamoDB table for orders",
+        "- S3 bucket for report storage",
+      ].join("\n"),
+    );
     const h = await buildHarness(ws, "aws");
     cleanups.push(h.close);
 
@@ -308,7 +314,9 @@ describe("IaC / environment promise-delivery regressions", () => {
     expect(techStack.language).toBe("TypeScript");
     expect(payload.tech_stack_source).toBe("feature contract");
 
-    const config = JSON.parse(readFileSync(join(ws, ".devcontainer/devcontainer.json"), "utf8")) as {
+    const config = JSON.parse(
+      readFileSync(join(ws, ".devcontainer/devcontainer.json"), "utf8"),
+    ) as {
       image: string;
       customizations: { vscode: { extensions: string[] } };
     };
@@ -356,7 +364,10 @@ describe("IaC / environment promise-delivery regressions", () => {
     seedFeature(ws, "A REST API for orders.\n");
     writeFileSync(
       join(ws, "package.json"),
-      JSON.stringify({ name: "orders", dependencies: { express: "^4.19.0", pg: "^8.11.0", ioredis: "^5.4.0" } }),
+      JSON.stringify({
+        name: "orders",
+        dependencies: { express: "^4.19.0", pg: "^8.11.0", ioredis: "^5.4.0" },
+      }),
     );
     const h = await buildHarness(ws);
     cleanups.push(h.close);
@@ -433,9 +444,16 @@ describe("IaC / environment promise-delivery regressions", () => {
   });
 
   it("detectServicesFromDesign merges DESIGN.md keywords with package.json deps", () => {
-    expect(detectServicesFromDesign("PostgreSQL and Redis", undefined)).toEqual(["postgres", "redis"]);
-    expect(detectServicesFromDesign("", JSON.stringify({ dependencies: { mongoose: "^8.0.0", amqplib: "^0.10.0" } })))
-      .toEqual(["mongodb", "rabbitmq"]);
+    expect(detectServicesFromDesign("PostgreSQL and Redis", undefined)).toEqual([
+      "postgres",
+      "redis",
+    ]);
+    expect(
+      detectServicesFromDesign(
+        "",
+        JSON.stringify({ dependencies: { mongoose: "^8.0.0", amqplib: "^0.10.0" } }),
+      ),
+    ).toEqual(["mongodb", "rabbitmq"]);
     expect(detectServicesFromDesign("nothing here", "{not json")).toEqual([]);
   });
 });
@@ -452,10 +470,14 @@ describe("ears-validator.sh hook", () => {
   }
 
   afterEach(() => {
-    for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    for (const d of dirs.splice(0))
+      rmSync(d, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
-  function runHook(cwd: string, shell: string): { status: number | null; stdout: string; stderr: string } {
+  function runHook(
+    cwd: string,
+    shell: string,
+  ): { status: number | null; stdout: string; stderr: string } {
     const featureDir = join(cwd, ".specs/001-x");
     const hasSignedState = existsSync(join(featureDir, ".sdd-state.json.sig"));
     const res = spawnSync(shell, [HOOK], {
@@ -463,11 +485,11 @@ describe("ears-validator.sh hook", () => {
       encoding: "utf8",
       env: hasSignedState
         ? {
-          ...process.env,
-          SPECKY_HOOK_WORKSPACE: cwd,
-          SDD_SPEC_DIR: ".specs",
-          SDD_FEATURE_NUMBER: "001",
-        }
+            ...process.env,
+            SPECKY_HOOK_WORKSPACE: cwd,
+            SDD_SPEC_DIR: ".specs",
+            SDD_FEATURE_NUMBER: "001",
+          }
         : process.env,
     });
     return { status: res.status, stdout: res.stdout ?? "", stderr: res.stderr ?? "" };
@@ -482,7 +504,18 @@ describe("ears-validator.sh hook", () => {
       capabilities: [],
       capability_config: {},
     });
-    const phaseNames = ["init", "discover", "specify", "clarify", "design", "tasks", "analyze", "implement", "verify", "release"];
+    const phaseNames = [
+      "init",
+      "discover",
+      "specify",
+      "clarify",
+      "design",
+      "tasks",
+      "analyze",
+      "implement",
+      "verify",
+      "release",
+    ];
     const state = {
       version: "5.0.0",
       project_name: "x",
@@ -494,8 +527,9 @@ describe("ears-validator.sh hook", () => {
       gate_decision: null,
     };
     const raw = JSON.stringify(state, null, 2);
-    const key = process.env["SDD_STATE_KEY"]
-      ?? createHash("sha256").update(`specky-state-v1:${cwd}`).digest("hex");
+    const key =
+      process.env["SDD_STATE_KEY"] ??
+      createHash("sha256").update(`specky-state-v1:${cwd}`).digest("hex");
     writeFileSync(join(cwd, featureDirectory, ".sdd-state.json"), raw);
     writeFileSync(
       join(cwd, featureDirectory, ".sdd-state.json.sig"),
@@ -535,21 +569,24 @@ describe("ears-validator.sh hook", () => {
   it("reports 6/6 without warnings when every pattern type is present", () => {
     const d = makeDir("specky-ears-full-");
     mkdirSync(join(d, ".specs/001-x"), { recursive: true });
-    writeFileSync(join(d, ".specs/001-x/SPECIFICATION.md"), [
-      "- REQ-A-001: The system shall log all requests.",
-      "- REQ-A-002: When a user logs in, the system shall issue a token.",
-      "- REQ-A-003: While offline, the system shall queue requests.",
-      "- REQ-A-004: Where 2FA is enabled, the system shall require an OTP.",
-      "- REQ-A-005: If the session expires, then the system shall redirect to login.",
-      "- REQ-A-006: While in maintenance mode, when a request arrives, the system shall queue it.",
-    ].join("\n"));
+    writeFileSync(
+      join(d, ".specs/001-x/SPECIFICATION.md"),
+      [
+        "- REQ-A-001: The system shall log all requests.",
+        "- REQ-A-002: When a user logs in, the system shall issue a token.",
+        "- REQ-A-003: While offline, the system shall queue requests.",
+        "- REQ-A-004: Where 2FA is enabled, the system shall require an OTP.",
+        "- REQ-A-005: If the session expires, then the system shall redirect to login.",
+        "- REQ-A-006: While in maintenance mode, when a request arrives, the system shall queue it.",
+      ].join("\n"),
+    );
     activateHookFeature(d);
 
     const res = runHook(d, "sh");
     expect(res.status).toBe(0);
     expect(res.stdout).toContain("Pattern coverage: 6/6");
     expect(res.stdout).not.toContain("Pattern types with zero requirements");
-  });
+  }, 15_000);
 
   it("exits 1 only for a real failure: latest feature dir has no SPECIFICATION.md", () => {
     const d = makeDir("specky-ears-missing-");

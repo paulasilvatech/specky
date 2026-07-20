@@ -1,6 +1,6 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { resolve } from "node:path";
 import { tmpdir } from "node:os";
+import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { runDoctor } from "../../src/cli/commands/doctor.js";
 import { runInit } from "../../src/cli/commands/init.js";
@@ -26,7 +26,9 @@ describe("specky doctor IDE scope", () => {
     const workspace = makeWorkspace("specky-doctor-copilot-");
     workspaces.push(workspace);
 
-    await expect(runInit({ ide: "copilot", force: false, dryRun: false, workspace })).resolves.toBe(0);
+    await expect(runInit({ ide: "copilot", force: false, dryRun: false, workspace })).resolves.toBe(
+      0,
+    );
     await expect(runDoctor({ fix: false, verbose: false, workspace })).resolves.toBe(0);
 
     expect(existsSync(resolve(workspace, ".vscode/mcp.json"))).toBe(true);
@@ -37,7 +39,9 @@ describe("specky doctor IDE scope", () => {
     const workspace = makeWorkspace("specky-doctor-claude-");
     workspaces.push(workspace);
 
-    await expect(runInit({ ide: "claude", force: false, dryRun: false, workspace })).resolves.toBe(0);
+    await expect(runInit({ ide: "claude", force: false, dryRun: false, workspace })).resolves.toBe(
+      0,
+    );
     await expect(runDoctor({ fix: false, verbose: false, workspace })).resolves.toBe(0);
 
     expect(existsSync(resolve(workspace, ".mcp.json"))).toBe(true);
@@ -48,14 +52,16 @@ describe("specky doctor IDE scope", () => {
     const workspace = makeWorkspace("specky-doctor-claude-github-");
     workspaces.push(workspace);
 
-    await expect(runInit({
-      target: "claude",
-      force: false,
-      dryRun: false,
-      permissionProfile: "prompt",
-      integration: "github",
-      workspace,
-    })).resolves.toBe(0);
+    await expect(
+      runInit({
+        target: "claude",
+        force: false,
+        dryRun: false,
+        permissionProfile: "prompt",
+        integration: "github",
+        workspace,
+      }),
+    ).resolves.toBe(0);
     await expect(runDoctor({ fix: false, verbose: false, workspace })).resolves.toBe(0);
 
     const mcp = JSON.parse(readFileSync(resolve(workspace, ".mcp.json"), "utf8")) as {
@@ -76,13 +82,15 @@ describe("specky doctor IDE scope", () => {
     const workspace = makeWorkspace(`specky-doctor-${target}-github-`);
     workspaces.push(workspace);
 
-    await expect(runInit({
-      target,
-      force: false,
-      dryRun: false,
-      integration: "github",
-      workspace,
-    })).resolves.toBe(0);
+    await expect(
+      runInit({
+        target,
+        force: false,
+        dryRun: false,
+        integration: "github",
+        workspace,
+      }),
+    ).resolves.toBe(0);
     await expect(runDoctor({ fix: false, verbose: false, workspace })).resolves.toBe(0);
 
     const config = JSON.parse(readFileSync(resolve(workspace, configPath), "utf8")) as Record<

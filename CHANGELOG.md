@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Biome lint and format integration with `biome.json` and npm scripts (`lint`, `lint:fix`, `format`).
+- Unit tests for previously uncovered modules: `slug`, `routing-helper`, `audit-tools`, `transcript-tools`, `cli-commands`, `vscode-settings-writer`, and `agent-skills`.
+- `.specs/001-biome-lint-integration/` spec package for dogfooding the SDD pipeline on Specky itself.
+
+### Changed
+
+- Coverage thresholds ratcheted to 85% statements, 71% branches, 94% functions, and 86% lines.
+- Test suite expanded from 663 to 769 tests across 90 files.
+
+### Fixed
+
+- Biome warnings for unused imports, unused variables, optional chains, and static-only classes.
+- `useOptionalChain` violations in `settings-merger`, `audit-logger`, `http-auth`, and `token-table`.
+- `noUnusedVariables` violations in `pipeline.ts`, `cross-analyzer.ts`, and `vscode-settings-writer.ts`.
+- `noUnusedFunctionParameters` violations in `metrics.ts` and `turnkey.ts`.
+- `noStaticOnlyClass` suppressions documented for `DependencyGraph` and `MethodologyGuide`.
+
 ## [3.11.1] - 2026-07-16
 
 ### Added

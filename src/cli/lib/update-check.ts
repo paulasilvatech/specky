@@ -58,7 +58,7 @@ interface ParsedVersion {
 function parseVersion(version: string): ParsedVersion {
   // Tolerate leading "v" and strip build metadata ("+sha") — compare loosely,
   // never throw on malformed input.
-  const clean = (version.trim().replace(/^v/i, "").split("+")[0] ?? "");
+  const clean = version.trim().replace(/^v/i, "").split("+")[0] ?? "";
   const dash = clean.indexOf("-");
   const coreStr = dash >= 0 ? clean.slice(0, dash) : clean;
   const preStr = dash >= 0 ? clean.slice(dash + 1) : "";
@@ -137,10 +137,7 @@ function writeCacheBestEffort(cachePath: string, cache: UpdateCache): void {
   }
 }
 
-async function fetchLatestVersion(
-  fetchImpl: FetchLike,
-  timeoutMs: number,
-): Promise<string | null> {
+async function fetchLatestVersion(fetchImpl: FetchLike, timeoutMs: number): Promise<string | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -150,7 +147,10 @@ async function fetchLatestVersion(
     });
     if (!res.ok) return null;
     const body = (await res.json()) as { version?: unknown };
-    return typeof body === "object" && body !== null && typeof body.version === "string" && body.version.length > 0
+    return typeof body === "object" &&
+      body !== null &&
+      typeof body.version === "string" &&
+      body.version.length > 0
       ? body.version
       : null;
   } catch {

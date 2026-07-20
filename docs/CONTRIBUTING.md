@@ -436,7 +436,7 @@ Tests live in `tests/unit/` and cover all services except `file-manager.ts` (whi
 - Use `vi.fn()` mocks for `FileManager` — never do real I/O in unit tests
 - Pure services (EarsValidator, ComplianceEngine) can be tested without mocks
 - Test file naming: `tests/unit/<service-name>.test.ts`
-- Coverage thresholds: 80% lines/functions, 70% branches (enforced in `vitest.config.ts`)
+- Coverage thresholds: 86% lines, 94% functions, 85% statements, 71% branches (enforced in `vitest.config.ts`)
 
 ### Adding Tests for a New Service
 

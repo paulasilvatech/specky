@@ -81,7 +81,10 @@ export class IntentDriftEngine {
 
     const total = principles.length;
     const covered = total - orphaned.length;
-    const score = this.computeScore({ orphaned_count: orphaned.length + unimplemented.length, total_principles: total });
+    const score = this.computeScore({
+      orphaned_count: orphaned.length + unimplemented.length,
+      total_principles: total,
+    });
     const label = this.scoreToLabel(score);
 
     return {
@@ -116,7 +119,21 @@ export class IntentDriftEngine {
 
   private extractKeywords(text: string): string[] {
     // Extract meaningful words: 4+ characters, no stop words
-    const stopWords = new Set(["with", "from", "this", "that", "have", "will", "been", "when", "then", "each", "only", "must", "should"]);
+    const stopWords = new Set([
+      "with",
+      "from",
+      "this",
+      "that",
+      "have",
+      "will",
+      "been",
+      "when",
+      "then",
+      "each",
+      "only",
+      "must",
+      "should",
+    ]);
     return text
       .replace(/[^a-zA-Z\s]/g, " ")
       .split(/\s+/)

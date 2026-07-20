@@ -7,20 +7,20 @@
  */
 import { createHash } from "node:crypto";
 import {
+  chmodSync,
   cpSync,
   existsSync,
   mkdirSync,
-  readFileSync,
   readdirSync,
+  readFileSync,
   statSync,
-  writeFileSync,
-  chmodSync,
   unlinkSync,
+  writeFileSync,
 } from "node:fs";
-import { basename, resolve, relative, sep } from "node:path";
+import { basename, relative, resolve, sep } from "node:path";
+import { getCompiler } from "./harness/index.js";
 import type { Targets } from "./paths.js";
 import { sourcePaths } from "./paths.js";
-import { getCompiler } from "./harness/index.js";
 
 export interface CopyResult {
   written: string[];
@@ -131,24 +131,22 @@ function chmodHookScripts(dir: string, opts: CopyOptions): void {
 /**
  * Copy assets to Claude Code `.claude/` layout.
  */
-export function copyToClaude(
-  pkgRoot: string,
-  targets: Targets,
-  opts: CopyOptions,
-): CopyResult {
+export function copyToClaude(pkgRoot: string, targets: Targets, opts: CopyOptions): CopyResult {
   const src = sourcePaths(pkgRoot);
   const result: CopyResult = { written: [], skipped: [] };
   const claude = getCompiler("claude");
 
+  copyDir(src.agentsDir, targets.claude.agents, opts, result, claude.renameAgent, (content) =>
+    claude.compileAgent(content, { integrations: opts.integrations }),
+  );
   copyDir(
-    src.agentsDir,
-    targets.claude.agents,
+    src.promptsDir,
+    targets.claude.commands,
     opts,
     result,
-    claude.renameAgent,
-    (content) => claude.compileAgent(content, { integrations: opts.integrations }),
+    claude.renamePrompt,
+    claude.compilePrompt,
   );
-  copyDir(src.promptsDir, targets.claude.commands, opts, result, claude.renamePrompt, claude.compilePrompt);
   copyDir(src.skillsDir, targets.claude.skills, opts, result);
   copyDir(src.hookScriptsDir, targets.claude.hooksScripts, opts, result);
 
@@ -158,12 +156,21 @@ export function copyToClaude(
   // instruction primitive; fall back to the Copilot one only if it is absent.
   const staleClaudeRule = resolve(targets.claude.rules, "copilot-instructions.md");
   if (!opts.dryRun && existsSync(staleClaudeRule)) {
-    try { unlinkSync(staleClaudeRule); } catch { /* ignore — might be read-only */ }
+    try {
+      unlinkSync(staleClaudeRule);
+    } catch {
+      /* ignore — might be read-only */
+    }
   }
 
   const claudeInstructionSrc = resolve(src.instructionsDir, "claude-instructions.instructions.md");
-  const fallbackInstructionSrc = resolve(src.instructionsDir, "copilot-instructions.instructions.md");
-  const instructionSrc = existsSync(claudeInstructionSrc) ? claudeInstructionSrc : fallbackInstructionSrc;
+  const fallbackInstructionSrc = resolve(
+    src.instructionsDir,
+    "copilot-instructions.instructions.md",
+  );
+  const instructionSrc = existsSync(claudeInstructionSrc)
+    ? claudeInstructionSrc
+    : fallbackInstructionSrc;
   if (existsSync(instructionSrc)) {
     copyFile(
       instructionSrc,
@@ -180,24 +187,22 @@ export function copyToClaude(
 /**
  * Copy assets to GitHub Copilot `.github/` layout.
  */
-export function copyToCopilot(
-  pkgRoot: string,
-  targets: Targets,
-  opts: CopyOptions,
-): CopyResult {
+export function copyToCopilot(pkgRoot: string, targets: Targets, opts: CopyOptions): CopyResult {
   const src = sourcePaths(pkgRoot);
   const result: CopyResult = { written: [], skipped: [] };
   const copilot = getCompiler("copilot");
 
+  copyDir(src.agentsDir, targets.copilot.agents, opts, result, copilot.renameAgent, (content) =>
+    copilot.compileAgent(content, { integrations: opts.integrations }),
+  );
   copyDir(
-    src.agentsDir,
-    targets.copilot.agents,
+    src.promptsDir,
+    targets.copilot.prompts,
     opts,
     result,
-    copilot.renameAgent,
-    (content) => copilot.compileAgent(content, { integrations: opts.integrations }),
+    copilot.renamePrompt,
+    copilot.compilePrompt,
   );
-  copyDir(src.promptsDir, targets.copilot.prompts, opts, result, copilot.renamePrompt, copilot.compilePrompt);
   copyDir(src.skillsDir, targets.copilot.skills, opts, result);
   copyDir(src.hookScriptsDir, targets.copilot.hooksScripts, opts, result);
 
@@ -206,7 +211,11 @@ export function copyToCopilot(
   // ALL .json files in .github/hooks/ so the broken one causes spurious blocks.
   const staleManifest = resolve(targets.copilot.hooksRoot, "..", "specky-sdd-hooks.json");
   if (!opts.dryRun && existsSync(staleManifest)) {
-    try { unlinkSync(staleManifest); } catch { /* ignore — might be read-only */ }
+    try {
+      unlinkSync(staleManifest);
+    } catch {
+      /* ignore — might be read-only */
+    }
   }
 
   // IMPORTANT: only ship the build-time copilot-hooks.json (paths already
@@ -220,17 +229,24 @@ export function copyToCopilot(
     if (!opts.dryRun) {
       console.warn(
         "[specky] Skipped Copilot hooks manifest: dist/copilot-hooks.json is missing. " +
-        "Run `npm run build` to generate it; SDD hook automation stays disabled until then.",
+          "Run `npm run build` to generate it; SDD hook automation stays disabled until then.",
       );
     }
   }
   // Install ONLY the Copilot instruction primitive. Never copy the whole
   // instructions dir — it also contains cursor/claude primitives that would
   // leak non-Copilot naming (and stray applyTo files) into .github/instructions/.
-  for (const stale of ["cursor-instructions.instructions.md", "claude-instructions.instructions.md"]) {
+  for (const stale of [
+    "cursor-instructions.instructions.md",
+    "claude-instructions.instructions.md",
+  ]) {
     const stalePath = resolve(targets.copilot.instructions, stale);
     if (!opts.dryRun && existsSync(stalePath)) {
-      try { unlinkSync(stalePath); } catch { /* ignore — might be read-only */ }
+      try {
+        unlinkSync(stalePath);
+      } catch {
+        /* ignore — might be read-only */
+      }
     }
   }
   const copilotInstruction = resolve(src.instructionsDir, "copilot-instructions.instructions.md");
@@ -252,34 +268,41 @@ export function copyToCopilot(
 /**
  * Copy assets to Cursor `.cursor/` layout.
  */
-export function copyToCursor(
-  pkgRoot: string,
-  targets: Targets,
-  opts: CopyOptions,
-): CopyResult {
+export function copyToCursor(pkgRoot: string, targets: Targets, opts: CopyOptions): CopyResult {
   const src = sourcePaths(pkgRoot);
   const result: CopyResult = { written: [], skipped: [] };
   const cursor = getCompiler("cursor");
 
+  copyDir(src.agentsDir, targets.cursor.agents, opts, result, cursor.renameAgent, (content) =>
+    cursor.compileAgent(content, { integrations: opts.integrations }),
+  );
   copyDir(
-    src.agentsDir,
-    targets.cursor.agents,
+    src.promptsDir,
+    targets.cursor.commands,
     opts,
     result,
-    cursor.renameAgent,
-    (content) => cursor.compileAgent(content, { integrations: opts.integrations }),
+    cursor.renamePrompt,
+    cursor.compilePrompt,
   );
-  copyDir(src.promptsDir, targets.cursor.commands, opts, result, cursor.renamePrompt, cursor.compilePrompt);
   copyDir(src.skillsDir, targets.shared.agentSkills, opts, result);
 
   const staleRule = resolve(targets.cursor.rules, "copilot-instructions.mdc");
   if (!opts.dryRun && existsSync(staleRule)) {
-    try { unlinkSync(staleRule); } catch { /* ignore — might be read-only */ }
+    try {
+      unlinkSync(staleRule);
+    } catch {
+      /* ignore — might be read-only */
+    }
   }
 
   const cursorInstructionSrc = resolve(src.instructionsDir, "cursor-instructions.instructions.md");
-  const fallbackInstructionSrc = resolve(src.instructionsDir, "copilot-instructions.instructions.md");
-  const instructionSrc = existsSync(cursorInstructionSrc) ? cursorInstructionSrc : fallbackInstructionSrc;
+  const fallbackInstructionSrc = resolve(
+    src.instructionsDir,
+    "copilot-instructions.instructions.md",
+  );
+  const instructionSrc = existsSync(cursorInstructionSrc)
+    ? cursorInstructionSrc
+    : fallbackInstructionSrc;
   if (existsSync(instructionSrc)) {
     copyFile(
       instructionSrc,
@@ -301,7 +324,7 @@ export function copyToCursor(
     if (!opts.dryRun) {
       console.warn(
         "[specky] Skipped Cursor hooks manifest: dist/cursor-hooks.json is missing. " +
-        "Run `npm run build` to generate it; Cursor hook automation stays disabled until then.",
+          "Run `npm run build` to generate it; Cursor hook automation stays disabled until then.",
       );
     }
   }
@@ -316,24 +339,22 @@ export function copyToCursor(
  * Copy assets to OpenCode `.opencode/` layout. OpenCode has no hooks concept,
  * so Specky hook primitives are intentionally skipped for this target.
  */
-export function copyToOpenCode(
-  pkgRoot: string,
-  targets: Targets,
-  opts: CopyOptions,
-): CopyResult {
+export function copyToOpenCode(pkgRoot: string, targets: Targets, opts: CopyOptions): CopyResult {
   const src = sourcePaths(pkgRoot);
   const result: CopyResult = { written: [], skipped: [] };
   const opencode = getCompiler("opencode");
 
+  copyDir(src.agentsDir, targets.opencode.agents, opts, result, opencode.renameAgent, (content) =>
+    opencode.compileAgent(content, { integrations: opts.integrations }),
+  );
   copyDir(
-    src.agentsDir,
-    targets.opencode.agents,
+    src.promptsDir,
+    targets.opencode.commands,
     opts,
     result,
-    opencode.renameAgent,
-    (content) => opencode.compileAgent(content, { integrations: opts.integrations }),
+    opencode.renamePrompt,
+    opencode.compilePrompt,
   );
-  copyDir(src.promptsDir, targets.opencode.commands, opts, result, opencode.renamePrompt, opencode.compilePrompt);
   copyDir(src.skillsDir, targets.shared.agentSkills, opts, result);
 
   return result;

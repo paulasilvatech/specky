@@ -7,7 +7,7 @@
  *        node scripts/generate-api-reference.mjs --check (fails if out of date)
  */
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,32 +18,48 @@ const OUT = resolve(ROOT, "docs/API_REFERENCE.md");
 
 function listTools() {
   const input =
-    JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "api-ref", version: "1" } } }) + "\n" +
-    JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n" +
-    JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list" }) + "\n";
+    JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: { name: "api-ref", version: "1" },
+      },
+    }) +
+    "\n" +
+    JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) +
+    "\n" +
+    JSON.stringify({ jsonrpc: "2.0", id: 2, method: "tools/list" }) +
+    "\n";
   const workspace = mkdtempSync(resolve(tmpdir(), "specky-api-reference-"));
   try {
     mkdirSync(resolve(workspace, ".specky"), { recursive: true });
     const configUrl = new URL("../dist/config.js", import.meta.url);
-    return import(configUrl.href).then(({ createWorkspaceConfig, serializeWorkspaceConfig }) => {
-      writeFileSync(
-        resolve(workspace, ".specky/config.yml"),
-        serializeWorkspaceConfig(createWorkspaceConfig()),
-      );
-      const res = spawnSync(process.execPath, [SERVER], {
-        input,
-        encoding: "utf8",
-        timeout: 20000,
-        env: { SDD_WORKSPACE: workspace },
-      });
-      for (const line of (res.stdout ?? "").split("\n").filter(Boolean)) {
-        try {
-          const parsed = JSON.parse(line);
-          if (parsed.id === 2) return parsed.result.tools;
-        } catch { /* ignore */ }
-      }
-      throw new Error(`tools/list failed. stderr=${res.stderr?.slice(0, 400)}`);
-    }).finally(() => rmSync(workspace, { recursive: true, force: true }));
+    return import(configUrl.href)
+      .then(({ createWorkspaceConfig, serializeWorkspaceConfig }) => {
+        writeFileSync(
+          resolve(workspace, ".specky/config.yml"),
+          serializeWorkspaceConfig(createWorkspaceConfig()),
+        );
+        const res = spawnSync(process.execPath, [SERVER], {
+          input,
+          encoding: "utf8",
+          timeout: 20000,
+          env: { SDD_WORKSPACE: workspace },
+        });
+        for (const line of (res.stdout ?? "").split("\n").filter(Boolean)) {
+          try {
+            const parsed = JSON.parse(line);
+            if (parsed.id === 2) return parsed.result.tools;
+          } catch {
+            /* ignore */
+          }
+        }
+        throw new Error(`tools/list failed. stderr=${res.stderr?.slice(0, 400)}`);
+      })
+      .finally(() => rmSync(workspace, { recursive: true, force: true }));
   } catch (error) {
     rmSync(workspace, { recursive: true, force: true });
     throw error;
@@ -80,7 +96,9 @@ const check = process.argv.includes("--check");
 if (check) {
   const current = readFileSync(OUT, "utf8");
   if (current.trim() !== content.trim()) {
-    console.error("[api-reference] docs/API_REFERENCE.md is out of date. Run: node scripts/generate-api-reference.mjs");
+    console.error(
+      "[api-reference] docs/API_REFERENCE.md is out of date. Run: node scripts/generate-api-reference.mjs",
+    );
     process.exit(1);
   }
   console.log("[api-reference] up to date.");

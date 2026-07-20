@@ -3,19 +3,19 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { formatError, truncate } from "./tool-result.js";
-import type { TechStack } from "../types.js";
-import type { FileManager } from "../services/file-manager.js";
-import type { StateMachine } from "../services/state-machine.js";
-import type { IacGenerator } from "../services/iac-generator.js";
-import type { CodebaseScanner } from "../services/codebase-scanner.js";
 import {
-  setupLocalEnvInputSchema,
-  setupCodespacesInputSchema,
   generateDevcontainerInputSchema,
+  setupCodespacesInputSchema,
+  setupLocalEnvInputSchema,
 } from "../schemas/environment.js";
+import type { CodebaseScanner } from "../services/codebase-scanner.js";
+import { requireCapabilityConfig, requireFeatureContext } from "../services/execution-context.js";
+import type { FileManager } from "../services/file-manager.js";
+import type { IacGenerator } from "../services/iac-generator.js";
+import type { StateMachine } from "../services/state-machine.js";
+import type { TechStack } from "../types.js";
 import { enrichResponse } from "./response-builder.js";
-import { requireExecutionContext } from "../services/execution-context.js";
+import { errorResult, truncate } from "./tool-result.js";
 
 function configuredTechStack(environment: {
   language: string;
@@ -50,7 +50,7 @@ export function registerEnvironmentTools(
   fileManager: FileManager,
   stateMachine: StateMachine,
   iacGenerator: IacGenerator,
-  _codebaseScanner: CodebaseScanner
+  _codebaseScanner: CodebaseScanner,
 ): void {
   // ─── sdd_setup_local_env ───
   server.registerTool(
@@ -69,13 +69,20 @@ export function registerEnvironmentTools(
     },
     async ({ feature_number }) => {
       try {
-        const context = requireExecutionContext("sdd_setup_local_env");
-        const stateDir = context.stateDir!;
-        const environment = context.state!.contract.capability_config["dev-environment"]!;
+        const context = requireFeatureContext("sdd_setup_local_env");
+        const stateDir = context.stateDir;
+        const environment = requireCapabilityConfig(
+          context.state.contract.capability_config,
+          "dev-environment",
+        );
         const techStack = configuredTechStack(environment);
 
         const envResult = iacGenerator.generateDockerfile(
-          { language: techStack.language, framework: techStack.framework, runtime: techStack.runtime },
+          {
+            language: techStack.language,
+            framework: techStack.framework,
+            runtime: techStack.runtime,
+          },
           environment.include_compose,
           environment.multi_stage,
           environment.services,
@@ -97,19 +104,25 @@ export function registerEnvironmentTools(
             note: "Route this payload to Docker MCP to build and start the local development environment.",
           },
           explanation: envResult.explanation,
-          next_steps: "The AI client should route the generated Docker files to Docker MCP's compose tools to start the environment.",
-          learning_note: "Local dev environments use Docker Compose to orchestrate multiple services. The generated Dockerfile uses multi-stage builds for smaller production images.",
+          next_steps:
+            "The AI client should route the generated Docker files to Docker MCP's compose tools to start the environment.",
+          learning_note:
+            "Local dev environments use Docker Compose to orchestrate multiple services. The generated Dockerfile uses multi-stage builds for smaller production images.",
         };
 
-        const enriched = await enrichResponse("sdd_setup_local_env", result, stateMachine, stateDir);
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
-      } catch (error) {
+        const enriched = await enrichResponse(
+          "sdd_setup_local_env",
+          result,
+          stateMachine,
+          stateDir,
+        );
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_setup_local_env", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_setup_local_env", error);
       }
-    }
+    },
   );
 
   // ─── sdd_setup_codespaces ───
@@ -129,9 +142,12 @@ export function registerEnvironmentTools(
     },
     async ({ feature_number }) => {
       try {
-        const context = requireExecutionContext("sdd_setup_codespaces");
-        const stateDir = context.stateDir!;
-        const environment = context.state!.contract.capability_config["dev-environment"]!;
+        const context = requireFeatureContext("sdd_setup_codespaces");
+        const stateDir = context.stateDir;
+        const environment = requireCapabilityConfig(
+          context.state.contract.capability_config,
+          "dev-environment",
+        );
         const techStack = configuredTechStack(environment);
 
         const envResult = iacGenerator.generateDevcontainer(
@@ -139,7 +155,11 @@ export function registerEnvironmentTools(
           environment.features,
           environment.extensions,
         );
-        const files = applyDevcontainerContract(envResult.files, environment.base_image, environment.port);
+        const files = applyDevcontainerContract(
+          envResult.files,
+          environment.base_image,
+          environment.port,
+        );
 
         const result = {
           status: "codespaces_config_generated",
@@ -162,18 +182,23 @@ export function registerEnvironmentTools(
             "1. Commit .devcontainer/devcontainer.json to the repository (GitHub MCP create_or_update_file or push_files). " +
             `2. Create the Codespace with machine type '${environment.codespaces_machine}' via the GitHub UI (Code → Codespaces → 'Create codespace'), ` +
             `'gh codespace create --repo <owner>/<repo> --machine ${environment.codespaces_machine}', or 'POST /repos/{owner}/{repo}/codespaces'.`,
-          learning_note: "GitHub Codespaces provides cloud-hosted dev environments. The devcontainer.json defines the container image, extensions, and port forwarding.",
+          learning_note:
+            "GitHub Codespaces provides cloud-hosted dev environments. The devcontainer.json defines the container image, extensions, and port forwarding.",
         };
 
-        const enriched = await enrichResponse("sdd_setup_codespaces", result, stateMachine, stateDir);
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
-      } catch (error) {
+        const enriched = await enrichResponse(
+          "sdd_setup_codespaces",
+          result,
+          stateMachine,
+          stateDir,
+        );
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_setup_codespaces", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_setup_codespaces", error);
       }
-    }
+    },
   );
 
   // ─── sdd_generate_devcontainer ───
@@ -193,9 +218,12 @@ export function registerEnvironmentTools(
     },
     async ({ feature_number }) => {
       try {
-        const context = requireExecutionContext("sdd_generate_devcontainer");
-        const stateDir = context.stateDir!;
-        const environment = context.state!.contract.capability_config["dev-environment"]!;
+        const context = requireFeatureContext("sdd_generate_devcontainer");
+        const stateDir = context.stateDir;
+        const environment = requireCapabilityConfig(
+          context.state.contract.capability_config,
+          "dev-environment",
+        );
         const techStack = configuredTechStack(environment);
 
         const envResult = iacGenerator.generateDevcontainer(
@@ -203,17 +231,21 @@ export function registerEnvironmentTools(
           environment.features,
           environment.extensions,
         );
-        const files = applyDevcontainerContract(envResult.files, environment.base_image, environment.port);
+        const files = applyDevcontainerContract(
+          envResult.files,
+          environment.base_image,
+          environment.port,
+        );
 
         // Write the devcontainer.json file
-        const devcontainerFile = files.find(f => f.path.includes("devcontainer.json"));
+        const devcontainerFile = files.find((f) => f.path.includes("devcontainer.json"));
         let writtenPath = "";
         if (devcontainerFile) {
           writtenPath = await fileManager.writeSpecFile(
             ".devcontainer",
             "devcontainer.json",
             devcontainerFile.content,
-            true
+            true,
           );
         }
 
@@ -225,18 +257,24 @@ export function registerEnvironmentTools(
           file: writtenPath || ".devcontainer/devcontainer.json",
           files,
           explanation: envResult.explanation,
-          next_steps: "Open the project in VS Code and use 'Dev Containers: Reopen in Container' or push to GitHub for Codespaces.",
-          learning_note: "The devcontainer.json specification defines reproducible development environments. It supports custom features, extensions, and lifecycle hooks.",
+          next_steps:
+            "Open the project in VS Code and use 'Dev Containers: Reopen in Container' or push to GitHub for Codespaces.",
+          learning_note:
+            "The devcontainer.json specification defines reproducible development environments. It supports custom features, extensions, and lifecycle hooks.",
         };
 
-        const enriched = await enrichResponse("sdd_generate_devcontainer", result, stateMachine, stateDir);
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
-      } catch (error) {
+        const enriched = await enrichResponse(
+          "sdd_generate_devcontainer",
+          result,
+          stateMachine,
+          stateDir,
+        );
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_generate_devcontainer", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_generate_devcontainer", error);
       }
-    }
+    },
   );
 }

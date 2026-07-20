@@ -4,7 +4,12 @@
  */
 
 import type { EarsPatternName } from "../constants.js";
-import type { ValidationResult, BatchValidationResult, EarsImprovement, EarsRequirement } from "../types.js";
+import type {
+  BatchValidationResult,
+  EarsImprovement,
+  EarsRequirement,
+  ValidationResult,
+} from "../types.js";
 
 interface PatternRule {
   name: EarsPatternName;
@@ -24,50 +29,76 @@ const PATTERN_RULES: PatternRule[] = [
   // be unreachable.
   {
     name: "complex",
-    regex: /^(?:While\s+.+?,\s+when\s+.+?,\s+|When\s+.+?,\s+if\s+.+?,\s+then\s+)the\s+(?:system|server|tool)\s+shall\s+/i,
+    regex:
+      /^(?:While\s+.+?,\s+when\s+.+?,\s+|When\s+.+?,\s+if\s+.+?,\s+then\s+)the\s+(?:system|server|tool)\s+shall\s+/i,
     priority: 1,
-    template: 'While <state>, when <trigger>, the system shall <response>.',
+    template: "While <state>, when <trigger>, the system shall <response>.",
   },
   {
     name: "event_driven",
     regex: /^When\s+.+,\s+the\s+(system|server|tool)\s+shall\s+/i,
     priority: 2,
-    template: 'When <trigger>, the system shall <response>.',
+    template: "When <trigger>, the system shall <response>.",
   },
   {
     name: "state_driven",
     regex: /^While\s+.+,\s+the\s+(system|server|tool)\s+shall\s+/i,
     priority: 3,
-    template: 'While <state>, the system shall <behavior>.',
+    template: "While <state>, the system shall <behavior>.",
   },
   {
     name: "optional",
     regex: /^Where\s+.+,\s+the\s+(system|server|tool)\s+shall\s+/i,
     priority: 4,
-    template: 'Where <feature is included>, the system shall <behavior>.',
+    template: "Where <feature is included>, the system shall <behavior>.",
   },
   {
     name: "unwanted",
     regex: /^If\s+.+,\s+then\s+the\s+(system|server|tool)\s+shall\s+/i,
     priority: 5,
-    template: 'If <unwanted condition>, then the system shall <mitigation>.',
+    template: "If <unwanted condition>, then the system shall <mitigation>.",
   },
   {
     name: "ubiquitous",
     regex: /^The\s+(system|server|tool)\s+shall\s+/i,
     priority: 6,
-    template: 'The system shall <behavior>.',
+    template: "The system shall <behavior>.",
   },
 ];
 
 // Vague, non-measurable terms. Matched on word boundaries so "fast" does not
 // fire on "breakfast" and "robust" not on "robustness".
 const VAGUE_TERMS = [
-  "fast", "quick", "slow", "good", "bad", "easy", "nice", "better", "best",
-  "properly", "appropriate", "appropriately", "efficient", "efficiently",
-  "robust", "seamless", "seamlessly", "intuitive", "user friendly",
-  "user-friendly", "flexible", "scalable", "reliable", "simple", "modern",
-  "state of the art", "state-of-the-art", "as needed", "as appropriate", "etc",
+  "fast",
+  "quick",
+  "slow",
+  "good",
+  "bad",
+  "easy",
+  "nice",
+  "better",
+  "best",
+  "properly",
+  "appropriate",
+  "appropriately",
+  "efficient",
+  "efficiently",
+  "robust",
+  "seamless",
+  "seamlessly",
+  "intuitive",
+  "user friendly",
+  "user-friendly",
+  "flexible",
+  "scalable",
+  "reliable",
+  "simple",
+  "modern",
+  "state of the art",
+  "state-of-the-art",
+  "as needed",
+  "as appropriate",
+  "etc",
 ];
 
 function escapeRegex(term: string): string {
@@ -112,7 +143,9 @@ export class EarsValidator {
 
     if (pattern === "unknown") {
       issues.push("Requirement does not match any EARS pattern.");
-      issues.push("EARS patterns start with: 'The system shall', 'When...', 'While...', 'Where...', or 'If..., then...'");
+      issues.push(
+        "EARS patterns start with: 'The system shall', 'When...', 'While...', 'Where...', or 'If..., then...'",
+      );
       return {
         valid: false,
         pattern,

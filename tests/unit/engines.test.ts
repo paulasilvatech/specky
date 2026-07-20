@@ -3,10 +3,10 @@
  * (model routing, context tiering, cognitive debt, intent drift).
  */
 import { describe, expect, it } from "vitest";
-import { ModelRoutingEngine } from "../../src/services/model-routing-engine.js";
-import { ContextTieringEngine } from "../../src/services/context-tiering-engine.js";
 import { CognitiveDebtEngine } from "../../src/services/cognitive-debt-engine.js";
+import { ContextTieringEngine } from "../../src/services/context-tiering-engine.js";
 import { IntentDriftEngine } from "../../src/services/intent-drift-engine.js";
+import { ModelRoutingEngine } from "../../src/services/model-routing-engine.js";
 import type { GateHistoryEntry } from "../../src/types.js";
 
 describe("ModelRoutingEngine", () => {
@@ -45,8 +45,18 @@ describe("CognitiveDebtEngine", () => {
 
   it("computes metrics from gate history including unmodified approvals", () => {
     const history: GateHistoryEntry[] = [
-      { phase: "specify" as GateHistoryEntry["phase"], timestamp: "2026-01-01T00:00:00Z", artifact: "a", was_modified: true },
-      { phase: "design" as GateHistoryEntry["phase"], timestamp: "2026-01-01T00:01:00Z", artifact: "b", was_modified: false },
+      {
+        phase: "specify" as GateHistoryEntry["phase"],
+        timestamp: "2026-01-01T00:00:00Z",
+        artifact: "a",
+        was_modified: true,
+      },
+      {
+        phase: "design" as GateHistoryEntry["phase"],
+        timestamp: "2026-01-01T00:01:00Z",
+        artifact: "b",
+        was_modified: false,
+      },
     ];
     const metrics = engine.computeMetrics(history);
     expect(metrics).toBeTruthy();

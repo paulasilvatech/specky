@@ -2,7 +2,16 @@
  * cursor-plugin-writer.ts — Write .cursor-plugin/plugin.json so Cursor shows
  * the Specky logo in Agent Plugins (stdio MCP icons alone are often ignored).
  */
-import { closeSync, copyFileSync, existsSync, ftruncateSync, mkdirSync, openSync, readFileSync, writeSync } from "node:fs";
+import {
+  closeSync,
+  copyFileSync,
+  existsSync,
+  ftruncateSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  writeSync,
+} from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { VERSION } from "../../constants.js";
 
@@ -10,7 +19,9 @@ const PLUGIN_NAME = "specky";
 /** Relative to workspace root; copied from the npm package on install. */
 export const CURSOR_PLUGIN_LOGO = ".cursor/assets/specky-icon.png";
 
-export function buildCursorPluginManifest(logoPath: string = CURSOR_PLUGIN_LOGO): Record<string, unknown> {
+export function buildCursorPluginManifest(
+  logoPath: string = CURSOR_PLUGIN_LOGO,
+): Record<string, unknown> {
   return {
     name: PLUGIN_NAME,
     version: VERSION,
@@ -64,7 +75,10 @@ export function writeCursorPluginManifest(
     try {
       fd = openSync(manifestPath, "r+");
     } catch (openErr: unknown) {
-      const code = typeof openErr === "object" && openErr !== null && "code" in openErr ? openErr.code : undefined;
+      const code =
+        typeof openErr === "object" && openErr !== null && "code" in openErr
+          ? openErr.code
+          : undefined;
       if (code !== "ENOENT") throw openErr;
       // File does not yet exist; create it atomically.
       fd = openSync(manifestPath, "w");

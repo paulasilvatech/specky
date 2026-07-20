@@ -7,7 +7,7 @@
  *  Cold   — loaded on-demand only when a tool explicitly requests it
  */
 
-export type ContextTier = 'hot' | 'domain' | 'cold';
+export type ContextTier = "hot" | "domain" | "cold";
 
 export interface ContextLoadSummary {
   hot_loaded: boolean;
@@ -25,15 +25,15 @@ export interface TierEntry {
 
 export class ContextTieringEngine {
   private static readonly TIER_TABLE: Record<string, ContextTier> = {
-    "CONSTITUTION.md":   "hot",
-    "SPECIFICATION.md":  "domain",
-    "DESIGN.md":         "domain",
-    "TASKS.md":          "domain",
-    "ANALYSIS.md":       "cold",
-    "CHECKLIST.md":      "cold",
-    "VERIFICATION.md":   "cold",
-    "RESEARCH.md":       "cold",
-    "COMPLIANCE.md":     "cold",
+    "CONSTITUTION.md": "hot",
+    "SPECIFICATION.md": "domain",
+    "DESIGN.md": "domain",
+    "TASKS.md": "domain",
+    "ANALYSIS.md": "cold",
+    "CHECKLIST.md": "cold",
+    "VERIFICATION.md": "cold",
+    "RESEARCH.md": "cold",
+    "COMPLIANCE.md": "cold",
     "CROSS_ANALYSIS.md": "cold",
   };
 
@@ -57,9 +57,12 @@ export class ContextTieringEngine {
     return Math.ceil(content.length / 4);
   }
 
-  buildContextLoadSummary(
-    loaded: { domainFiles: string[]; coldFiles: string[]; domainContent: string; coldContent: string },
-  ): ContextLoadSummary {
+  buildContextLoadSummary(loaded: {
+    domainFiles: string[];
+    coldFiles: string[];
+    domainContent: string;
+    coldContent: string;
+  }): ContextLoadSummary {
     const hotEstimate = ContextTieringEngine.AVG_FILE_CHARS / 4; // CONSTITUTION.md
     const domainEstimate = this.estimateTokens(loaded.domainContent);
     const coldEstimate = this.estimateTokens(loaded.coldContent);
@@ -67,12 +70,11 @@ export class ContextTieringEngine {
 
     // Universal estimate: all 10 artifacts at average size
     const universalTokens = Math.ceil(
-      ContextTieringEngine.ALL_FILES.length * ContextTieringEngine.AVG_FILE_CHARS / 4,
+      (ContextTieringEngine.ALL_FILES.length * ContextTieringEngine.AVG_FILE_CHARS) / 4,
     );
 
-    const savingsPercent = universalTokens > 0
-      ? Math.round((1 - estimatedTokens / universalTokens) * 100)
-      : 0;
+    const savingsPercent =
+      universalTokens > 0 ? Math.round((1 - estimatedTokens / universalTokens) * 100) : 0;
 
     return {
       hot_loaded: true,
