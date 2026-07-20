@@ -5,6 +5,7 @@ export default defineConfig({
     // Integration tests spawn the MCP server and run hooks in temp workspaces;
     // the default 5s timeout is too tight for cold-start and CI variance.
     testTimeout: 30_000,
+    hookTimeout: 30_000,
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

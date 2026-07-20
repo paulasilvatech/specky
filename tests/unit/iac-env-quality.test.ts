@@ -563,7 +563,7 @@ describe("ears-validator.sh hook", () => {
       expect(res.stdout).toContain("Pattern coverage: 2/6");
       expect(res.stdout).toContain("EARS total:   3 / 3");
       expect(res.stdout).toContain("Pattern types with zero requirements");
-    }, 15_000);
+    }, 30_000);
   }
 
   it("reports 6/6 without warnings when every pattern type is present", () => {

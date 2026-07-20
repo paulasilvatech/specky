@@ -120,6 +120,142 @@ export interface InfraComponent {
   service: string;
 }
 
+/** Cloud resource pattern: maps DESIGN.md keywords to InfraComponent. */
+interface ResourcePattern {
+  regex: RegExp;
+  module: string;
+  service: string;
+}
+
+const RESOURCE_PATTERNS: ResourcePattern[] = [
+  // Compute
+  { regex: /\bcontainer\s*app(s)?\b|\baca\b/i, module: "compute", service: "container" },
+  {
+    regex: /\bkubernetes\b|\bk8s\b|\baks\b|\beks\b|\bgke\b/i,
+    module: "compute",
+    service: "kubernetes",
+  },
+  {
+    regex: /\bfunction(s)?\b|\blambda\b|\bazure\s*function(s)?\b/i,
+    module: "compute",
+    service: "function",
+  },
+  { regex: /\bapp\s*service\b|\bweb\s*app\b/i, module: "compute", service: "appservice" },
+  { regex: /\bvirtual\s*machine(s)?\b|\bvm(s)?\b|\bec2\b/i, module: "compute", service: "vm" },
+
+  // Database
+  { regex: /\bpostgres(ql)?\b/i, module: "database", service: "postgres" },
+  { regex: /\bmysql\b|\bmariadb\b/i, module: "database", service: "mysql" },
+  {
+    regex: /\bmongo(db)?\b|\bdocumentdb\b|\bcosmos\s*db\b/i,
+    module: "database",
+    service: "mongodb",
+  },
+  { regex: /\bsql\s*server\b|\bmssql\b/i, module: "database", service: "sqlserver" },
+  { regex: /\bsqlite\b/i, module: "database", service: "sqlite" },
+
+  // Cache
+  { regex: /\bredis\b|\bazure\s*cache\b/i, module: "cache", service: "redis" },
+  { regex: /\bmemcached\b/i, module: "cache", service: "memcached" },
+
+  // Messaging
+  { regex: /\brabbitmq\b|\bamqp\b/i, module: "messaging", service: "rabbitmq" },
+  { regex: /\bkafka\b|\bevent\s*hubs?\b/i, module: "messaging", service: "kafka" },
+  { regex: /\bservice\s*bus\b|\bsqs\b|\bsns\b/i, module: "messaging", service: "queue" },
+
+  // Storage
+  {
+    regex: /\bs3\b|\bblob\s*storage\b|\bobject\s*storage\b/i,
+    module: "storage",
+    service: "objectstorage",
+  },
+  { regex: /\bfile\s*share\b|\befs\b|\bnfs\b/i, module: "storage", service: "filestorage" },
+
+  // Networking
+  { regex: /\bload\s*balancer\b|\balb\b|\bnlb\b/i, module: "networking", service: "loadbalancer" },
+  { regex: /\bcdn\b|\bcloudfront\b|\bfront\s*door\b/i, module: "networking", service: "cdn" },
+  {
+    regex: /\bapi\s*management\b|\bapim\b|\bapi\s*gateway\b/i,
+    module: "networking",
+    service: "apigateway",
+  },
+  { regex: /\bvnet\b|\bvpc\b|\bvirtual\s*network\b/i, module: "networking", service: "vnet" },
+
+  // Identity/Security
+  { regex: /\bkey\s*vault\b|\bsecrets\s*manager\b/i, module: "security", service: "keyvault" },
+  {
+    regex: /\bactive\s*directory\b|\bazure\s*ad\b|\bentra\b|\bcognito\b/i,
+    module: "security",
+    service: "identity",
+  },
+];
+
+/**
+ * Extract infrastructure components from DESIGN.md content.
+ * Maps natural language mentions to concrete cloud resources.
+ */
+export function extractInfraComponentsFromDesign(designContent: string): InfraComponent[] {
+  const components: InfraComponent[] = [];
+  const seen = new Set<string>();
+
+  for (const pattern of RESOURCE_PATTERNS) {
+    if (pattern.regex.test(designContent)) {
+      const key = `${pattern.module}:${pattern.service}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        components.push({ module: pattern.module, service: pattern.service });
+      }
+    }
+  }
+
+  return components;
+}
+
+/**
+ * Extract infrastructure components with cloud-specific filtering.
+ * Only returns components that have Terraform templates for the target cloud.
+ */
+export function extractInfraComponentsForCloud(
+  designContent: string,
+  cloud: "azure" | "aws" | "gcp",
+): InfraComponent[] {
+  const allComponents = extractInfraComponentsFromDesign(designContent);
+
+  // Cloud-specific service mappings
+  const cloudMappings: Record<string, Record<string, string[]>> = {
+    azure: {
+      compute: ["container", "kubernetes", "function", "appservice", "vm"],
+      database: ["postgres", "mysql", "mongodb", "sqlserver"],
+      cache: ["redis"],
+      messaging: ["queue", "kafka"],
+      storage: ["objectstorage", "filestorage"],
+      networking: ["loadbalancer", "cdn", "apigateway", "vnet"],
+      security: ["keyvault", "identity"],
+    },
+    aws: {
+      compute: ["container", "kubernetes", "function", "vm"],
+      database: ["postgres", "mysql", "mongodb"],
+      cache: ["redis", "memcached"],
+      messaging: ["queue", "kafka", "rabbitmq"],
+      storage: ["objectstorage", "filestorage"],
+      networking: ["loadbalancer", "cdn", "apigateway", "vnet"],
+      security: ["keyvault", "identity"],
+    },
+    gcp: {
+      compute: ["container", "kubernetes", "function", "vm"],
+      database: ["postgres", "mysql", "mongodb"],
+      cache: ["redis", "memcached"],
+      messaging: ["queue", "kafka"],
+      storage: ["objectstorage", "filestorage"],
+      networking: ["loadbalancer", "cdn", "apigateway", "vnet"],
+      security: ["keyvault", "identity"],
+    },
+  };
+
+  const allowed = cloudMappings[cloud] ?? cloudMappings.azure;
+  return allComponents.filter((c) => allowed[c.module]?.includes(c.service));
+}
+
 /** A Terraform output produced alongside a resource block. */
 interface TfOutput {
   name: string;
