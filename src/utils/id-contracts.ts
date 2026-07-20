@@ -44,7 +44,7 @@ export interface RequirementSection {
   text: string;
 }
 
-const REQUIREMENT_SECTION_HEADING = /^###\s+(REQ-[A-Z]+-\d{3})\b:?\s*(.*)$/;
+const REQUIREMENT_SECTION_HEADING = /^###\s+(REQ-[A-Z]+-\d{3}):?(.*)$/;
 const ACCEPTANCE_HEADING = /^\s*#{1,6}\s*acceptance\b/i;
 const ACCEPTANCE_LABEL = /^\s*\*{0,2}acceptance\s+criteria\*{0,2}\s*:?/i;
 
@@ -77,7 +77,7 @@ export function extractRequirementSections(spec: string): RequirementSection[] {
     const heading = REQUIREMENT_SECTION_HEADING.exec(line);
     if (heading) {
       flush();
-      current = { id: heading[1], title: heading[2] ?? "", body: [] };
+      current = { id: heading[1], title: (heading[2] ?? "").trim(), body: [] };
       continue;
     }
     if (!current) continue;

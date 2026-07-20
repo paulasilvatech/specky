@@ -148,21 +148,14 @@ describe("generateTerraform — azure components", () => {
     expect(outputsTf).not.toContain('value       = ""');
   });
 
-  it("emits a placeholder comment (not a resource) for unsupported components", async () => {
+  it("throws (no placeholder) for unsupported components", async () => {
     const gen = makeGenerator(makeWorkspace("specky-iacx-azure-unsup-"));
-    const result = await gen.generateTerraform("azure", [
-      { module: "compute", service: "container" },
-      { module: "dns", service: "zone" },
-    ]);
-
-    const mainTf = fileByPath(result, "terraform/main.tf");
-    expect(mainTf).toContain('resource "azurerm_container_app" "app"');
-    expect(mainTf).toContain('# No azure template exists for module "dns"');
-    expect(mainTf).not.toContain("TODO");
-    // The unsupported component contributes no outputs.
-    const outputsTf = fileByPath(result, "terraform/outputs.tf");
-    expect(outputsTf).toContain('output "app_fqdn"');
-    expect(outputsTf).not.toContain("dns");
+    await expect(
+      gen.generateTerraform("azure", [
+        { module: "compute", service: "container" },
+        { module: "dns", service: "zone" },
+      ]),
+    ).rejects.toThrow(/no template exists for dns:zone/);
   });
 });
 
@@ -354,13 +347,11 @@ describe("generateTerraform — file structure and variables", () => {
     expect(result.diagram).toContain("M1[database: nosql]");
   });
 
-  it("emits the empty-outputs marker when no component produces outputs (aws/gcp)", async () => {
+  it("rejects unrenderable components before writing any output (aws/gcp)", async () => {
     const gen = makeGenerator(makeWorkspace("specky-iacx-noout-"));
-    const result = await gen.generateTerraform("aws", [{ module: "dns", service: "zone" }]);
-
-    expect(fileByPath(result, "terraform/outputs.tf")).toBe(
-      "# No outputs defined for the detected components.",
-    );
+    await expect(
+      gen.generateTerraform("aws", [{ module: "dns", service: "zone" }]),
+    ).rejects.toThrow(/no template exists for dns:zone/);
   });
 
   it("throws when the contract carries no resources", async () => {

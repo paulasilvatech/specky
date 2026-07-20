@@ -7,11 +7,16 @@ import {
   generateUserStoriesInputSchema,
 } from "../schemas/visualization.js";
 import type { DiagramGenerator } from "../services/diagram-generator.js";
+import {
+  type AutoDiagramType,
+  generateDiagramFromContent,
+  isAutoDiagramType,
+} from "../services/content-diagram-generator.js";
 import { requireCapabilityConfig, requireFeatureContext } from "../services/execution-context.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { UserStoriesResult, UserStory } from "../types.js";
-import { extractRequirementIds } from "../utils/id-contracts.js";
+import { extractRequirementIds, extractRequirementSections } from "../utils/id-contracts.js";
 import { enrichResponse } from "./response-builder.js";
 import { errorResult, truncate } from "./tool-result.js";
 
@@ -73,6 +78,66 @@ async function sourceArtifact(
   }
 }
 
+/**
+ * Raw specification and design content used to synthesize diagrams in auto
+ * mode. SPECIFICATION.md is required (it defines requirements/actors);
+ * DESIGN.md is optional and defaults to empty when absent.
+ */
+interface DiagramSourceContent {
+  featureName: string;
+  specContent: string;
+  designContent: string;
+}
+
+async function buildDiagramSources(
+  fileManager: FileManager,
+  featureDir: string,
+  featureName: string,
+): Promise<DiagramSourceContent> {
+  const specContent = await sourceArtifact(fileManager, featureDir, "spec");
+  let designContent = "";
+  try {
+    designContent = await fileManager.readSpecFile(featureDir, "DESIGN.md");
+  } catch {
+    designContent = "";
+  }
+  return { featureName, specContent, designContent };
+}
+
+interface SynthesizedDiagram {
+  mermaidCode: string;
+  evidenceRefs: string[];
+}
+
+/**
+ * Synthesize one auto-mode diagram and validate its evidence against the
+ * contract source artifact. Actors/requirements are derived from the diagram's
+ * contract source so the generated evidence is always grounded in the artifact
+ * used for validation. Throws (InsufficientEvidenceError or a validation error)
+ * when the diagram cannot be grounded — callers must treat this as a hard
+ * failure so nothing partial is written.
+ */
+function synthesizeDiagram(
+  diagramType: AutoDiagramType,
+  contractSource: keyof typeof SOURCE_TO_FILE,
+  sources: DiagramSourceContent,
+): SynthesizedDiagram {
+  const sourceContent = contractSource === "spec" ? sources.specContent : sources.designContent;
+  const requirements =
+    contractSource === "spec"
+      ? extractRequirementSections(sources.specContent)
+      : [{ id: "DESIGN", text: sources.designContent }];
+
+  const generated = generateDiagramFromContent(diagramType, {
+    featureName: sources.featureName,
+    requirements,
+    designContent: sources.designContent,
+  });
+
+  validateDiagramEvidence(diagramType, generated.mermaid, generated.evidenceRefs, sourceContent);
+  return { mermaidCode: generated.mermaid, evidenceRefs: generated.evidenceRefs };
+}
+
 export function registerVisualizationTools(
   server: McpServer,
   fileManager: FileManager,
@@ -82,9 +147,9 @@ export function registerVisualizationTools(
   server.registerTool(
     TOOL_NAMES.GENERATE_DIAGRAM,
     {
-      title: "Validate Contracted Mermaid Diagram",
+      title: "Generate or Validate a Contracted Mermaid Diagram",
       description:
-        "Validates explicit Mermaid code and source evidence for one diagram type required by the selected workload contract. No diagram content is synthesized.",
+        "For one diagram type required by the selected workload contract: in explicit mode (default) validates caller-supplied Mermaid and source evidence; in auto mode synthesizes the diagram deterministically from SPECIFICATION.md/DESIGN.md content and validates its evidence. Auto mode supports c4_context, sequence, er, and deployment.",
       inputSchema: generateDiagramInputSchema,
       annotations: {
         readOnlyHint: true,
@@ -93,7 +158,7 @@ export function registerVisualizationTools(
         openWorldHint: false,
       },
     },
-    async ({ diagram_type, mermaid_code, evidence_refs }) => {
+    async ({ diagram_type, mode, mermaid_code, evidence_refs }) => {
       try {
         const context = requireFeatureContext(TOOL_NAMES.GENERATE_DIAGRAM);
         const required = context.state.contract.required_diagrams.find(
@@ -102,23 +167,47 @@ export function registerVisualizationTools(
         if (!required) {
           throw new Error(
             `Diagram ${diagram_type} is not required by ${context.state.contract.id}. ` +
-              `Allowed: ${context.state.contract.required_diagrams.map((diagram) => diagram.type).join(", ")}.`,
+            `Allowed: ${context.state.contract.required_diagrams.map((diagram) => diagram.type).join(", ")}.`,
           );
         }
-        const source = await sourceArtifact(
-          fileManager,
-          context.feature.directory,
-          required.source,
-        );
-        validateDiagramEvidence(diagram_type, mermaid_code, evidence_refs, source);
+
+        let finalMermaid: string;
+        let finalEvidence: string[];
+        if (mode === "auto") {
+          if (!isAutoDiagramType(diagram_type)) {
+            throw new Error(
+              `auto mode cannot synthesize ${diagram_type}. Use mode=explicit for this diagram type.`,
+            );
+          }
+          const sources = await buildDiagramSources(
+            fileManager,
+            context.feature.directory,
+            context.feature.name,
+          );
+          const synthesized = synthesizeDiagram(diagram_type, required.source, sources);
+          finalMermaid = synthesized.mermaidCode;
+          finalEvidence = synthesized.evidenceRefs;
+        } else {
+          // Explicit mode: schema guarantees these are present.
+          const source = await sourceArtifact(
+            fileManager,
+            context.feature.directory,
+            required.source,
+          );
+          validateDiagramEvidence(diagram_type, mermaid_code as string, evidence_refs as string[], source);
+          finalMermaid = mermaid_code as string;
+          finalEvidence = evidence_refs as string[];
+        }
+
         const result = await enrichResponse(
           TOOL_NAMES.GENERATE_DIAGRAM,
           {
             type: diagram_type,
             title: required.title,
-            mermaid_code,
+            mermaid_code: finalMermaid,
             source: required.source,
-            evidence_refs,
+            evidence_refs: finalEvidence,
+            generation_mode: mode,
             feature_number: context.featureNumber,
             contract_id: context.state.contract.id,
           },
@@ -139,7 +228,7 @@ export function registerVisualizationTools(
     {
       title: "Write All Contracted Mermaid Diagrams",
       description:
-        "Validates the exact workload-required diagram set and its source evidence, then writes DIAGRAMS.md. Missing, extra, duplicate, or ungrounded inputs fail before writing.",
+        "Writes DIAGRAMS.md for the exact workload-required diagram set. In explicit mode (default) validates caller-supplied Mermaid and evidence. In auto mode synthesizes every required diagram from SPECIFICATION.md/DESIGN.md content; all diagrams are generated and validated in memory first, so nothing is written unless the complete set succeeds. Auto mode requires every contracted diagram type to be auto-supported (c4_context, sequence, er, deployment).",
       inputSchema: generateAllDiagramsInputSchema,
       annotations: {
         readOnlyHint: false,
@@ -148,39 +237,83 @@ export function registerVisualizationTools(
         openWorldHint: false,
       },
     },
-    async ({ diagrams: inputs, force }) => {
+    async ({ diagrams: inputs, force, mode }) => {
       try {
         const context = requireFeatureContext(TOOL_NAMES.GENERATE_ALL_DIAGRAMS);
         const required = context.state.contract.required_diagrams;
-        const requiredTypes = required.map((diagram) => diagram.type);
-        const inputTypes = inputs.map((diagram) => diagram.diagram_type);
-        const missing = requiredTypes.filter((type) => !inputTypes.includes(type));
-        const extra = inputTypes.filter((type) => !requiredTypes.includes(type));
-        const duplicates = inputTypes.filter((type, index) => inputTypes.indexOf(type) !== index);
-        if (missing.length > 0 || extra.length > 0 || duplicates.length > 0) {
-          throw new Error(
-            `Diagram set mismatch. Missing: ${missing.join(", ") || "none"}. ` +
-              `Extra: ${extra.join(", ") || "none"}. ` +
-              `Duplicate: ${[...new Set(duplicates)].join(", ") || "none"}.`,
-          );
-        }
 
-        const diagrams = [];
-        for (const contract of required) {
-          const input = inputs.find((candidate) => candidate.diagram_type === contract.type)!;
-          const source = await sourceArtifact(
+        const diagrams: Array<{
+          type: string;
+          title: string;
+          source: keyof typeof SOURCE_TO_FILE;
+          mermaid_code: string;
+          evidence_refs: string[];
+        }> = [];
+
+        if (mode === "auto") {
+          const unsupported = required.filter((diagram) => !isAutoDiagramType(diagram.type));
+          if (unsupported.length > 0) {
+            throw new Error(
+              `auto mode cannot synthesize ${unsupported.map((d) => d.type).join(", ")}. ` +
+              "Use mode=explicit and supply Mermaid for the full diagram set.",
+            );
+          }
+          const sources = await buildDiagramSources(
             fileManager,
             context.feature.directory,
-            contract.source,
+            context.feature.name,
           );
-          validateDiagramEvidence(contract.type, input.mermaid_code, input.evidence_refs, source);
-          diagrams.push({
-            type: contract.type,
-            title: contract.title,
-            source: contract.source,
-            mermaid_code: input.mermaid_code,
-            evidence_refs: input.evidence_refs,
-          });
+          // Preflight: synthesize and validate every diagram in memory first.
+          for (const contract of required) {
+            const synthesized = synthesizeDiagram(
+              contract.type as AutoDiagramType,
+              contract.source,
+              sources,
+            );
+            diagrams.push({
+              type: contract.type,
+              title: contract.title,
+              source: contract.source,
+              mermaid_code: synthesized.mermaidCode,
+              evidence_refs: synthesized.evidenceRefs,
+            });
+          }
+        } else {
+          // Explicit mode: schema guarantees inputs is present.
+          const explicitInputs = inputs as NonNullable<typeof inputs>;
+          const requiredTypes = required.map((diagram) => diagram.type);
+          const inputTypes = explicitInputs.map((diagram) => diagram.diagram_type);
+          const missing = requiredTypes.filter((type) => !inputTypes.includes(type));
+          const extra = inputTypes.filter((type) => !requiredTypes.includes(type));
+          const duplicates = inputTypes.filter(
+            (type, index) => inputTypes.indexOf(type) !== index,
+          );
+          if (missing.length > 0 || extra.length > 0 || duplicates.length > 0) {
+            throw new Error(
+              `Diagram set mismatch. Missing: ${missing.join(", ") || "none"}. ` +
+              `Extra: ${extra.join(", ") || "none"}. ` +
+              `Duplicate: ${[...new Set(duplicates)].join(", ") || "none"}.`,
+            );
+          }
+
+          for (const contract of required) {
+            const input = explicitInputs.find(
+              (candidate) => candidate.diagram_type === contract.type,
+            )!;
+            const source = await sourceArtifact(
+              fileManager,
+              context.feature.directory,
+              contract.source,
+            );
+            validateDiagramEvidence(contract.type, input.mermaid_code, input.evidence_refs, source);
+            diagrams.push({
+              type: contract.type,
+              title: contract.title,
+              source: contract.source,
+              mermaid_code: input.mermaid_code,
+              evidence_refs: input.evidence_refs,
+            });
+          }
         }
 
         const body = diagrams
@@ -210,6 +343,7 @@ export function registerVisualizationTools(
             feature_number: context.featureNumber,
             diagrams,
             total_generated: diagrams.length,
+            generation_mode: mode,
             diagrams_file: path,
             contract_id: context.state.contract.id,
           },
@@ -255,7 +389,7 @@ export function registerVisualizationTools(
         if (unknown.length > 0 || missing.length > 0) {
           throw new Error(
             `User-story bindings mismatch. Missing: ${missing.join(", ") || "none"}. ` +
-              `Unknown: ${unknown.join(", ") || "none"}.`,
+            `Unknown: ${unknown.join(", ") || "none"}.`,
           );
         }
 
@@ -314,7 +448,7 @@ export function registerVisualizationTools(
         if (!figma.diagram_types.includes(diagram_type)) {
           throw new Error(
             `FigJam diagram ${diagram_type} is not enabled by ${context.state.contract.id}. ` +
-              `Allowed: ${figma.diagram_types.join(", ")}.`,
+            `Allowed: ${figma.diagram_types.join(", ")}.`,
           );
         }
         const design = await sourceArtifact(fileManager, context.feature.directory, "design");

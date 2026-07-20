@@ -190,6 +190,77 @@ describe("infrastructure MCP tools", () => {
       expect(String(result.payload["explanation"])).toContain("Generated Terraform for azure");
     });
 
+    it("adds a renderable resource declared in the DESIGN infrastructure section", async () => {
+      const ws = workspace("specky-infra-iac-design-");
+      const harness = await buildHarness(ws, { design: DESIGN });
+      closes.push(harness.close);
+      const result = await callTool(harness.client, "sdd_generate_iac");
+      expect(result.isError).toBe(false);
+      // Contract stays authoritative and unchanged.
+      expect(result.payload["contract_resources"]).toEqual([
+        { module: "networking", service: "network" },
+        { module: "database", service: "postgres" },
+      ]);
+      // DESIGN contributes the container resource on top of the contract.
+      expect(result.payload["design_resources"]).toContainEqual({
+        module: "compute",
+        service: "container",
+      });
+      expect(result.payload["resolved_resources"]).toContainEqual({
+        module: "compute",
+        service: "container",
+      });
+      const mainTf = readFileSync(join(ws, FEATURE_DIR, "terraform/main.tf"), "utf8");
+      expect(mainTf).toContain('resource "azurerm_container_app" "app"');
+    });
+
+    it("produces different Terraform for different designs (content-driven)", async () => {
+      const redisDesign = `## Infrastructure & Deployment\nThe API uses a Redis cache.`;
+      const storageDesign = `## Infrastructure & Deployment\nThe API uses Blob Storage.`;
+
+      const wsRedis = workspace("specky-infra-iac-redis-");
+      const redisHarness = await buildHarness(wsRedis, { design: redisDesign });
+      closes.push(redisHarness.close);
+      await callTool(redisHarness.client, "sdd_generate_iac");
+      const redisTf = readFileSync(join(wsRedis, FEATURE_DIR, "terraform/main.tf"), "utf8");
+
+      const wsStorage = workspace("specky-infra-iac-storage-");
+      const storageHarness = await buildHarness(wsStorage, { design: storageDesign });
+      closes.push(storageHarness.close);
+      await callTool(storageHarness.client, "sdd_generate_iac");
+      const storageTf = readFileSync(join(wsStorage, FEATURE_DIR, "terraform/main.tf"), "utf8");
+
+      expect(redisTf).not.toEqual(storageTf);
+      expect(redisTf).toContain("azurerm_redis_cache");
+      expect(storageTf).toContain("azurerm_storage_account");
+    });
+
+    it("reports recognized-but-unrenderable resources without rendering them", async () => {
+      const ws = workspace("specky-infra-iac-unsupported-");
+      const harness = await buildHarness(ws, {
+        design: `## Infrastructure & Deployment\nThe API runs in a container and reads secrets from Key Vault.`,
+      });
+      closes.push(harness.close);
+      const result = await callTool(harness.client, "sdd_generate_iac");
+      expect(result.isError).toBe(false);
+      expect(result.payload["unsupported_resources"]).toContain("key-vault");
+      const mainTf = readFileSync(join(ws, FEATURE_DIR, "terraform/main.tf"), "utf8");
+      expect(mainTf).not.toContain("key_vault");
+    });
+
+    it("does not persist inferred resources into the signed contract", async () => {
+      const ws = workspace("specky-infra-iac-nopersist-");
+      const harness = await buildHarness(ws, { design: DESIGN });
+      closes.push(harness.close);
+      await callTool(harness.client, "sdd_generate_iac");
+      // A second call sees the same contract resources — inference was not persisted.
+      const second = await callTool(harness.client, "sdd_generate_iac");
+      expect(second.payload["contract_resources"]).toEqual([
+        { module: "networking", service: "network" },
+        { module: "database", service: "postgres" },
+      ]);
+    });
+
     it("requires DESIGN.md as evidence", async () => {
       const harness = await buildHarness(workspace("specky-infra-iac-nodesign-"));
       closes.push(harness.close);

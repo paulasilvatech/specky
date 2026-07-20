@@ -259,10 +259,12 @@ function headingLevel(line: string): number {
   return line[hashes] === " " ? hashes : 0;
 }
 
-/** Test a pattern against non-negated lines only. */
+/** Test a pattern against non-negated clauses only. */
 function matchesPositively(pattern: RegExp, text: string): boolean {
-  for (const line of text.split(/\r?\n/)) {
-    if (pattern.test(line) && !NEGATION_REGEX.test(line)) return true;
+  // Split into clauses on line and sentence boundaries so a negation in one
+  // clause does not suppress a resource mentioned in an adjacent clause.
+  for (const clause of text.split(/[\n.;]+/)) {
+    if (pattern.test(clause) && !NEGATION_REGEX.test(clause)) return true;
   }
   return false;
 }
@@ -735,17 +737,10 @@ export class IacGenerator {
     }
 
     for (const component of components) {
-      const rendered = this.componentResources(cloud, component);
-      if (rendered) {
-        blocks.push(
-          `# ── Module: ${component.module} (${component.service}) ──\n\n${rendered.hcl}`,
-        );
-        outputs.push(...rendered.outputs);
-      } else {
-        blocks.push(
-          `# ── Module: ${component.module} ──\n# No ${cloud} template exists for module "${component.module}" — define its resources in a dedicated .tf file.`,
-        );
-      }
+      // generateTerraform preflights renderability, so this never returns null.
+      const rendered = this.componentResources(cloud, component) as RenderedComponent;
+      blocks.push(`# ── Module: ${component.module} (${component.service}) ──\n\n${rendered.hcl}`);
+      outputs.push(...rendered.outputs);
     }
 
     const mainTf = `terraform {\n  required_version = ">= 1.5"\n  required_providers {\n    ${providerName} = {\n      source = "${providerSource}"\n    }\n  }\n}\n\n${providerBlock}\n\n${blocks.join("\n\n")}`;
@@ -1303,7 +1298,9 @@ export class IacGenerator {
   }
 
   private generateOutputsTf(outputs: TfOutput[]): string {
-    if (outputs.length === 0) return "# No outputs defined for the detected components.";
+    // Preflight guarantees at least one renderable component, and every
+    // renderable component contributes at least one output, so `outputs` is
+    // never empty here.
     return outputs
       .map(
         (o) =>

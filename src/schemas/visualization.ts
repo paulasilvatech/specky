@@ -52,21 +52,21 @@ export const generateDiagramInputSchema = z
     if (value.mode === "auto") {
       if (value.mermaid_code !== undefined) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["mermaid_code"],
           message: "mermaid_code must be omitted in auto mode; Specky synthesizes the diagram.",
         });
       }
       if (value.evidence_refs !== undefined) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["evidence_refs"],
           message: "evidence_refs must be omitted in auto mode; Specky derives evidence.",
         });
       }
       if (!AUTO_TYPE_SET.has(value.diagram_type)) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["diagram_type"],
           message: `auto mode supports only ${[...AUTO_TYPE_SET].join(", ")}. Use mode=explicit for ${value.diagram_type}.`,
         });
@@ -75,14 +75,14 @@ export const generateDiagramInputSchema = z
     }
     if (value.mermaid_code === undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["mermaid_code"],
         message: "mermaid_code is required in explicit mode.",
       });
     }
     if (value.evidence_refs === undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["evidence_refs"],
         message: "evidence_refs is required in explicit mode.",
       });
@@ -114,7 +114,7 @@ export const generateAllDiagramsInputSchema = z
     if (value.mode === "auto") {
       if (value.diagrams !== undefined) {
         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
+          code: "custom",
           path: ["diagrams"],
           message:
             "diagrams must be omitted in auto mode; Specky synthesizes every contracted diagram it supports.",
@@ -124,7 +124,7 @@ export const generateAllDiagramsInputSchema = z
     }
     if (value.diagrams === undefined) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         path: ["diagrams"],
         message: "diagrams is required in explicit mode.",
       });

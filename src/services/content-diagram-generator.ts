@@ -124,7 +124,7 @@ interface ActorPattern {
 }
 
 const ACTOR_PATTERNS: readonly ActorPattern[] = [
-  { source: "\\badministrators?\\b", id: "admin", name: "Administrator", type: "person" },
+  { source: "\\badmin(?:istrator)?s?\\b", id: "admin", name: "Administrator", type: "person" },
   { source: "\\busers?\\b", id: "user", name: "User", type: "person" },
   { source: "\\bclients?\\b", id: "client", name: "Client", type: "person" },
   { source: "\\bdevelopers?\\b", id: "developer", name: "Developer", type: "person" },

@@ -298,6 +298,139 @@ describe("sdd_generate_diagram", () => {
   });
 });
 
+/** DESIGN.md rich enough to auto-ground c4_context, sequence, and er. */
+const AUTO_DESIGN_MD = `# App Design
+
+## System Context
+The Order Client uses the Order API.
+
+## API
+- GET /api/orders lists orders
+- POST /api/orders creates an order
+
+## Data Model
+The Order entity has id and status.
+
+## Infrastructure
+Deploy with Docker containers.
+`;
+
+describe("sdd_generate_diagram (auto mode)", () => {
+  it("synthesizes a c4_context diagram from design content", async () => {
+    const testHarness = await harness({
+      selection: API_SELECTION,
+      files: { "DESIGN.md": AUTO_DESIGN_MD, "SPECIFICATION.md": SPEC_MD },
+    });
+    const result = await call(testHarness.client, "sdd_generate_diagram", {
+      ...baseArgs,
+      mode: "auto",
+      diagram_type: "c4_context",
+    });
+    expect(result.isError, result.raw).toBe(false);
+    expect(result.raw).toContain('"generation_mode": "auto"');
+    expect(result.raw).toContain("C4Context");
+    expect(result.raw).toContain("System Context");
+  });
+
+  it("rejects auto mode when mermaid_code is supplied (mixed input)", async () => {
+    const testHarness = await harness({
+      selection: API_SELECTION,
+      files: { "DESIGN.md": AUTO_DESIGN_MD, "SPECIFICATION.md": SPEC_MD },
+    });
+    const result = await call(testHarness.client, "sdd_generate_diagram", {
+      ...baseArgs,
+      mode: "auto",
+      diagram_type: "c4_context",
+      mermaid_code: "C4Context\n  Person(a, \"A\")",
+      evidence_refs: ["Order Client"],
+    });
+    expect(result.isError).toBe(true);
+    expect(result.raw).toContain("mermaid_code must be omitted in auto mode");
+  });
+
+  it("rejects auto mode for a diagram type that cannot be synthesized", async () => {
+    const testHarness = await harness({
+      selection: API_SELECTION,
+      files: { "DESIGN.md": AUTO_DESIGN_MD, "SPECIFICATION.md": SPEC_MD },
+    });
+    const result = await call(testHarness.client, "sdd_generate_diagram", {
+      ...baseArgs,
+      mode: "auto",
+      diagram_type: "gantt",
+    });
+    expect(result.isError).toBe(true);
+    expect(result.raw).toContain("auto mode supports only");
+  });
+
+  it("fails cleanly when the design lacks evidence for the diagram", async () => {
+    const testHarness = await harness({
+      selection: API_SELECTION,
+      files: { "DESIGN.md": DESIGN_MD, "SPECIFICATION.md": SPEC_MD },
+    });
+    const result = await call(testHarness.client, "sdd_generate_diagram", {
+      ...baseArgs,
+      mode: "auto",
+      diagram_type: "sequence",
+    });
+    expect(result.isError).toBe(true);
+    expect(result.raw).toContain("Cannot synthesize sequence diagram");
+  });
+});
+
+describe("sdd_generate_all_diagrams (auto mode)", () => {
+  it("synthesizes and writes the full contracted set from content", async () => {
+    const testHarness = await harness({
+      selection: API_SELECTION,
+      files: { "DESIGN.md": AUTO_DESIGN_MD, "SPECIFICATION.md": SPEC_MD },
+    });
+    const result = await call(testHarness.client, "sdd_generate_all_diagrams", {
+      ...baseArgs,
+      mode: "auto",
+      force: true,
+    });
+    expect(result.isError, result.raw).toBe(false);
+    expect(result.raw).toContain('"generation_mode": "auto"');
+    expect(result.raw).toContain('"total_generated": 3');
+
+    const diagramsPath = join(testHarness.workspace, FEATURE_DIR, "DIAGRAMS.md");
+    expect(existsSync(diagramsPath)).toBe(true);
+    const written = readFileSync(diagramsPath, "utf8");
+    expect(written).toContain("C4Context");
+    expect(written).toContain("sequenceDiagram");
+    expect(written).toContain("erDiagram");
+  });
+
+  it("rejects auto mode when a diagrams payload is supplied", async () => {
+    const testHarness = await harness({
+      selection: API_SELECTION,
+      files: { "DESIGN.md": AUTO_DESIGN_MD, "SPECIFICATION.md": SPEC_MD },
+    });
+    const result = await call(testHarness.client, "sdd_generate_all_diagrams", {
+      ...baseArgs,
+      mode: "auto",
+      force: true,
+      diagrams: API_DIAGRAMS,
+    });
+    expect(result.isError).toBe(true);
+    expect(result.raw).toContain("diagrams must be omitted in auto mode");
+  });
+
+  it("writes nothing when one diagram in the set cannot be grounded", async () => {
+    const testHarness = await harness({
+      selection: API_SELECTION,
+      files: { "DESIGN.md": DESIGN_MD, "SPECIFICATION.md": SPEC_MD },
+    });
+    const result = await call(testHarness.client, "sdd_generate_all_diagrams", {
+      ...baseArgs,
+      mode: "auto",
+      force: true,
+    });
+    expect(result.isError).toBe(true);
+    const diagramsPath = join(testHarness.workspace, FEATURE_DIR, "DIAGRAMS.md");
+    expect(existsSync(diagramsPath)).toBe(false);
+  });
+});
+
 describe("sdd_generate_all_diagrams", () => {
   it("writes DIAGRAMS.md with every contracted Mermaid block", async () => {
     const testHarness = await harness({
