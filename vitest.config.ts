@@ -2,10 +2,13 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    // Integration tests spawn the MCP server and run hooks in temp workspaces;
-    // the default 5s timeout is too tight for cold-start and CI variance.
-    testTimeout: 30_000,
-    hookTimeout: 30_000,
+    // Integration tests spawn the MCP server, git, and node subprocesses in
+    // temp workspaces. Under the full parallel suite these compete for CPU, so
+    // the per-test wall-clock can exceed a tight timeout even though each file
+    // passes comfortably in isolation. Give them generous headroom to avoid
+    // flaky timeout failures without weakening any assertion.
+    testTimeout: 60_000,
+    hookTimeout: 60_000,
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],
