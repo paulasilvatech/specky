@@ -11,7 +11,7 @@ import {
 } from "../schemas/infrastructure.js";
 import { requireCapabilityConfig, requireFeatureContext } from "../services/execution-context.js";
 import type { FileManager } from "../services/file-manager.js";
-import type { IacGenerator } from "../services/iac-generator.js";
+import { type IacGenerator, resolveIacResources } from "../services/iac-generator.js";
 import type { StateMachine } from "../services/state-machine.js";
 import { enrichResponse } from "./response-builder.js";
 import { errorResult, truncate } from "./tool-result.js";
@@ -28,7 +28,7 @@ export function registerInfrastructureTools(
     {
       title: "Generate Infrastructure as Code",
       description:
-        "Requires DESIGN.md evidence and generates Terraform for the exact cloud and concrete resources persisted in the IaC capability. No provider, module, or cloud inference is performed.",
+        "Generates Terraform for the exact cloud persisted in the signed IaC capability. The signed contract is authoritative for the provider, cloud, state backend, and region policy. Concrete resources are resolved from the contract PLUS any renderable resources declared in the infrastructure section of DESIGN.md (contract resources are never removed). Recognized-but-unrenderable resources are reported, not silently dropped.",
       inputSchema: generateIacInputSchema,
       annotations: {
         readOnlyHint: false,
@@ -43,15 +43,19 @@ export function registerInfrastructureTools(
         const feature = context.feature;
         const stateDir = context.stateDir;
         const iac = requireCapabilityConfig(context.state.contract.capability_config, "iac");
+        let designContent: string;
         try {
-          await fileManager.readSpecFile(feature.directory, "DESIGN.md");
+          designContent = await fileManager.readSpecFile(feature.directory, "DESIGN.md");
         } catch {
           throw new Error(
             `DESIGN.md is required as evidence for the IaC contract in ${feature.directory}.`,
           );
         }
 
-        const iacResult = await iacGenerator.generateTerraform(iac.cloud, iac.resources);
+        // The signed contract is authoritative; DESIGN.md may only ADD
+        // renderable resources on top of the contracted set.
+        const resolution = resolveIacResources(iac.resources, designContent, iac.cloud);
+        const iacResult = await iacGenerator.generateTerraform(iac.cloud, resolution.resolved);
 
         // Write generated files to feature directory
         const writtenPaths: string[] = [];
@@ -68,7 +72,10 @@ export function registerInfrastructureTools(
         const result = {
           provider: iacResult.provider,
           cloud: iac.cloud,
-          contract_resources: iac.resources,
+          contract_resources: resolution.contractResources,
+          design_resources: resolution.designResources,
+          resolved_resources: resolution.resolved,
+          unsupported_resources: resolution.unsupported,
           state_backend: iac.state_backend,
           region_policy: iac.region_policy,
           files: iacResult.files.map((f) => ({

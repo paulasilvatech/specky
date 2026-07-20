@@ -120,86 +120,165 @@ export interface InfraComponent {
   service: string;
 }
 
-/** Cloud resource pattern: maps DESIGN.md keywords to InfraComponent. */
+/** Cloud resource pattern: maps DESIGN.md keywords to a canonical InfraComponent. */
 interface ResourcePattern {
   regex: RegExp;
   module: string;
   service: string;
 }
 
-const RESOURCE_PATTERNS: ResourcePattern[] = [
+/**
+ * Canonical resource patterns. The `module:service` keys here MUST match the
+ * keys understood by the per-cloud renderers (azureComponent/awsComponent/
+ * gcpComponent). Every entry is renderable on azure, aws, and gcp.
+ */
+const RESOURCE_PATTERNS: readonly ResourcePattern[] = [
+  // Networking
+  {
+    regex: /\bvnet\b|\bvpc\b|\bvirtual\s*network\b|\bsubnet\b/i,
+    module: "networking",
+    service: "network",
+  },
+
   // Compute
-  { regex: /\bcontainer\s*app(s)?\b|\baca\b/i, module: "compute", service: "container" },
+  {
+    regex: /\bcontainer\s*app(s)?\b|\baca\b|\bcontainers?\b|\bdocker\b|\becs\b|\bfargate\b|\bcloud\s*run\b/i,
+    module: "compute",
+    service: "container",
+  },
   {
     regex: /\bkubernetes\b|\bk8s\b|\baks\b|\beks\b|\bgke\b/i,
     module: "compute",
     service: "kubernetes",
   },
   {
-    regex: /\bfunction(s)?\b|\blambda\b|\bazure\s*function(s)?\b/i,
+    regex: /\bserverless\b|\bfunction(s)?\b|\blambda\b|\bazure\s*function(s)?\b|\bcloud\s*function(s)?\b/i,
     module: "compute",
-    service: "function",
+    service: "serverless",
   },
-  { regex: /\bapp\s*service\b|\bweb\s*app\b/i, module: "compute", service: "appservice" },
-  { regex: /\bvirtual\s*machine(s)?\b|\bvm(s)?\b|\bec2\b/i, module: "compute", service: "vm" },
 
   // Database
   { regex: /\bpostgres(ql)?\b/i, module: "database", service: "postgres" },
   { regex: /\bmysql\b|\bmariadb\b/i, module: "database", service: "mysql" },
   {
-    regex: /\bmongo(db)?\b|\bdocumentdb\b|\bcosmos\s*db\b/i,
+    regex: /\bmongo(db)?\b|\bdocumentdb\b|\bcosmos\s*db\b|\bdynamodb\b|\bfirestore\b|\bnosql\b/i,
     module: "database",
-    service: "mongodb",
+    service: "nosql",
   },
   { regex: /\bsql\s*server\b|\bmssql\b/i, module: "database", service: "sqlserver" },
-  { regex: /\bsqlite\b/i, module: "database", service: "sqlite" },
 
   // Cache
-  { regex: /\bredis\b|\bazure\s*cache\b/i, module: "cache", service: "redis" },
-  { regex: /\bmemcached\b/i, module: "cache", service: "memcached" },
-
-  // Messaging
-  { regex: /\brabbitmq\b|\bamqp\b/i, module: "messaging", service: "rabbitmq" },
-  { regex: /\bkafka\b|\bevent\s*hubs?\b/i, module: "messaging", service: "kafka" },
-  { regex: /\bservice\s*bus\b|\bsqs\b|\bsns\b/i, module: "messaging", service: "queue" },
+  { regex: /\bredis\b|\bazure\s*cache\b|\belasticache\b/i, module: "cache", service: "redis" },
 
   // Storage
   {
-    regex: /\bs3\b|\bblob\s*storage\b|\bobject\s*storage\b/i,
+    regex: /\bs3\b|\bblob\s*storage\b|\bobject\s*storage\b|\bcloud\s*storage\b|\bgcs\b/i,
     module: "storage",
-    service: "objectstorage",
+    service: "object",
   },
-  { regex: /\bfile\s*share\b|\befs\b|\bnfs\b/i, module: "storage", service: "filestorage" },
 
-  // Networking
-  { regex: /\bload\s*balancer\b|\balb\b|\bnlb\b/i, module: "networking", service: "loadbalancer" },
-  { regex: /\bcdn\b|\bcloudfront\b|\bfront\s*door\b/i, module: "networking", service: "cdn" },
+  // Messaging
   {
-    regex: /\bapi\s*management\b|\bapim\b|\bapi\s*gateway\b/i,
-    module: "networking",
-    service: "apigateway",
+    regex: /\bservice\s*bus\b|\bsqs\b|\bsns\b|\bpub\/?sub\b|\bmessage\s*queue\b|\bqueue\b/i,
+    module: "messaging",
+    service: "queue",
   },
-  { regex: /\bvnet\b|\bvpc\b|\bvirtual\s*network\b/i, module: "networking", service: "vnet" },
 
-  // Identity/Security
-  { regex: /\bkey\s*vault\b|\bsecrets\s*manager\b/i, module: "security", service: "keyvault" },
+  // Identity
   {
-    regex: /\bactive\s*directory\b|\bazure\s*ad\b|\bentra\b|\bcognito\b/i,
-    module: "security",
+    regex: /\bactive\s*directory\b|\bazure\s*ad\b|\bentra\b|\bcognito\b|\bidentity\s*platform\b|\bmanaged\s*identit(y|ies)\b/i,
+    module: "identity",
     service: "identity",
+  },
+
+  // Monitoring
+  {
+    regex: /\blog\s*analytics\b|\bcloud\s*watch\b|\bcloudwatch\b|\bapp(lication)?\s*insights\b|\bobservability\b/i,
+    module: "monitoring",
+    service: "logs",
   },
 ];
 
 /**
- * Extract infrastructure components from DESIGN.md content.
- * Maps natural language mentions to concrete cloud resources.
+ * Resources Specky recognizes by name but does not (yet) render a Terraform
+ * template for. These are reported transparently rather than silently dropped
+ * or emitted as generic placeholders.
+ */
+const UNSUPPORTED_PATTERNS: readonly { regex: RegExp; label: string }[] = [
+  { regex: /\bapp\s*service\b|\bweb\s*app\b/i, label: "app-service" },
+  { regex: /\bvirtual\s*machine(s)?\b|\bvm(s)?\b|\bec2\b|\bcompute\s*engine\b/i, label: "virtual-machine" },
+  { regex: /\bsqlite\b/i, label: "sqlite" },
+  { regex: /\bmemcached\b/i, label: "memcached" },
+  { regex: /\brabbitmq\b|\bamqp\b/i, label: "rabbitmq" },
+  { regex: /\bkafka\b|\bevent\s*hubs?\b/i, label: "kafka" },
+  { regex: /\bfile\s*share\b|\befs\b|\bnfs\b/i, label: "file-storage" },
+  { regex: /\bload\s*balancer\b|\balb\b|\bnlb\b/i, label: "load-balancer" },
+  { regex: /\bcdn\b|\bcloudfront\b|\bfront\s*door\b/i, label: "cdn" },
+  { regex: /\bapi\s*management\b|\bapim\b|\bapi\s*gateway\b/i, label: "api-gateway" },
+  { regex: /\bkey\s*vault\b|\bsecrets\s*manager\b/i, label: "key-vault" },
+];
+
+/** Words that negate a nearby resource mention on the same line. */
+const NEGATION_REGEX = /\b(?:no|not|without|avoid|avoids|never|exclude|excludes|excluded|excluding)\b/i;
+
+/**
+ * Isolate the infrastructure/deployment section of a DESIGN.md document. When a
+ * recognizable section heading exists, only that section is returned so that
+ * resources mentioned incidentally elsewhere are not extracted. When no such
+ * heading exists, the whole document is used.
+ */
+export function extractInfrastructureSection(designContent: string): {
+  text: string;
+  isolated: boolean;
+} {
+  const lines = designContent.split(/\r?\n/);
+  const infraHeading =
+    /\b(?:infrastructure|deployment|infra|provisioning|topology|hosting)\b|\bcloud\s+resources?\b/i;
+
+  for (let i = 0; i < lines.length; i++) {
+    const level = headingLevel(lines[i]);
+    if (level > 0 && infraHeading.test(lines[i])) {
+      const body: string[] = [];
+      for (let j = i + 1; j < lines.length; j++) {
+        const nextLevel = headingLevel(lines[j]);
+        if (nextLevel > 0 && nextLevel <= level) break;
+        body.push(lines[j]);
+      }
+      return { text: body.join("\n"), isolated: true };
+    }
+  }
+
+  return { text: designContent, isolated: false };
+}
+
+/** Return the ATX heading level of a line (1-6), or 0 if it is not a heading. */
+function headingLevel(line: string): number {
+  let hashes = 0;
+  while (hashes < line.length && line[hashes] === "#") hashes++;
+  if (hashes === 0 || hashes > 6) return 0;
+  return line[hashes] === " " ? hashes : 0;
+}
+
+/** Test a pattern against non-negated lines only. */
+function matchesPositively(pattern: RegExp, text: string): boolean {
+  for (const line of text.split(/\r?\n/)) {
+    if (pattern.test(line) && !NEGATION_REGEX.test(line)) return true;
+  }
+  return false;
+}
+
+/**
+ * Extract canonical infrastructure components from DESIGN.md content. Only
+ * resources present (and not negated) in the infrastructure section are
+ * returned, in canonical registry order.
  */
 export function extractInfraComponentsFromDesign(designContent: string): InfraComponent[] {
+  const { text } = extractInfrastructureSection(designContent);
   const components: InfraComponent[] = [];
   const seen = new Set<string>();
 
   for (const pattern of RESOURCE_PATTERNS) {
-    if (pattern.regex.test(designContent)) {
+    if (matchesPositively(pattern.regex, text)) {
       const key = `${pattern.module}:${pattern.service}`;
       if (!seen.has(key)) {
         seen.add(key);
@@ -212,48 +291,111 @@ export function extractInfraComponentsFromDesign(designContent: string): InfraCo
 }
 
 /**
- * Extract infrastructure components with cloud-specific filtering.
- * Only returns components that have Terraform templates for the target cloud.
+ * Detect recognized-but-unrenderable resources mentioned in the infrastructure
+ * section, for transparent reporting.
+ */
+export function detectUnsupportedResources(designContent: string): string[] {
+  const { text } = extractInfrastructureSection(designContent);
+  const labels: string[] = [];
+  for (const { regex, label } of UNSUPPORTED_PATTERNS) {
+    if (matchesPositively(regex, text) && !labels.includes(label)) labels.push(label);
+  }
+  return labels;
+}
+
+/**
+ * Extract infrastructure components for a target cloud. All canonical services
+ * render on every cloud; the GCP container/serverless collision is folded to a
+ * single compute resource because both map to the same Terraform address.
  */
 export function extractInfraComponentsForCloud(
   designContent: string,
-  cloud: "azure" | "aws" | "gcp",
+  cloud: CloudProvider,
 ): InfraComponent[] {
-  const allComponents = extractInfraComponentsFromDesign(designContent);
+  return foldCloudCollisions(extractInfraComponentsFromDesign(designContent), cloud);
+}
 
-  // Cloud-specific service mappings
-  const cloudMappings: Record<string, Record<string, string[]>> = {
-    azure: {
-      compute: ["container", "kubernetes", "function", "appservice", "vm"],
-      database: ["postgres", "mysql", "mongodb", "sqlserver"],
-      cache: ["redis"],
-      messaging: ["queue", "kafka"],
-      storage: ["objectstorage", "filestorage"],
-      networking: ["loadbalancer", "cdn", "apigateway", "vnet"],
-      security: ["keyvault", "identity"],
-    },
-    aws: {
-      compute: ["container", "kubernetes", "function", "vm"],
-      database: ["postgres", "mysql", "mongodb"],
-      cache: ["redis", "memcached"],
-      messaging: ["queue", "kafka", "rabbitmq"],
-      storage: ["objectstorage", "filestorage"],
-      networking: ["loadbalancer", "cdn", "apigateway", "vnet"],
-      security: ["keyvault", "identity"],
-    },
-    gcp: {
-      compute: ["container", "kubernetes", "function", "vm"],
-      database: ["postgres", "mysql", "mongodb"],
-      cache: ["redis", "memcached"],
-      messaging: ["queue", "kafka"],
-      storage: ["objectstorage", "filestorage"],
-      networking: ["loadbalancer", "cdn", "apigateway", "vnet"],
-      security: ["keyvault", "identity"],
-    },
+/** Map legacy/aliased contract service names to canonical renderer keys. */
+const LEGACY_SERVICE_ALIASES: Record<string, { module: string; service: string }> = {
+  "compute:function": { module: "compute", service: "serverless" },
+  "database:mongodb": { module: "database", service: "nosql" },
+  "database:documentdb": { module: "database", service: "nosql" },
+  "storage:objectstorage": { module: "storage", service: "object" },
+  "networking:vnet": { module: "networking", service: "network" },
+  "security:identity": { module: "identity", service: "identity" },
+};
+
+/** Normalize a component to its canonical renderer key. */
+export function normalizeInfraComponent(component: InfraComponent): InfraComponent {
+  const alias = LEGACY_SERVICE_ALIASES[`${component.module}:${component.service}`];
+  return alias ? { module: alias.module, service: alias.service } : component;
+}
+
+/**
+ * GCP renders compute:container and compute:serverless to the same Cloud Run
+ * resource address. When both are present for gcp, keep container and drop
+ * serverless to avoid a duplicate-resource Terraform error.
+ */
+function foldCloudCollisions(components: InfraComponent[], cloud: CloudProvider): InfraComponent[] {
+  if (cloud !== "gcp") return components;
+  const hasContainer = components.some((c) => c.module === "compute" && c.service === "container");
+  if (!hasContainer) return components;
+  return components.filter((c) => !(c.module === "compute" && c.service === "serverless"));
+}
+
+/** Resolution of contract + design resources for IaC generation. */
+export interface ResolvedIac {
+  /** Final ordered, deduped components handed to the generator. */
+  resolved: InfraComponent[];
+  /** Canonicalized resources declared by the signed capability contract. */
+  contractResources: InfraComponent[];
+  /** Resources contributed only by DESIGN.md (not already in the contract). */
+  designResources: InfraComponent[];
+  /** Recognized-but-unrenderable resources mentioned in DESIGN.md. */
+  unsupported: string[];
+}
+
+/**
+ * Resolve the effective infrastructure resource set. The signed contract is
+ * authoritative and always comes first; DESIGN.md may only ADD renderable
+ * resources. Order is deterministic (contract order, then design registry
+ * order) and duplicates are removed.
+ */
+export function resolveIacResources(
+  contractResources: InfraComponent[],
+  designContent: string,
+  cloud: CloudProvider,
+): ResolvedIac {
+  const canonicalContract = contractResources.map(normalizeInfraComponent);
+  const resolved: InfraComponent[] = [];
+  const seen = new Set<string>();
+
+  const add = (c: InfraComponent): boolean => {
+    const key = `${c.module}:${c.service}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    resolved.push(c);
+    return true;
   };
 
-  const allowed = cloudMappings[cloud] ?? cloudMappings.azure;
-  return allComponents.filter((c) => allowed[c.module]?.includes(c.service));
+  for (const c of canonicalContract) add(c);
+
+  const designResources: InfraComponent[] = [];
+  for (const c of extractInfraComponentsFromDesign(designContent)) {
+    if (add(c)) designResources.push(c);
+  }
+
+  const folded = foldCloudCollisions(resolved, cloud);
+  // Recompute design-only list after collision folding.
+  const contractKeys = new Set(canonicalContract.map((c) => `${c.module}:${c.service}`));
+  const foldedDesign = folded.filter((c) => !contractKeys.has(`${c.module}:${c.service}`));
+
+  return {
+    resolved: folded,
+    contractResources: canonicalContract,
+    designResources: foldedDesign.length > 0 ? foldedDesign : designResources.filter((c) => folded.includes(c)),
+    unsupported: detectUnsupportedResources(designContent),
+  };
 }
 
 /** A Terraform output produced alongside a resource block. */
@@ -322,7 +464,7 @@ function renderDockerfile(language: string, multiStage: boolean): string {
 }
 
 export class IacGenerator {
-  constructor(_fileManager: FileManager) {}
+  constructor(_fileManager: FileManager) { }
 
   async generateTerraform(cloud: CloudProvider, components: InfraComponent[]): Promise<IacResult> {
     if (components.length === 0) {
@@ -330,6 +472,20 @@ export class IacGenerator {
         "Terraform generation requires at least one resource in the IaC capability contract.",
       );
     }
+
+    // Preflight: every resource must have a template for the target cloud.
+    // Fail before emitting any file rather than writing generic placeholders.
+    const unrenderable = components.filter(
+      (component) => this.componentResources(cloud, component) === null,
+    );
+    if (unrenderable.length > 0) {
+      const list = unrenderable.map((c) => `${c.module}:${c.service}`).join(", ");
+      throw new Error(
+        `Cannot generate Terraform for ${cloud}: no template exists for ${list}. ` +
+        "Remove the resource from the capability contract or design, or target a supported resource type.",
+      );
+    }
+
     const files: IacFile[] = [];
 
     const { mainTf, outputs } = this.renderCloud(cloud, components);
@@ -383,15 +539,15 @@ export class IacGenerator {
     const routing: RoutingInstructions =
       provider === "terraform"
         ? {
-            mcp_server: "terraform",
-            tool_name: "plan",
-            note: "Call Terraform MCP plan/validate with the generated files",
-          }
+          mcp_server: "terraform",
+          tool_name: "plan",
+          note: "Call Terraform MCP plan/validate with the generated files",
+        }
         : {
-            mcp_server: "azure",
-            tool_name: "validate_template",
-            note: "Call Azure MCP to validate Bicep/ARM template",
-          };
+          mcp_server: "azure",
+          tool_name: "validate_template",
+          note: "Call Azure MCP to validate Bicep/ARM template",
+        };
     return {
       provider,
       cloud,

@@ -35,3 +35,70 @@ export function extractTaskIds(text: string): string[] {
     ...new Set([...text.matchAll(TASK_ID_PATTERN)].map((match) => normalizeTaskId(match[0]))),
   ].sort((a, b) => a.localeCompare(b));
 }
+
+/** A parsed requirement section from SPECIFICATION.md. */
+export interface RequirementSection {
+  id: string;
+  title: string;
+  /** Requirement statement text (title + body), excluding acceptance criteria. */
+  text: string;
+}
+
+const REQUIREMENT_SECTION_HEADING = /^###\s+(REQ-[A-Z]+-\d{3})\b:?\s*(.*)$/;
+const ACCEPTANCE_HEADING = /^\s*#{1,6}\s*acceptance\b/i;
+const ACCEPTANCE_LABEL = /^\s*\*{0,2}acceptance\s+criteria\*{0,2}\s*:?/i;
+
+/**
+ * Parse requirement sections (`### REQ-<AREA>-<NNN>: Title`) from a
+ * specification document. Each section's text is the title plus the body up to
+ * the next heading, with acceptance-criteria prose excluded. Repeated
+ * requirement IDs are de-duplicated (first occurrence wins), so the result is
+ * deterministic even when a requirement heading appears more than once.
+ */
+export function extractRequirementSections(spec: string): RequirementSection[] {
+  const lines = spec.split(/\r?\n/);
+  const sections: RequirementSection[] = [];
+  const seen = new Set<string>();
+
+  let current: { id: string; title: string; body: string[] } | null = null;
+  let inAcceptance = false;
+
+  const flush = (): void => {
+    if (current && !seen.has(current.id)) {
+      seen.add(current.id);
+      const text = [current.title, ...current.body].join("\n").trim();
+      sections.push({ id: current.id, title: current.title.trim(), text });
+    }
+    current = null;
+    inAcceptance = false;
+  };
+
+  for (const line of lines) {
+    const heading = REQUIREMENT_SECTION_HEADING.exec(line);
+    if (heading) {
+      flush();
+      current = { id: heading[1], title: heading[2] ?? "", body: [] };
+      continue;
+    }
+    if (!current) continue;
+
+    // Any non-requirement heading at level 1-3 ends the requirement body.
+    const level = /^(#{1,3})\s/.exec(line);
+    if (level) {
+      flush();
+      continue;
+    }
+
+    if (ACCEPTANCE_HEADING.test(line) || ACCEPTANCE_LABEL.test(line)) {
+      inAcceptance = true;
+      continue;
+    }
+    if (inAcceptance) continue;
+
+    current.body.push(line);
+  }
+  flush();
+
+  return sections;
+}
+
