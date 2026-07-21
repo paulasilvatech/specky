@@ -15,6 +15,7 @@ interface TokenBucket {
 export class RateLimiter {
   private readonly buckets: Map<string, TokenBucket> = new Map();
   private readonly refillIntervalMs: number;
+  private readonly idleEvictionMs: number;
 
   constructor(
     _maxRpm: number,
@@ -22,6 +23,9 @@ export class RateLimiter {
   ) {
     // Tokens refill at a rate of maxRpm per minute
     this.refillIntervalMs = 60_000 / _maxRpm;
+    // A bucket idle for two full refill windows has certainly refilled to
+    // burst, so a returning client is indistinguishable from a new one.
+    this.idleEvictionMs = 2 * this.burst * this.refillIntervalMs;
   }
 
   /**
@@ -31,6 +35,7 @@ export class RateLimiter {
    */
   checkRateLimit(clientId: string): { allowed: boolean; retry_after_ms?: number } {
     const now = Date.now();
+    this.evictIdleBuckets(now);
     let bucket = this.buckets.get(clientId);
 
     if (!bucket) {
@@ -56,6 +61,20 @@ export class RateLimiter {
     // Calculate when the next token will be available
     const msUntilNextToken = this.refillIntervalMs - (elapsed % this.refillIntervalMs);
     return { allowed: false, retry_after_ms: Math.ceil(msUntilNextToken) };
+  }
+
+  /**
+   * Lazily drop buckets that have been idle long enough to fully refill twice
+   * over. Eviction never changes allow/deny outcomes (such a client would get
+   * a full bucket anyway) — it only bounds memory for long-running servers.
+   * Runs inline on each check; no timers, so it stays serverless/CLI friendly.
+   */
+  private evictIdleBuckets(now: number): void {
+    for (const [clientId, bucket] of this.buckets) {
+      if (now - bucket.lastRefill > this.idleEvictionMs) {
+        this.buckets.delete(clientId);
+      }
+    }
   }
 
   /**

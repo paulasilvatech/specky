@@ -29,7 +29,7 @@ const TASK_TABLE_ROW =
 
 const SUBTASK_LINE = /^\s{2,}-\s+(?:\[[ x]\]\s+)?(.+)/;
 const TRAILING_TRACE_SUFFIX =
-  /\s*[(\[]?\s*(?:traces?(?:_to)?\s*:\s*)?REQ-[A-Z]+-\d{3}(?:\s*,\s*REQ-[A-Z]+-\d{3})*\s*[)\]]?\s*$/i;
+  /\s*[([]?\s*(?:traces?(?:_to)?\s*:\s*)?REQ-[A-Z]+-\d{3}(?:\s*,\s*REQ-[A-Z]+-\d{3})*\s*[)\]]?\s*$/i;
 
 function splitCellList(cell: string): string[] {
   const trimmed = cell.trim();
@@ -181,8 +181,7 @@ export function parseTasksFromMarkdown(content: string): ParsedTask[] {
       parallel: task.parallel || existing.parallel,
       claimed_done: task.claimed_done,
       subtasks: task.subtasks.length > 0 ? task.subtasks : existing.subtasks,
-      dependencies:
-        task.dependencies.length > 0 ? task.dependencies : existing.dependencies,
+      dependencies: task.dependencies.length > 0 ? task.dependencies : existing.dependencies,
       traces_to:
         task.traces_to.length > 0
           ? [...new Set([...existing.traces_to, ...task.traces_to])].sort((a, b) =>

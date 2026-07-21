@@ -3,7 +3,19 @@
  * All TypeScript interfaces and types used across the project.
  */
 
-import { type Phase as PhaseEnum, type EarsPatternName, type TemplateName, type WorkItemPlatform, type DiagramType, type ComplianceFramework, type ChecklistDomain, type DocumentFormat, type IacProvider, type CloudProvider } from "./constants.js";
+import type {
+  ChecklistDomain,
+  CloudProvider,
+  ComplianceFramework,
+  DiagramType,
+  DocumentFormat,
+  EarsPatternName,
+  IacProvider,
+  Phase as PhaseEnum,
+  TemplateName,
+  WorkItemPlatform,
+} from "./constants.js";
+import type { ToolContract } from "./contracts/tool-contracts.js";
 import type { ResolvedUseCaseContract } from "./contracts/use-case.js";
 
 /** Re-export Phase type from constants for convenience */
@@ -77,6 +89,22 @@ export interface FeatureInfo {
   name: string;
   directory: string;
   files: string[];
+}
+
+/**
+ * Execution context narrowed for feature-scoped tools. The tool contract
+ * guarantees specDir, featureNumber, feature, stateDir, and state are resolved
+ * before the handler runs, so they are non-optional here.
+ */
+export interface FeatureContext {
+  toolName: string;
+  toolContract: ToolContract;
+  specDir: string;
+  featureNumber: string;
+  feature: FeatureInfo;
+  stateDir: string;
+  state: SddState;
+  requestedContract?: ResolvedUseCaseContract;
 }
 
 /** A single EARS requirement */
@@ -666,4 +694,14 @@ export interface Checkpoint {
 }
 
 /** Re-export for convenience */
-export type { EarsPatternName, TemplateName, WorkItemPlatform, DiagramType, ComplianceFramework, ChecklistDomain, DocumentFormat, IacProvider, CloudProvider };
+export type {
+  ChecklistDomain,
+  CloudProvider,
+  ComplianceFramework,
+  DiagramType,
+  DocumentFormat,
+  EarsPatternName,
+  IacProvider,
+  TemplateName,
+  WorkItemPlatform,
+};

@@ -1,6 +1,6 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { deflateRawSync, deflateSync } from "node:zlib";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DocumentConverter } from "../../src/services/document-converter.js";
@@ -87,7 +87,11 @@ function makePptx(slideTexts: string[], store: boolean): Buffer {
       '<?xml version="1.0"?><p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" ' +
       'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">' +
       `<p:cSld><p:spTree><p:sp><p:txBody><a:p><a:r><a:t>${text}</a:t></a:r></a:p></p:txBody></p:sp></p:spTree></p:cSld></p:sld>`;
-    entries.push({ name: `ppt/slides/slide${i + 1}.xml`, data: Buffer.from(slideXml, "utf8"), store });
+    entries.push({
+      name: `ppt/slides/slide${i + 1}.xml`,
+      data: Buffer.from(slideXml, "utf8"),
+      store,
+    });
   });
   return makeZip(entries);
 }
@@ -97,12 +101,12 @@ function makePlainPdf(text: string): Buffer {
   const stream = `BT /F1 12 Tf 72 720 Td (${text}) Tj ET`;
   return Buffer.from(
     "%PDF-1.4\n" +
-    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n" +
-    "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n" +
-    "3 0 obj << /Type /Page /Parent 2 0 R /Contents 4 0 R >> endobj\n" +
-    `4 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj\n` +
-    "%%EOF\n",
-    "latin1"
+      "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n" +
+      "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n" +
+      "3 0 obj << /Type /Page /Parent 2 0 R /Contents 4 0 R >> endobj\n" +
+      `4 0 obj << /Length ${stream.length} >> stream\n${stream}\nendstream endobj\n` +
+      "%%EOF\n",
+    "latin1",
   );
 }
 
@@ -111,11 +115,11 @@ function makeFlatePdf(text: string): Buffer {
   const stream = deflateSync(Buffer.from(`BT /F1 12 Tf 72 720 Td (${text}) Tj ET`, "latin1"));
   const head = Buffer.from(
     "%PDF-1.4\n" +
-    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n" +
-    "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n" +
-    "3 0 obj << /Type /Page /Parent 2 0 R /Contents 4 0 R >> endobj\n" +
-    `4 0 obj << /Length ${stream.length} /Filter /FlateDecode >> stream\n`,
-    "latin1"
+      "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n" +
+      "2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj\n" +
+      "3 0 obj << /Type /Page /Parent 2 0 R /Contents 4 0 R >> endobj\n" +
+      `4 0 obj << /Length ${stream.length} /Filter /FlateDecode >> stream\n`,
+    "latin1",
   );
   const tail = Buffer.from("\nendstream endobj\n%%EOF\n", "latin1");
   return Buffer.concat([head, stream, tail]);
@@ -159,11 +163,15 @@ describe("DocumentConverter", () => {
     const absolutePath = join(workspace, "docs", "input.md");
     writeFileSync(absolutePath, "# Absolute", "utf8");
 
-    await expect(converter.convert(absolutePath, "md")).rejects.toThrow("Absolute paths are not allowed");
+    await expect(converter.convert(absolutePath, "md")).rejects.toThrow(
+      "Absolute paths are not allowed",
+    );
   });
 
   it("rejects path traversal", async () => {
-    await expect(converter.convert("../outside.md", "md")).rejects.toThrow("Path traversal is not allowed");
+    await expect(converter.convert("../outside.md", "md")).rejects.toThrow(
+      "Path traversal is not allowed",
+    );
   });
 
   // ─── DOCX honesty (audit wf_c703f5af-3d8: compressed files returned
@@ -174,7 +182,7 @@ describe("DocumentConverter", () => {
     writeFileSync(join(workspace, "docs", "report.docx"), makeDocx(sentence, false));
 
     await expect(converter.convert("docs/report.docx", "docx")).rejects.toThrow(
-      /compressed docx not supported natively — convert to md\/txt or use the MarkItDown MCP integration/
+      /compressed docx not supported natively — convert to md\/txt or use the MarkItDown MCP integration/,
     );
   });
 
@@ -193,12 +201,13 @@ describe("DocumentConverter", () => {
   });
 
   it("fails a file without word/document.xml instead of returning empty success", async () => {
-    writeFileSync(join(workspace, "docs", "notadocx.docx"), makeZip([
-      { name: "unrelated.txt", data: Buffer.from("hello", "utf8"), store: true },
-    ]));
+    writeFileSync(
+      join(workspace, "docs", "notadocx.docx"),
+      makeZip([{ name: "unrelated.txt", data: Buffer.from("hello", "utf8"), store: true }]),
+    );
 
     await expect(converter.convert("docs/notadocx.docx", "docx")).rejects.toThrow(
-      /not a readable DOCX|MarkItDown/
+      /not a readable DOCX|MarkItDown/,
     );
   });
 
@@ -207,11 +216,11 @@ describe("DocumentConverter", () => {
   it("fails a compressed (real-world) PPTX with an actionable error instead of gibberish", async () => {
     writeFileSync(
       join(workspace, "docs", "deck.pptx"),
-      makePptx(["Roadmap: the search feature shall support fuzzy matching."], false)
+      makePptx(["Roadmap: the search feature shall support fuzzy matching."], false),
     );
 
     await expect(converter.convert("docs/deck.pptx", "pptx")).rejects.toThrow(
-      /compressed pptx not supported natively — convert to md\/txt or use the MarkItDown MCP integration/
+      /compressed pptx not supported natively — convert to md\/txt or use the MarkItDown MCP integration/,
     );
   });
 
@@ -223,8 +232,8 @@ describe("DocumentConverter", () => {
           "Roadmap: the search feature shall support fuzzy matching.",
           "The results page shall offer faceted filters.",
         ],
-        true
-      )
+        true,
+      ),
     );
 
     const result = await converter.convert("docs/stored.pptx", "pptx");
@@ -240,12 +249,15 @@ describe("DocumentConverter", () => {
   });
 
   it("fails a PPTX with no slides instead of returning an empty deck as success", async () => {
-    writeFileSync(join(workspace, "docs", "noslides.pptx"), makeZip([
-      { name: "[Content_Types].xml", data: Buffer.from(CONTENT_TYPES_XML, "utf8"), store: true },
-    ]));
+    writeFileSync(
+      join(workspace, "docs", "noslides.pptx"),
+      makeZip([
+        { name: "[Content_Types].xml", data: Buffer.from(CONTENT_TYPES_XML, "utf8"), store: true },
+      ]),
+    );
 
     await expect(converter.convert("docs/noslides.pptx", "pptx")).rejects.toThrow(
-      /No slides found|MarkItDown/
+      /No slides found|MarkItDown/,
     );
   });
 
@@ -254,11 +266,11 @@ describe("DocumentConverter", () => {
   it("fails a FlateDecode (real-world) PDF instead of returning empty text as success", async () => {
     writeFileSync(
       join(workspace, "docs", "invoices-flate.pdf"),
-      makeFlatePdf("The reporting module shall export monthly invoices as CSV.")
+      makeFlatePdf("The reporting module shall export monthly invoices as CSV."),
     );
 
     await expect(converter.convert("docs/invoices-flate.pdf", "pdf")).rejects.toThrow(
-      /compressed pdf not supported natively — convert to md\/txt or use the MarkItDown MCP integration/
+      /compressed pdf not supported natively — convert to md\/txt or use the MarkItDown MCP integration/,
     );
   });
 
@@ -277,7 +289,7 @@ describe("DocumentConverter", () => {
     writeFileSync(join(workspace, "docs", "blank.pdf"), Buffer.from("%PDF-1.4\n%%EOF\n", "latin1"));
 
     await expect(converter.convert("docs/blank.pdf", "pdf")).rejects.toThrow(
-      /No extractable text found/
+      /No extractable text found/,
     );
   });
 });

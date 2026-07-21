@@ -3,29 +3,29 @@
  * Thin tools: validate input → call service → format output.
  */
 
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { formatError, truncate } from "./tool-result.js";
 import { join } from "node:path";
-import type { FileManager } from "../services/file-manager.js";
-import type { StateMachine } from "../services/state-machine.js";
-import type { TemplateEngine } from "../services/template-engine.js";
-import type { ComplianceEngine } from "../services/compliance-engine.js";
-import type { CrossAnalyzer } from "../services/cross-analyzer.js";
-import type { EarsValidator } from "../services/ears-validator.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ChecklistDomain, ComplianceFramework } from "../constants.js";
-import type { ChecklistItem, VerificationResult } from "../types.js";
-import { enrichResponse } from "./response-builder.js";
-import { parseTasksFromMarkdown } from "../utils/task-parser.js";
-import { currentDateString } from "../utils/runtime-context.js";
 import {
   checklistInputSchema,
-  verifyTasksInputSchema,
   complianceCheckInputSchema,
   crossAnalyzeInputSchema,
   validateEarsInputSchema,
+  verifyTasksInputSchema,
 } from "../schemas/quality.js";
-import { requireExecutionContext } from "../services/execution-context.js";
+import type { ComplianceEngine } from "../services/compliance-engine.js";
+import type { CrossAnalyzer } from "../services/cross-analyzer.js";
+import type { EarsValidator } from "../services/ears-validator.js";
+import { requireCapabilityConfig, requireFeatureContext } from "../services/execution-context.js";
+import type { FileManager } from "../services/file-manager.js";
+import type { StateMachine } from "../services/state-machine.js";
+import type { TemplateEngine } from "../services/template-engine.js";
+import type { ChecklistItem, VerificationResult } from "../types.js";
 import { artifactMetadata } from "../utils/artifact-metadata.js";
+import { currentDateString } from "../utils/runtime-context.js";
+import { parseTasksFromMarkdown } from "../utils/task-parser.js";
+import { enrichResponse } from "./response-builder.js";
+import { errorResult, truncate } from "./tool-result.js";
 
 /**
  * Escape free text for a markdown table cell: backslashes FIRST (so escapes
@@ -35,72 +35,319 @@ import { artifactMetadata } from "../utils/artifact-metadata.js";
  */
 const escapeTableCell = (value: string): string => {
   const slash = String.fromCodePoint(92);
-  return value.split(slash).join(slash + slash).split("|").join(`${slash}|`);
+  return value
+    .split(slash)
+    .join(slash + slash)
+    .split("|")
+    .join(`${slash}|`);
 };
 
 /** Domain-specific checklist definitions */
-const DOMAIN_CHECKS: Record<ChecklistDomain, Array<{ id: string; category: string; check: string; mandatory: boolean }>> = {
+const DOMAIN_CHECKS: Record<
+  ChecklistDomain,
+  Array<{ id: string; category: string; check: string; mandatory: boolean }>
+> = {
   security: [
-    { id: "SEC-01", category: "Authentication", check: "Authentication mechanism is specified with method (OAuth2, JWT, etc.)", mandatory: true },
-    { id: "SEC-02", category: "Authorization", check: "Authorization model is defined (RBAC, ABAC, etc.)", mandatory: true },
-    { id: "SEC-03", category: "Input Validation", check: "All user inputs have validation rules specified", mandatory: true },
-    { id: "SEC-04", category: "Encryption", check: "Data encryption at rest and in transit is specified", mandatory: true },
-    { id: "SEC-05", category: "Secrets Management", check: "Secrets storage and rotation strategy is defined", mandatory: true },
-    { id: "SEC-06", category: "Audit Logging", check: "Security-relevant events are logged", mandatory: true },
-    { id: "SEC-07", category: "OWASP", check: "OWASP Top 10 risks are addressed in design", mandatory: false },
-    { id: "SEC-08", category: "Rate Limiting", check: "Rate limiting and throttling are specified for public endpoints", mandatory: false },
+    {
+      id: "SEC-01",
+      category: "Authentication",
+      check: "Authentication mechanism is specified with method (OAuth2, JWT, etc.)",
+      mandatory: true,
+    },
+    {
+      id: "SEC-02",
+      category: "Authorization",
+      check: "Authorization model is defined (RBAC, ABAC, etc.)",
+      mandatory: true,
+    },
+    {
+      id: "SEC-03",
+      category: "Input Validation",
+      check: "All user inputs have validation rules specified",
+      mandatory: true,
+    },
+    {
+      id: "SEC-04",
+      category: "Encryption",
+      check: "Data encryption at rest and in transit is specified",
+      mandatory: true,
+    },
+    {
+      id: "SEC-05",
+      category: "Secrets Management",
+      check: "Secrets storage and rotation strategy is defined",
+      mandatory: true,
+    },
+    {
+      id: "SEC-06",
+      category: "Audit Logging",
+      check: "Security-relevant events are logged",
+      mandatory: true,
+    },
+    {
+      id: "SEC-07",
+      category: "OWASP",
+      check: "OWASP Top 10 risks are addressed in design",
+      mandatory: false,
+    },
+    {
+      id: "SEC-08",
+      category: "Rate Limiting",
+      check: "Rate limiting and throttling are specified for public endpoints",
+      mandatory: false,
+    },
   ],
   accessibility: [
-    { id: "A11Y-01", category: "WCAG", check: "WCAG 2.1 compliance level is specified (A, AA, or AAA)", mandatory: true },
-    { id: "A11Y-02", category: "Keyboard", check: "All interactive elements are keyboard accessible", mandatory: true },
-    { id: "A11Y-03", category: "Screen Reader", check: "ARIA labels and roles are specified for dynamic content", mandatory: true },
-    { id: "A11Y-04", category: "Color Contrast", check: "Color contrast ratios meet minimum requirements", mandatory: true },
-    { id: "A11Y-05", category: "Alt Text", check: "All images have meaningful alt text specified", mandatory: true },
-    { id: "A11Y-06", category: "Focus Management", check: "Focus management strategy is defined for SPAs", mandatory: false },
-    { id: "A11Y-07", category: "Responsive", check: "Content is readable at 200% zoom", mandatory: false },
+    {
+      id: "A11Y-01",
+      category: "WCAG",
+      check: "WCAG 2.1 compliance level is specified (A, AA, or AAA)",
+      mandatory: true,
+    },
+    {
+      id: "A11Y-02",
+      category: "Keyboard",
+      check: "All interactive elements are keyboard accessible",
+      mandatory: true,
+    },
+    {
+      id: "A11Y-03",
+      category: "Screen Reader",
+      check: "ARIA labels and roles are specified for dynamic content",
+      mandatory: true,
+    },
+    {
+      id: "A11Y-04",
+      category: "Color Contrast",
+      check: "Color contrast ratios meet minimum requirements",
+      mandatory: true,
+    },
+    {
+      id: "A11Y-05",
+      category: "Alt Text",
+      check: "All images have meaningful alt text specified",
+      mandatory: true,
+    },
+    {
+      id: "A11Y-06",
+      category: "Focus Management",
+      check: "Focus management strategy is defined for SPAs",
+      mandatory: false,
+    },
+    {
+      id: "A11Y-07",
+      category: "Responsive",
+      check: "Content is readable at 200% zoom",
+      mandatory: false,
+    },
   ],
   performance: [
-    { id: "PERF-01", category: "Response Time", check: "API response time SLAs are defined", mandatory: true },
-    { id: "PERF-02", category: "Throughput", check: "Expected concurrent users and request rates are specified", mandatory: true },
-    { id: "PERF-03", category: "Caching", check: "Caching strategy is defined (CDN, application, database)", mandatory: true },
-    { id: "PERF-04", category: "Database", check: "Database query optimization requirements are specified", mandatory: true },
-    { id: "PERF-05", category: "Pagination", check: "Large data sets use pagination or streaming", mandatory: true },
-    { id: "PERF-06", category: "Load Testing", check: "Load testing targets and methodology are defined", mandatory: false },
-    { id: "PERF-07", category: "Monitoring", check: "Performance monitoring and alerting thresholds are specified", mandatory: false },
+    {
+      id: "PERF-01",
+      category: "Response Time",
+      check: "API response time SLAs are defined",
+      mandatory: true,
+    },
+    {
+      id: "PERF-02",
+      category: "Throughput",
+      check: "Expected concurrent users and request rates are specified",
+      mandatory: true,
+    },
+    {
+      id: "PERF-03",
+      category: "Caching",
+      check: "Caching strategy is defined (CDN, application, database)",
+      mandatory: true,
+    },
+    {
+      id: "PERF-04",
+      category: "Database",
+      check: "Database query optimization requirements are specified",
+      mandatory: true,
+    },
+    {
+      id: "PERF-05",
+      category: "Pagination",
+      check: "Large data sets use pagination or streaming",
+      mandatory: true,
+    },
+    {
+      id: "PERF-06",
+      category: "Load Testing",
+      check: "Load testing targets and methodology are defined",
+      mandatory: false,
+    },
+    {
+      id: "PERF-07",
+      category: "Monitoring",
+      check: "Performance monitoring and alerting thresholds are specified",
+      mandatory: false,
+    },
   ],
   testing: [
-    { id: "TEST-01", category: "Unit Tests", check: "Unit test coverage target is defined", mandatory: true },
-    { id: "TEST-02", category: "Integration", check: "Integration test strategy is specified", mandatory: true },
-    { id: "TEST-03", category: "E2E", check: "End-to-end test scenarios are mapped to acceptance criteria", mandatory: true },
-    { id: "TEST-04", category: "Test Data", check: "Test data strategy is defined (fixtures, factories, seeds)", mandatory: true },
-    { id: "TEST-05", category: "CI Pipeline", check: "Tests are integrated into CI/CD pipeline", mandatory: true },
-    { id: "TEST-06", category: "Regression", check: "Regression test suite is maintained", mandatory: false },
-    { id: "TEST-07", category: "Mutation", check: "Mutation testing or property-based testing is considered", mandatory: false },
+    {
+      id: "TEST-01",
+      category: "Unit Tests",
+      check: "Unit test coverage target is defined",
+      mandatory: true,
+    },
+    {
+      id: "TEST-02",
+      category: "Integration",
+      check: "Integration test strategy is specified",
+      mandatory: true,
+    },
+    {
+      id: "TEST-03",
+      category: "E2E",
+      check: "End-to-end test scenarios are mapped to acceptance criteria",
+      mandatory: true,
+    },
+    {
+      id: "TEST-04",
+      category: "Test Data",
+      check: "Test data strategy is defined (fixtures, factories, seeds)",
+      mandatory: true,
+    },
+    {
+      id: "TEST-05",
+      category: "CI Pipeline",
+      check: "Tests are integrated into CI/CD pipeline",
+      mandatory: true,
+    },
+    {
+      id: "TEST-06",
+      category: "Regression",
+      check: "Regression test suite is maintained",
+      mandatory: false,
+    },
+    {
+      id: "TEST-07",
+      category: "Mutation",
+      check: "Mutation testing or property-based testing is considered",
+      mandatory: false,
+    },
   ],
   documentation: [
-    { id: "DOC-01", category: "API Docs", check: "API endpoints are documented with request/response schemas", mandatory: true },
-    { id: "DOC-02", category: "Architecture", check: "Architecture decision records (ADRs) exist for key decisions", mandatory: true },
-    { id: "DOC-03", category: "Setup Guide", check: "Developer setup guide covers local environment configuration", mandatory: true },
-    { id: "DOC-04", category: "Runbook", check: "Operational runbook covers deployment and incident response", mandatory: true },
-    { id: "DOC-05", category: "Changelog", check: "Changelog is maintained with semantic versioning", mandatory: true },
-    { id: "DOC-06", category: "Code Comments", check: "Complex logic has inline documentation", mandatory: false },
+    {
+      id: "DOC-01",
+      category: "API Docs",
+      check: "API endpoints are documented with request/response schemas",
+      mandatory: true,
+    },
+    {
+      id: "DOC-02",
+      category: "Architecture",
+      check: "Architecture decision records (ADRs) exist for key decisions",
+      mandatory: true,
+    },
+    {
+      id: "DOC-03",
+      category: "Setup Guide",
+      check: "Developer setup guide covers local environment configuration",
+      mandatory: true,
+    },
+    {
+      id: "DOC-04",
+      category: "Runbook",
+      check: "Operational runbook covers deployment and incident response",
+      mandatory: true,
+    },
+    {
+      id: "DOC-05",
+      category: "Changelog",
+      check: "Changelog is maintained with semantic versioning",
+      mandatory: true,
+    },
+    {
+      id: "DOC-06",
+      category: "Code Comments",
+      check: "Complex logic has inline documentation",
+      mandatory: false,
+    },
   ],
   deployment: [
-    { id: "DEPLOY-01", category: "CI/CD", check: "CI/CD pipeline is defined with build, test, deploy stages", mandatory: true },
-    { id: "DEPLOY-02", category: "Environments", check: "Environment strategy is defined (dev, staging, production)", mandatory: true },
-    { id: "DEPLOY-03", category: "Rollback", check: "Rollback strategy is documented and tested", mandatory: true },
-    { id: "DEPLOY-04", category: "Health Checks", check: "Application health check endpoints are specified", mandatory: true },
-    { id: "DEPLOY-05", category: "Config Management", check: "Configuration management strategy separates config from code", mandatory: true },
-    { id: "DEPLOY-06", category: "Blue-Green", check: "Zero-downtime deployment strategy is considered", mandatory: false },
-    { id: "DEPLOY-07", category: "IaC", check: "Infrastructure is defined as code (Terraform, Bicep, etc.)", mandatory: false },
+    {
+      id: "DEPLOY-01",
+      category: "CI/CD",
+      check: "CI/CD pipeline is defined with build, test, deploy stages",
+      mandatory: true,
+    },
+    {
+      id: "DEPLOY-02",
+      category: "Environments",
+      check: "Environment strategy is defined (dev, staging, production)",
+      mandatory: true,
+    },
+    {
+      id: "DEPLOY-03",
+      category: "Rollback",
+      check: "Rollback strategy is documented and tested",
+      mandatory: true,
+    },
+    {
+      id: "DEPLOY-04",
+      category: "Health Checks",
+      check: "Application health check endpoints are specified",
+      mandatory: true,
+    },
+    {
+      id: "DEPLOY-05",
+      category: "Config Management",
+      check: "Configuration management strategy separates config from code",
+      mandatory: true,
+    },
+    {
+      id: "DEPLOY-06",
+      category: "Blue-Green",
+      check: "Zero-downtime deployment strategy is considered",
+      mandatory: false,
+    },
+    {
+      id: "DEPLOY-07",
+      category: "IaC",
+      check: "Infrastructure is defined as code (Terraform, Bicep, etc.)",
+      mandatory: false,
+    },
   ],
   general: [
-    { id: "GEN-01", category: "Requirements", check: "All requirements use EARS notation", mandatory: true },
-    { id: "GEN-02", category: "Traceability", check: "Every requirement has acceptance criteria", mandatory: true },
-    { id: "GEN-03", category: "Design", check: "Architecture design covers all specified requirements", mandatory: true },
-    { id: "GEN-04", category: "Tasks", check: "All tasks trace back to at least one requirement", mandatory: true },
-    { id: "GEN-05", category: "Error Handling", check: "Error handling strategy is defined for all failure modes", mandatory: true },
-    { id: "GEN-06", category: "Dependencies", check: "External dependencies are listed with versions and alternatives", mandatory: false },
+    {
+      id: "GEN-01",
+      category: "Requirements",
+      check: "All requirements use EARS notation",
+      mandatory: true,
+    },
+    {
+      id: "GEN-02",
+      category: "Traceability",
+      check: "Every requirement has acceptance criteria",
+      mandatory: true,
+    },
+    {
+      id: "GEN-03",
+      category: "Design",
+      check: "Architecture design covers all specified requirements",
+      mandatory: true,
+    },
+    {
+      id: "GEN-04",
+      category: "Tasks",
+      check: "All tasks trace back to at least one requirement",
+      mandatory: true,
+    },
+    {
+      id: "GEN-05",
+      category: "Error Handling",
+      check: "Error handling strategy is defined for all failure modes",
+      mandatory: true,
+    },
+    {
+      id: "GEN-06",
+      category: "Dependencies",
+      check: "External dependencies are listed with versions and alternatives",
+      mandatory: false,
+    },
   ],
 };
 
@@ -111,7 +358,7 @@ export function registerQualityTools(
   templateEngine: TemplateEngine,
   complianceEngine: ComplianceEngine,
   crossAnalyzer: CrossAnalyzer,
-  earsValidator: EarsValidator
+  earsValidator: EarsValidator,
 ): void {
   // ─── sdd_checklist ───
   server.registerTool(
@@ -143,7 +390,7 @@ export function registerQualityTools(
           specContent = await fileManager.readSpecFile(featureDir, "SPECIFICATION.md");
         } catch {
           throw new Error(
-            `SPECIFICATION.md not found in ${featureDir}.\n→ Fix: Run sdd_write_spec first.`
+            `SPECIFICATION.md not found in ${featureDir}.\n→ Fix: Run sdd_write_spec first.`,
           );
         }
 
@@ -159,7 +406,10 @@ export function registerQualityTools(
 
         // Evaluate each check item against spec/design content
         const items: ChecklistItem[] = checks.map((check) => {
-          const keywords = check.check.toLowerCase().split(/\s+/).filter((w) => w.length > 4);
+          const keywords = check.check
+            .toLowerCase()
+            .split(/\s+/)
+            .filter((w) => w.length > 4);
           const matchCount = keywords.filter((kw) => combined.includes(kw)).length;
           const matchRatio = keywords.length > 0 ? matchCount / keywords.length : 0;
 
@@ -190,20 +440,23 @@ export function registerQualityTools(
         const pendingCount = items.filter((i) => i.status === "pending").length;
         const mandatoryItems = items.filter((i) => i.mandatory);
         const mandatoryPassed = mandatoryItems.filter((i) => i.status === "pass").length;
-        const mandatoryPassRate = mandatoryItems.length > 0
-          ? Math.round((mandatoryPassed / mandatoryItems.length) * 100)
-          : 100;
+        const mandatoryPassRate =
+          mandatoryItems.length > 0
+            ? Math.round((mandatoryPassed / mandatoryItems.length) * 100)
+            : 100;
 
         const mandatoryGap = mandatoryItems.length - mandatoryPassed;
-        const gateDecision = mandatoryGap === 0
-          ? "APPROVE — all mandatory checks pass."
-          : `CHANGES_NEEDED — ${mandatoryGap} of ${mandatoryItems.length} mandatory checks are not passing. Address them in SPECIFICATION.md or DESIGN.md, then re-run sdd_checklist.`;
+        const gateDecision =
+          mandatoryGap === 0
+            ? "APPROVE — all mandatory checks pass."
+            : `CHANGES_NEEDED — ${mandatoryGap} of ${mandatoryItems.length} mandatory checks are not passing. Address them in SPECIFICATION.md or DESIGN.md, then re-run sdd_checklist.`;
 
         // Render and write CHECKLIST.md — the per-item table, totals, date, and
         // gate decision are all passed to the template so the persisted file
         // carries the computed data instead of unresolved template markers.
-        const itemRows = items.map((item) =>
-          `| ${item.id} | ${escapeTableCell(item.check)} | ${item.mandatory ? "Yes" : "No"} | ${item.status} | ${escapeTableCell(item.evidence ?? "—")} |`
+        const itemRows = items.map(
+          (item) =>
+            `| ${item.id} | ${escapeTableCell(item.check)} | ${item.mandatory ? "Yes" : "No"} | ${item.status} | ${escapeTableCell(item.evidence ?? "—")} |`,
         );
         const content = await templateEngine.renderWithFrontmatter("checklist", {
           ...artifactMetadata({ version: "1.0.0", author: "sdd_checklist", status: gateDecision }),
@@ -220,7 +473,12 @@ export function registerQualityTools(
           gate_decision: gateDecision,
         });
 
-        const filePath = await fileManager.writeSpecFile(featureDir, "CHECKLIST.md", content, force);
+        const filePath = await fileManager.writeSpecFile(
+          featureDir,
+          "CHECKLIST.md",
+          content,
+          force,
+        );
 
         const result = {
           domain,
@@ -232,21 +490,21 @@ export function registerQualityTools(
           gate_decision: gateDecision,
           file_written: filePath,
           explanation: `Generated ${domain} quality checklist with ${items.length} items. ${passCount} passed, ${failCount} failed, ${pendingCount} pending review. Mandatory pass rate: ${mandatoryPassRate}%.`,
-          next_steps: failCount > 0
-            ? `Address ${failCount} failing checks in SPECIFICATION.md or DESIGN.md. Focus on mandatory items first (${mandatoryItems.length - mandatoryPassed} mandatory items need attention).`
-            : "All checks addressed. Proceed to the next pipeline phase.",
+          next_steps:
+            failCount > 0
+              ? `Address ${failCount} failing checks in SPECIFICATION.md or DESIGN.md. Focus on mandatory items first (${mandatoryItems.length - mandatoryPassed} mandatory items need attention).`
+              : "All checks addressed. Proceed to the next pipeline phase.",
           learning_note: `The ${domain} checklist validates that your specification and design artifacts address key ${domain} concerns. Items marked 'pending' have partial coverage and should be reviewed manually.`,
         };
 
         const enriched = await enrichResponse("sdd_checklist", result, stateMachine, spec_dir);
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
-      } catch (error) {
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_checklist", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_checklist", error);
       }
-    }
+    },
   );
 
   // ─── sdd_verify_tasks ───
@@ -279,7 +537,7 @@ export function registerQualityTools(
           tasksContent = await fileManager.readSpecFile(featureDir, "TASKS.md");
         } catch {
           throw new Error(
-            `TASKS.md not found in ${featureDir}.\n→ Fix: Run sdd_write_tasks first.`
+            `TASKS.md not found in ${featureDir}.\n→ Fix: Run sdd_write_tasks first.`,
           );
         }
 
@@ -293,7 +551,7 @@ export function registerQualityTools(
 
         if (tasks.length === 0) {
           throw new Error(
-            `No tasks found in TASKS.md. Expected a Task Breakdown table (| T-001 | … |) or checkbox lines ("- [ ] T-001: Description").\n→ Fix: Run sdd_write_tasks first.`
+            `No tasks found in TASKS.md. Expected a Task Breakdown table (| T-001 | … |) or checkbox lines ("- [ ] T-001: Description").\n→ Fix: Run sdd_write_tasks first.`,
           );
         }
 
@@ -313,17 +571,30 @@ export function registerQualityTools(
         const results: VerificationResult[] = tasks.map((task) => {
           const idInCode = combinedCode.includes(task.id);
           // Also check for description keywords (3+ word match)
-          const descWords = task.description.toLowerCase().split(/\s+/).filter((w) => w.length > 3);
-          const keywordMatches = descWords.filter((w) => combinedCode.toLowerCase().includes(w)).length;
+          const descWords = task.description
+            .toLowerCase()
+            .split(/\s+/)
+            .filter((w) => w.length > 3);
+          const keywordMatches = descWords.filter((w) =>
+            combinedCode.toLowerCase().includes(w),
+          ).length;
           const hasEvidence = idInCode || keywordMatches >= Math.min(3, descWords.length);
 
           const evidence: string[] = [];
           if (idInCode) evidence.push(`Task ID ${task.id} found in code`);
-          if (keywordMatches > 0) evidence.push(`${keywordMatches}/${descWords.length} description keywords found in code`);
-          if (!hasEvidence) evidence.push("No implementation evidence found in provided code paths");
+          if (keywordMatches > 0)
+            evidence.push(
+              `${keywordMatches}/${descWords.length} description keywords found in code`,
+            );
+          if (!hasEvidence)
+            evidence.push("No implementation evidence found in provided code paths");
 
           const phantom = task.claimed_done && !hasEvidence;
-          const verifiedStatus = hasEvidence ? "verified" : (task.claimed_done ? "phantom" : "not_started");
+          const verifiedStatus = hasEvidence
+            ? "verified"
+            : task.claimed_done
+              ? "phantom"
+              : "not_started";
 
           return {
             task_id: task.id,
@@ -337,14 +608,16 @@ export function registerQualityTools(
         const verifiedCount = results.filter((r) => r.verified_status === "verified").length;
         const phantomCount = results.filter((r) => r.phantom).length;
         const passRate = tasks.length > 0 ? Math.round((verifiedCount / tasks.length) * 100) : 0;
-        const gateDecision = phantomCount === 0 && passRate >= 80
-          ? "APPROVE"
-          : "CHANGES_NEEDED";
+        const gateDecision = phantomCount === 0 && passRate >= 80 ? "APPROVE" : "CHANGES_NEEDED";
 
         // Generate verification diagram
         const diagramLines = ["flowchart TD"];
         for (const r of results.slice(0, 15)) {
-          const style = r.phantom ? ":::phantom" : r.verified_status === "verified" ? ":::verified" : ":::pending";
+          const style = r.phantom
+            ? ":::phantom"
+            : r.verified_status === "verified"
+              ? ":::verified"
+              : ":::pending";
           diagramLines.push(`  ${r.task_id}[${r.task_id}: ${r.claimed_status}]${style}`);
         }
         diagramLines.push("  classDef verified fill:#4caf50,stroke:#333");
@@ -352,13 +625,18 @@ export function registerQualityTools(
         diagramLines.push("  classDef pending fill:#ff9800,stroke:#333");
         const diagram = diagramLines.join("\n");
 
-        const resultRows = results.map((r) =>
-          `| ${r.task_id} | ${r.claimed_status} | ${r.verified_status} | ${r.phantom ? "Yes" : "No"} | ${escapeTableCell(r.evidence.join("; "))} |`
+        const resultRows = results.map(
+          (r) =>
+            `| ${r.task_id} | ${r.claimed_status} | ${r.verified_status} | ${r.phantom ? "Yes" : "No"} | ${escapeTableCell(r.evidence.join("; "))} |`,
         );
 
         // Write VERIFICATION.md
         const content = await templateEngine.renderWithFrontmatter("verification", {
-          ...artifactMetadata({ version: "1.0.0", author: "sdd_verify_tasks", status: gateDecision }),
+          ...artifactMetadata({
+            version: "1.0.0",
+            author: "sdd_verify_tasks",
+            status: gateDecision,
+          }),
           title: "Task Verification Report",
           feature_id: feature_number,
           date: currentDateString(),
@@ -382,21 +660,22 @@ export function registerQualityTools(
           pass_rate: passRate,
           explanation: `Verified ${tasks.length} tasks against ${code_paths.length} code paths. ${verifiedCount} verified, ${phantomCount} phantom completions detected. Pass rate: ${passRate}%.`,
           diagram,
-          next_steps: phantomCount > 0
-            ? `${phantomCount} tasks are marked complete but have no code evidence. Review these phantom completions and either implement the missing code or update TASKS.md.`
-            : "All completed tasks have implementation evidence. Verification passed.",
-          learning_note: "Phantom completions occur when a task is marked [x] but no corresponding code is found in the specified paths. This helps catch accidental check-offs and ensures specification-code alignment.",
+          next_steps:
+            phantomCount > 0
+              ? `${phantomCount} tasks are marked complete but have no code evidence. Review these phantom completions and either implement the missing code or update TASKS.md.`
+              : "All completed tasks have implementation evidence. Verification passed.",
+          learning_note:
+            "Phantom completions occur when a task is marked [x] but no corresponding code is found in the specified paths. This helps catch accidental check-offs and ensures specification-code alignment.",
         };
 
         const enriched = await enrichResponse("sdd_verify_tasks", report, stateMachine, spec_dir);
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
-      } catch (error) {
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_verify_tasks", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_verify_tasks", error);
       }
-    }
+    },
   );
 
   // ─── sdd_compliance_check ───
@@ -416,35 +695,44 @@ export function registerQualityTools(
     },
     async ({ evidence, force }) => {
       try {
-        const context = requireExecutionContext("sdd_compliance_check");
-        const feature = context.feature!;
+        const context = requireFeatureContext("sdd_compliance_check");
+        const feature = context.feature;
         const featureDir = feature.directory;
-        const stateDir = context.stateDir!;
-        const compliance = context.state!.contract.capability_config.compliance!;
+        const stateDir = context.stateDir;
+        const compliance = requireCapabilityConfig(
+          context.state.contract.capability_config,
+          "compliance",
+        );
 
         try {
           await fileManager.readSpecFile(featureDir, "SPECIFICATION.md");
           await fileManager.readSpecFile(featureDir, "DESIGN.md");
         } catch {
           throw new Error(
-            `SPECIFICATION.md and DESIGN.md are required compliance evidence sources in ${featureDir}.`
+            `SPECIFICATION.md and DESIGN.md are required compliance evidence sources in ${featureDir}.`,
           );
         }
 
         const reports = compliance.frameworks.map((framework) =>
-          complianceEngine.checkCompliance(framework as ComplianceFramework, evidence)
+          complianceEngine.checkCompliance(framework as ComplianceFramework, evidence),
         );
         const controlsChecked = reports.reduce((sum, report) => sum + report.controls_checked, 0);
         const controlsPassed = reports.reduce((sum, report) => sum + report.controls_passed, 0);
         const controlsFailed = reports.reduce((sum, report) => sum + report.controls_failed, 0);
 
-        const findingRows = reports.flatMap((report) => report.findings.map((finding) =>
-          `| ${escapeTableCell(finding.control_id)} | ${escapeTableCell(finding.control_name)} | ${finding.status} | ${escapeTableCell(finding.evidence ?? "—")} | ${escapeTableCell(finding.remediation ?? "—")} |`
-        ));
-        const recommendation = controlsFailed > 0
-          ? `Provide explicit evidence for ${controlsFailed} controls, then re-run sdd_compliance_check.`
-          : "All controls in the configured compliance packs have explicit evidence.";
-        const frameworkLabel = compliance.frameworks.map((framework) => framework.toUpperCase()).join(", ");
+        const findingRows = reports.flatMap((report) =>
+          report.findings.map(
+            (finding) =>
+              `| ${escapeTableCell(finding.control_id)} | ${escapeTableCell(finding.control_name)} | ${finding.status} | ${escapeTableCell(finding.evidence ?? "—")} | ${escapeTableCell(finding.remediation ?? "—")} |`,
+          ),
+        );
+        const recommendation =
+          controlsFailed > 0
+            ? `Provide explicit evidence for ${controlsFailed} controls, then re-run sdd_compliance_check.`
+            : "All controls in the configured compliance packs have explicit evidence.";
+        const frameworkLabel = compliance.frameworks
+          .map((framework) => framework.toUpperCase())
+          .join(", ");
 
         const content = await templateEngine.renderWithFrontmatter("compliance", {
           ...artifactMetadata({
@@ -479,15 +767,19 @@ export function registerQualityTools(
           learning_note: `Compliance pack ${compliance.control_pack_version} accepts only explicit evidence keyed by control ID; prose keyword presence is not treated as proof.`,
         };
 
-        const enriched = await enrichResponse("sdd_compliance_check", result, stateMachine, stateDir);
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
-      } catch (error) {
+        const enriched = await enrichResponse(
+          "sdd_compliance_check",
+          result,
+          stateMachine,
+          stateDir,
+        );
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_compliance_check", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_compliance_check", error);
       }
-    }
+    },
   );
 
   // ─── sdd_cross_analyze ───
@@ -517,20 +809,29 @@ export function registerQualityTools(
         // Run cross-analysis
         const analysisResult = await crossAnalyzer.analyze(featureDir);
 
-        const recommendation = analysisResult.consistency_score < 100
-          ? `Consistency score is ${analysisResult.consistency_score}%. Review orphaned requirements (${analysisResult.orphaned_requirements.length}) and orphaned tasks (${analysisResult.orphaned_tasks.length}). Update DESIGN.md and TASKS.md to reference all requirements.`
-          : "Perfect consistency score. All requirements are traced through design and tasks.";
+        const recommendation =
+          analysisResult.consistency_score < 100
+            ? `Consistency score is ${analysisResult.consistency_score}%. Review orphaned requirements (${analysisResult.orphaned_requirements.length}) and orphaned tasks (${analysisResult.orphaned_tasks.length}). Update DESIGN.md and TASKS.md to reference all requirements.`
+            : "Perfect consistency score. All requirements are traced through design and tasks.";
 
         // Write CROSS_ANALYSIS.md — alignment tables and the recommendation are
         // rendered into the persisted file so it carries the real analysis data
         // instead of unresolved template markers.
-        const alignmentRow = (check: { source_id: string; status: string; detail: string }): string =>
+        const alignmentRow = (check: {
+          source_id: string;
+          status: string;
+          detail: string;
+        }): string =>
           `| ${check.source_id} | ${check.status === "aligned" ? "Yes" : "No"} | ${escapeTableCell(check.detail)} |`;
         const specDesignRows = analysisResult.spec_design_alignment.map(alignmentRow);
         const designTasksRows = analysisResult.design_tasks_alignment.map(alignmentRow);
         const emptyRow = "| — | — | No requirements found |";
         const content = await templateEngine.renderWithFrontmatter("cross_analysis", {
-          ...artifactMetadata({ version: "1.0.0", author: "sdd_cross_analyze", status: "Generated" }),
+          ...artifactMetadata({
+            version: "1.0.0",
+            author: "sdd_cross_analyze",
+            status: "Generated",
+          }),
           title: "Cross-Artifact Consistency Analysis",
           feature_id: feature_number,
           date: currentDateString(),
@@ -549,18 +850,18 @@ export function registerQualityTools(
           ...analysisResult,
           file_written: join(featureDir, "CROSS_ANALYSIS.md"),
           next_steps: recommendation,
-          learning_note: "Cross-analysis ensures every requirement flows from SPECIFICATION.md → DESIGN.md → TASKS.md. Orphaned items indicate gaps in traceability that can lead to missing features or wasted effort.",
+          learning_note:
+            "Cross-analysis ensures every requirement flows from SPECIFICATION.md → DESIGN.md → TASKS.md. Orphaned items indicate gaps in traceability that can lead to missing features or wasted effort.",
         };
 
         const enriched = await enrichResponse("sdd_cross_analyze", result, stateMachine, spec_dir);
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
-      } catch (error) {
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_cross_analyze", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_cross_analyze", error);
       }
-    }
+    },
   );
 
   // ─── sdd_validate_ears ───
@@ -595,7 +896,7 @@ export function registerQualityTools(
             specContent = await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md");
           } catch {
             throw new Error(
-              `SPECIFICATION.md not found in ${feature.directory}.\n→ Fix: Run sdd_write_spec first.`
+              `SPECIFICATION.md not found in ${feature.directory}.\n→ Fix: Run sdd_write_spec first.`,
             );
           }
           // Extract lines that look like requirements (contain "shall")
@@ -606,12 +907,12 @@ export function registerQualityTools(
 
           if (reqs.length === 0) {
             throw new Error(
-              `No requirement statements found in SPECIFICATION.md for feature ${feature_number}.\n→ Requirements must contain the word "shall" to be detected.`
+              `No requirement statements found in SPECIFICATION.md for feature ${feature_number}.\n→ Requirements must contain the word "shall" to be detected.`,
             );
           }
         } else {
           throw new Error(
-            "Provide either requirements (array of strings) or feature_number to read from SPECIFICATION.md."
+            "Provide either requirements (array of strings) or feature_number to read from SPECIFICATION.md.",
           );
         }
 
@@ -629,9 +930,8 @@ export function registerQualityTools(
 
         const validCount = results.filter((r) => r.valid).length;
         const invalidCount = results.length - validCount;
-        const complianceRate = results.length > 0
-          ? Math.round((validCount / results.length) * 100)
-          : 0;
+        const complianceRate =
+          results.length > 0 ? Math.round((validCount / results.length) * 100) : 0;
 
         const report = {
           total: results.length,
@@ -652,13 +952,12 @@ export function registerQualityTools(
         };
 
         const enriched = await enrichResponse("sdd_validate_ears", report, stateMachine, spec_dir);
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
-      } catch (error) {
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_validate_ears", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_validate_ears", error);
       }
-    }
+    },
   );
 }

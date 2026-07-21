@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { describe, expect, it } from "vitest";
 import { TOTAL_TOOLS } from "../../src/constants.js";
 
 /**
@@ -21,7 +21,10 @@ describe("Tool count integrity", () => {
     const files = readdirSync(toolsDir).filter((name) => name.endsWith(".ts"));
     let count = 0;
     for (const file of files) {
-      const content = readFileSync(fileURLToPath(new URL(`../../src/tools/${file}`, import.meta.url)), "utf8");
+      const content = readFileSync(
+        fileURLToPath(new URL(`../../src/tools/${file}`, import.meta.url)),
+        "utf8",
+      );
       const matches = content.match(/server\.registerTool\(/g);
       count += matches ? matches.length : 0;
     }

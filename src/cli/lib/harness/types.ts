@@ -14,12 +14,7 @@
  * `harness/index.ts` to add a new harness (e.g. "codex", "gemini", "kiro").
  * New targets must also add native tool mappings in `harness/tool-map.ts`.
  */
-export type HarnessTarget =
-    | "copilot"
-    | "claude"
-    | "cursor"
-    | "opencode"
-    | "agent-skills";
+export type HarnessTarget = "copilot" | "claude" | "cursor" | "opencode" | "agent-skills";
 
 /**
  * Canonical, harness-agnostic tool vocabulary. Primitive sources are authored
@@ -28,14 +23,14 @@ export type HarnessTarget =
  * logical id back into the tokens a specific harness understands.
  */
 export type LogicalTool =
-    | "workspace.search"
-    | "workspace.edit"
-    | "workspace.command"
-    | "web.fetch"
-    | "agent.delegate"
-    | "todo.write"
-    | `mcp.specky.${string}`
-    | `raw:${string}`;
+  | "workspace.search"
+  | "workspace.edit"
+  | "workspace.command"
+  | "web.fetch"
+  | "agent.delegate"
+  | "todo.write"
+  | `mcp.specky.${string}`
+  | `raw:${string}`;
 
 /**
  * Canonical agent capability vocabulary. Canonical `.apm` agents declare
@@ -44,19 +39,19 @@ export type LogicalTool =
  * permission profiles while sharing one native command tool per harness.
  */
 export type AgentCapability =
-    | "workspace.read"
-    | "workspace.edit"
-    | "workspace.command.git"
-    | "workspace.command.test"
-    | "workspace.command.release-gates"
-    | "web.fetch"
-    | "agent.delegate"
-    | "todo.write"
-    | `mcp.specky.${string}`
-    | `mcp.github.${string}`;
+  | "workspace.read"
+  | "workspace.edit"
+  | "workspace.command.git"
+  | "workspace.command.test"
+  | "workspace.command.release-gates"
+  | "web.fetch"
+  | "agent.delegate"
+  | "todo.write"
+  | `mcp.specky.${string}`
+  | `mcp.github.${string}`;
 
 export interface HarnessCompileOptions {
-    integrations?: readonly string[];
+  integrations?: readonly string[];
 }
 
 /**
@@ -65,15 +60,15 @@ export interface HarnessCompileOptions {
  * renamers map source filenames to the harness's expected extension.
  */
 export interface HarnessCompiler {
-    readonly target: HarnessTarget;
-    /** Transform an agent markdown file (frontmatter `tools:` line, etc.). */
-    compileAgent(content: string, opts?: HarnessCompileOptions): string;
-    /** Transform a prompt/command markdown file. */
-    compilePrompt(content: string): string;
-    /** Transform an instruction/rules markdown file. */
-    compileInstruction(content: string): string;
-    /** Map an agent source filename to the harness's expected filename. */
-    renameAgent(fileName: string): string;
-    /** Map a prompt source filename to the harness's expected filename. */
-    renamePrompt(fileName: string): string;
+  readonly target: HarnessTarget;
+  /** Transform an agent markdown file (frontmatter `tools:` line, etc.). */
+  compileAgent(content: string, opts?: HarnessCompileOptions): string;
+  /** Transform a prompt/command markdown file. */
+  compilePrompt(content: string): string;
+  /** Transform an instruction/rules markdown file. */
+  compileInstruction(content: string): string;
+  /** Map an agent source filename to the harness's expected filename. */
+  renameAgent(fileName: string): string;
+  /** Map a prompt source filename to the harness's expected filename. */
+  renamePrompt(fileName: string): string;
 }

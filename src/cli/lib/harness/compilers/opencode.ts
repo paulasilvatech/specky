@@ -7,27 +7,25 @@ import type { HarnessCompiler } from "../types.js";
 import { transformAgentTools } from "./common.js";
 
 export const opencodeCompiler: HarnessCompiler = {
-    target: "opencode",
+  target: "opencode",
 
-    compileAgent(content, opts) {
-        return transformAgentTools(content, "opencode", "comma-list", opts);
-    },
+  compileAgent(content, opts) {
+    return transformAgentTools(content, "opencode", "comma-list", opts);
+  },
 
-    compilePrompt(content) {
-        return content
-            .replace(/^agent:\s*agent\s*\n/m, "")
-            .replace(/^mode:\s*agent\s*\n/m, "");
-    },
+  compilePrompt(content) {
+    return content.replace(/^agent:\s*agent\s*\n/m, "").replace(/^mode:\s*agent\s*\n/m, "");
+  },
 
-    compileInstruction(content) {
-        return content;
-    },
+  compileInstruction(content) {
+    return content;
+  },
 
-    renameAgent(fileName) {
-        return fileName.replace(/\.agent\.md$/, ".md");
-    },
+  renameAgent(fileName) {
+    return fileName.replace(/\.agent\.md$/, ".md");
+  },
 
-    renamePrompt(fileName) {
-        return fileName.replace(/\.prompt\.md$/, ".md");
-    },
+  renamePrompt(fileName) {
+    return fileName.replace(/\.prompt\.md$/, ".md");
+  },
 };

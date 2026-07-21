@@ -2331,7 +2331,7 @@
       <div class="hero-grid"></div>
       <div class="hero-glow"></div>
       <div class="hero-inner">
-        <div class="hero-badge"><span class="badge-dot"></span> Open Source · MIT License · v3.11.1</div>
+        <div class="hero-badge"><span class="badge-dot"></span> Open Source · MIT License · v3.12.0</div>
         <div class="hero-copy">
           <h1 data-i18n="hero.h1">Stop vibe coding.<br><span data-i18n="hero.h1span">Start spec coding.</span></h1>
           <p class="lead">
@@ -2904,7 +2904,7 @@
               <button class="code-copy-btn" data-copy-id="c-airgap-pack">Copy</button>
             </div>
             <pre id="c-airgap-pack"><span class="dk">$</span> npm pack specky-sdd
-<span class="cm"># produces: specky-sdd-3.11.1.tgz</span></pre>
+<span class="cm"># produces: specky-sdd-3.12.0.tgz</span></pre>
           </div>
           <ol class="install-steps" style="margin-top:16px">
             <li>
@@ -2916,9 +2916,9 @@
           <div class="code-block" style="margin-top:12px">
             <div class="code-block-header">
               <span class="code-block-title">Terminal (air-gapped machine)</span>
-              <button class="code-copy-btn" data-copy="npm install -g ./specky-sdd-3.11.1.tgz">Copy</button>
+              <button class="code-copy-btn" data-copy="npm install -g ./specky-sdd-3.12.0.tgz">Copy</button>
             </div>
-            <pre><span class="dk">$</span> npm install -g ./specky-sdd-3.11.1.tgz
+            <pre><span class="dk">$</span> npm install -g ./specky-sdd-3.12.0.tgz
 <span class="dk">$</span> specky install --target=cursor   <span class="cm"># or copilot, claude, opencode</span></pre>
           </div>
           <ol class="install-steps" style="margin-top:16px">
@@ -3227,8 +3227,8 @@ npx specky upgrade">Copy</button>
             <div class="di-c">✓</div>
             <div>
               <h4 data-i18n="diff.diagrams_h">Workload-contracted diagrams</h4>
-              <p data-i18n="diff.diagrams_p">Exact Mermaid and FigJam payloads require source evidence; nothing is
-                synthesized.</p>
+              <p data-i18n="diff.diagrams_p">Validate explicit Mermaid evidence or deterministically derive supported
+                diagrams from SPECIFICATION.md and DESIGN.md.</p>
             </div>
           </div>
           <div class="di">
@@ -3243,8 +3243,8 @@ npx specky upgrade">Copy</button>
             <div class="di-c">✓</div>
             <div>
               <h4 data-i18n="diff.iac_h">Infrastructure as Code</h4>
-              <p data-i18n="diff.iac_p">Terraform and development environments use persisted cloud, resources, stack,
-                image, and service parameters.</p>
+              <p data-i18n="diff.iac_p">Terraform resources are grounded in relevant DESIGN.md sections; unsupported
+                templates fail before files are written.</p>
             </div>
           </div>
           <div class="di">
@@ -3332,10 +3332,10 @@ npx specky upgrade">Copy</button>
             <button class="code-copy-btn" data-copy-id="c-enterprise-pull">Copy</button>
           </div>
           <pre id="c-enterprise-pull"><span class="cm"># Public image, no login needed. Multi-arch: linux/amd64 + linux/arm64.</span>
-<span class="dk">$</span> docker pull ghcr.io/paulasilvatech/specky:3.11.1        <span class="cm"># or :latest</span>
-<span class="dk">$</span> docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:3.11.1
+<span class="dk">$</span> docker pull ghcr.io/paulasilvatech/specky:3.12.0        <span class="cm"># or :latest</span>
+<span class="dk">$</span> docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:3.12.0
 <span class="dk">$</span> curl -s http://localhost:3200/health
-<span class="cm"># -&gt; {"status":"ok","version":"3.11.1"}</span></pre>
+<span class="cm"># -&gt; {"status":"ok","version":"3.12.0"}</span></pre>
         </div>
 
         <div class="code-block" style="margin-bottom:16px">
@@ -3351,7 +3351,7 @@ npx specky upgrade">Copy</button>
     -e SDD_AUDIT_HMAC_KEY_FILE=/run/secrets/audit.key \
     -v "$PWD/workspace:/workspace" \
     -v /etc/specky:/run/secrets:ro \
-    ghcr.io/paulasilvatech/specky:3.11.1</pre>
+    ghcr.io/paulasilvatech/specky:3.12.0</pre>
         </div>
 
         <div class="install-note">
@@ -3571,9 +3571,9 @@ npx specky upgrade">Copy</button>
           'diff.phases_h': 'Signed phase graphs', 'diff.phases_p': 'Full, rapid, and emergency modes persist distinct ordered graphs.',
           'diff.mcp_h': 'Works in any MCP host', 'diff.mcp_p': 'No proprietary IDE. Use VS Code, Copilot, Claude Code, Cursor, or any MCP-compatible client.',
           'diff.offline_h': 'Fully offline capable', 'diff.offline_p': 'MCP server stays local; CLI registry check is optional (SPECKY_NO_UPDATE_CHECK=1). Air-gapped installs supported.',
-          'diff.diagrams_h': 'Workload-contracted diagrams', 'diff.diagrams_p': 'Exact Mermaid and FigJam payloads require source evidence; nothing is synthesized.',
+          'diff.diagrams_h': 'Workload-contracted diagrams', 'diff.diagrams_p': 'Validate explicit Mermaid evidence or deterministically derive supported diagrams from SPECIFICATION.md and DESIGN.md.',
           'diff.tests_h': 'Tests for 6 frameworks', 'diff.tests_p': 'Vitest, Jest, Playwright, Pytest, JUnit, xUnit. Plus property-based testing.',
-          'diff.iac_h': 'Infrastructure as Code', 'diff.iac_p': 'Terraform and development environments use persisted cloud, resources, stack, image, and service parameters.',
+          'diff.iac_h': 'Infrastructure as Code', 'diff.iac_p': 'Terraform resources are grounded in relevant DESIGN.md sections; unsupported templates fail before files are written.',
           'diff.comply_h': '5 compliance framework packs', 'diff.comply_p': 'HIPAA, SOC 2, GDPR, PCI DSS, and ISO 27001 with explicit control evidence.',
           'diff.security_h': 'Enterprise profile (v3.5.0)', 'diff.security_p': 'Opt-in enterprise defaults for identity-based RBAC, rate limiting, HMAC-signed audit trail, and fail-closed auditing.',
           'diff.container_h': 'Container-ready MCP server', 'diff.container_p': 'Published GHCR image, Dockerfile, healthcheck, and HTTP transport on port 3200 for hosted or air-gapped deployments.',
@@ -3711,9 +3711,9 @@ npx specky upgrade">Copy</button>
           'diff.phases_h': 'Grafos de fase assinados', 'diff.phases_p': 'Os modos full, rapid e emergency persistem grafos ordenados distintos.',
           'diff.mcp_h': 'Funciona em qualquer MCP host', 'diff.mcp_p': 'Sem IDE propriet\u00e1ria. Use VS Code, Copilot, Claude Code, Cursor, ou qualquer client compat\u00edvel com MCP.',
           'diff.offline_h': 'Totalmente offline', 'diff.offline_p': 'MCP server local; check do registry na CLI \u00e9 opcional (SPECKY_NO_UPDATE_CHECK=1). Instala\u00e7\u00f5es air-gapped suportadas.',
-          'diff.diagrams_h': 'Diagramas contratados por workload', 'diff.diagrams_p': 'Payloads Mermaid e FigJam exigem evid\u00eancia de origem; nada \u00e9 sintetizado.',
+          'diff.diagrams_h': 'Diagramas contratados por workload', 'diff.diagrams_p': 'Valide evid\u00eancias Mermaid expl\u00edcitas ou derive deterministicamente diagramas compat\u00edveis de SPECIFICATION.md e DESIGN.md.',
           'diff.tests_h': 'Testes para 6 frameworks', 'diff.tests_p': 'Vitest, Jest, Playwright, Pytest, JUnit, xUnit. Mais testes property-based.',
-          'diff.iac_h': 'Infrastructure as Code', 'diff.iac_p': 'Terraform e ambientes de desenvolvimento usam cloud, recursos, stack, imagem e servi\u00e7os persistidos.',
+          'diff.iac_h': 'Infrastructure as Code', 'diff.iac_p': 'Os recursos Terraform s\u00e3o fundamentados nas se\u00e7\u00f5es relevantes de DESIGN.md; templates n\u00e3o compat\u00edveis falham antes da grava\u00e7\u00e3o dos arquivos.',
           'diff.comply_h': '5 pacotes de compliance', 'diff.comply_p': 'HIPAA, SOC 2, GDPR, PCI DSS e ISO 27001 com evid\u00eancia expl\u00edcita por controle.',
           'diff.security_h': 'Perfil enterprise (v3.5.0)', 'diff.security_p': 'Defaults enterprise opt-in para RBAC por identidade, rate limiting, trilha de auditoria assinada com HMAC e auditoria fail-closed.',
           'diff.container_h': 'MCP server pronto para container', 'diff.container_p': 'Imagem publicada no GHCR, Dockerfile, healthcheck e transporte HTTP na porta 3200 para deployments hospedados ou air-gapped.',
@@ -3851,9 +3851,9 @@ npx specky upgrade">Copy</button>
           'diff.phases_h': 'Grafos de fase firmados', 'diff.phases_p': 'Los modos full, rapid y emergency persisten grafos ordenados distintos.',
           'diff.mcp_h': 'Funciona en cualquier MCP host', 'diff.mcp_p': 'Sin IDE propietario. Usa VS Code, Copilot, Claude Code, Cursor, o cualquier client compatible con MCP.',
           'diff.offline_h': 'Totalmente offline', 'diff.offline_p': 'MCP server local; el check del registry en la CLI es opcional (SPECKY_NO_UPDATE_CHECK=1). Instalaciones air-gapped soportadas.',
-          'diff.diagrams_h': 'Diagramas contratados por workload', 'diff.diagrams_p': 'Los payloads Mermaid y FigJam requieren evidencia de origen; nada se sintetiza.',
+          'diff.diagrams_h': 'Diagramas contratados por workload', 'diff.diagrams_p': 'Valida evidencia Mermaid expl\u00edcita o deriva de forma determinista diagramas compatibles desde SPECIFICATION.md y DESIGN.md.',
           'diff.tests_h': 'Tests para 6 frameworks', 'diff.tests_p': 'Vitest, Jest, Playwright, Pytest, JUnit, xUnit. M\u00e1s tests property-based.',
-          'diff.iac_h': 'Infrastructure as Code', 'diff.iac_p': 'Terraform y entornos de desarrollo usan cloud, recursos, stack, imagen y servicios persistidos.',
+          'diff.iac_h': 'Infrastructure as Code', 'diff.iac_p': 'Los recursos Terraform se basan en las secciones relevantes de DESIGN.md; las plantillas no compatibles fallan antes de escribir archivos.',
           'diff.comply_h': '5 paquetes de compliance', 'diff.comply_p': 'HIPAA, SOC 2, GDPR, PCI DSS e ISO 27001 con evidencia expl\u00edcita por control.',
           'diff.security_h': 'Perfil enterprise (v3.5.0)', 'diff.security_p': 'Defaults enterprise opt-in para RBAC por identidad, rate limiting, auditor\u00eda firmada con HMAC y modo fail-closed.',
           'diff.container_h': 'MCP server listo para contenedores', 'diff.container_p': 'Imagen publicada en GHCR, Dockerfile, healthcheck y transporte HTTP en el puerto 3200 para despliegues hospedados o air-gapped.',

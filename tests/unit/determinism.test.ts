@@ -1,13 +1,17 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { DocumentationConfig } from "../../src/contracts/use-case.js";
 import { DocGenerator } from "../../src/services/doc-generator.js";
 import { FileManager } from "../../src/services/file-manager.js";
 import { TemplateEngine } from "../../src/services/template-engine.js";
 import { TestGenerator } from "../../src/services/test-generator.js";
-import { currentDateString, currentTimestamp, formatTimestampForDisplay } from "../../src/utils/runtime-context.js";
-import type { DocumentationConfig } from "../../src/contracts/use-case.js";
+import {
+  currentDateString,
+  currentTimestamp,
+  formatTimestampForDisplay,
+} from "../../src/utils/runtime-context.js";
 
 const DOCUMENTATION: DocumentationConfig = {
   types: ["full"],
@@ -67,21 +71,34 @@ describe("deterministic runtime context", () => {
   it("generates stable documentation timestamps", async () => {
     const featureDir = "001-stable-docs";
     mkdirSync(join(workspace, featureDir), { recursive: true });
-    writeFileSync(join(workspace, featureDir, "SPECIFICATION.md"), [
-      "### REQ-CORE-001: Stable behavior",
-      "",
-      "The system shall keep documentation stable.",
-      "",
-      "**Acceptance Criteria:**",
-      "- Repeated generation is byte-identical",
-    ].join("\n"), "utf8");
-    writeFileSync(join(workspace, featureDir, "DESIGN.md"), [
-      "## System Context", "Stable user context.",
-      "## Container Architecture", "Stable container context.",
-      "## Component Design", "Stable component context.",
-      "## Data Model", "Stable data context.",
-      "## Infrastructure", "Stable infrastructure context.",
-    ].join("\n\n"), "utf8");
+    writeFileSync(
+      join(workspace, featureDir, "SPECIFICATION.md"),
+      [
+        "### REQ-CORE-001: Stable behavior",
+        "",
+        "The system shall keep documentation stable.",
+        "",
+        "**Acceptance Criteria:**",
+        "- Repeated generation is byte-identical",
+      ].join("\n"),
+      "utf8",
+    );
+    writeFileSync(
+      join(workspace, featureDir, "DESIGN.md"),
+      [
+        "## System Context",
+        "Stable user context.",
+        "## Container Architecture",
+        "Stable container context.",
+        "## Component Design",
+        "Stable component context.",
+        "## Data Model",
+        "Stable data context.",
+        "## Infrastructure",
+        "Stable infrastructure context.",
+      ].join("\n\n"),
+      "utf8",
+    );
     writeFileSync(
       join(workspace, featureDir, "TASKS.md"),
       "| T-001 | Generate docs | No | S | — | REQ-CORE-001 |\n",
@@ -115,11 +132,13 @@ describe("deterministic runtime context", () => {
     );
     const testGenerator = new TestGenerator(fileManager);
     const imports = 'import { describe, it, expect } from "vitest";';
-    const bindings = [{
-      requirement_id: "REQ-CORE-001",
-      test_name: "keeps generated dates stable",
-      body: "const generated = \"2026-06-17\";\nexpect(generated).toBe(\"2026-06-17\");",
-    }];
+    const bindings = [
+      {
+        requirement_id: "REQ-CORE-001",
+        test_name: "keeps generated dates stable",
+        body: 'const generated = "2026-06-17";\nexpect(generated).toBe("2026-06-17");',
+      },
+    ];
 
     const first = await testGenerator.generate(featureDir, "vitest", "tests", imports, bindings);
     const second = await testGenerator.generate(featureDir, "vitest", "tests", imports, bindings);

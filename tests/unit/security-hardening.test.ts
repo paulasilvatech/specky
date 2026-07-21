@@ -5,18 +5,14 @@
  *     templates_path
  *   - the installer's pre-authorized allow-list stays least-privilege
  */
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { specDirSchema } from "../../src/schemas/common.js";
-import {
-  createWorkspaceConfig,
-  loadConfig,
-  serializeWorkspaceConfig,
-} from "../../src/config.js";
-import { FileManager } from "../../src/services/file-manager.js";
 import { requiredClaudeAllows } from "../../src/cli/lib/settings-merger.js";
+import { createWorkspaceConfig, loadConfig, serializeWorkspaceConfig } from "../../src/config.js";
+import { specDirSchema } from "../../src/schemas/common.js";
+import { FileManager } from "../../src/services/file-manager.js";
 
 describe("specDirSchema traversal guard", () => {
   it("accepts workspace-relative paths", () => {
@@ -46,7 +42,9 @@ describe("FileManager.sanitizePath is absolute-path-safe on every OS", () => {
     // Regression: the guard only checked "/" and "\\" prefixes, so "C:\\…"
     // slipped through on Windows (and would on POSIX too). This asserts the
     // fix on every platform, not just Windows CI.
-    expect(() => fm.sanitizePath("C:\\Windows\\System32")).toThrow("Absolute paths are not allowed");
+    expect(() => fm.sanitizePath("C:\\Windows\\System32")).toThrow(
+      "Absolute paths are not allowed",
+    );
     expect(() => fm.sanitizePath("C:/Windows/System32")).toThrow("Absolute paths are not allowed");
     expect(() => fm.sanitizePath("d:relative")).toThrow("Absolute paths are not allowed");
   });
@@ -126,8 +124,15 @@ describe("installer pre-authorization is least-privilege", () => {
       integrations: ["github"],
     });
     for (const dangerous of [
-      "Bash(bash:*)", "Bash(sh:*)", "Bash(node:*)", "Bash(python:*)",
-      "Bash(python3:*)", "Bash(rm:*)", "Bash(chmod:*)", "WebFetch", "WebSearch",
+      "Bash(bash:*)",
+      "Bash(sh:*)",
+      "Bash(node:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(rm:*)",
+      "Bash(chmod:*)",
+      "WebFetch",
+      "WebSearch",
     ]) {
       expect(allows, `must not pre-authorize ${dangerous}`).not.toContain(dangerous);
     }
@@ -139,17 +144,28 @@ describe("installer pre-authorization is least-privilege", () => {
       workspace: wsForPermissions(),
       integrations: ["github"],
     });
-    for (const needed of ["Read", "Grep", "Edit", "Write", "Bash(git:*)", "Bash(npm:*)", "mcp__specky__sdd_get_status", "mcp__github__create_pull_request"]) {
+    for (const needed of [
+      "Read",
+      "Grep",
+      "Edit",
+      "Write",
+      "Bash(git:*)",
+      "Bash(npm:*)",
+      "mcp__specky__sdd_get_status",
+      "mcp__github__create_pull_request",
+    ]) {
       expect(allows).toContain(needed);
     }
   });
 
   it("leaves all permissions to host confirmation in the prompt profile", () => {
-    expect(requiredClaudeAllows(capabilities, {
-      profile: "prompt",
-      workspace: wsForPermissions(),
-      integrations: ["github"],
-    })).toEqual([]);
+    expect(
+      requiredClaudeAllows(capabilities, {
+        profile: "prompt",
+        workspace: wsForPermissions(),
+        integrations: ["github"],
+      }),
+    ).toEqual([]);
   });
 });
 

@@ -3,12 +3,8 @@
  * Extracts speakers, topics, decisions, action items, and raw requirements.
  */
 
+import type { TranscriptAnalysis, TranscriptSegment, TranscriptTopic } from "../types.js";
 import type { FileManager } from "./file-manager.js";
-import type {
-  TranscriptSegment,
-  TranscriptAnalysis,
-  TranscriptTopic,
-} from "../types.js";
 
 /** Supported transcript formats */
 type TranscriptFormat = "vtt" | "srt" | "txt" | "md";
@@ -42,7 +38,7 @@ export class TranscriptParser {
   parse(
     content: string,
     format: TranscriptFormat = "txt",
-    _source: string = "inline"
+    _source: string = "inline",
   ): TranscriptAnalysis {
     let segments: TranscriptSegment[];
 
@@ -193,7 +189,7 @@ export class TranscriptParser {
 
       // Find timestamp line
       const tsLineIdx = lines.findIndex((l) =>
-        /\d{2}:\d{2}[.:]\d{2}\.\d{3}\s*-->\s*\d{2}:\d{2}[.:]\d{2}\.\d{3}/.test(l)
+        /\d{2}:\d{2}[.:]\d{2}\.\d{3}\s*-->\s*\d{2}:\d{2}[.:]\d{2}\.\d{3}/.test(l),
       );
       if (tsLineIdx === -1) continue;
 
@@ -266,8 +262,11 @@ export class TranscriptParser {
     // OR has numbered sections like ## 1. Executive Summary, ## 4. Complete Transcription
     // OR has ## Executive Summary + ## Action Items
     const hasFrontmatter = /^---\s*\n[\s\S]*?\n---/m.test(content);
-    const hasNumberedSections = /^##\s+\d+\.\s+(Executive Summary|Complete Transcription|Action Items)/im.test(content);
-    const hasSimpleSections = /^##\s+(Executive Summary|Transcription|Action Items)/im.test(content);
+    const hasNumberedSections =
+      /^##\s+\d+\.\s+(Executive Summary|Complete Transcription|Action Items)/im.test(content);
+    const hasSimpleSections = /^##\s+(Executive Summary|Transcription|Action Items)/im.test(
+      content,
+    );
     const isPowerAutomateFormat = hasFrontmatter || hasNumberedSections || hasSimpleSections;
 
     if (isPowerAutomateFormat) {
@@ -385,11 +384,24 @@ export class TranscriptParser {
           currentSection = "summary";
         } else if (sectionName.includes("meeting details") || sectionName.includes("detalhes")) {
           currentSection = "details";
-        } else if (sectionName.includes("main topics") || sectionName.includes("tópicos") || sectionName.includes("topicos")) {
+        } else if (
+          sectionName.includes("main topics") ||
+          sectionName.includes("tópicos") ||
+          sectionName.includes("topicos")
+        ) {
           currentSection = "topics";
-        } else if (sectionName.includes("complete transcription") || sectionName.includes("transcription") || sectionName.includes("transcript") || sectionName.includes("transcrição")) {
+        } else if (
+          sectionName.includes("complete transcription") ||
+          sectionName.includes("transcription") ||
+          sectionName.includes("transcript") ||
+          sectionName.includes("transcrição")
+        ) {
           currentSection = "transcription";
-        } else if (sectionName.includes("action item") || sectionName.includes("ações") || sectionName.includes("acoes")) {
+        } else if (
+          sectionName.includes("action item") ||
+          sectionName.includes("ações") ||
+          sectionName.includes("acoes")
+        ) {
           currentSection = "actions";
         } else if (sectionName.includes("reference") || sectionName.includes("referência")) {
           currentSection = "references";
@@ -430,7 +442,11 @@ export class TranscriptParser {
           const key = tableRowMatch[1].toLowerCase().trim();
           const value = tableRowMatch[2].trim();
 
-          if (key.includes("participant") || key.includes("attendee") || key.includes("participante")) {
+          if (
+            key.includes("participant") ||
+            key.includes("attendee") ||
+            key.includes("participante")
+          ) {
             segments.push({ speaker: "__META_PARTICIPANTS__", text: value });
           } else if (key.includes("date") || key.includes("data") || key.includes("fecha")) {
             if (!segments.some((s) => s.speaker === "__META_DATE__")) {
@@ -479,7 +495,9 @@ export class TranscriptParser {
         // Speaker Name: text (plain)
         const plainSpeaker = trimmed.match(/^([A-Z][a-zA-ZÀ-ú\s.]+?):\s*(.+)$/);
         // [HH:MM:SS] **Speaker:** text (with timestamp)
-        const timestampSpeaker = trimmed.match(/^\[?(\d{1,2}:\d{2}(?::\d{2})?)\]?\s*\*?\*?([^*:]+)\*?\*?:?\s*(.+)$/);
+        const timestampSpeaker = trimmed.match(
+          /^\[?(\d{1,2}:\d{2}(?::\d{2})?)\]?\s*\*?\*?([^*:]+)\*?\*?:?\s*(.+)$/,
+        );
 
         if (timestampSpeaker) {
           segments.push({
@@ -673,23 +691,56 @@ export class TranscriptParser {
     let currentSegments: TranscriptSegment[] = [];
 
     for (const seg of realSegments) {
-
       // Detect topic transitions
       const topicSignals = [
-        { pattern: /\b(login|auth|authentica|sso|oauth|azure ad|entra)\b/i, topic: "Authentication & Authorization" },
+        {
+          pattern: /\b(login|auth|authentica|sso|oauth|azure ad|entra)\b/i,
+          topic: "Authentication & Authorization",
+        },
         { pattern: /\b(api|endpoint|rest|graphql|grpc|webhook)\b/i, topic: "API Design" },
         { pattern: /\b(database|db|sql|postgres|mongo|cosmos|storage)\b/i, topic: "Data Storage" },
-        { pattern: /\b(deploy|ci\/cd|pipeline|github actions|azure devops|kubernetes|docker|container)\b/i, topic: "Deployment & Infrastructure" },
-        { pattern: /\b(security|encrypt|ssl|tls|compliance|gdpr|lgpd|hipaa)\b/i, topic: "Security & Compliance" },
-        { pattern: /\b(performance|latenc|speed|cache|redis|cdn|scale|concurrent)\b/i, topic: "Performance & Scalability" },
-        { pattern: /\b(ui|ux|frontend|react|angular|vue|design|layout|component)\b/i, topic: "User Interface" },
-        { pattern: /\b(test|testing|unit test|integration|e2e|qa|quality)\b/i, topic: "Testing & Quality" },
-        { pattern: /\b(monitor|observ|log|metric|alert|grafana|datadog|app insights)\b/i, topic: "Monitoring & Observability" },
-        { pattern: /\b(user|persona|stakeholder|customer|role|permission)\b/i, topic: "Users & Personas" },
-        { pattern: /\b(budget|cost|pricing|timeline|deadline|sprint|milestone)\b/i, topic: "Project Constraints" },
-        { pattern: /\b(integration|third.party|external|partner|vendor)\b/i, topic: "Integrations" },
+        {
+          pattern:
+            /\b(deploy|ci\/cd|pipeline|github actions|azure devops|kubernetes|docker|container)\b/i,
+          topic: "Deployment & Infrastructure",
+        },
+        {
+          pattern: /\b(security|encrypt|ssl|tls|compliance|gdpr|lgpd|hipaa)\b/i,
+          topic: "Security & Compliance",
+        },
+        {
+          pattern: /\b(performance|latenc|speed|cache|redis|cdn|scale|concurrent)\b/i,
+          topic: "Performance & Scalability",
+        },
+        {
+          pattern: /\b(ui|ux|frontend|react|angular|vue|design|layout|component)\b/i,
+          topic: "User Interface",
+        },
+        {
+          pattern: /\b(test|testing|unit test|integration|e2e|qa|quality)\b/i,
+          topic: "Testing & Quality",
+        },
+        {
+          pattern: /\b(monitor|observ|log|metric|alert|grafana|datadog|app insights)\b/i,
+          topic: "Monitoring & Observability",
+        },
+        {
+          pattern: /\b(user|persona|stakeholder|customer|role|permission)\b/i,
+          topic: "Users & Personas",
+        },
+        {
+          pattern: /\b(budget|cost|pricing|timeline|deadline|sprint|milestone)\b/i,
+          topic: "Project Constraints",
+        },
+        {
+          pattern: /\b(integration|third.party|external|partner|vendor)\b/i,
+          topic: "Integrations",
+        },
         { pattern: /\b(notification|email|sms|push|alert|message)\b/i, topic: "Notifications" },
-        { pattern: /\b(report|dashboard|analytics|chart|graph|insight)\b/i, topic: "Reporting & Analytics" },
+        {
+          pattern: /\b(report|dashboard|analytics|chart|graph|insight)\b/i,
+          topic: "Reporting & Analytics",
+        },
       ];
 
       for (const signal of topicSignals) {
@@ -743,9 +794,7 @@ export class TranscriptParser {
     for (const seg of segments) {
       for (const pattern of decisionPatterns) {
         if (pattern.test(seg.text)) {
-          const clean = seg.speaker
-            ? `[${seg.speaker}] ${seg.text}`
-            : seg.text;
+          const clean = seg.speaker ? `[${seg.speaker}] ${seg.text}` : seg.text;
           decisions.push(clean);
           break;
         }
@@ -777,9 +826,7 @@ export class TranscriptParser {
 
       for (const pattern of actionPatterns) {
         if (pattern.test(seg.text)) {
-          const clean = seg.speaker
-            ? `[${seg.speaker}] ${seg.text}`
-            : seg.text;
+          const clean = seg.speaker ? `[${seg.speaker}] ${seg.text}` : seg.text;
           actions.push(clean);
           break;
         }
@@ -843,9 +890,7 @@ export class TranscriptParser {
         seg.text.includes("?") ||
         /^(how|what|when|where|why|who|which|como|qual|quando|onde|por que|quem)\b/i.test(seg.text)
       ) {
-        const clean = seg.speaker
-          ? `[${seg.speaker}] ${seg.text}`
-          : seg.text;
+        const clean = seg.speaker ? `[${seg.speaker}] ${seg.text}` : seg.text;
         questions.push(clean);
       }
     }
@@ -884,11 +929,7 @@ export class TranscriptParser {
     if (parts.length >= 3) {
       if (parts.length === 4) {
         // HH:MM:SS.mmm
-        return (
-          parseInt(parts[0], 10) * 3600 +
-          parseInt(parts[1], 10) * 60 +
-          parseInt(parts[2], 10)
-        );
+        return parseInt(parts[0], 10) * 3600 + parseInt(parts[1], 10) * 60 + parseInt(parts[2], 10);
       }
       // MM:SS.mmm
       return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
@@ -904,7 +945,8 @@ export class TranscriptParser {
 
     // Auto-detect from content
     if (content.trimStart().startsWith("WEBVTT")) return "vtt";
-    if (/^\d+\n\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}/m.test(content)) return "srt";
+    if (/^\d+\n\d{2}:\d{2}:\d{2},\d{3}\s*-->\s*\d{2}:\d{2}:\d{2},\d{3}/m.test(content))
+      return "srt";
 
     return "txt";
   }

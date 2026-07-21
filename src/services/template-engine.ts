@@ -2,10 +2,9 @@
  * TemplateEngine — Template loading, variable replacement, YAML frontmatter.
  */
 
-import { join } from "node:path";
 import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { dirname } from "node:path";
 import type { TemplateName } from "../constants.js";
 import { TEMPLATE_NAMES } from "../constants.js";
 import type { TemplateContext, TemplateRow, TemplateValue } from "../types.js";
@@ -30,7 +29,7 @@ export class TemplateEngine {
    */
   async render(
     templateName: TemplateName,
-    context: Record<string, TemplateValue>
+    context: Record<string, TemplateValue>,
   ): Promise<string> {
     const template = await this.loadTemplate(templateName);
     return this.replaceVariables(template, context, templateName);
@@ -41,7 +40,7 @@ export class TemplateEngine {
    */
   async renderWithFrontmatter(
     templateName: TemplateName,
-    context: TemplateContext
+    context: TemplateContext,
   ): Promise<string> {
     const frontmatter = this.generateFrontmatter(context);
     const body = await this.render(templateName, context);
@@ -57,8 +56,8 @@ export class TemplateEngine {
 
   /**
    * Replace {{variable}} placeholders with context values.
-  * Every referenced variable must be present with the expected shape.
-  * Supports string arrays via {{this}} and object arrays via named fields.
+   * Every referenced variable must be present with the expected shape.
+   * Supports string arrays via {{this}} and object arrays via named fields.
    */
   replaceVariables(
     template: string,
@@ -74,12 +73,9 @@ export class TemplateEngine {
       if (!Array.isArray(value)) {
         throw new TemplateRenderError(templateName, key, "array");
       }
-      return value.map((item, index) => this.renderLoopItem(
-        body,
-        item,
-        templateName,
-        `${key}[${index}]`,
-      )).join("");
+      return value
+        .map((item, index) => this.renderLoopItem(body, item, templateName, `${key}[${index}]`))
+        .join("");
     });
 
     // Handle {{variable}} replacements

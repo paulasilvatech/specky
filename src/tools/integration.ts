@@ -3,24 +3,29 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { formatError, truncate } from "./tool-result.js";
-import type { FileManager } from "../services/file-manager.js";
-import type { StateMachine } from "../services/state-machine.js";
-import type { TemplateEngine } from "../services/template-engine.js";
-import type { GitManager } from "../services/git-manager.js";
-import type { WorkItemExporter } from "../services/work-item-exporter.js";
-import type { ImplementationPlan, ImplementationPhase, ImplementationTask, ResearchEntry } from "../types.js";
 import {
   createBranchInputSchema,
-  exportWorkItemsInputSchema,
   createPrInputSchema,
+  exportWorkItemsInputSchema,
   implementInputSchema,
   researchInputSchema,
 } from "../schemas/integration.js";
-import { enrichResponse } from "./response-builder.js";
-import { parseTasksFromMarkdown } from "../utils/task-parser.js";
-import { requireExecutionContext } from "../services/execution-context.js";
+import { requireCapabilityConfig, requireFeatureContext } from "../services/execution-context.js";
+import type { FileManager } from "../services/file-manager.js";
+import type { GitManager } from "../services/git-manager.js";
+import type { StateMachine } from "../services/state-machine.js";
+import type { TemplateEngine } from "../services/template-engine.js";
+import type { WorkItemExporter } from "../services/work-item-exporter.js";
+import type {
+  ImplementationPhase,
+  ImplementationPlan,
+  ImplementationTask,
+  ResearchEntry,
+} from "../types.js";
 import { currentDateString, currentTimestamp } from "../utils/runtime-context.js";
+import { parseTasksFromMarkdown } from "../utils/task-parser.js";
+import { enrichResponse } from "./response-builder.js";
+import { errorResult, truncate } from "./tool-result.js";
 
 export function registerIntegrationTools(
   server: McpServer,
@@ -28,7 +33,7 @@ export function registerIntegrationTools(
   stateMachine: StateMachine,
   _templateEngine: TemplateEngine,
   gitManager: GitManager,
-  workItemExporter: WorkItemExporter
+  workItemExporter: WorkItemExporter,
 ): void {
   // ─── sdd_create_branch ───
   server.registerTool(
@@ -47,10 +52,13 @@ export function registerIntegrationTools(
     },
     async () => {
       try {
-        const context = requireExecutionContext("sdd_create_branch");
-        const feature = context.feature!;
-        const stateDir = context.stateDir!;
-        const release = context.state!.contract.capability_config.release!;
+        const context = requireFeatureContext("sdd_create_branch");
+        const feature = context.feature;
+        const stateDir = context.stateDir;
+        const release = requireCapabilityConfig(
+          context.state.contract.capability_config,
+          "release",
+        );
 
         const branchInfo = gitManager.generateBranchInfo(
           feature.number,
@@ -64,18 +72,16 @@ export function registerIntegrationTools(
           ...branchInfo,
           explanation: `Branch name '${branchInfo.name}' follows the SDD convention: ${branchInfo.convention}. Run the command_hint to create it.`,
           next_steps: `Execute: ${branchInfo.command_hint}`,
-          learning_note: "SDD branch naming ties the feature number to the branch, enabling traceability from spec to code.",
+          learning_note:
+            "SDD branch naming ties the feature number to the branch, enabling traceability from spec to code.",
         };
 
         const enriched = await enrichResponse("sdd_create_branch", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
-        return {
-          content: [{ type: "text" as const, text: formatError("sdd_create_branch", error as Error) }],
-          isError: true,
-        };
+        return errorResult("sdd_create_branch", error);
       }
-    }
+    },
   );
 
   // ─── sdd_export_work_items ───
@@ -95,11 +101,14 @@ export function registerIntegrationTools(
     },
     async () => {
       try {
-        const context = requireExecutionContext("sdd_export_work_items");
-        const feature = context.feature!;
-        const stateDir = context.stateDir!;
-        const specDir = context.specDir!;
-        const workItems = context.state!.contract.capability_config["work-items"]!;
+        const context = requireFeatureContext("sdd_export_work_items");
+        const feature = context.feature;
+        const stateDir = context.stateDir;
+        const specDir = context.specDir;
+        const workItems = requireCapabilityConfig(
+          context.state.contract.capability_config,
+          "work-items",
+        );
 
         const exportResult = await workItemExporter.export(
           workItems.platform,
@@ -113,27 +122,40 @@ export function registerIntegrationTools(
           },
         );
 
-        const serverRecommendations: Record<string, { id: string; name: string; purpose: string; install_command: string; install_note: string }> = {
+        const serverRecommendations: Record<
+          string,
+          {
+            id: string;
+            name: string;
+            purpose: string;
+            install_command: string;
+            install_note: string;
+          }
+        > = {
           github: {
             id: "github",
             name: "GitHub MCP Server",
             purpose: "Create GitHub Issues from the exported work items",
             install_command: 'VS Code MCP Gallery: search "GitHub"',
-            install_note: "The AI client needs GitHub MCP to create the issues. If you see this message, ensure GitHub MCP is installed in your VS Code MCP settings.",
+            install_note:
+              "The AI client needs GitHub MCP to create the issues. If you see this message, ensure GitHub MCP is installed in your VS Code MCP settings.",
           },
           azure_boards: {
             id: "azure-devops",
             name: "Azure DevOps MCP Server",
             purpose: "Create Work Items in Azure Boards from the exported tasks",
-            install_command: 'npx -y @azure-devops/mcp@latest <your-org> -d work-items',
-            install_note: "The AI client needs Azure DevOps MCP to create work items. Replace <your-org> with your Azure DevOps organization name.",
+            install_command: "npx -y @azure-devops/mcp@latest <your-org> -d work-items",
+            install_note:
+              "The AI client needs Azure DevOps MCP to create work items. Replace <your-org> with your Azure DevOps organization name.",
           },
           jira: {
             id: "jira",
             name: "Jira MCP Server",
             purpose: "Create Jira Issues from the exported tasks",
-            install_command: "Search VS Code MCP Gallery for Jira, or use npx @anthropic/jira-mcp-server",
-            install_note: "The AI client needs Jira MCP to create issues. Requires a Jira API token.",
+            install_command:
+              "Search VS Code MCP Gallery for Jira, or use npx @anthropic/jira-mcp-server",
+            install_note:
+              "The AI client needs Jira MCP to create issues. Requires a Jira API token.",
           },
         };
 
@@ -146,18 +168,23 @@ export function registerIntegrationTools(
           recommended_servers: [serverRecommendations[workItems.platform]].filter(Boolean),
           explanation: `Exported ${exportResult.items.length} work items in the ${workItems.platform}-native payload shape. Route to ${exportResult.routing_instructions.mcp_server} MCP to create them.`,
           next_steps: `The AI client should call ${exportResult.routing_instructions.mcp_server} MCP's ${exportResult.routing_instructions.tool_name} for each item in the items array. ${exportResult.routing_instructions.note}`,
-          learning_note: "Work items maintain traceability from TASKS.md through to your project management platform: every item carries task_id and traces_to, and the rendered body/description repeats the REQ references.",
+          learning_note:
+            "Work items maintain traceability from TASKS.md through to your project management platform: every item carries task_id and traces_to, and the rendered body/description repeats the REQ references.",
         };
 
-        const enriched = await enrichResponse("sdd_export_work_items", result, stateMachine, stateDir);
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
-      } catch (error) {
+        const enriched = await enrichResponse(
+          "sdd_export_work_items",
+          result,
+          stateMachine,
+          stateDir,
+        );
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_export_work_items", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_export_work_items", error);
       }
-    }
+    },
   );
 
   // ─── sdd_create_pr ───
@@ -177,10 +204,13 @@ export function registerIntegrationTools(
     },
     async () => {
       try {
-        const context = requireExecutionContext("sdd_create_pr");
-        const feature = context.feature!;
-        const stateDir = context.stateDir!;
-        const release = context.state!.contract.capability_config.release!;
+        const context = requireFeatureContext("sdd_create_pr");
+        const feature = context.feature;
+        const stateDir = context.stateDir;
+        const release = requireCapabilityConfig(
+          context.state.contract.capability_config,
+          "release",
+        );
         const headBranch = `${release.branch_prefix}${feature.number}-${feature.name}`;
 
         const prPayload = await gitManager.generatePrPayload(
@@ -203,18 +233,18 @@ export function registerIntegrationTools(
           routing_instructions: prPayload.routing_instructions,
           explanation: `PR payload generated for '${prPayload.title}'. Covers ${prPayload.requirements_covered.length} requirements.`,
           next_steps: "Route this payload to GitHub MCP's create_pull_request tool to open the PR.",
-          learning_note: "SDD pull requests include spec artifact references and requirement coverage, enabling reviewers to trace code changes back to requirements.",
+          learning_note:
+            "SDD pull requests include spec artifact references and requirement coverage, enabling reviewers to trace code changes back to requirements.",
         };
 
         const enriched = await enrichResponse("sdd_create_pr", result, stateMachine, stateDir);
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
-      } catch (error) {
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_create_pr", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_create_pr", error);
       }
-    }
+    },
   );
 
   // ─── sdd_implement ───
@@ -234,9 +264,9 @@ export function registerIntegrationTools(
     },
     async ({ task_ids, checkpoint }) => {
       try {
-        const context = requireExecutionContext("sdd_implement");
-        const feature = context.feature!;
-        const stateDir = context.stateDir!;
+        const context = requireFeatureContext("sdd_implement");
+        const feature = context.feature;
+        const stateDir = context.stateDir;
 
         const tasksContent = await fileManager.readSpecFile(feature.directory, "TASKS.md");
 
@@ -251,13 +281,12 @@ export function registerIntegrationTools(
         }));
 
         // Filter to requested task_ids if provided
-        const targetTasks = task_ids.length > 0
-          ? allTasks.filter((t) => task_ids.includes(t.id))
-          : allTasks;
+        const targetTasks =
+          task_ids.length > 0 ? allTasks.filter((t) => task_ids.includes(t.id)) : allTasks;
 
         if (targetTasks.length === 0) {
           throw new Error(
-            "No tasks found. Ensure TASKS.md contains a Task Breakdown table (| T-001 | … |) or checkbox lines (- [ ] T-001: Title)."
+            "No tasks found. Ensure TASKS.md contains a Task Breakdown table (| T-001 | … |) or checkbox lines (- [ ] T-001: Title).",
           );
         }
 
@@ -267,7 +296,7 @@ export function registerIntegrationTools(
         // Count parallel opportunities
         const parallelOpportunities = phases.reduce(
           (sum, p) => sum + (p.tasks.filter((t) => t.parallel).length > 1 ? 1 : 0),
-          0
+          0,
         );
 
         // Generate Mermaid Gantt diagram
@@ -281,24 +310,25 @@ export function registerIntegrationTools(
           estimated_checkpoints: phases.filter((p) => p.checkpoint).length,
           diagram,
           explanation: `Implementation plan with ${phases.length} phases covering ${targetTasks.length} tasks. ${parallelOpportunities} parallel opportunities detected.`,
-          next_steps: "Follow the phases in order. Pause at each checkpoint for review. Tasks marked parallel can be executed simultaneously.",
+          next_steps:
+            "Follow the phases in order. Pause at each checkpoint for review. Tasks marked parallel can be executed simultaneously.",
         };
 
         const result = {
           status: "implementation_plan_generated",
           ...plan,
-          learning_note: "Implementation plans resolve task dependencies to find the optimal execution order. Parallel groups reduce total implementation time.",
+          learning_note:
+            "Implementation plans resolve task dependencies to find the optimal execution order. Parallel groups reduce total implementation time.",
         };
 
         const enriched = await enrichResponse("sdd_implement", result, stateMachine, stateDir);
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
-      } catch (error) {
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_implement", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_implement", error);
       }
-    }
+    },
   );
 
   // ─── sdd_research ───
@@ -318,10 +348,10 @@ export function registerIntegrationTools(
     },
     async ({ entries: inputEntries, force }) => {
       try {
-        const context = requireExecutionContext("sdd_research");
-        const feature = context.feature!;
+        const context = requireFeatureContext("sdd_research");
+        const feature = context.feature;
         const featureDir = feature.directory;
-        const stateDir = context.stateDir!;
+        const stateDir = context.stateDir;
 
         const entries: ResearchEntry[] = inputEntries;
 
@@ -354,19 +384,20 @@ export function registerIntegrationTools(
           resolved_count: entries.filter((entry) => entry.status === "resolved").length,
           deferred_count: entries.filter((entry) => entry.status === "deferred").length,
           explanation: `Wrote ${entries.length} evidence-backed research entries without unresolved placeholders.`,
-          next_steps: "Use resolved recommendations as design evidence and track deferred entries as explicit risk.",
-          learning_note: "Research artifacts record evidence and decisions; unanswered placeholders are rejected by the input contract.",
+          next_steps:
+            "Use resolved recommendations as design evidence and track deferred entries as explicit risk.",
+          learning_note:
+            "Research artifacts record evidence and decisions; unanswered placeholders are rejected by the input contract.",
         };
 
         const enriched = await enrichResponse("sdd_research", result, stateMachine, stateDir);
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
-      } catch (error) {
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_research", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_research", error);
       }
-    }
+    },
   );
 }
 
@@ -389,9 +420,7 @@ function buildPhases(tasks: ParsedTask[], includeCheckpoints: boolean): Implemen
 
   while (remaining.length > 0) {
     // Find tasks whose dependencies are all completed
-    const ready = remaining.filter((t) =>
-      t.dependencies.every((d) => completed.has(d))
-    );
+    const ready = remaining.filter((t) => t.dependencies.every((d) => completed.has(d)));
 
     if (ready.length === 0) {
       // Circular dependency or missing deps — add remaining as final phase
@@ -438,9 +467,7 @@ function generateGanttDiagram(phases: ImplementationPhase[]): string {
   for (const phase of phases) {
     diagram += `  section ${phase.name}\n`;
     for (const task of phase.tasks) {
-      const deps = task.dependencies.length > 0
-        ? `after ${task.dependencies.join(" ")}`
-        : "";
+      const deps = task.dependencies.length > 0 ? `after ${task.dependencies.join(" ")}` : "";
       diagram += `    ${task.id} ${task.title.substring(0, 30)} :${task.id}, ${deps || "active"}, 1d\n`;
     }
     if (phase.checkpoint) {

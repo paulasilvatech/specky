@@ -58,9 +58,9 @@ deployments, use the published GHCR image instead of installing Node/npm on the
 host:
 
 ```bash
-docker pull ghcr.io/paulasilvatech/specky:latest        # or pin: :3.11.1
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin: :3.12.0
 docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
-curl -s http://localhost:3200/health                    # -> {"status":"ok","version":"3.11.1"}
+curl -s http://localhost:3200/health                    # -> {"status":"ok","version":"3.12.0"}
 ```
 
 Production deployments should pin an explicit version tag and enable token auth

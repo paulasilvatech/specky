@@ -17,7 +17,7 @@
  * requiring 2FA. See docs/PUBLISH.md for the full release procedure.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -72,8 +72,9 @@ function countFiles(dir) {
 
 function countHookScripts(dir) {
   try {
-    return readdirSync(dir, { withFileTypes: true })
-      .filter((entry) => entry.isFile() && entry.name.endsWith(".sh")).length;
+    return readdirSync(dir, { withFileTypes: true }).filter(
+      (entry) => entry.isFile() && entry.name.endsWith(".sh"),
+    ).length;
   } catch {
     return 0;
   }
@@ -166,18 +167,54 @@ step("fresh-install smoke test", () => {
     );
 
     const counts = {
-      ".claude/agents": { expected: EXPECTED.agents, got: countFiles(resolve(fresh, ".claude/agents")) },
-      ".claude/commands": { expected: EXPECTED.prompts, got: countFiles(resolve(fresh, ".claude/commands")) },
-      ".claude/skills": { expected: EXPECTED.skills, got: countDirs(resolve(fresh, ".claude/skills")) },
-      ".claude/hooks/scripts": { expected: EXPECTED.hooks, got: countHookScripts(resolve(fresh, ".claude/hooks/scripts")) },
-      ".github/agents": { expected: EXPECTED.agents, got: countFiles(resolve(fresh, ".github/agents")) },
-      ".github/prompts": { expected: EXPECTED.prompts, got: countFiles(resolve(fresh, ".github/prompts")) },
-      ".github/hooks/specky/scripts": { expected: EXPECTED.hooks, got: countHookScripts(resolve(fresh, ".github/hooks/specky/scripts")) },
-      ".cursor/agents": { expected: EXPECTED.agents, got: countFiles(resolve(fresh, ".cursor/agents")) },
-      ".cursor/commands": { expected: EXPECTED.prompts, got: countFiles(resolve(fresh, ".cursor/commands")) },
-      ".opencode/agents": { expected: EXPECTED.agents, got: countFiles(resolve(fresh, ".opencode/agents")) },
-      ".opencode/commands": { expected: EXPECTED.prompts, got: countFiles(resolve(fresh, ".opencode/commands")) },
-      ".agents/skills": { expected: EXPECTED.skills, got: countDirs(resolve(fresh, ".agents/skills")) },
+      ".claude/agents": {
+        expected: EXPECTED.agents,
+        got: countFiles(resolve(fresh, ".claude/agents")),
+      },
+      ".claude/commands": {
+        expected: EXPECTED.prompts,
+        got: countFiles(resolve(fresh, ".claude/commands")),
+      },
+      ".claude/skills": {
+        expected: EXPECTED.skills,
+        got: countDirs(resolve(fresh, ".claude/skills")),
+      },
+      ".claude/hooks/scripts": {
+        expected: EXPECTED.hooks,
+        got: countHookScripts(resolve(fresh, ".claude/hooks/scripts")),
+      },
+      ".github/agents": {
+        expected: EXPECTED.agents,
+        got: countFiles(resolve(fresh, ".github/agents")),
+      },
+      ".github/prompts": {
+        expected: EXPECTED.prompts,
+        got: countFiles(resolve(fresh, ".github/prompts")),
+      },
+      ".github/hooks/specky/scripts": {
+        expected: EXPECTED.hooks,
+        got: countHookScripts(resolve(fresh, ".github/hooks/specky/scripts")),
+      },
+      ".cursor/agents": {
+        expected: EXPECTED.agents,
+        got: countFiles(resolve(fresh, ".cursor/agents")),
+      },
+      ".cursor/commands": {
+        expected: EXPECTED.prompts,
+        got: countFiles(resolve(fresh, ".cursor/commands")),
+      },
+      ".opencode/agents": {
+        expected: EXPECTED.agents,
+        got: countFiles(resolve(fresh, ".opencode/agents")),
+      },
+      ".opencode/commands": {
+        expected: EXPECTED.prompts,
+        got: countFiles(resolve(fresh, ".opencode/commands")),
+      },
+      ".agents/skills": {
+        expected: EXPECTED.skills,
+        got: countDirs(resolve(fresh, ".agents/skills")),
+      },
     };
     for (const [dir, { expected, got }] of Object.entries(counts)) {
       if (got !== expected) throw new Error(`${dir}: ${got} ≠ ${expected}`);

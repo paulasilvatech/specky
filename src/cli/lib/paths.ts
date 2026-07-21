@@ -8,9 +8,10 @@
  * When running from the Specky source repo (e.g., during development):
  *   <repo-root>/.apm/...
  */
+
+import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { existsSync } from "node:fs";
 
 /**
  * Resolve the package root by walking up from the compiled CLI location.

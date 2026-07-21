@@ -2,27 +2,27 @@
  * Utility Tools — sdd_get_status, sdd_get_template, sdd_write_bugfix, sdd_scan_codebase, sdd_amend.
  */
 
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { formatError, truncate } from "./tool-result.js";
 import { join } from "node:path";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { STATE_FILE, VERSION, MCP_ECOSYSTEM, TOTAL_TOOLS } from "../constants.js";
-import type { FileManager } from "../services/file-manager.js";
-import type { StateMachine } from "../services/state-machine.js";
-import type { TemplateEngine } from "../services/template-engine.js";
-import type { CodebaseScanner } from "../services/codebase-scanner.js";
+import { MCP_ECOSYSTEM, STATE_FILE, TOTAL_TOOLS, VERSION } from "../constants.js";
 import {
+  amendInputSchema,
   getStatusInputSchema,
   getTemplateInputSchema,
-  writeBugfixInputSchema,
   scanCodebaseInputSchema,
-  amendInputSchema,
+  writeBugfixInputSchema,
 } from "../schemas/utility.js";
-import { buildToolResponse, enrichResponse, enrichStateless } from "./response-builder.js";
-import type { IntentDriftEngine } from "../services/intent-drift-engine.js";
-import type { FeatureInfo, SddState } from "../types.js";
+import type { CodebaseScanner } from "../services/codebase-scanner.js";
 import { requireExecutionContext } from "../services/execution-context.js";
+import type { FileManager } from "../services/file-manager.js";
+import type { IntentDriftEngine } from "../services/intent-drift-engine.js";
+import type { StateMachine } from "../services/state-machine.js";
+import type { TemplateEngine } from "../services/template-engine.js";
+import type { FeatureInfo, SddState } from "../types.js";
 import { artifactMetadata } from "../utils/artifact-metadata.js";
+import { buildToolResponse, enrichResponse, enrichStateless } from "./response-builder.js";
+import { errorResult, truncate } from "./tool-result.js";
 
 interface FeatureStatus {
   number: string;
@@ -126,8 +126,11 @@ export function registerUtilityTools(
             view: "workspace",
             spec_directory: input.spec_dir,
             feature_count: featureSummaries.length,
-            ready_features: featureSummaries.filter((feature) => feature.state_status === "ready").length,
-            features_requiring_attention: featureSummaries.filter((feature) => feature.state_status !== "ready").length,
+            ready_features: featureSummaries.filter((feature) => feature.state_status === "ready")
+              .length,
+            features_requiring_attention: featureSummaries.filter(
+              (feature) => feature.state_status !== "ready",
+            ).length,
             features: featureSummaries,
             active_feature: null,
           };
@@ -140,15 +143,23 @@ export function registerUtilityTools(
         }
         if (!target.state) {
           return {
-            content: [{
-              type: "text" as const, text: JSON.stringify({
-                error: "feature_state_unavailable",
-                feature: publicFeatureStatus(target),
-                fix: target.state_status === "invalid"
-                  ? "Run specky migrate-contracts for legacy state, or restore a valid signed v5 state."
-                  : "Initialize this feature with sdd_init before invoking feature tools.",
-              }, null, 2)
-            }],
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify(
+                  {
+                    error: "feature_state_unavailable",
+                    feature: publicFeatureStatus(target),
+                    fix:
+                      target.state_status === "invalid"
+                        ? "Run specky migrate-contracts for legacy state, or restore a valid signed v5 state."
+                        : "Initialize this feature with sdd_init before invoking feature tools.",
+                  },
+                  null,
+                  2,
+                ),
+              },
+            ],
             isError: true,
           };
         }
@@ -158,9 +169,10 @@ export function registerUtilityTools(
           (phase) => state.phases[phase]?.status === "completed",
         ).length;
         const currentIndex = state.contract.phases.indexOf(state.current_phase);
-        const nextPhase = currentIndex < state.contract.phases.length - 1
-          ? state.contract.phases[currentIndex + 1]
-          : null;
+        const nextPhase =
+          currentIndex < state.contract.phases.length - 1
+            ? state.contract.phases[currentIndex + 1]
+            : null;
         const result = {
           status: "feature_status",
           view: "feature",
@@ -183,12 +195,9 @@ export function registerUtilityTools(
         );
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
-        return {
-          content: [{ type: "text" as const, text: formatError("sdd_get_status", error as Error) }],
-          isError: true,
-        };
+        return errorResult("sdd_get_status", error);
       }
-    }
+    },
   );
 
   // ─── sdd_get_template ───
@@ -209,15 +218,18 @@ export function registerUtilityTools(
     async ({ template_name }) => {
       try {
         const template = await templateEngine.getTemplate(template_name);
-        const enriched = enrichStateless("sdd_get_template", { status: "template_retrieved", template_name, content: template });
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
-      } catch (error) {
+        const enriched = enrichStateless("sdd_get_template", {
+          status: "template_retrieved",
+          template_name,
+          content: template,
+        });
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_get_template", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_get_template", error);
       }
-    }
+    },
   );
 
   // ─── sdd_write_bugfix ───
@@ -235,7 +247,17 @@ export function registerUtilityTools(
         openWorldHint: false,
       },
     },
-    async ({ bug_title, current_behavior, expected_behavior, unchanged_behavior, root_cause, test_plan, severity, related_requirements, force }) => {
+    async ({
+      bug_title,
+      current_behavior,
+      expected_behavior,
+      unchanged_behavior,
+      root_cause,
+      test_plan,
+      severity,
+      related_requirements,
+      force,
+    }) => {
       try {
         const context = requireExecutionContext("sdd_write_bugfix");
         const feature = context.feature!;
@@ -255,24 +277,37 @@ export function registerUtilityTools(
           related_requirements: related_requirements.join(", "),
         });
 
-        const filePath = await fileManager.writeSpecFile(featureDir, "BUGFIX_SPEC.md", content, force);
+        const filePath = await fileManager.writeSpecFile(
+          featureDir,
+          "BUGFIX_SPEC.md",
+          content,
+          force,
+        );
 
         const result = {
           status: "bugfix_spec_written",
           file: filePath,
           bug_title,
-          sections: ["Current Behavior", "Expected Behavior", "Unchanged Behavior", "Root Cause Analysis", "Test Plan"],
+          sections: [
+            "Current Behavior",
+            "Expected Behavior",
+            "Unchanged Behavior",
+            "Root Cause Analysis",
+            "Test Plan",
+          ],
         };
 
-        const enriched = await enrichResponse("sdd_write_bugfix", result, stateMachine, context.stateDir!);
+        const enriched = await enrichResponse(
+          "sdd_write_bugfix",
+          result,
+          stateMachine,
+          context.stateDir!,
+        );
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
-        return {
-          content: [{ type: "text" as const, text: formatError("sdd_write_bugfix", error as Error) }],
-          isError: true,
-        };
+        return errorResult("sdd_write_bugfix", error);
       }
-    }
+    },
   );
 
   // ─── sdd_scan_codebase ───
@@ -293,16 +328,18 @@ export function registerUtilityTools(
     async ({ depth, exclude }) => {
       try {
         const summary = await codebaseScanner.scan(depth, exclude);
-        const enriched = enrichStateless("sdd_scan_codebase", summary as unknown as Record<string, unknown>);
+        const enriched = enrichStateless(
+          "sdd_scan_codebase",
+          summary as unknown as Record<string, unknown>,
+        );
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }] };
-      } catch (error) {
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_scan_codebase", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_scan_codebase", error);
       }
-    }
+    },
   );
 
   // ─── sdd_amend ───
@@ -332,7 +369,7 @@ export function registerUtilityTools(
           constitution = await fileManager.readSpecFile(feature.directory, "CONSTITUTION.md");
         } catch {
           throw new Error(
-            `CONSTITUTION.md not found in ${feature.directory}.\n→ Fix: Run sdd_init first.`
+            `CONSTITUTION.md not found in ${feature.directory}.\n→ Fix: Run sdd_init first.`,
           );
         }
 
@@ -352,7 +389,7 @@ export function registerUtilityTools(
         if (constitution.includes(amendmentLogMarker)) {
           updatedConstitution = constitution.replace(
             amendmentLogMarker,
-            `${amendmentLogMarker}\n${amendmentRow}`
+            `${amendmentLogMarker}\n${amendmentRow}`,
           );
         } else {
           // Append to the end
@@ -364,17 +401,22 @@ export function registerUtilityTools(
         if (countRegex.test(updatedConstitution)) {
           updatedConstitution = updatedConstitution.replace(
             countRegex,
-            `amendment_count: ${nextNumber}`
+            `amendment_count: ${nextNumber}`,
           );
         } else {
           // Add amendment_count to frontmatter
           updatedConstitution = updatedConstitution.replace(
             /^(---\n)/m,
-            `---\namendment_count: ${nextNumber}\n`
+            `---\namendment_count: ${nextNumber}\n`,
           );
         }
 
-        await fileManager.writeSpecFile(feature.directory, "CONSTITUTION.md", updatedConstitution, force);
+        await fileManager.writeSpecFile(
+          feature.directory,
+          "CONSTITUTION.md",
+          updatedConstitution,
+          force,
+        );
 
         // Update state
         const state = await stateMachine.loadState(stateDir);
@@ -396,21 +438,35 @@ export function registerUtilityTools(
             if (lastSnapshot && lastSnapshot.score > 40) {
               const principles = intentDriftEngine.extractPrinciples(constitution);
               let specContent = "";
-              try { specContent = await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md"); } catch { /* ok */ }
+              try {
+                specContent = await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md");
+              } catch {
+                /* ok */
+              }
               let tasksContent = "";
-              try { tasksContent = await fileManager.readSpecFile(feature.directory, "TASKS.md"); } catch { /* ok */ }
-              const driftReport = intentDriftEngine.computeCoverage(principles, specContent, tasksContent);
+              try {
+                tasksContent = await fileManager.readSpecFile(feature.directory, "TASKS.md");
+              } catch {
+                /* ok */
+              }
+              const driftReport = intentDriftEngine.computeCoverage(
+                principles,
+                specContent,
+                tasksContent,
+              );
               driftAmendmentSuggestion = {
                 current_drift_score: lastSnapshot.score,
                 drift_label: driftReport.intent_drift_label,
                 orphaned_principles: driftReport.orphaned_principles.map((p) => p.heading),
-                recommended_actions: driftReport.orphaned_principles.map((p) =>
-                  `Add requirement referencing "${p.heading}" to SPECIFICATION.md`
+                recommended_actions: driftReport.orphaned_principles.map(
+                  (p) => `Add requirement referencing "${p.heading}" to SPECIFICATION.md`,
                 ),
                 note: "High intent drift detected. Consider adding requirements that address orphaned constitutional principles.",
               };
             }
-          } catch { /* non-critical */ }
+          } catch {
+            /* non-critical */
+          }
         }
 
         const result = {
@@ -419,18 +475,17 @@ export function registerUtilityTools(
           rationale,
           articles_affected,
           changes_description,
-          ...(driftAmendmentSuggestion ? { drift_amendment_suggestion: driftAmendmentSuggestion } : {}),
+          ...(driftAmendmentSuggestion
+            ? { drift_amendment_suggestion: driftAmendmentSuggestion }
+            : {}),
         };
 
         const enriched = await enrichResponse("sdd_amend", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
-        return {
-          content: [{ type: "text" as const, text: formatError("sdd_amend", error as Error) }],
-          isError: true,
-        };
+        return errorResult("sdd_amend", error);
       }
-    }
+    },
   );
 
   // ─── sdd_check_ecosystem ───
@@ -465,14 +520,16 @@ export function registerUtilityTools(
         total_tools: TOTAL_TOOLS,
         recommended_servers: ecosystem,
         explanation: `Specky v${VERSION} has ${TOTAL_TOOLS} tools that work standalone. For the full experience, ${ecosystem.length} external MCP servers are recommended. Each server unlocks additional integrations — none are required, but they transform Specky from a spec engine into a complete development platform.`,
-        next_steps: "Review the list above. Install the servers relevant to your workflow. GitHub MCP and Azure DevOps MCP are the most commonly used. MarkItDown MCP is recommended for document import (PDF/DOCX/PPTX).",
-        learning_note: "MCP (Model Context Protocol) allows AI clients to orchestrate between multiple servers. Specky produces structured payloads with routing_instructions that tell the AI client which external MCP server to call. This MCP-to-MCP pattern means Specky never needs API keys or credentials for external services — the AI client handles routing.",
+        next_steps:
+          "Review the list above. Install the servers relevant to your workflow. GitHub MCP and Azure DevOps MCP are the most commonly used. MarkItDown MCP is recommended for document import (PDF/DOCX/PPTX).",
+        learning_note:
+          "MCP (Model Context Protocol) allows AI clients to orchestrate between multiple servers. Specky produces structured payloads with routing_instructions that tell the AI client which external MCP server to call. This MCP-to-MCP pattern means Specky never needs API keys or credentials for external services — the AI client handles routing.",
       };
 
       const enriched = enrichStateless("sdd_check_ecosystem", result);
       return {
         content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }],
       };
-    }
+    },
   );
 }

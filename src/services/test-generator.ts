@@ -2,9 +2,12 @@
  * TestGenerator — Assembles executable tests from persisted requirement bindings.
  * Reads acceptance criteria and produces framework-specific test files.
  */
-import type { FileManager } from "./file-manager.js";
-import { currentDateString } from "../utils/runtime-context.js";
+
 import { extractRequirementIds } from "../utils/id-contracts.js";
+import { currentDateString } from "../utils/runtime-context.js";
+import { readSpecFileOrEmpty } from "../utils/safe-read.js";
+import { TRIVIAL_TEST_BODY_PATTERN } from "../utils/test-quality.js";
+import type { FileManager } from "./file-manager.js";
 
 export type TestFramework = "vitest" | "jest" | "playwright" | "pytest" | "junit" | "xunit";
 
@@ -35,13 +38,20 @@ export interface TestBinding {
  * Never returns an empty string or one that starts with a digit.
  */
 export function pascalIdentifier(s: string): string {
-  const words = s.replace(/[^a-zA-Z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
+  const words = s
+    .replace(/[^a-zA-Z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
   const pascal = words.map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("");
   if (pascal.length === 0) return "Feature";
   return /^\d/.test(pascal) ? `Feature${pascal}` : pascal;
 }
 
-const FRAMEWORK_CONFIG: Record<TestFramework, { fileBase: (featureName: string) => string; wrapper: (name: string, body: string) => string }> = {
+const FRAMEWORK_CONFIG: Record<
+  TestFramework,
+  { fileBase: (featureName: string) => string; wrapper: (name: string, body: string) => string }
+> = {
   vitest: {
     fileBase: (f) => `${f || "feature"}.test.ts`,
     wrapper: (name, body) => `describe("${name}", () => {\n${body}\n});`,
@@ -72,7 +82,7 @@ const FRAMEWORK_CONFIG: Record<TestFramework, { fileBase: (featureName: string) 
 };
 
 export class TestGenerator {
-  constructor(private fileManager: FileManager) { }
+  constructor(private fileManager: FileManager) {}
 
   async generate(
     featureDir: string,
@@ -81,7 +91,7 @@ export class TestGenerator {
     imports: string,
     bindings: TestBinding[],
   ): Promise<TestGenerationResult> {
-    const spec = await this.safeRead(featureDir, "SPECIFICATION.md");
+    const spec = await readSpecFileOrEmpty(this.fileManager, featureDir, "SPECIFICATION.md");
     const requirementIds = extractRequirementIds(spec);
     if (requirementIds.length === 0) {
       throw new Error(`No requirement IDs found in ${featureDir}/SPECIFICATION.md.`);
@@ -162,14 +172,11 @@ export class TestGenerator {
   extractRequirements(text: string): string[] {
     return text
       .split("\n")
-      .filter(l => l.match(/(?:shall|must)\s/i) && l.trim().length > 15)
-      .map(l => l.trim().replace(/^[-*#\d.)\s]+/, ""));
+      .filter((l) => l.match(/(?:shall|must)\s/i) && l.trim().length > 15)
+      .map((l) => l.trim().replace(/^[-*#\d.)\s]+/, ""));
   }
 
-  private buildBoundTests(
-    bindings: TestBinding[],
-    framework: TestFramework,
-  ): TestStub[] {
+  private buildBoundTests(bindings: TestBinding[], framework: TestFramework): TestStub[] {
     const usedNames = new Set<string>();
     return bindings.map((binding, i) => {
       const stubId = `TC-${String(i + 1).padStart(3, "0")}`;
@@ -189,7 +196,11 @@ export class TestGenerator {
     usedNames: Set<string>,
   ): string {
     const title = `${binding.requirement_id}: ${binding.test_name}`;
-    const safeTitle = title.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+    const safeTitle = title
+      .replace(/\\/g, "\\\\")
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, "\\n")
+      .replace(/\r/g, "\\r");
     switch (framework) {
       case "vitest":
       case "jest":
@@ -218,18 +229,25 @@ export class TestGenerator {
     const missing = requirementIds.filter((id) => !covered.has(id));
     const unknown = [...covered].filter((id) => !expected.has(id));
     if (missing.length > 0 || unknown.length > 0) {
-      throw new Error(`TDD bindings mismatch. Missing: ${missing.join(", ") || "none"}. Unknown: ${unknown.join(", ") || "none"}.`);
+      throw new Error(
+        `TDD bindings mismatch. Missing: ${missing.join(", ") || "none"}. Unknown: ${unknown.join(", ") || "none"}.`,
+      );
     }
     for (const binding of bindings) {
-      if (/(?:\/\/|#|\/\*|\[)\s*TODO\b|expect\(true\)|assert\s+True|assertTrue\(true\)|Assert\.True\(true\)|toBeTruthy\(\)/i.test(binding.body)) {
-        throw new Error(`TDD binding ${binding.requirement_id} contains a placeholder or trivial assertion.`);
+      if (TRIVIAL_TEST_BODY_PATTERN.test(binding.body)) {
+        throw new Error(
+          `TDD binding ${binding.requirement_id} contains a placeholder or trivial assertion.`,
+        );
       }
     }
   }
 
   private indent(body: string, spaces: number): string {
     const prefix = " ".repeat(spaces);
-    return body.split("\n").map((line) => `${prefix}${line}`).join("\n");
+    return body
+      .split("\n")
+      .map((line) => `${prefix}${line}`)
+      .join("\n");
   }
 
   /** Deduplicate generated identifiers — javac/C# reject duplicate members. */
@@ -244,10 +262,16 @@ export class TestGenerator {
     return candidate;
   }
 
-  private renderFile(stubs: TestStub[], framework: TestFramework, featureDir: string, imports: string): string {
+  private renderFile(
+    stubs: TestStub[],
+    framework: TestFramework,
+    featureDir: string,
+    imports: string,
+  ): string {
     const cfg = FRAMEWORK_CONFIG[framework];
-    const featureName = featureDir.replace(/.*\d{3}-/, "").replace(/[^a-zA-Z0-9 -]/g, "") || "Feature";
-    const body = stubs.map(s => s.test_code).join("\n\n");
+    const featureName =
+      featureDir.replace(/.*\d{3}-/, "").replace(/[^a-zA-Z0-9 -]/g, "") || "Feature";
+    const body = stubs.map((s) => s.test_code).join("\n\n");
     const date = currentDateString();
 
     if (framework === "pytest") {
@@ -272,29 +296,40 @@ export class TestGenerator {
   }
 
   private snakeCase(s: string): string {
-    return s.replace(/[^a-zA-Z0-9]+/g, "_").toLowerCase().slice(0, 60).replace(/^_+|_+$/g, "");
+    return s
+      .replace(/[^a-zA-Z0-9]+/g, "_")
+      .toLowerCase()
+      .slice(0, 60)
+      .replace(/^_+|_+$/g, "");
   }
 
   private camelCase(s: string): string {
-    const words = s.replace(/[^a-zA-Z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean);
+    const words = s
+      .replace(/[^a-zA-Z0-9]+/g, " ")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
     if (words.length === 0) return "";
-    const name = (words[0].toLowerCase() + words.slice(1).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("")).slice(0, 60);
+    const name = (
+      words[0].toLowerCase() +
+      words
+        .slice(1)
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join("")
+    ).slice(0, 60);
     return /^\d/.test(name) ? `test${name.charAt(0).toUpperCase()}${name.slice(1)}` : name;
   }
 
   private pascalCase(s: string): string {
-    const name = s.replace(/[^a-zA-Z0-9]+/g, " ").trim().split(/\s+/).filter(Boolean).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("").slice(0, 60);
+    const name = s
+      .replace(/[^a-zA-Z0-9]+/g, " ")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join("")
+      .slice(0, 60);
     return /^\d/.test(name) ? `Test${name}` : name;
-  }
-
-  private async safeRead(featureDir: string, file: string): Promise<string> {
-    try {
-      const parts = featureDir.split("/");
-      const specDir = parts.slice(0, -1).join("/") || ".specs";
-      return await this.fileManager.readSpecFile(specDir, `${parts[parts.length - 1]}/${file}`);
-    } catch {
-      return "";
-    }
   }
 
   // ── Test Verification ─────────────────────────────────────────────────
@@ -307,8 +342,8 @@ export class TestGenerator {
     featureDir: string,
     testResultsJson: string,
   ): Promise<TestVerificationResult> {
-    const spec = await this.safeRead(featureDir, "SPECIFICATION.md");
-    const reqIds = this.extractRequirementIds(spec);
+    const spec = await readSpecFileOrEmpty(this.fileManager, featureDir, "SPECIFICATION.md");
+    const reqIds = extractRequirementIds(spec);
 
     let testResults: Array<{ name: string; status: string }>;
     try {
@@ -334,8 +369,8 @@ export class TestGenerator {
       };
     }
 
-    const passedTests = testResults.filter(t => t.status === "passed" || t.status === "pass");
-    const failedTests = testResults.filter(t => t.status === "failed" || t.status === "fail");
+    const passedTests = testResults.filter((t) => t.status === "passed" || t.status === "pass");
+    const failedTests = testResults.filter((t) => t.status === "failed" || t.status === "fail");
 
     // Match: a requirement is "covered" if any test name contains its ID
     const covered: string[] = [];
@@ -343,22 +378,25 @@ export class TestGenerator {
     const matrix: Array<{ requirement: string; tests: string[]; status: string }> = [];
 
     for (const reqId of reqIds) {
-      const matchingTests = testResults.filter(t =>
-        t.name.includes(reqId) || t.name.toLowerCase().includes(reqId.toLowerCase()),
+      const matchingTests = testResults.filter(
+        (t) => t.name.includes(reqId) || t.name.toLowerCase().includes(reqId.toLowerCase()),
       );
       if (matchingTests.length > 0) {
         covered.push(reqId);
-        const allPassed = matchingTests.every(t => t.status === "passed" || t.status === "pass");
-        matrix.push({ requirement: reqId, tests: matchingTests.map(t => t.name), status: allPassed ? "covered" : "failing" });
+        const allPassed = matchingTests.every((t) => t.status === "passed" || t.status === "pass");
+        matrix.push({
+          requirement: reqId,
+          tests: matchingTests.map((t) => t.name),
+          status: allPassed ? "covered" : "failing",
+        });
       } else {
         uncovered.push(reqId);
         matrix.push({ requirement: reqId, tests: [], status: "uncovered" });
       }
     }
 
-    const coveragePercentage = reqIds.length > 0
-      ? Math.round((covered.length / reqIds.length) * 100)
-      : 100;
+    const coveragePercentage =
+      reqIds.length > 0 ? Math.round((covered.length / reqIds.length) * 100) : 100;
 
     return {
       total_requirements: reqIds.length,
@@ -370,16 +408,6 @@ export class TestGenerator {
       failed_tests: failedTests.length,
       traceability_matrix: matrix,
     };
-  }
-
-  private extractRequirementIds(text: string): string[] {
-    const ids = new Set<string>();
-    const regex = /REQ-(?:[A-Z]+-)?\d{3}/g;
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-      ids.add(match[0]);
-    }
-    return [...ids].sort();
   }
 }
 

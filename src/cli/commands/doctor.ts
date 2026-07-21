@@ -7,21 +7,21 @@
  *  - .vscode/settings.json has Copilot MCP discovery enabled
  *  - .mcp.json / .vscode/mcp.json register the specky server
  */
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
+import { loadConfig } from "../../config.js";
 import { STATE_FILE, VERSION } from "../../constants.js";
 import { hashFile } from "../lib/asset-copier.js";
-import { detectIde } from "../lib/ide-detect.js";
 import type { HarnessTarget } from "../lib/harness/index.js";
 import type { AgentCapability } from "../lib/harness/types.js";
-import { targetPaths, type Targets } from "../lib/paths.js";
+import { detectIde } from "../lib/ide-detect.js";
+import { type Targets, targetPaths } from "../lib/paths.js";
 import {
+  type PermissionProfile,
   requiredClaudeAllows,
   SPECKY_REQUIRED_ALLOWS,
-  type PermissionProfile,
 } from "../lib/settings-merger.js";
 import { SPECKY_VSCODE_SETTINGS } from "../lib/vscode-settings-writer.js";
-import { loadConfig } from "../../config.js";
 
 export interface DoctorOptions {
   fix: boolean;
@@ -65,10 +65,7 @@ interface IntegrityReport {
   ok: string[];
 }
 
-function verifyIntegrity(
-  lock: InstallLock,
-  speckyRoot: string,
-): IntegrityReport {
+function verifyIntegrity(lock: InstallLock, speckyRoot: string): IntegrityReport {
   const missing: string[] = [];
   const modified: string[] = [];
   const ok: string[] = [];
@@ -125,10 +122,10 @@ function checkClaudePermissions(
   }
   const requiredAllows = installMeta?.capabilities
     ? requiredClaudeAllows(installMeta.capabilities, {
-      profile,
-      workspace,
-      integrations: installMeta.integrations,
-    })
+        profile,
+        workspace,
+        integrations: installMeta.integrations,
+      })
     : SPECKY_REQUIRED_ALLOWS;
   const allow = new Set(settings.permissions?.allow ?? []);
   const missing = requiredAllows.filter((a) => !allow.has(a));
@@ -152,9 +149,7 @@ function checkVscodeSettings(workspace: string): Check {
       detail: "settings.json missing — Copilot tools may not auto-discover MCP",
     };
   }
-  const missing = Object.keys(SPECKY_VSCODE_SETTINGS).filter(
-    (k) => !(k in settings),
-  );
+  const missing = Object.keys(SPECKY_VSCODE_SETTINGS).filter((k) => !(k in settings));
   return {
     name: "VS Code settings",
     pass: missing.length === 0,
@@ -182,9 +177,10 @@ function checkMcpRegistration(
     Boolean(cfg.mcp?.[serverName]);
   let detail = `${serverName} entry missing`;
   if (hasServer) {
-    detail = serverName === "github"
-      ? "GitHub MCP registered; authentication is managed by the target runtime"
-      : "specky server registered";
+    detail =
+      serverName === "github"
+        ? "GitHub MCP registered; authentication is managed by the target runtime"
+        : "specky server registered";
   }
   return {
     name: label,
@@ -253,7 +249,9 @@ function checkCursorRule(targets: Targets): Check {
   }
   const text = readFileSync(path, "utf8");
   const ruleLines = text.trimEnd().split(/\r?\n/);
-  const hasDescription = ruleLines.some((line) => line.startsWith("description:") && line.trim() !== "description:");
+  const hasDescription = ruleLines.some(
+    (line) => line.startsWith("description:") && line.trim() !== "description:",
+  );
   const hasAlwaysApply = ruleLines.some((line) => line.trim() === "alwaysApply: true");
   const hasSpeckyTitle = text.includes("Specky SDD");
   const noWorkspaceLeak = !text.includes("@workspace");
@@ -308,7 +306,11 @@ function checkClaudeHooksInSettings(targets: Targets, installTargets: HarnessTar
 
   const settings = readJsonSafe<{ hooks?: Record<string, unknown> }>(targets.claude.settingsJson);
   if (!settings?.hooks) {
-    return { name: "Claude hooks in settings", pass: false, detail: "no hooks key in .claude/settings.json" };
+    return {
+      name: "Claude hooks in settings",
+      pass: false,
+      detail: "no hooks key in .claude/settings.json",
+    };
   }
   const serialized = JSON.stringify(settings.hooks);
   const hasSpecky = serialized.includes("specky");
@@ -316,7 +318,8 @@ function checkClaudeHooksInSettings(targets: Targets, installTargets: HarnessTar
   return {
     name: "Claude hooks in settings",
     pass: hasSpecky && hasLifecycle,
-    detail: hasSpecky && hasLifecycle ? "Specky hooks registered" : "Specky hooks missing from settings",
+    detail:
+      hasSpecky && hasLifecycle ? "Specky hooks registered" : "Specky hooks missing from settings",
   };
 }
 
@@ -340,7 +343,10 @@ function checkAgentsMd(workspace: string): Check {
 
 function detectWorkspaceHarnessTargets(workspace: string): HarnessTarget[] {
   const found: HarnessTarget[] = [];
-  if (existsSync(resolve(workspace, ".cursor/mcp.json")) || existsSync(resolve(workspace, ".cursor/rules"))) {
+  if (
+    existsSync(resolve(workspace, ".cursor/mcp.json")) ||
+    existsSync(resolve(workspace, ".cursor/rules"))
+  ) {
     found.push("cursor");
   }
   if (existsSync(resolve(workspace, "opencode.json"))) {
@@ -359,43 +365,101 @@ function detectWorkspaceHarnessTargets(workspace: string): HarnessTarget[] {
 }
 
 function checkCursorHooksManifest(targets: Targets): Check {
-  const manifest = readJsonSafe<{ version?: number; hooks?: Record<string, unknown[]> }>(targets.cursor.hooksManifest);
+  const manifest = readJsonSafe<{ version?: number; hooks?: Record<string, unknown[]> }>(
+    targets.cursor.hooksManifest,
+  );
   if (!manifest) {
     return { name: "Cursor hooks.json", pass: false, detail: "missing or unreadable" };
   }
-  const hasMcpHooks = Boolean(manifest.hooks?.beforeMCPExecution?.length) && Boolean(manifest.hooks?.afterMCPExecution?.length);
+  const hasMcpHooks =
+    Boolean(manifest.hooks?.beforeMCPExecution?.length) &&
+    Boolean(manifest.hooks?.afterMCPExecution?.length);
   return {
     name: "Cursor hooks.json",
     pass: manifest.version === 1 && hasMcpHooks,
-    detail: manifest.version === 1 && hasMcpHooks ? "version 1 with MCP hooks" : "missing version 1 or MCP hooks",
+    detail:
+      manifest.version === 1 && hasMcpHooks
+        ? "version 1 with MCP hooks"
+        : "missing version 1 or MCP hooks",
   };
 }
 
-function checkCursorInstall(targets: Targets, workspace: string, installMeta: InstallMeta | null): Check[] {
+function checkCursorInstall(
+  targets: Targets,
+  workspace: string,
+  installMeta: InstallMeta | null,
+): Check[] {
   return [
     checkMcpRegistration(targets.cursor.mcp, ".cursor/mcp.json"),
     ...githubIntegrationCheck(targets.cursor.mcp, installMeta, "Cursor GitHub MCP"),
-    checkFileCount(targets.cursor.agents, 13, "Cursor agents", (name) => name.startsWith("specky-") && name.endsWith(".md")),
-    checkFileCount(targets.cursor.commands, 22, "Cursor commands", (name) => name.startsWith("specky-") && name.endsWith(".md")),
-    checkFileCount(targets.shared.agentSkills, 14, "Cursor skills", (name, path) => name.startsWith("specky-") && statSync(path).isDirectory()),
+    checkFileCount(
+      targets.cursor.agents,
+      13,
+      "Cursor agents",
+      (name) => name.startsWith("specky-") && name.endsWith(".md"),
+    ),
+    checkFileCount(
+      targets.cursor.commands,
+      22,
+      "Cursor commands",
+      (name) => name.startsWith("specky-") && name.endsWith(".md"),
+    ),
+    checkFileCount(
+      targets.shared.agentSkills,
+      14,
+      "Cursor skills",
+      (name, path) => name.startsWith("specky-") && statSync(path).isDirectory(),
+    ),
     checkCursorRule(targets),
     checkNoCopilotLeak(targets.cursor.root, workspace, "Cursor leakage"),
     checkCursorHooksManifest(targets),
-    checkFileCount(targets.cursor.hooksScripts, 16, "Cursor hook scripts", (name) => name.endsWith(".sh") || name.endsWith(".mjs")),
+    checkFileCount(
+      targets.cursor.hooksScripts,
+      16,
+      "Cursor hook scripts",
+      (name) => name.endsWith(".sh") || name.endsWith(".mjs"),
+    ),
     checkFileExists(targets.cursor.hooksRunner, "Cursor hook runner"),
   ];
 }
 
-function checkCopilotInstall(targets: Targets, workspace: string, installMeta: InstallMeta | null): Check[] {
+function checkCopilotInstall(
+  targets: Targets,
+  workspace: string,
+  installMeta: InstallMeta | null,
+): Check[] {
   return [
     checkMcpRegistration(targets.shared.vscodeMcp, ".vscode/mcp.json"),
     ...githubIntegrationCheck(targets.shared.vscodeMcp, installMeta, "Copilot GitHub MCP"),
     checkVscodeSettings(workspace),
-    checkFileCount(targets.copilot.agents, 13, "Copilot agents", (name) => name.startsWith("specky-") && name.endsWith(".md")),
-    checkFileCount(targets.copilot.prompts, 22, "Copilot prompts", (name) => name.startsWith("specky-") && name.endsWith(".md")),
-    checkFileCount(targets.copilot.skills, 14, "Copilot skills", (name, path) => name.startsWith("specky-") && statSync(path).isDirectory()),
-    checkFileExists(resolve(targets.copilot.instructions, "copilot-instructions.instructions.md"), "Copilot instruction"),
-    checkFileCount(targets.copilot.hooksScripts, 16, "Copilot hook scripts", (name) => name.endsWith(".sh") || name.endsWith(".mjs")),
+    checkFileCount(
+      targets.copilot.agents,
+      13,
+      "Copilot agents",
+      (name) => name.startsWith("specky-") && name.endsWith(".md"),
+    ),
+    checkFileCount(
+      targets.copilot.prompts,
+      22,
+      "Copilot prompts",
+      (name) => name.startsWith("specky-") && name.endsWith(".md"),
+    ),
+    checkFileCount(
+      targets.copilot.skills,
+      14,
+      "Copilot skills",
+      (name, path) => name.startsWith("specky-") && statSync(path).isDirectory(),
+    ),
+    checkFileExists(
+      resolve(targets.copilot.instructions, "copilot-instructions.instructions.md"),
+      "Copilot instruction",
+    ),
+    checkFileCount(
+      targets.copilot.hooksScripts,
+      16,
+      "Copilot hook scripts",
+      (name) => name.endsWith(".sh") || name.endsWith(".mjs"),
+    ),
     checkCopilotHooksManifest(targets),
   ];
 }
@@ -410,23 +474,62 @@ function checkClaudeInstall(
     checkMcpRegistration(targets.shared.claudeMcp, ".mcp.json"),
     ...githubIntegrationCheck(targets.shared.claudeMcp, installMeta, "Claude GitHub MCP"),
     checkClaudePermissions(targets, workspace, installMeta),
-    checkFileCount(targets.claude.agents, 13, "Claude agents", (name) => name.startsWith("specky-") && name.endsWith(".md")),
-    checkFileCount(targets.claude.commands, 22, "Claude commands", (name) => name.startsWith("specky-") && name.endsWith(".md")),
-    checkFileCount(targets.claude.skills, 14, "Claude skills", (name, path) => name.startsWith("specky-") && statSync(path).isDirectory()),
+    checkFileCount(
+      targets.claude.agents,
+      13,
+      "Claude agents",
+      (name) => name.startsWith("specky-") && name.endsWith(".md"),
+    ),
+    checkFileCount(
+      targets.claude.commands,
+      22,
+      "Claude commands",
+      (name) => name.startsWith("specky-") && name.endsWith(".md"),
+    ),
+    checkFileCount(
+      targets.claude.skills,
+      14,
+      "Claude skills",
+      (name, path) => name.startsWith("specky-") && statSync(path).isDirectory(),
+    ),
     checkFileExists(resolve(targets.claude.rules, "specky-sdd.md"), "Claude rule"),
     checkNoCopilotLeak(targets.claude.root, workspace, "Claude leakage"),
-    checkFileCount(targets.claude.hooksScripts, 16, "Claude hook scripts", (name) => name.endsWith(".sh") || name.endsWith(".mjs")),
+    checkFileCount(
+      targets.claude.hooksScripts,
+      16,
+      "Claude hook scripts",
+      (name) => name.endsWith(".sh") || name.endsWith(".mjs"),
+    ),
     checkClaudeHooksInSettings(targets, installTargets),
   ];
 }
 
-function checkOpenCodeInstall(targets: Targets, workspace: string, installMeta: InstallMeta | null): Check[] {
+function checkOpenCodeInstall(
+  targets: Targets,
+  workspace: string,
+  installMeta: InstallMeta | null,
+): Check[] {
   return [
     checkMcpRegistration(targets.opencode.mcp, "opencode.json"),
     ...githubIntegrationCheck(targets.opencode.mcp, installMeta, "OpenCode GitHub MCP"),
-    checkFileCount(targets.opencode.agents, 13, "OpenCode agents", (name) => name.startsWith("specky-") && name.endsWith(".md")),
-    checkFileCount(targets.opencode.commands, 22, "OpenCode commands", (name) => name.startsWith("specky-") && name.endsWith(".md")),
-    checkFileCount(targets.shared.agentSkills, 14, "OpenCode skills", (name, path) => name.startsWith("specky-") && statSync(path).isDirectory()),
+    checkFileCount(
+      targets.opencode.agents,
+      13,
+      "OpenCode agents",
+      (name) => name.startsWith("specky-") && name.endsWith(".md"),
+    ),
+    checkFileCount(
+      targets.opencode.commands,
+      22,
+      "OpenCode commands",
+      (name) => name.startsWith("specky-") && name.endsWith(".md"),
+    ),
+    checkFileCount(
+      targets.shared.agentSkills,
+      14,
+      "OpenCode skills",
+      (name, path) => name.startsWith("specky-") && statSync(path).isDirectory(),
+    ),
     checkNoCopilotLeak(targets.opencode.root, workspace, "OpenCode leakage"),
     checkAgentsMd(workspace),
   ];
@@ -619,9 +722,7 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
   const lock = JSON.parse(readFileSync(lockPath, "utf8")) as InstallLock;
   const installMeta = loadInstallMeta(installJsonPath);
   const resolvedTargets = resolveInstalledTargets(installMeta, workspace);
-  console.log(
-    `[specky doctor] Lock version: ${lock.version} (generated ${lock.generated_at})`,
-  );
+  console.log(`[specky doctor] Lock version: ${lock.version} (generated ${lock.generated_at})`);
   console.log(`[specky doctor] Files tracked: ${Object.keys(lock.files).length}`);
   console.log(
     `[specky doctor] Target scope: ${resolvedTargets.targets.join(", ")} (${resolvedTargets.detail})`,
@@ -637,16 +738,10 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
   const integrity = verifyIntegrity(lock, targets.shared.specky);
   printIntegrity(integrity, opts.verbose);
 
-  const checks = runConfigChecks(
-    targets,
-    workspace,
-    resolvedTargets.targets,
-    installMeta,
-  );
+  const checks = runConfigChecks(targets, workspace, resolvedTargets.targets, installMeta);
   printChecks(checks);
 
-  const integrityOk =
-    integrity.missing.length === 0 && integrity.modified.length === 0;
+  const integrityOk = integrity.missing.length === 0 && integrity.modified.length === 0;
   const configOk = checks.every((c) => c.pass);
 
   if (integrityOk && configOk) {
@@ -657,9 +752,7 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
 
   console.log("");
   if (opts.fix) {
-    console.log(
-      "[specky doctor] --fix requested — re-running init with --force to restore.",
-    );
+    console.log("[specky doctor] --fix requested — re-running init with --force to restore.");
     const init = await import("./init.js");
     return init.runInit({
       force: true,
@@ -669,8 +762,6 @@ export async function runDoctor(opts: DoctorOptions): Promise<number> {
     });
   }
 
-  console.log(
-    "[specky doctor] ⚠️  Repair: `npx specky init --force` or `npx specky doctor --fix`",
-  );
+  console.log("[specky doctor] ⚠️  Repair: `npx specky init --force` or `npx specky doctor --fix`");
   return 1;
 }

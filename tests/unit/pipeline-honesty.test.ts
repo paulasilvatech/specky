@@ -17,30 +17,38 @@
  * Tests drive the REAL tool handlers over an in-memory MCP transport against
  * temp workspaces — no mocking of the pipeline itself.
  */
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { afterEach, describe, expect, it } from "vitest";
-import { Phase } from "../../src/constants.js";
+import { join, resolve } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { afterEach, describe, expect, it } from "vitest";
+import { createWorkspaceConfig, serializeWorkspaceConfig } from "../../src/config.js";
+import { Phase } from "../../src/constants.js";
+import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
+import { AnalysisEngine } from "../../src/services/analysis-engine.js";
+import { AuditLogger } from "../../src/services/audit-logger.js";
+import { CodebaseScanner } from "../../src/services/codebase-scanner.js";
+import { EarsValidator } from "../../src/services/ears-validator.js";
+import { ExecutionContextResolver } from "../../src/services/execution-context.js";
 import { FileManager } from "../../src/services/file-manager.js";
+import { RbacEngine } from "../../src/services/rbac-engine.js";
 import { StateMachine } from "../../src/services/state-machine.js";
 import { TemplateEngine } from "../../src/services/template-engine.js";
-import { EarsValidator } from "../../src/services/ears-validator.js";
-import { CodebaseScanner } from "../../src/services/codebase-scanner.js";
 import { TranscriptParser } from "../../src/services/transcript-parser.js";
-import { AnalysisEngine } from "../../src/services/analysis-engine.js";
 import { registerPipelineTools } from "../../src/tools/pipeline.js";
-import { registerUtilityTools } from "../../src/tools/utility.js";
-import { registerTranscriptTools } from "../../src/tools/transcript.js";
-import { AuditLogger } from "../../src/services/audit-logger.js";
-import { RbacEngine } from "../../src/services/rbac-engine.js";
-import { ExecutionContextResolver } from "../../src/services/execution-context.js";
 import { installToolEnforcement } from "../../src/tools/tool-enforcement.js";
-import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
-import { createWorkspaceConfig, serializeWorkspaceConfig } from "../../src/config.js";
+import { registerTranscriptTools } from "../../src/tools/transcript.js";
+import { registerUtilityTools } from "../../src/tools/utility.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 // The built-in template dir resolves relative to dist/; when running from
@@ -70,18 +78,28 @@ const SERVICE_DESIGN = {
   type: "service" as const,
   protocols: "HTTPS JSON requests from the order service with a versioned event envelope.",
   dependencies: "PostgreSQL owns durable notification state; the email provider owns delivery.",
-  failure_modes: "Timeouts use bounded retries and idempotency keys; exhausted delivery is quarantined.",
-  operability: "The service deploys independently with health probes, autoscaling and rollback criteria.",
-  observability: "Traces correlate order events to delivery attempts; alerts identify queue and provider failures.",
+  failure_modes:
+    "Timeouts use bounded retries and idempotency keys; exhausted delivery is quarantined.",
+  operability:
+    "The service deploys independently with health probes, autoscaling and rollback criteria.",
+  observability:
+    "Traces correlate order events to delivery attempts; alerts identify queue and provider failures.",
 };
 const TRANSCRIPT_CONSTITUTION = {
   author: "Notification platform team",
-  description: "Source-backed charter for the notification service discussed in the planning transcript.",
+  description:
+    "Source-backed charter for the notification service discussed in the planning transcript.",
   license: "MIT",
   scope_in: "Order-status email notifications and retention evidence",
   scope_out: "SMS, push notifications, and marketing campaigns",
-  principles: ["Trace every requirement to a transcript quote", "Keep delivery behavior measurable"],
-  constraints: ["Email delivery occurs within five minutes", "Notification evidence is retained for thirty days"],
+  principles: [
+    "Trace every requirement to a transcript quote",
+    "Keep delivery behavior measurable",
+  ],
+  constraints: [
+    "Email delivery occurs within five minutes",
+    "Notification evidence is retained for thirty days",
+  ],
 };
 const TRANSCRIPT_REQUIREMENTS = [
   {
@@ -102,44 +120,61 @@ const TRANSCRIPT_REQUIREMENTS = [
   },
 ];
 const TRANSCRIPT_ARCHITECTURE = {
-  architecture_overview: "An independently deployed notification service consumes order changes and sends email.",
-  system_context: "The order service publishes status changes; operators inspect delivery evidence.",
-  container_architecture: "A notification worker, PostgreSQL database, and email provider form the runtime boundary.",
-  component_design: "EventConsumer validates changes, NotificationService sends mail, and EvidenceRepository stores outcomes.",
-  code_level_design: "Typed interfaces isolate the event consumer, mail adapter, and evidence repository.",
-  data_models: "NotificationEvidence contains order ID, status, recipient, delivery timestamp, and expiry timestamp.",
-  infrastructure: "The worker scales from queue depth and uses managed PostgreSQL with encrypted backups.",
-  security_architecture: "Managed identity protects dependencies; TLS protects events and email-provider calls.",
-  error_handling: "Idempotency prevents duplicate mail; bounded retries quarantine exhausted deliveries.",
+  architecture_overview:
+    "An independently deployed notification service consumes order changes and sends email.",
+  system_context:
+    "The order service publishes status changes; operators inspect delivery evidence.",
+  container_architecture:
+    "A notification worker, PostgreSQL database, and email provider form the runtime boundary.",
+  component_design:
+    "EventConsumer validates changes, NotificationService sends mail, and EvidenceRepository stores outcomes.",
+  code_level_design:
+    "Typed interfaces isolate the event consumer, mail adapter, and evidence repository.",
+  data_models:
+    "NotificationEvidence contains order ID, status, recipient, delivery timestamp, and expiry timestamp.",
+  infrastructure:
+    "The worker scales from queue depth and uses managed PostgreSQL with encrypted backups.",
+  security_architecture:
+    "Managed identity protects dependencies; TLS protects events and email-provider calls.",
+  error_handling:
+    "Idempotency prevents duplicate mail; bounded retries quarantine exhausted deliveries.",
   cross_cutting: "Trace IDs, delivery metrics, structured logs, and retention jobs are mandatory.",
   workload_design: SERVICE_DESIGN,
-  mermaid_diagrams: [{
-    title: "Notification flow",
-    type: "sequenceDiagram",
-    code: "sequenceDiagram\nOrder->>Notifier: status changed\nNotifier->>Email: send\nNotifier->>DB: store evidence",
-  }],
-  adrs: [{
-    title: "Persist delivery evidence",
-    decision: "Store notification delivery evidence in PostgreSQL.",
-    rationale: "Operators require queryable retention evidence for thirty days.",
-    consequences: "A scheduled retention job must remove expired evidence deterministically.",
-  }],
+  mermaid_diagrams: [
+    {
+      title: "Notification flow",
+      type: "sequenceDiagram",
+      code: "sequenceDiagram\nOrder->>Notifier: status changed\nNotifier->>Email: send\nNotifier->>DB: store evidence",
+    },
+  ],
+  adrs: [
+    {
+      title: "Persist delivery evidence",
+      decision: "Store notification delivery evidence in PostgreSQL.",
+      rationale: "Operators require queryable retention evidence for thirty days.",
+      consequences: "A scheduled retention job must remove expired evidence deterministically.",
+    },
+  ],
   api_contracts: [],
 };
-const TRANSCRIPT_TASKS = [{
-  id: "T-001",
-  title: "Implement order notification delivery",
-  description: "Consume order status changes and send one idempotent email notification.",
-  effort: "M" as const,
-  dependencies: [],
-  parallel: false,
-  traces_to: ["REQ-FUNC-001"],
-}];
-const TRANSCRIPT_GATES = [{
-  id: "G-001",
-  check: "Review notification timing and idempotency evidence before implementation.",
-  constitution_article: "Keep delivery behavior measurable",
-}];
+const TRANSCRIPT_TASKS = [
+  {
+    id: "T-001",
+    title: "Implement order notification delivery",
+    description: "Consume order status changes and send one idempotent email notification.",
+    effort: "M" as const,
+    dependencies: [],
+    parallel: false,
+    traces_to: ["REQ-FUNC-001"],
+  },
+];
+const TRANSCRIPT_GATES = [
+  {
+    id: "G-001",
+    check: "Review notification timing and idempotency evidence before implementation.",
+    constitution_article: "Keep delivery behavior measurable",
+  },
+];
 
 function initInput(projectName: string): Record<string, unknown> {
   return { project_name: projectName, ...FEATURE_INPUT, use_case: USE_CASE };
@@ -184,7 +219,14 @@ async function buildHarness(workspace: string): Promise<Harness> {
   });
   registerPipelineTools(server, fileManager, stateMachine, templateEngine, earsValidator);
   registerUtilityTools(server, fileManager, stateMachine, templateEngine, codebaseScanner);
-  registerTranscriptTools(server, fileManager, stateMachine, templateEngine, earsValidator, transcriptParser);
+  registerTranscriptTools(
+    server,
+    fileManager,
+    stateMachine,
+    templateEngine,
+    earsValidator,
+    transcriptParser,
+  );
 
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const client = new Client({ name: "pipeline-honesty", version: "0.0.0" });
@@ -230,7 +272,8 @@ describe("pipeline honesty regressions", () => {
 
   afterEach(async () => {
     for (const close of cleanups.splice(0)) await close();
-    for (const ws of workspaces.splice(0)) rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    for (const ws of workspaces.splice(0))
+      rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   // ── Fix 1: sdd_auto_pipeline computes its gate with the real engine ──
@@ -322,10 +365,12 @@ describe("pipeline honesty regressions", () => {
       ...FEATURE_INPUT,
       use_case: TRANSCRIPT_USE_CASE,
       constitution: TRANSCRIPT_CONSTITUTION,
-      requirements: [{
-        ...TRANSCRIPT_REQUIREMENTS[0],
-        source_quote: "This sentence does not exist in the transcript",
-      }],
+      requirements: [
+        {
+          ...TRANSCRIPT_REQUIREMENTS[0],
+          source_quote: "This sentence does not exist in the transcript",
+        },
+      ],
       architecture: TRANSCRIPT_ARCHITECTURE,
       tasks: TRANSCRIPT_TASKS,
       pre_impl_gates: TRANSCRIPT_GATES,
@@ -341,7 +386,10 @@ describe("pipeline honesty regressions", () => {
   it("batch transcript manifest mismatch fails before creating the specs root", async () => {
     const ws = makeWorkspace("specky-honesty-transcript-batch-");
     mkdirSync(join(ws, "transcripts"), { recursive: true });
-    writeFileSync(join(ws, "transcripts/meeting.txt"), "Paula: Send one email after an order changes.");
+    writeFileSync(
+      join(ws, "transcripts/meeting.txt"),
+      "Paula: Send one email after an order changes.",
+    );
     const h = await buildHarness(ws);
     cleanups.push(h.close);
 
@@ -349,16 +397,18 @@ describe("pipeline honesty regressions", () => {
       transcripts_dir: "transcripts",
       spec_dir: ".specs",
       use_case: TRANSCRIPT_USE_CASE,
-      features: [{
-        file_name: "other.txt",
-        project_name: "other",
-        feature_number: "001",
-        constitution: TRANSCRIPT_CONSTITUTION,
-        requirements: TRANSCRIPT_REQUIREMENTS,
-        architecture: TRANSCRIPT_ARCHITECTURE,
-        tasks: TRANSCRIPT_TASKS,
-        pre_impl_gates: TRANSCRIPT_GATES,
-      }],
+      features: [
+        {
+          file_name: "other.txt",
+          project_name: "other",
+          feature_number: "001",
+          constitution: TRANSCRIPT_CONSTITUTION,
+          requirements: TRANSCRIPT_REQUIREMENTS,
+          architecture: TRANSCRIPT_ARCHITECTURE,
+          tasks: TRANSCRIPT_TASKS,
+          pre_impl_gates: TRANSCRIPT_GATES,
+        },
+      ],
       force: false,
     });
 
@@ -379,7 +429,11 @@ describe("pipeline honesty regressions", () => {
     const statusAtInit = await callTool(h.client, "sdd_get_status", featureStatusInput());
     expect(statusAtInit.payload["current_phase"]).toBe("init");
 
-    await callTool(h.client, "sdd_discover", featureInput({ project_idea: "A status probe service" }));
+    await callTool(
+      h.client,
+      "sdd_discover",
+      featureInput({ project_idea: "A status probe service" }),
+    );
     const advance = await callTool(h.client, "sdd_advance_phase", featureInput());
     expect(advance.isError).toBe(false);
     expect(advance.payload["current_phase"]).toBe("specify");
@@ -471,35 +525,51 @@ describe("pipeline honesty regressions", () => {
       state.phases[Phase.Clarify] = { status: "completed" };
     });
 
-    const incomplete = await callTool(h.client, "sdd_write_design", featureInput({
-      architecture_overview: "A versioned request-processing service.",
-      mermaid_diagrams: [{ title: "Context", type: "flowchart", code: "flowchart LR\nA-->B" }],
-      workload_design: SERVICE_DESIGN,
-      force: false,
-    }));
+    const incomplete = await callTool(
+      h.client,
+      "sdd_write_design",
+      featureInput({
+        architecture_overview: "A versioned request-processing service.",
+        mermaid_diagrams: [{ title: "Context", type: "flowchart", code: "flowchart LR\nA-->B" }],
+        workload_design: SERVICE_DESIGN,
+        force: false,
+      }),
+    );
     expect(incomplete.isError).toBe(true);
 
-    const complete = await callTool(h.client, "sdd_write_design", featureInput({
-      architecture_overview: "A versioned request-processing service with owned boundaries.",
-      mermaid_diagrams: [{ title: "Context", type: "flowchart", code: "flowchart LR\nA-->B" }],
-      workload_design: SERVICE_DESIGN,
-      adrs: [{
-        title: "Use synchronous HTTPS",
-        decision: "Expose versioned HTTPS JSON operations.",
-        rationale: "Named callers require request-response semantics.",
-        consequences: "Timeout and retry budgets become public behavior.",
-      }],
-      system_context: "Order clients call the service; identity and telemetry systems are external.",
-      container_architecture: "One API container owns request processing and one PostgreSQL database owns state.",
-      component_design: "RequestController validates input and ProcessingService applies REQ-CORE-001.",
-      code_level_design: "RequestController depends on ProcessingService through a typed interface.",
-      data_models: "RequestRecord stores request ID, status, timestamps and idempotency key.",
-      infrastructure: "The container is deployed with health probes, autoscaling and a managed database.",
-      security_architecture: "OAuth tokens authorize operations; TLS and managed identity protect boundaries.",
-      error_handling: "Typed errors map validation, dependency timeout and conflict outcomes.",
-      cross_cutting: "Trace IDs, structured logs, metrics and configuration are mandatory.",
-      force: false,
-    }));
+    const complete = await callTool(
+      h.client,
+      "sdd_write_design",
+      featureInput({
+        architecture_overview: "A versioned request-processing service with owned boundaries.",
+        mermaid_diagrams: [{ title: "Context", type: "flowchart", code: "flowchart LR\nA-->B" }],
+        workload_design: SERVICE_DESIGN,
+        adrs: [
+          {
+            title: "Use synchronous HTTPS",
+            decision: "Expose versioned HTTPS JSON operations.",
+            rationale: "Named callers require request-response semantics.",
+            consequences: "Timeout and retry budgets become public behavior.",
+          },
+        ],
+        system_context:
+          "Order clients call the service; identity and telemetry systems are external.",
+        container_architecture:
+          "One API container owns request processing and one PostgreSQL database owns state.",
+        component_design:
+          "RequestController validates input and ProcessingService applies REQ-CORE-001.",
+        code_level_design:
+          "RequestController depends on ProcessingService through a typed interface.",
+        data_models: "RequestRecord stores request ID, status, timestamps and idempotency key.",
+        infrastructure:
+          "The container is deployed with health probes, autoscaling and a managed database.",
+        security_architecture:
+          "OAuth tokens authorize operations; TLS and managed identity protect boundaries.",
+        error_handling: "Typed errors map validation, dependency timeout and conflict outcomes.",
+        cross_cutting: "Trace IDs, structured logs, metrics and configuration are mandatory.",
+        force: false,
+      }),
+    );
     expect(complete.isError).toBe(false);
     const design = readFileSync(join(ws, stateDir, "DESIGN.md"), "utf8");
     expect(design).toContain("## 13. Workload-Specific Design Contract");
@@ -591,7 +661,11 @@ describe("pipeline honesty regressions", () => {
     cleanups.push(h.close);
 
     await callTool(h.client, "sdd_init", initInput("no-lgtm"));
-    await callTool(h.client, "sdd_discover", featureInput({ project_idea: "Default behavior probe" }));
+    await callTool(
+      h.client,
+      "sdd_discover",
+      featureInput({ project_idea: "Default behavior probe" }),
+    );
     await callTool(h.client, "sdd_advance_phase", featureInput());
     await callTool(h.client, "sdd_write_spec", {
       ...FEATURE_INPUT,
@@ -683,17 +757,23 @@ describe("pipeline honesty regressions", () => {
 
     await callTool(h.client, "sdd_init", initInput("block-gate"));
     const featureDir = join(ws, ".specs/001-block-gate");
-    writeFileSync(join(featureDir, "SPECIFICATION.md"), [
-      "### REQ-CORE-001: (ubiquitous)",
-      "",
-      "The system shall be fast and user-friendly.",
-      "",
-      "**Acceptance Criteria:**",
-      "- It works well",
-      "",
-    ].join("\n"));
+    writeFileSync(
+      join(featureDir, "SPECIFICATION.md"),
+      [
+        "### REQ-CORE-001: (ubiquitous)",
+        "",
+        "The system shall be fast and user-friendly.",
+        "",
+        "**Acceptance Criteria:**",
+        "- It works well",
+        "",
+      ].join("\n"),
+    );
     writeFileSync(join(featureDir, "DESIGN.md"), "# Design\n");
-    writeFileSync(join(featureDir, "TASKS.md"), "# Tasks\n| T-001 | Do thing | | 1h | | REQ-CORE-001 |\n");
+    writeFileSync(
+      join(featureDir, "TASKS.md"),
+      "# Tasks\n| T-001 | Do thing | | 1h | | REQ-CORE-001 |\n",
+    );
 
     await h.stateMachine.mutateState(".specs/001-block-gate", (state) => {
       state.current_phase = Phase.Tasks;
@@ -702,7 +782,9 @@ describe("pipeline honesty regressions", () => {
 
     const analysis = await callTool(h.client, "sdd_run_analysis", featureInput({ force: false }));
     expect(analysis.isError).toBe(false);
-    expect((analysis.payload["gate_decision"] as { decision: string }).decision).not.toBe("APPROVE");
+    expect((analysis.payload["gate_decision"] as { decision: string }).decision).not.toBe(
+      "APPROVE",
+    );
 
     const state = await h.stateMachine.loadState(".specs/001-block-gate");
     expect(state.phases.analyze.status).not.toBe("completed");

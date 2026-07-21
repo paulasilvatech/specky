@@ -3,13 +3,13 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { formatError, truncate } from "./tool-result.js";
-import type { FileManager } from "../services/file-manager.js";
-import type { StateMachine } from "../services/state-machine.js";
-import type { PbtGenerator } from "../services/pbt-generator.js";
 import { generatePbtInputSchema } from "../schemas/pbt.js";
+import { requireCapabilityConfig, requireFeatureContext } from "../services/execution-context.js";
+import type { FileManager } from "../services/file-manager.js";
+import type { PbtGenerator } from "../services/pbt-generator.js";
+import type { StateMachine } from "../services/state-machine.js";
 import { enrichResponse } from "./response-builder.js";
-import { requireExecutionContext } from "../services/execution-context.js";
+import { errorResult, truncate } from "./tool-result.js";
 
 export function registerPbtTools(
   server: McpServer,
@@ -33,10 +33,10 @@ export function registerPbtTools(
     },
     async () => {
       try {
-        const context = requireExecutionContext("sdd_generate_pbt");
-        const feature = context.feature!;
-        const stateDir = context.stateDir!;
-        const tdd = context.state!.contract.capability_config.tdd!;
+        const context = requireFeatureContext("sdd_generate_pbt");
+        const feature = context.feature;
+        const stateDir = context.stateDir;
+        const tdd = requireCapabilityConfig(context.state.contract.capability_config, "tdd");
 
         const genResult = await pbtGenerator.generate(
           feature.directory,
@@ -48,12 +48,7 @@ export function registerPbtTools(
 
         const fileName = genResult.output_file.split("/").pop() || genResult.output_file;
         const dirPart = genResult.output_file.replace(/\/[^/]+$/, "");
-        await fileManager.writeSpecFile(
-          dirPart,
-          fileName,
-          genResult.content,
-          true,
-        );
+        await fileManager.writeSpecFile(dirPart, fileName, genResult.content, true);
 
         const traceability = genResult.properties.map((p) => ({
           prop_id: p.id,
@@ -84,20 +79,10 @@ export function registerPbtTools(
 
         const enriched = await enrichResponse("sdd_generate_pbt", result, stateMachine, stateDir);
         return {
-          content: [
-            { type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) },
-          ],
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
       } catch (error) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: formatError("sdd_generate_pbt", error as Error),
-            },
-          ],
-          isError: true,
-        };
+        return errorResult("sdd_generate_pbt", error);
       }
     },
   );

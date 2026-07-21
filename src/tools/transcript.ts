@@ -5,28 +5,51 @@
  * sdd_auto_pipeline: Parse transcript → run FULL pipeline → all 5 spec files written
  */
 
+import { basename, join } from "node:path";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { formatError, truncate } from "./tool-result.js";
-import { join } from "node:path";
 import { Phase } from "../constants.js";
+import { renderWorkloadDesign } from "../contracts/pipeline-profiles.js";
+import {
+  autoPipelineInputSchema,
+  batchTranscriptsInputSchema,
+  importTranscriptInputSchema,
+} from "../schemas/transcript.js";
+import { AnalysisEngine } from "../services/analysis-engine.js";
+import type { EarsValidator } from "../services/ears-validator.js";
+import { requireExecutionContext } from "../services/execution-context.js";
+import { FeaturePackageGenerator } from "../services/feature-package-generator.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TemplateEngine } from "../services/template-engine.js";
-import type { EarsValidator } from "../services/ears-validator.js";
 import type { TranscriptParser } from "../services/transcript-parser.js";
 import type { TranscriptAnalysis } from "../types.js";
-import { basename } from "node:path";
-import {
-  importTranscriptInputSchema,
-  autoPipelineInputSchema,
-  batchTranscriptsInputSchema,
-} from "../schemas/transcript.js";
-import { enrichResponse } from "./response-builder.js";
-import { FeaturePackageGenerator } from "../services/feature-package-generator.js";
-import { AnalysisEngine } from "../services/analysis-engine.js";
-import { requireExecutionContext } from "../services/execution-context.js";
-import { renderWorkloadDesign } from "../contracts/pipeline-profiles.js";
 import { artifactMetadata } from "../utils/artifact-metadata.js";
+import {
+  type DesignFormatting,
+  initializeFeatureState,
+  type RequirementSectionInput,
+  renderAcceptanceCriteriaTable,
+  renderRequirementSections,
+  type TasksFormatting,
+  writeConstitution,
+  writeDesign,
+  writeSpecification,
+  writeTasks,
+} from "./pipeline-writers.js";
+import { enrichResponse } from "./response-builder.js";
+import { errorResult, truncate } from "./tool-result.js";
+
+/** Transcript flows keep design evidence sections unterminated and render the no-API sentence for empty contract lists. */
+const TRANSCRIPT_DESIGN_FORMATTING: DesignFormatting = {
+  sectionTrailingNewline: false,
+  emptyApiListMeansNoApi: true,
+};
+
+/** Transcript flows use an ASCII dependency arrow and itemize per-task effort. */
+const TRANSCRIPT_TASKS_FORMATTING: TasksFormatting = {
+  dependencyGraphArrow: "->",
+  itemizedEffortSummary: true,
+};
 
 function transcriptDiscoveryContext(analysis: TranscriptAnalysis): string {
   const lines = [
@@ -48,21 +71,31 @@ function transcriptDiscoveryContext(analysis: TranscriptAnalysis): string {
 
 function validateExplicitFeatureContent(
   analysis: TranscriptAnalysis,
-  requirements: Array<{ id: string; text: string; source_quote: string; acceptance_criteria: string[] }>,
+  requirements: Array<{
+    id: string;
+    text: string;
+    source_quote: string;
+    acceptance_criteria: string[];
+  }>,
   tasks: Array<{ id: string; dependencies: string[]; traces_to: string[] }>,
   earsValidator: EarsValidator,
 ): void {
   const source = analysis.full_text.toLowerCase();
   const requirementIds = new Set<string>();
   for (const requirement of requirements) {
-    if (requirementIds.has(requirement.id)) throw new Error(`Duplicate requirement ID ${requirement.id}.`);
+    if (requirementIds.has(requirement.id))
+      throw new Error(`Duplicate requirement ID ${requirement.id}.`);
     requirementIds.add(requirement.id);
     if (!source.includes(requirement.source_quote.toLowerCase())) {
-      throw new Error(`Requirement ${requirement.id} source_quote is not present in the transcript.`);
+      throw new Error(
+        `Requirement ${requirement.id} source_quote is not present in the transcript.`,
+      );
     }
     const validation = earsValidator.validate(requirement.text);
     if (!validation.valid) {
-      throw new Error(`Requirement ${requirement.id} is not valid EARS: ${(validation.issues ?? []).join("; ")}.`);
+      throw new Error(
+        `Requirement ${requirement.id} is not valid EARS: ${(validation.issues ?? []).join("; ")}.`,
+      );
     }
     if (requirement.acceptance_criteria.length === 0) {
       throw new Error(`Requirement ${requirement.id} requires acceptance criteria.`);
@@ -74,40 +107,16 @@ function validateExplicitFeatureContent(
     const unknownRequirements = task.traces_to.filter((id) => !requirementIds.has(id));
     const unknownDependencies = task.dependencies.filter((id) => !taskIds.has(id));
     if (unknownRequirements.length > 0) {
-      throw new Error(`Task ${task.id} traces to unknown requirements: ${unknownRequirements.join(", ")}.`);
+      throw new Error(
+        `Task ${task.id} traces to unknown requirements: ${unknownRequirements.join(", ")}.`,
+      );
     }
     if (unknownDependencies.length > 0) {
-      throw new Error(`Task ${task.id} depends on unknown tasks: ${unknownDependencies.join(", ")}.`);
+      throw new Error(
+        `Task ${task.id} depends on unknown tasks: ${unknownDependencies.join(", ")}.`,
+      );
     }
   }
-}
-
-function replaceDesignEvidence(
-  content: string,
-  diagrams: Array<{ title: string; code: string }>,
-  adrs: Array<{ title: string; decision: string; rationale: string; consequences: string }>,
-): string {
-  const diagramContent = diagrams.map((diagram) =>
-    `### ${diagram.title}\n\n\`\`\`mermaid\n${diagram.code}\n\`\`\``
-  ).join("\n\n---\n\n");
-  const adrContent = adrs.map((adr, index) => [
-    `### ADR-${String(index + 1).padStart(3, "0")}: ${adr.title}`,
-    "",
-    `**Decision:** ${adr.decision}`,
-    "",
-    `**Rationale:** ${adr.rationale}`,
-    "",
-    `**Consequences:** ${adr.consequences}`,
-  ].join("\n")).join("\n\n---\n\n");
-  return content
-    .replace(
-      /## 5\. System Diagrams\n\n[\s\S]*?(?=\n---\n\n## 6)/,
-      `## 5. System Diagrams\n\n${diagramContent}`,
-    )
-    .replace(
-      /## 10\. Architecture Decision Records\n\n[\s\S]*?(?=\n---\n\n## 11)/,
-      `## 10. Architecture Decision Records\n\n${adrContent}`,
-    );
 }
 
 export function registerTranscriptTools(
@@ -116,7 +125,7 @@ export function registerTranscriptTools(
   stateMachine: StateMachine,
   templateEngine: TemplateEngine,
   earsValidator: EarsValidator,
-  transcriptParser: TranscriptParser
+  transcriptParser: TranscriptParser,
 ): void {
   const featurePackageGenerator = new FeaturePackageGenerator(fileManager);
   const analysisEngine = new AnalysisEngine(earsValidator);
@@ -147,7 +156,7 @@ export function registerTranscriptTools(
           analysis = await transcriptParser.parseFile(file_path);
         } else {
           throw new Error(
-            "Provide either file_path or raw_text.\n→ Fix: Set file_path to transcript location, or paste text in raw_text."
+            "Provide either file_path or raw_text.\n→ Fix: Set file_path to transcript location, or paste text in raw_text.",
           );
         }
 
@@ -184,24 +193,19 @@ export function registerTranscriptTools(
           tip: "You can also call sdd_auto_pipeline directly with the same file_path for a fully automated flow.",
         };
 
-        const enriched = await enrichResponse("sdd_import_transcript", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse(
+          "sdd_import_transcript",
+          result,
+          stateMachine,
+          spec_dir,
+        );
         return {
-          content: [
-            { type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) },
-          ],
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
       } catch (error) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: formatError("sdd_import_transcript", error as Error),
-            },
-          ],
-          isError: true,
-        };
+        return errorResult("sdd_import_transcript", error);
       }
-    }
+    },
   );
 
   // ─── sdd_auto_pipeline ───
@@ -219,7 +223,20 @@ export function registerTranscriptTools(
         openWorldHint: false,
       },
     },
-    async ({ file_path, raw_text, project_name, feature_number, constitution, requirements, architecture, tasks, pre_impl_gates, format, spec_dir, force }) => {
+    async ({
+      file_path,
+      raw_text,
+      project_name,
+      feature_number,
+      constitution,
+      requirements,
+      architecture,
+      tasks,
+      pre_impl_gates,
+      format,
+      spec_dir,
+      force,
+    }) => {
       try {
         // ── Step 1: Parse transcript ──
         console.error(`[specky] Auto-pipeline: parsing transcript...`);
@@ -232,66 +249,62 @@ export function registerTranscriptTools(
           analysis = await transcriptParser.parseFile(file_path);
         } else {
           throw new Error(
-            "Provide either file_path or raw_text.\n→ Fix: Set file_path to transcript location, or paste text in raw_text."
+            "Provide either file_path or raw_text.\n→ Fix: Set file_path to transcript location, or paste text in raw_text.",
           );
         }
 
         const featureDir = join(spec_dir, `${feature_number}-${project_name}`);
         const contract = requireExecutionContext("sdd_auto_pipeline").requestedContract!;
         if (contract.execution_mode !== "full") {
-          throw new Error(`sdd_auto_pipeline requires a full execution-mode contract; received ${contract.id}.`);
+          throw new Error(
+            `sdd_auto_pipeline requires a full execution-mode contract; received ${contract.id}.`,
+          );
         }
         validateExplicitFeatureContent(analysis, requirements, tasks, earsValidator);
-        const workloadDesign = renderWorkloadDesign(contract.workload, architecture.workload_design);
+        const workloadDesign = renderWorkloadDesign(
+          contract.workload,
+          architecture.workload_design,
+        );
         if (contract.workload === "api" && architecture.api_contracts.length === 0) {
-          throw new Error("API transcript orchestration requires at least one explicit API contract.");
+          throw new Error(
+            "API transcript orchestration requires at least one explicit API contract.",
+          );
         }
         const existing = (await fileManager.listFeatures(spec_dir)).find(
           (feature) => feature.number === feature_number,
         );
-        if (existing) throw new Error(`Feature number ${feature_number} is already assigned to ${existing.directory}.`);
+        if (existing)
+          throw new Error(
+            `Feature number ${feature_number} is already assigned to ${existing.directory}.`,
+          );
         const filesCreated: string[] = [];
 
         // ── Step 2: Create CONSTITUTION.md ──
         console.error(`[specky] Auto-pipeline: writing CONSTITUTION.md...`);
         await fileManager.ensureSpecDir(spec_dir);
 
-        const constitutionContent = await templateEngine.renderWithFrontmatter(
-          "constitution",
-          {
-            ...artifactMetadata({ version: "1.0.0", author: "sdd_auto_pipeline", status: "Active" }),
-            title: `${project_name} — Constitution`,
-            feature_id: `${feature_number}-${project_name}`,
-            project_name,
-            author: constitution.author,
-            principles: constitution.principles,
-            constraints: constitution.constraints,
-            description: constitution.description,
-            license: constitution.license,
-            scope_in: constitution.scope_in,
-            scope_out: constitution.scope_out,
-          }
-        );
-
-        await fileManager.writeSpecFile(featureDir, "CONSTITUTION.md", constitutionContent, force);
+        await writeConstitution(fileManager, templateEngine, {
+          featureDir,
+          projectName: project_name,
+          featureNumber: feature_number,
+          toolName: "sdd_auto_pipeline",
+          constitution,
+          force,
+        });
         filesCreated.push("CONSTITUTION.md");
 
         // Initialize state and advance through phases properly
-        const state = stateMachine.createFeatureState({
+        await initializeFeatureState(stateMachine, {
+          featureDir,
           projectName: project_name,
-          feature: { number: feature_number, name: project_name, directory: featureDir },
+          featureNumber: feature_number,
           contract,
+          useStateLock: false,
         });
-        state.phases[Phase.Init] = {
-          status: "completed",
-          started_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-        };
-        await stateMachine.saveState(featureDir, state);
         // Advance Init → Discover
         await stateMachine.advancePhase(featureDir);
 
-        const earsRequirements: GeneratedRequirement[] = requirements.map((requirement) => ({
+        const earsRequirements: RequirementSectionInput[] = requirements.map((requirement) => ({
           id: requirement.id,
           title: requirement.title,
           pattern: requirement.ears_pattern,
@@ -302,96 +315,61 @@ export function registerTranscriptTools(
 
         // ── Step 4: Write SPECIFICATION.md ──
         console.error(`[specky] Auto-pipeline: writing SPECIFICATION.md...`);
-        const reqSections = earsRequirements
-          .map((req) => {
-            return [
-              `### ${req.id}: ${req.title} (${req.pattern})`,
-              "",
-              req.text,
-              "",
-              "**Acceptance Criteria:**",
-              ...req.acceptance_criteria.map((ac) => `- ${ac}`),
-              "",
-              `**Source:** ${req.source}`,
-              "",
-              "---",
-              "",
-            ].join("\n");
-          })
-          .join("\n");
+        const specScores = `${earsRequirements.length}/${earsRequirements.length}`;
+        const { content: specContent } = await writeSpecification(fileManager, templateEngine, {
+          featureDir,
+          projectName: project_name,
+          featureNumber: feature_number,
+          toolName: "sdd_auto_pipeline",
+          discoveryContext: transcriptDiscoveryContext(analysis),
+          requirementsCore: renderRequirementSections(earsRequirements, earsValidator),
+          requirementsFunctional: "",
+          requirementsNonfunctional: "",
+          acceptanceCriteriaTable: renderAcceptanceCriteriaTable(earsRequirements),
+          scores: {
+            ears_compliance: specScores,
+            testability_score: specScores,
+            traceability_score: specScores,
+            uniqueness_score: specScores,
+          },
+          force,
+        });
 
-        const acTable = earsRequirements
-          .map(
-            (req) =>
-              `| ${req.id} | ${req.text.slice(0, 60)}... | Acceptance test |`
-          )
-          .join("\n");
-
-        const specContent = await templateEngine.renderWithFrontmatter(
-          "specification",
-          {
-            ...artifactMetadata({ version: "1.0.0", author: "sdd_auto_pipeline", status: "Draft" }),
-            title: `${project_name} — Specification`,
-            feature_id: `${feature_number}-${project_name}`,
-            project_name,
-            discovery_context: transcriptDiscoveryContext(analysis),
-            requirements_core: reqSections,
-            requirements_functional: "",
-            requirements_nonfunctional: "",
-            acceptance_criteria_table: acTable,
-            ears_compliance: `${earsRequirements.length}/${earsRequirements.length}`,
-            testability_score: `${earsRequirements.length}/${earsRequirements.length}`,
-            traceability_score: `${earsRequirements.length}/${earsRequirements.length}`,
-            uniqueness_score: `${earsRequirements.length}/${earsRequirements.length}`,
-          }
-        );
-
-        await fileManager.writeSpecFile(featureDir, "SPECIFICATION.md", specContent, force);
         filesCreated.push("SPECIFICATION.md");
         // Advance Discover → Specify → Clarify
         await stateMachine.recordPhaseComplete(featureDir, Phase.Discover);
-        await stateMachine.advancePhase(featureDir);  // Discover → Specify
+        await stateMachine.advancePhase(featureDir); // Discover → Specify
         await stateMachine.recordPhaseComplete(featureDir, Phase.Specify);
-        await stateMachine.advancePhase(featureDir);  // Specify → Clarify
+        await stateMachine.advancePhase(featureDir); // Specify → Clarify
         await stateMachine.recordPhaseComplete(featureDir, Phase.Clarify);
 
         // ── Step 5: Write DESIGN.md ──
         console.error(`[specky] Auto-pipeline: writing DESIGN.md...`);
-        const apiContent = architecture.api_contracts.length > 0
-          ? architecture.api_contracts.map((api) => [
-            `### ${api.method} ${api.endpoint}`,
-            "",
-            api.description,
-            "",
-            `**Request:** ${api.request}`,
-            "",
-            `**Response:** ${api.response}`,
-          ].join("\n")).join("\n\n---\n\n")
-          : "No network API is exposed by this workload contract.";
-        let designContent = await templateEngine.renderWithFrontmatter("design", {
-          ...artifactMetadata({ version: "1.0.0", author: "sdd_auto_pipeline", status: "Draft" }),
-          title: `${project_name} — Design`,
-          feature_id: `${feature_number}-${project_name}`,
-          project_name,
+        const { content: designContent } = await writeDesign(fileManager, templateEngine, {
+          featureDir,
+          projectName: project_name,
+          featureNumber: feature_number,
+          toolName: "sdd_auto_pipeline",
           architecture_overview: architecture.architecture_overview,
           system_context: architecture.system_context,
           container_architecture: architecture.container_architecture,
-          diagrams: architecture.mermaid_diagrams.map((diagram) => diagram.title),
-          adrs: architecture.adrs.map((adr) => adr.title),
-          api_contracts: apiContent,
-          data_models: architecture.data_models,
-          error_handling: architecture.error_handling,
           component_design: architecture.component_design,
           code_level_design: architecture.code_level_design,
-          security_architecture: architecture.security_architecture,
+          data_models: architecture.data_models,
           infrastructure: architecture.infrastructure,
+          security_architecture: architecture.security_architecture,
+          error_handling: architecture.error_handling,
           cross_cutting: architecture.cross_cutting,
-          workload_design: workloadDesign,
-          requirement_references: requirements.map((requirement) => `- ${requirement.id}`).join("\n"),
+          workloadDesign,
+          requirementReferences: requirements
+            .map((requirement) => `- ${requirement.id}`)
+            .join("\n"),
+          diagrams: architecture.mermaid_diagrams,
+          adrs: architecture.adrs,
+          apiContracts: architecture.api_contracts,
+          force,
+          formatting: TRANSCRIPT_DESIGN_FORMATTING,
         });
-        designContent = replaceDesignEvidence(designContent, architecture.mermaid_diagrams, architecture.adrs);
-
-        await fileManager.writeSpecFile(featureDir, "DESIGN.md", designContent, force);
         filesCreated.push("DESIGN.md");
         // Advance Clarify → Design
         await stateMachine.advancePhase(featureDir);
@@ -399,32 +377,16 @@ export function registerTranscriptTools(
 
         // ── Step 6: Write TASKS.md ──
         console.error(`[specky] Auto-pipeline: writing TASKS.md...`);
-        const taskTable = tasks
-          .map(
-            (t) =>
-              `| ${t.id} | ${t.title} | ${t.parallel ? "[P]" : ""} | ${t.effort} | ${t.dependencies.join(", ") || "—"} | ${t.traces_to.join(", ")} |`
-          )
-          .join("\n");
-
-        const gates = pre_impl_gates.map(
-          (gate) => `**Gate ${gate.id}:** ${gate.check} (${gate.constitution_article})`,
-        );
-
-        const tasksContent = await templateEngine.renderWithFrontmatter("tasks", {
-          ...artifactMetadata({ version: "1.0.0", author: "sdd_auto_pipeline", status: "Draft" }),
-          title: `${project_name} — Tasks`,
-          feature_id: `${feature_number}-${project_name}`,
-          project_name,
-          gates,
-          task_table: taskTable,
-          dependency_graph: tasks.map((t) => `${t.id}: ${t.title} -> [${t.dependencies.join(", ")}]`).join("\n"),
-          effort_summary: tasks.map((t) => `${t.id}: ${t.effort}`).join("; "),
-          total_tasks: String(tasks.length),
-          parallel_tasks: String(tasks.filter((t) => t.parallel).length),
-          total_effort: `${tasks.length} tasks`,
+        const { content: tasksContent } = await writeTasks(fileManager, templateEngine, {
+          featureDir,
+          projectName: project_name,
+          featureNumber: feature_number,
+          toolName: "sdd_auto_pipeline",
+          tasks,
+          gates: pre_impl_gates,
+          force,
+          formatting: TRANSCRIPT_TASKS_FORMATTING,
         });
-
-        await fileManager.writeSpecFile(featureDir, "TASKS.md", tasksContent, force);
         filesCreated.push("TASKS.md");
         // Advance Design → Tasks
         await stateMachine.advancePhase(featureDir);
@@ -447,13 +409,18 @@ export function registerTranscriptTools(
         });
         let reportedGaps = gate.gaps;
         if (reportedGaps.length === 0) {
-          reportedGaps = analysis.open_questions.length > 0
-            ? analysis.open_questions.map((question) => `Open question from meeting: ${question}`)
-            : ["No gaps — all requirements mapped through design and tasks"];
+          reportedGaps =
+            analysis.open_questions.length > 0
+              ? analysis.open_questions.map((question) => `Open question from meeting: ${question}`)
+              : ["No gaps — all requirements mapped through design and tasks"];
         }
 
         const analysisContent = await templateEngine.renderWithFrontmatter("analysis", {
-          ...artifactMetadata({ version: "1.0.0", author: "sdd_auto_pipeline", status: gate.decision }),
+          ...artifactMetadata({
+            version: "1.0.0",
+            author: "sdd_auto_pipeline",
+            status: gate.decision,
+          }),
           title: `${project_name} — Analysis`,
           feature_id: `${feature_number}-${project_name}`,
           project_name,
@@ -464,11 +431,12 @@ export function registerTranscriptTools(
           task_coverage: `${gate.taskCoverage}%`,
           test_coverage: "Pending implementation",
           gaps: reportedGaps,
-          recommendations: gate.gaps.length > 0
-            ? gate.gaps.map((gap) => `Remediate: ${gap}`)
-            : analysis.action_items.length > 0
-              ? analysis.action_items.map((action) => `Source action: ${action}`)
-              : ["No remediation is required by the current traceability analysis."],
+          recommendations:
+            gate.gaps.length > 0
+              ? gate.gaps.map((gap) => `Remediate: ${gap}`)
+              : analysis.action_items.length > 0
+                ? analysis.action_items.map((action) => `Source action: ${action}`)
+                : ["No remediation is required by the current traceability analysis."],
           ears_compliance: `${gate.earsCoverage}%`,
           ears_status: gate.earsCoverage === 100 ? "✅" : "❌",
           coverage_status: gate.coveragePercent >= 90 ? "✅" : "❌",
@@ -494,7 +462,7 @@ export function registerTranscriptTools(
         filesCreated.push(...featurePackage.created);
 
         // ── Step 9: Finalize state — advance Tasks → Analyze and set gate decision ──
-        await stateMachine.advancePhase(featureDir);  // Tasks → Analyze
+        await stateMachine.advancePhase(featureDir); // Tasks → Analyze
         await stateMachine.recordPhaseComplete(featureDir, Phase.Analyze);
 
         // Persist the COMPUTED gate decision — the state must carry the same
@@ -542,7 +510,9 @@ export function registerTranscriptTools(
           next_action: [
             ...(gate.decision === "APPROVE"
               ? []
-              : [`0. Gate is ${gate.decision} (${gate.coveragePercent}% coverage) — remediate the gaps in ANALYSIS.md, then re-run sdd_run_analysis`]),
+              : [
+                  `0. Gate is ${gate.decision} (${gate.coveragePercent}% coverage) — remediate the gaps in ANALYSIS.md, then re-run sdd_run_analysis`,
+                ]),
             "1. Review SPECIFICATION.md source quotes and acceptance criteria",
             "2. Review DESIGN.md diagrams, ADRs, and workload-specific contract",
             "3. Review TASKS.md dependency and requirement traceability",
@@ -551,24 +521,19 @@ export function registerTranscriptTools(
           ].join("\n"),
         };
 
-        const enriched = await enrichResponse("sdd_auto_pipeline", result, stateMachine, featureDir);
+        const enriched = await enrichResponse(
+          "sdd_auto_pipeline",
+          result,
+          stateMachine,
+          featureDir,
+        );
         return {
-          content: [
-            { type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) },
-          ],
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
       } catch (error) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: formatError("sdd_auto_pipeline", error as Error),
-            },
-          ],
-          isError: true,
-        };
+        return errorResult("sdd_auto_pipeline", error);
       }
-    }
+    },
   );
 
   // ─── sdd_batch_transcripts ───
@@ -590,7 +555,9 @@ export function registerTranscriptTools(
       try {
         const contract = requireExecutionContext("sdd_batch_transcripts").requestedContract!;
         if (contract.execution_mode !== "full") {
-          throw new Error(`sdd_batch_transcripts requires a full execution-mode contract; received ${contract.id}.`);
+          throw new Error(
+            `sdd_batch_transcripts requires a full execution-mode contract; received ${contract.id}.`,
+          );
         }
         console.error(`[specky] Batch: scanning ${transcripts_dir} for transcripts...`);
 
@@ -603,12 +570,16 @@ export function registerTranscriptTools(
             content: [
               {
                 type: "text" as const,
-                text: JSON.stringify({
-                  status: "no_transcripts_found",
-                  directory: transcripts_dir,
-                  message: `No transcript files found in "${transcripts_dir}". Expected files with extensions: ${extensions.join(", ")}`,
-                  fix: "Check the folder path. OneDrive paths may include spaces (e.g., 'OneDrive - Company/Meeting Transcripts').",
-                }, null, 2),
+                text: JSON.stringify(
+                  {
+                    status: "no_transcripts_found",
+                    directory: transcripts_dir,
+                    message: `No transcript files found in "${transcripts_dir}". Expected files with extensions: ${extensions.join(", ")}`,
+                    fix: "Check the folder path. OneDrive paths may include spaces (e.g., 'OneDrive - Company/Meeting Transcripts').",
+                  },
+                  null,
+                  2,
+                ),
               },
             ],
           };
@@ -616,14 +587,16 @@ export function registerTranscriptTools(
 
         const filesByName = new Map(files.map((filePath) => [basename(filePath), filePath]));
         const configuredNames = new Set(featureInputs.map((feature) => feature.file_name));
-        const missingConfigurations = [...filesByName.keys()].filter((name) => !configuredNames.has(name));
+        const missingConfigurations = [...filesByName.keys()].filter(
+          (name) => !configuredNames.has(name),
+        );
         const missingFiles = featureInputs
           .map((feature) => feature.file_name)
           .filter((name) => !filesByName.has(name));
         if (missingConfigurations.length > 0 || missingFiles.length > 0) {
           throw new Error(
             `Batch manifest mismatch. Unconfigured files: ${missingConfigurations.join(", ") || "none"}. ` +
-            `Missing files: ${missingFiles.join(", ") || "none"}.`,
+              `Missing files: ${missingFiles.join(", ") || "none"}.`,
           );
         }
 
@@ -637,30 +610,39 @@ export function registerTranscriptTools(
         if (duplicateNumbers.length > 0 || collisions.length > 0) {
           throw new Error(
             `Batch feature number conflict. Duplicates: ${[...new Set(duplicateNumbers)].join(", ") || "none"}. ` +
-            `Existing: ${collisions.join(", ") || "none"}.`,
+              `Existing: ${collisions.join(", ") || "none"}.`,
           );
         }
 
-        const prepared = await Promise.all(featureInputs.map(async (featureInput) => {
-          const filePath = filesByName.get(featureInput.file_name)!;
-          const analysis = await transcriptParser.parseFile(filePath);
-          validateExplicitFeatureContent(
-            analysis,
-            featureInput.requirements,
-            featureInput.tasks,
-            earsValidator,
-          );
-          const workloadDesign = renderWorkloadDesign(
-            contract.workload,
-            featureInput.architecture.workload_design,
-          );
-          if (contract.workload === "api" && featureInput.architecture.api_contracts.length === 0) {
-            throw new Error(`Batch feature ${featureInput.feature_number} requires an explicit API contract.`);
-          }
-          return { featureInput, filePath, analysis, workloadDesign };
-        }));
+        const prepared = await Promise.all(
+          featureInputs.map(async (featureInput) => {
+            const filePath = filesByName.get(featureInput.file_name)!;
+            const analysis = await transcriptParser.parseFile(filePath);
+            validateExplicitFeatureContent(
+              analysis,
+              featureInput.requirements,
+              featureInput.tasks,
+              earsValidator,
+            );
+            const workloadDesign = renderWorkloadDesign(
+              contract.workload,
+              featureInput.architecture.workload_design,
+            );
+            if (
+              contract.workload === "api" &&
+              featureInput.architecture.api_contracts.length === 0
+            ) {
+              throw new Error(
+                `Batch feature ${featureInput.feature_number} requires an explicit API contract.`,
+              );
+            }
+            return { featureInput, filePath, analysis, workloadDesign };
+          }),
+        );
 
-        console.error(`[specky] Batch: validated ${prepared.length} transcript feature manifest(s). Processing...`);
+        console.error(
+          `[specky] Batch: validated ${prepared.length} transcript feature manifest(s). Processing...`,
+        );
 
         const results: Array<{
           file: string;
@@ -680,125 +662,90 @@ export function registerTranscriptTools(
 
           try {
             console.error(`[specky] Batch feature ${featureNum}: processing "${fileName}"...`);
-            const earsRequirements: GeneratedRequirement[] = featureInput.requirements.map((requirement) => ({
-              id: requirement.id,
-              title: requirement.title,
-              pattern: requirement.ears_pattern,
-              text: requirement.text,
-              acceptance_criteria: requirement.acceptance_criteria,
-              source: requirement.source_quote,
-            }));
+            const earsRequirements: RequirementSectionInput[] = featureInput.requirements.map(
+              (requirement) => ({
+                id: requirement.id,
+                title: requirement.title,
+                pattern: requirement.ears_pattern,
+                text: requirement.text,
+                acceptance_criteria: requirement.acceptance_criteria,
+                source: requirement.source_quote,
+              }),
+            );
 
             // ── Write all spec files ──
             await fileManager.ensureSpecDir(spec_dir);
 
             // CONSTITUTION.md
-            const constitutionContent = await templateEngine.renderWithFrontmatter("constitution", {
-              ...artifactMetadata({ version: "1.0.0", author: "sdd_batch_transcripts", status: "Active" }),
-              title: `${projectName} — Constitution`,
-              feature_id: `${featureNum}-${projectName}`,
-              project_name: projectName,
-              author: featureInput.constitution.author,
-              principles: featureInput.constitution.principles,
-              constraints: featureInput.constitution.constraints,
-              description: featureInput.constitution.description,
-              license: featureInput.constitution.license,
-              scope_in: featureInput.constitution.scope_in,
-              scope_out: featureInput.constitution.scope_out,
+            await writeConstitution(fileManager, templateEngine, {
+              featureDir,
+              projectName,
+              featureNumber: featureNum,
+              toolName: "sdd_batch_transcripts",
+              constitution: featureInput.constitution,
+              force,
             });
-            await fileManager.writeSpecFile(featureDir, "CONSTITUTION.md", constitutionContent, force);
 
             // SPECIFICATION.md
-            const reqSections = earsRequirements.map((req) =>
-              [
-                `### ${req.id}: ${req.title} (${req.pattern})`,
-                "", req.text, "",
-                "**Acceptance Criteria:**",
-                ...req.acceptance_criteria.map((ac) => `- ${ac}`),
-                "", `**Source:** ${req.source}`, "", "---", "",
-              ].join("\n")
-            ).join("\n");
-
-            const specContent = await templateEngine.renderWithFrontmatter("specification", {
-              ...artifactMetadata({ version: "1.0.0", author: "sdd_batch_transcripts", status: "Draft" }),
-              title: `${projectName} — Specification`,
-              feature_id: `${featureNum}-${projectName}`,
-              project_name: projectName,
-              discovery_context: transcriptDiscoveryContext(analysis),
-              requirements_core: reqSections,
-              requirements_functional: "",
-              requirements_nonfunctional: "",
-              acceptance_criteria_table: earsRequirements.map((r) =>
-                `| ${r.id} | ${r.text.slice(0, 60)}... | Test |`
-              ).join("\n"),
-              ears_compliance: `${earsRequirements.length}/${earsRequirements.length}`,
-              testability_score: `${earsRequirements.length}/${earsRequirements.length}`,
-              traceability_score: `${earsRequirements.length}/${earsRequirements.length}`,
-              uniqueness_score: `${earsRequirements.length}/${earsRequirements.length}`,
+            const batchScores = `${earsRequirements.length}/${earsRequirements.length}`;
+            const { content: specContent } = await writeSpecification(fileManager, templateEngine, {
+              featureDir,
+              projectName,
+              featureNumber: featureNum,
+              toolName: "sdd_batch_transcripts",
+              discoveryContext: transcriptDiscoveryContext(analysis),
+              requirementsCore: renderRequirementSections(earsRequirements, earsValidator),
+              requirementsFunctional: "",
+              requirementsNonfunctional: "",
+              acceptanceCriteriaTable: renderAcceptanceCriteriaTable(earsRequirements, {
+                testMethodLabel: "Test",
+              }),
+              scores: {
+                ears_compliance: batchScores,
+                testability_score: batchScores,
+                traceability_score: batchScores,
+                uniqueness_score: batchScores,
+              },
+              force,
             });
-            await fileManager.writeSpecFile(featureDir, "SPECIFICATION.md", specContent, force);
 
             const architecture = featureInput.architecture;
-            const apiContent = architecture.api_contracts.length > 0
-              ? architecture.api_contracts.map((api) => [
-                `### ${api.method} ${api.endpoint}`,
-                "",
-                api.description,
-                "",
-                `**Request:** ${api.request}`,
-                "",
-                `**Response:** ${api.response}`,
-              ].join("\n")).join("\n\n---\n\n")
-              : "No network API is exposed by this workload contract.";
-            let designContent = await templateEngine.renderWithFrontmatter("design", {
-              ...artifactMetadata({ version: "1.0.0", author: "sdd_batch_transcripts", status: "Draft" }),
-              title: `${projectName} — Design`,
-              feature_id: `${featureNum}-${projectName}`,
-              project_name: projectName,
+            const { content: designContent } = await writeDesign(fileManager, templateEngine, {
+              featureDir,
+              projectName,
+              featureNumber: featureNum,
+              toolName: "sdd_batch_transcripts",
               architecture_overview: architecture.architecture_overview,
               system_context: architecture.system_context,
               container_architecture: architecture.container_architecture,
-              diagrams: architecture.mermaid_diagrams.map((diagram) => diagram.title),
-              adrs: architecture.adrs.map((adr) => adr.title),
-              api_contracts: apiContent,
-              data_models: architecture.data_models,
-              error_handling: architecture.error_handling,
               component_design: architecture.component_design,
               code_level_design: architecture.code_level_design,
-              security_architecture: architecture.security_architecture,
+              data_models: architecture.data_models,
               infrastructure: architecture.infrastructure,
+              security_architecture: architecture.security_architecture,
+              error_handling: architecture.error_handling,
               cross_cutting: architecture.cross_cutting,
-              workload_design: workloadDesign,
-              requirement_references: featureInput.requirements
+              workloadDesign,
+              requirementReferences: featureInput.requirements
                 .map((requirement) => `- ${requirement.id}`)
                 .join("\n"),
+              diagrams: architecture.mermaid_diagrams,
+              adrs: architecture.adrs,
+              apiContracts: architecture.api_contracts,
+              force,
+              formatting: TRANSCRIPT_DESIGN_FORMATTING,
             });
-            designContent = replaceDesignEvidence(
-              designContent,
-              architecture.mermaid_diagrams,
-              architecture.adrs,
-            );
-            await fileManager.writeSpecFile(featureDir, "DESIGN.md", designContent, force);
 
-            const tasks = featureInput.tasks;
-            const tasksContent = await templateEngine.renderWithFrontmatter("tasks", {
-              ...artifactMetadata({ version: "1.0.0", author: "sdd_batch_transcripts", status: "Draft" }),
-              title: `${projectName} — Tasks`,
-              feature_id: `${featureNum}-${projectName}`,
-              project_name: projectName,
-              gates: featureInput.pre_impl_gates.map(
-                (gate) => `**Gate ${gate.id}:** ${gate.check} (${gate.constitution_article})`,
-              ),
-              task_table: tasks.map((t) =>
-                `| ${t.id} | ${t.title} | ${t.parallel ? "[P]" : ""} | ${t.effort} | ${t.dependencies.join(", ") || "—"} | ${t.traces_to.join(", ")} |`
-              ).join("\n"),
-              dependency_graph: tasks.map((t) => `${t.id}: ${t.title} -> [${t.dependencies.join(", ")}]`).join("\n"),
-              effort_summary: tasks.map((t) => `${t.id}: ${t.effort}`).join("; "),
-              total_tasks: String(tasks.length),
-              parallel_tasks: String(tasks.filter((t) => t.parallel).length),
-              total_effort: `${tasks.length} tasks`,
+            const { content: tasksContent } = await writeTasks(fileManager, templateEngine, {
+              featureDir,
+              projectName,
+              featureNumber: featureNum,
+              toolName: "sdd_batch_transcripts",
+              tasks: featureInput.tasks,
+              gates: featureInput.pre_impl_gates,
+              force,
+              formatting: TRANSCRIPT_TASKS_FORMATTING,
             });
-            await fileManager.writeSpecFile(featureDir, "TASKS.md", tasksContent, force);
 
             // ANALYSIS.md — real quality gate over the artifacts we just wrote
             // (shared engine, no hard-coded APPROVE/100%). Auto-generated
@@ -814,7 +761,11 @@ export function registerTranscriptTools(
               tasksContent,
             });
             const analysisContent = await templateEngine.renderWithFrontmatter("analysis", {
-              ...artifactMetadata({ version: "1.0.0", author: "sdd_batch_transcripts", status: gate.decision }),
+              ...artifactMetadata({
+                version: "1.0.0",
+                author: "sdd_batch_transcripts",
+                status: gate.decision,
+              }),
               title: `${projectName} — Analysis`,
               feature_id: `${featureNum}-${projectName}`,
               project_name: projectName,
@@ -825,11 +776,12 @@ export function registerTranscriptTools(
               task_coverage: `${gate.taskCoverage}%`,
               test_coverage: "Pending",
               gaps: batchAnalysisGaps(gate.gaps, analysis.open_questions),
-              recommendations: gate.gaps.length > 0
-                ? gate.gaps.map((gap) => `Remediate: ${gap}`)
-                : analysis.action_items.length > 0
-                  ? analysis.action_items.map((action) => `Source action: ${action}`)
-                  : ["No remediation is required by the current traceability analysis."],
+              recommendations:
+                gate.gaps.length > 0
+                  ? gate.gaps.map((gap) => `Remediate: ${gap}`)
+                  : analysis.action_items.length > 0
+                    ? analysis.action_items.map((action) => `Source action: ${action}`)
+                    : ["No remediation is required by the current traceability analysis."],
               ears_compliance: `${gate.earsCoverage}%`,
               ears_status: evidenceStatus(gate.earsCoverage === 100),
               coverage_status: evidenceStatus(gate.coveragePercent >= 90),
@@ -856,7 +808,15 @@ export function registerTranscriptTools(
               contract,
             });
             state.current_phase = Phase.Analyze;
-            for (const phase of [Phase.Init, Phase.Discover, Phase.Specify, Phase.Clarify, Phase.Design, Phase.Tasks, Phase.Analyze]) {
+            for (const phase of [
+              Phase.Init,
+              Phase.Discover,
+              Phase.Specify,
+              Phase.Clarify,
+              Phase.Design,
+              Phase.Tasks,
+              Phase.Analyze,
+            ]) {
               state.phases[phase] = {
                 status: "completed",
                 started_at: new Date().toISOString(),
@@ -886,7 +846,6 @@ export function registerTranscriptTools(
               requirements: earsRequirements.length,
               package_artifacts: featurePackage.created.length,
             });
-
           } catch (err) {
             const errorMsg = err instanceof Error ? err.message : String(err);
             console.error(`[specky] Batch: ERROR processing "${fileName}": ${errorMsg}`);
@@ -905,7 +864,7 @@ export function registerTranscriptTools(
         const failed = results.filter((r) => r.status === "error");
 
         console.error(
-          `[specky] Batch: DONE — ${succeeded.length} succeeded, ${failed.length} failed out of ${files.length} transcripts.`
+          `[specky] Batch: DONE — ${succeeded.length} succeeded, ${failed.length} failed out of ${files.length} transcripts.`,
         );
 
         const batchResult = {
@@ -928,39 +887,29 @@ export function registerTranscriptTools(
         return {
           content: [
             {
-              type: "text" as const, text: truncate(JSON.stringify({
-                ...batchResult,
-                contract_id: contract.id,
-                contract_fingerprint: contract.fingerprint,
-              }, null, 2))
+              type: "text" as const,
+              text: truncate(
+                JSON.stringify(
+                  {
+                    ...batchResult,
+                    contract_id: contract.id,
+                    contract_fingerprint: contract.fingerprint,
+                  },
+                  null,
+                  2,
+                ),
+              ),
             },
           ],
         };
       } catch (error) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: formatError("sdd_batch_transcripts", error as Error),
-            },
-          ],
-          isError: true,
-        };
+        return errorResult("sdd_batch_transcripts", error);
       }
-    }
+    },
   );
 }
 
-// ─── Helper: Generate EARS requirements from transcript analysis ───
-
-interface GeneratedRequirement {
-  id: string;
-  title: string;
-  pattern: string;
-  text: string;
-  acceptance_criteria: string[];
-  source: string;
-}
+// ─── Helpers for batch reporting ───
 
 function batchAnalysisGaps(gaps: string[], openQuestions: string[]): string[] {
   return gaps.length > 0 ? gaps : openQuestions.map((question) => `Open: ${question}`);
@@ -975,4 +924,3 @@ function batchCompletionMessage(failedCount: number): string {
     ? `${failedCount} transcript feature(s) failed; no unvalidated source content was synthesized.`
     : "All explicitly configured transcript features were processed successfully.";
 }
-

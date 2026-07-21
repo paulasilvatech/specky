@@ -17,12 +17,20 @@
  *     anchor `current_hash` externally (e.g. in CI logs) to close that gap.
  *   - Fail-closed: when enabled, a failed audit write throws instead of being
  *     swallowed, so the enforcement layer can refuse to run unaudited tools.
+ *
+ * v3.12.0 hardening:
+ *   - Per-file async write lock: concurrent log() calls serialize their whole
+ *     read-tail → rotate → append cycle, so two callers can no longer read the
+ *     same chain tail and append entries with duplicate previous_hash values.
+ *   - Fail-open write failures warn on stderr instead of being silently
+ *     swallowed (fail-closed still throws, unchanged).
+ *   - resolveAuditFile rejects spec_dir values that escape the workspace root.
  */
 
-import { appendFile, mkdir, stat, rename, unlink, readFile } from "node:fs/promises";
-import { readFileSync } from "node:fs";
-import { join, dirname } from "node:path";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { appendFile, mkdir, readFile, rename, stat, unlink } from "node:fs/promises";
+import { dirname, join, resolve, sep } from "node:path";
 
 export interface AuditEntry {
   timestamp: string;
@@ -75,14 +83,12 @@ const MAX_ROTATIONS = 3;
  * feature stays off. The key file should live OUTSIDE the workspace with 0600
  * permissions — a key readable/writable from the workspace defeats the purpose.
  */
-export function resolveAuditHmacKey(
-  env: Record<string, string | undefined> = process.env,
-): string {
+export function resolveAuditHmacKey(env: Record<string, string | undefined> = process.env): string {
   const direct = env["SDD_AUDIT_HMAC_KEY"];
-  if (direct && direct.trim()) return direct.trim();
+  if (direct?.trim()) return direct.trim();
 
   const keyFile = env["SDD_AUDIT_HMAC_KEY_FILE"];
-  if (keyFile && keyFile.trim()) {
+  if (keyFile?.trim()) {
     try {
       const key = readFileSync(keyFile.trim(), "utf-8").trim();
       if (key) return key;
@@ -142,6 +148,31 @@ export class AuditLogger {
   }
 
   /**
+   * Per-audit-file serialization queue. Tool handlers can run concurrently (a
+   * client pipelines requests, or HTTP mode fields parallel callers); without
+   * this, two log() calls both read the same chain tail and append entries
+   * with duplicate previous_hash values, corrupting the hash chain. The whole
+   * read-hash → rotate → append cycle below runs inside withLock so it is
+   * atomic per audit file. Mirrors StateMachine.withLock.
+   */
+  private static readonly locks = new Map<string, Promise<unknown>>();
+
+  private withLock<T>(auditFile: string, fn: () => Promise<T>): Promise<T> {
+    const key = resolve(auditFile);
+    const prev = AuditLogger.locks.get(key) ?? Promise.resolve();
+    const run = prev.then(fn, fn);
+    // Keep the chain alive regardless of individual success/failure.
+    AuditLogger.locks.set(
+      key,
+      run.then(
+        () => undefined,
+        () => undefined,
+      ),
+    );
+    return run;
+  }
+
+  /**
    * Log a tool call to the audit file.
    * No-ops when disabled. By default never throws — audit failures must not
    * break tool calls. In fail-closed mode the error propagates so the
@@ -150,43 +181,51 @@ export class AuditLogger {
   async log(entry: AuditEntry): Promise<void> {
     if (!this.enabled) return;
 
-    try {
-      const auditFile = this.resolveAuditFile(entry.spec_dir, entry.feature_number);
-      await mkdir(dirname(auditFile), { recursive: true });
+    // Resolve outside the failure-tolerant zone: a path-traversal rejection is
+    // a caller bug (or attack), not an I/O failure — it throws in both modes.
+    const auditFile = this.resolveAuditFile(entry.spec_dir, entry.feature_number);
 
-      // Rotate if needed before appending
-      await this.rotateIfNeeded(auditFile);
+    await this.withLock(auditFile, async () => {
+      try {
+        await mkdir(dirname(auditFile), { recursive: true });
 
-      entry.previous_hash = await this.readCurrentChainHash(auditFile);
+        // Rotate if needed before appending
+        await this.rotateIfNeeded(auditFile);
 
-      // Serialize without hmac, sign, then append the signature as the final
-      // field by string surgery — verification can strip it back off without
-      // depending on JSON key-order round-trips.
-      delete entry.hmac;
-      const baseLine = JSON.stringify(entry);
-      const signedLine = this.hmacKey
-        ? `${baseLine.slice(0, -1)},"hmac":"${signLine(baseLine, this.hmacKey)}"}`
-        : baseLine;
-      const line = signedLine + "\n";
+        entry.previous_hash = await this.readCurrentChainHash(auditFile);
 
-      if (this.exportFormat === "syslog") {
-        await this.appendSyslog(auditFile, entry, line);
-      } else if (this.exportFormat === "otlp") {
-        console.error("[specky] OTLP export not yet implemented");
-        await appendFile(auditFile, line, "utf-8");
-      } else {
-        await appendFile(auditFile, line, "utf-8");
-      }
+        // Serialize without hmac, sign, then append the signature as the final
+        // field by string surgery — verification can strip it back off without
+        // depending on JSON key-order round-trips.
+        delete entry.hmac;
+        const baseLine = JSON.stringify(entry);
+        const signedLine = this.hmacKey
+          ? `${baseLine.slice(0, -1)},"hmac":"${signLine(baseLine, this.hmacKey)}"}`
+          : baseLine;
+        const line = signedLine + "\n";
 
-      // Advance chain: hash of the line just written
-      this.lastHash = createHash("sha256").update(line.trimEnd()).digest("hex");
-    } catch (error) {
-      if (this.failClosed) {
+        if (this.exportFormat === "syslog") {
+          await this.appendSyslog(auditFile, entry, line);
+        } else if (this.exportFormat === "otlp") {
+          console.error("[specky] OTLP export not yet implemented");
+          await appendFile(auditFile, line, "utf-8");
+        } else {
+          await appendFile(auditFile, line, "utf-8");
+        }
+
+        // Advance chain: hash of the line just written
+        this.lastHash = createHash("sha256").update(line.trimEnd()).digest("hex");
+      } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        throw new Error(`Audit write failed (fail-closed mode): ${message}`);
+        if (this.failClosed) {
+          throw new Error(`Audit write failed (fail-closed mode): ${message}`);
+        }
+        // Audit failures must never break the tool call — warn and drop the entry.
+        console.error(
+          `[specky] Audit write failed for ${auditFile}: ${message} (fail-open mode; entry dropped)`,
+        );
       }
-      // Audit failures must never break the tool call — silently ignore
-    }
+    });
   }
 
   /** Convenience: log a successful tool call */
@@ -327,6 +366,14 @@ export class AuditLogger {
   }
 
   private resolveAuditFile(specDir: string, _featureNumber?: string): string {
+    // Defense-in-depth: the spec_dir zod schema already rejects ".." and
+    // absolute paths, but this path decides where we write — never trust a
+    // single layer. Refuse anything that resolves outside the workspace root.
+    const root = resolve(this.workspaceRoot);
+    const resolvedDir = resolve(root, specDir);
+    if (resolvedDir !== root && !resolvedDir.startsWith(root + sep)) {
+      throw new Error(`Audit spec_dir escapes the workspace root: ${JSON.stringify(specDir)}`);
+    }
     return join(this.workspaceRoot, specDir, ".audit.jsonl");
   }
 
@@ -390,8 +437,7 @@ export class AuditLogger {
     const procId = process.pid;
     const msgId = entry.tool;
     const msg = entry.summary ?? entry.result;
-    const syslogLine =
-      `<${pri}>1 ${entry.timestamp} ${hostname} ${appName} ${procId} ${msgId} - ${msg}\n`;
+    const syslogLine = `<${pri}>1 ${entry.timestamp} ${hostname} ${appName} ${procId} ${msgId} - ${msg}\n`;
 
     await appendFile(syslogFile, syslogLine, "utf-8");
     // Also keep JSONL copy

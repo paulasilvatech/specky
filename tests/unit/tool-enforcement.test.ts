@@ -1,15 +1,15 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { join } from "node:path";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
 import { AuditLogger } from "../../src/services/audit-logger.js";
+import { ExecutionContextResolver } from "../../src/services/execution-context.js";
 import { FileManager } from "../../src/services/file-manager.js";
 import { RbacEngine } from "../../src/services/rbac-engine.js";
 import { StateMachine } from "../../src/services/state-machine.js";
 import { installToolEnforcement } from "../../src/tools/tool-enforcement.js";
-import { ExecutionContextResolver } from "../../src/services/execution-context.js";
-import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
 
 interface ToolResult {
   content: Array<{ type: string; text: string }>;
@@ -28,7 +28,10 @@ class FakeServer {
 
 function readAuditEntries(workspace: string): Array<Record<string, unknown>> {
   const raw = readFileSync(join(workspace, ".specs", ".audit.jsonl"), "utf8");
-  return raw.trim().split("\n").map((line) => JSON.parse(line) as Record<string, unknown>);
+  return raw
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line) as Record<string, unknown>);
 }
 
 function getHandler(server: FakeServer, name: string): Handler {
@@ -116,7 +119,10 @@ describe("installToolEnforcement", () => {
       return { content: [{ type: "text", text: "should not run" }] };
     });
 
-    const result = await getHandler(server, "sdd_write_design")({
+    const result = await getHandler(
+      server,
+      "sdd_write_design",
+    )({
       spec_dir: ".specs",
       feature_number: "001",
     });
@@ -146,7 +152,10 @@ describe("installToolEnforcement", () => {
       };
     });
 
-    const result = await getHandler(server, "sdd_get_status")({ spec_dir: ".specs" }, { marker: "extra" });
+    const result = await getHandler(server, "sdd_get_status")(
+      { spec_dir: ".specs" },
+      { marker: "extra" },
+    );
 
     expect(result.content[0].text).toBe("ok");
     expect(extraArg).toEqual({ marker: "extra" });
@@ -190,7 +199,14 @@ describe("identity-based RBAC (authInfo from the HTTP token table)", () => {
   }
 
   function viewerExtra(principal: string): Record<string, unknown> {
-    return { authInfo: { token: "fp", clientId: principal, scopes: ["role:viewer"], extra: { principal, role: "viewer" } } };
+    return {
+      authInfo: {
+        token: "fp",
+        clientId: principal,
+        scopes: ["role:viewer"],
+        extra: { principal, role: "viewer" },
+      },
+    };
   }
 
   it("authenticated token role wins over SDD_ROLE env", async () => {
@@ -252,9 +268,7 @@ describe("identity-based RBAC (authInfo from the HTTP token table)", () => {
   it("fail-closed audit refuses to execute when the start entry cannot be written", async () => {
     // Make `.specs` a regular FILE so the audit write fails.
     writeFileSync(join(workspace, ".specs"), "not a directory", "utf8");
-    const server = installedServer(
-      new AuditLogger(workspace, true, { failClosed: true }),
-    );
+    const server = installedServer(new AuditLogger(workspace, true, { failClosed: true }));
     let executed = false;
     server.registerTool("sdd_get_status", {}, async () => {
       executed = true;

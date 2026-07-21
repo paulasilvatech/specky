@@ -131,10 +131,7 @@ export function requiredClaudeAllows(
         if (capability.startsWith("mcp.specky.")) {
           allows.add(`mcp__specky__${capability.slice("mcp.specky.".length)}`);
         }
-        if (
-          integrations.has("github") &&
-          capability.startsWith("mcp.github.")
-        ) {
+        if (integrations.has("github") && capability.startsWith("mcp.github.")) {
           allows.add(`mcp__github__${capability.slice("mcp.github.".length)}`);
         }
     }
@@ -149,9 +146,7 @@ function readSettings(path: string): ClaudeSettings {
     if (!raw.trim()) return {};
     return JSON.parse(raw) as ClaudeSettings;
   } catch (err) {
-    throw new Error(
-      `[specky] Failed to parse ${path}: ${(err as Error).message}`,
-    );
+    throw new Error(`[specky] Failed to parse ${path}: ${(err as Error).message}`);
   }
 }
 
@@ -175,9 +170,7 @@ function mergeHooks(existing: HooksSection, incoming: HooksSection): HooksSectio
       }
       // Append any hook commands not already present
       for (const h of g.hooks) {
-        const exists = match.hooks.some(
-          (x) => x.type === h.type && x.command === h.command,
-        );
+        const exists = match.hooks.some((x) => x.type === h.type && x.command === h.command);
         if (!exists) match.hooks.push(h);
       }
     }
@@ -232,16 +225,14 @@ export function mergeClaudeHooks(
   const existing = readSettings(path);
 
   const mergedHooks = mergeHooks(existing.hooks ?? {}, claudeHooks);
-  const addedEvents = Object.keys(mergedHooks).filter(
-    (k) => !existing.hooks || !existing.hooks[k],
-  );
+  const addedEvents = Object.keys(mergedHooks).filter((k) => !existing.hooks?.[k]);
 
   const requiredAllows = opts.capabilities
     ? requiredClaudeAllows(opts.capabilities, {
-      profile: opts.permissionProfile ?? "scoped",
-      workspace: opts.workspace ?? process.cwd(),
-      integrations: opts.integrations,
-    })
+        profile: opts.permissionProfile ?? "scoped",
+        workspace: opts.workspace ?? process.cwd(),
+        integrations: opts.integrations,
+      })
     : SPECKY_REQUIRED_ALLOWS;
   const { merged: mergedPerms, added: addedPermissions } = mergePermissions(
     existing.permissions,
@@ -265,7 +256,7 @@ export function loadClaudeHooksManifest(manifestPath: string): HooksSection {
   if (!existsSync(manifestPath)) {
     throw new Error(
       `[specky] claude-hooks.json not found at ${manifestPath}. ` +
-      `Did the build step run? (npm run build)`,
+        `Did the build step run? (npm run build)`,
     );
   }
   const raw = readFileSync(manifestPath, "utf8");

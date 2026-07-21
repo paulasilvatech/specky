@@ -1,6 +1,6 @@
 # Contributing to Specky
 
-Thank you for your interest in contributing to Specky. This guide covers the v3.11.1 architecture, development patterns, and submission process.
+Thank you for your interest in contributing to Specky. This guide covers the v3.12.0 architecture, development patterns, and submission process.
 
 ---
 
@@ -22,7 +22,7 @@ Thank you for your interest in contributing to Specky. This guide covers the v3.
 
 ## Architecture Overview
 
-Specky v3.11.1 is an MCP server that exposes **58 tools** organized around signed, per-feature use-case contracts. The codebase comprises **119 TypeScript source files**, **22 templates**, and is structured as follows:
+Specky v3.12.0 is an MCP server that exposes **58 tools** organized around signed, per-feature use-case contracts. The codebase comprises **124 TypeScript source files**, **22 templates**, and is structured as follows:
 
 ```
 src/
@@ -436,7 +436,7 @@ Tests live in `tests/unit/` and cover all services except `file-manager.ts` (whi
 - Use `vi.fn()` mocks for `FileManager` — never do real I/O in unit tests
 - Pure services (EarsValidator, ComplianceEngine) can be tested without mocks
 - Test file naming: `tests/unit/<service-name>.test.ts`
-- Coverage thresholds: 80% lines/functions, 70% branches (enforced in `vitest.config.ts`)
+- Coverage thresholds: 86% lines, 94% functions, 85% statements, 71% branches (enforced in `vitest.config.ts`)
 
 ### Adding Tests for a New Service
 

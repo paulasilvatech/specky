@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * Specky MCP Server — Entry Point
  * Spec-Driven Development engine for AI agents.
@@ -7,67 +8,70 @@
  * License: MIT
  */
 
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { VERSION, SERVER_NAME, DEFAULT_HTTP_PORT } from "./constants.js";
-import { FileManager } from "./services/file-manager.js";
-import { StateMachine } from "./services/state-machine.js";
-import { TemplateEngine } from "./services/template-engine.js";
-import { EarsValidator } from "./services/ears-validator.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { loadConfigCached } from "./config.js";
+import { DEFAULT_HTTP_PORT, SERVER_NAME, VERSION } from "./constants.js";
+import { AuditLogger, resolveAuditHmacKey } from "./services/audit-logger.js";
 import { CodebaseScanner } from "./services/codebase-scanner.js";
-import { registerPipelineTools } from "./tools/pipeline.js";
-import { registerAnalysisTools } from "./tools/analysis.js";
-import { registerUtilityTools } from "./tools/utility.js";
-import { registerTranscriptTools } from "./tools/transcript.js";
-import { TranscriptParser } from "./services/transcript-parser.js";
-
+import { CognitiveDebtEngine } from "./services/cognitive-debt-engine.js";
+import { ComplianceEngine } from "./services/compliance-engine.js";
+import { ContextTieringEngine } from "./services/context-tiering-engine.js";
+import { CrossAnalyzer } from "./services/cross-analyzer.js";
+import { DiagramGenerator } from "./services/diagram-generator.js";
+import { DocGenerator } from "./services/doc-generator.js";
 // v2.0 imports — new services
 import { DocumentConverter } from "./services/document-converter.js";
-import { DiagramGenerator } from "./services/diagram-generator.js";
-import { IacGenerator } from "./services/iac-generator.js";
-import { WorkItemExporter } from "./services/work-item-exporter.js";
-import { CrossAnalyzer } from "./services/cross-analyzer.js";
-import { ComplianceEngine } from "./services/compliance-engine.js";
-import { DocGenerator } from "./services/doc-generator.js";
+import { EarsValidator } from "./services/ears-validator.js";
+import { ExecutionContextResolver } from "./services/execution-context.js";
+import { FileManager } from "./services/file-manager.js";
 import { GitManager } from "./services/git-manager.js";
-
-// v2.0 imports — new tool groups
-import { registerInputTools } from "./tools/input.js";
-import { registerQualityTools } from "./tools/quality.js";
-import { registerVisualizationTools } from "./tools/visualization.js";
-import { registerInfrastructureTools } from "./tools/infrastructure.js";
-import { registerEnvironmentTools } from "./tools/environment.js";
-import { registerIntegrationTools } from "./tools/integration.js";
-import { registerDocumentationTools } from "./tools/documentation.js";
-import { TestGenerator } from "./services/test-generator.js";
-import { registerTestingTools } from "./tools/testing.js";
-import { registerCheckpointTools } from "./tools/checkpoint.js";
-import { registerTurnkeyTools } from "./tools/turnkey.js";
-import { PbtGenerator } from "./services/pbt-generator.js";
-import { registerPbtTools } from "./tools/pbt.js";
-import { loadConfig } from "./config.js";
-import { AuditLogger, resolveAuditHmacKey } from "./services/audit-logger.js";
-import { loadTokenTable, resolveBearerIdentity, sha256Hex, type TokenTableEntry } from "./utils/token-table.js";
-import { MetricsGenerator } from "./services/metrics-generator.js";
-import { registerMetricsTools } from "./tools/metrics.js";
-import { ModelRoutingEngine } from "./services/model-routing-engine.js";
-import { registerRoutingTools } from "./tools/routing.js";
-import { ContextTieringEngine } from "./services/context-tiering-engine.js";
-import { registerContextTools } from "./tools/context.js";
-import { CognitiveDebtEngine } from "./services/cognitive-debt-engine.js";
+import { IacGenerator } from "./services/iac-generator.js";
 import { IntentDriftEngine } from "./services/intent-drift-engine.js";
-import { TestResultParser } from "./services/test-result-parser.js";
-import { TestTraceabilityMapper } from "./services/test-traceability-mapper.js";
+import { MetricsGenerator } from "./services/metrics-generator.js";
+import { ModelRoutingEngine } from "./services/model-routing-engine.js";
+import { PbtGenerator } from "./services/pbt-generator.js";
 import { RateLimiter } from "./services/rate-limiter.js";
 import { RbacEngine } from "./services/rbac-engine.js";
-import { registerRbacTools } from "./tools/rbac.js";
-import { installToolEnforcement } from "./tools/tool-enforcement.js";
+import { StateMachine } from "./services/state-machine.js";
+import { TemplateEngine } from "./services/template-engine.js";
+import { TestGenerator } from "./services/test-generator.js";
+import { TestResultParser } from "./services/test-result-parser.js";
+import { TestTraceabilityMapper } from "./services/test-traceability-mapper.js";
+import { TranscriptParser } from "./services/transcript-parser.js";
+import { WorkItemExporter } from "./services/work-item-exporter.js";
+import { registerAnalysisTools } from "./tools/analysis.js";
 import { registerAuditTools } from "./tools/audit.js";
+import { registerCheckpointTools } from "./tools/checkpoint.js";
+import { registerContextTools } from "./tools/context.js";
+import { registerDocumentationTools } from "./tools/documentation.js";
+import { registerEnvironmentTools } from "./tools/environment.js";
+import { registerInfrastructureTools } from "./tools/infrastructure.js";
+// v2.0 imports — new tool groups
+import { registerInputTools } from "./tools/input.js";
+import { registerIntegrationTools } from "./tools/integration.js";
+import { registerMetricsTools } from "./tools/metrics.js";
+import { registerPbtTools } from "./tools/pbt.js";
+import { registerPipelineTools } from "./tools/pipeline.js";
+import { registerQualityTools } from "./tools/quality.js";
+import { registerRbacTools } from "./tools/rbac.js";
+import { registerRoutingTools } from "./tools/routing.js";
+import { registerTestingTools } from "./tools/testing.js";
+import { installToolEnforcement } from "./tools/tool-enforcement.js";
+import { registerTranscriptTools } from "./tools/transcript.js";
+import { registerTurnkeyTools } from "./tools/turnkey.js";
+import { registerUtilityTools } from "./tools/utility.js";
+import { registerVisualizationTools } from "./tools/visualization.js";
 import { mcpServerIcons, resolvePackageRoot } from "./utils/server-icon.js";
-import { ExecutionContextResolver } from "./services/execution-context.js";
+import {
+  loadTokenTable,
+  resolveBearerIdentity,
+  sha256Hex,
+  type TokenTableEntry,
+} from "./utils/token-table.js";
 
 const pkgRoot = resolvePackageRoot(import.meta.url);
 const serverIcons = mcpServerIcons(pkgRoot);
@@ -97,20 +101,20 @@ try {
 // Load mandatory project config (.specky/config.yml). The profile may be
 // forced from outside the workspace: --profile=enterprise flag, SPECKY_PROFILE
 // env, or SPECKY_ENTERPRISE=1 shorthand.
-const config = loadConfig(workspaceRoot);
+const config = loadConfigCached(workspaceRoot);
 const auditHmacKey = resolveAuditHmacKey();
 if (config.templates_path) console.error(`[specky] Custom templates: ${config.templates_path}`);
 if (config.profile === "enterprise") {
   console.error(
     `[specky] Profile: enterprise — audit=${config.audit_enabled ? "on" : "off"}` +
-    ` (fail_closed=${config.audit.fail_closed ? "on" : "off"}, hmac=${auditHmacKey ? "on" : "off"})` +
-    `, rbac=${config.rbac.enabled ? "on" : "off"} (default_role=${config.rbac.default_role})` +
-    `, rate_limit=${config.rate_limit.enabled ? "on" : "off"}`,
+      ` (fail_closed=${config.audit.fail_closed ? "on" : "off"}, hmac=${auditHmacKey ? "on" : "off"})` +
+      `, rbac=${config.rbac.enabled ? "on" : "off"} (default_role=${config.rbac.default_role})` +
+      `, rate_limit=${config.rate_limit.enabled ? "on" : "off"}`,
   );
   if (config.audit_enabled && !auditHmacKey) {
     console.error(
       "[specky] WARNING: enterprise audit is hash-chained but NOT tamper-evident — " +
-      "set SDD_AUDIT_HMAC_KEY or SDD_AUDIT_HMAC_KEY_FILE (key stored outside the workspace) to sign entries.",
+        "set SDD_AUDIT_HMAC_KEY or SDD_AUDIT_HMAC_KEY_FILE (key stored outside the workspace) to sign entries.",
     );
   }
 } else if (config.audit_enabled) {
@@ -123,22 +127,22 @@ const server = new McpServer(
     name: SERVER_NAME,
     version: VERSION,
     title: "Specky",
-    description: "Agentic Spec-Driven Development plugin — 13 agents, 58 MCP tools, signed per-feature use-case contracts, EARS validation, 22 prompts, 14 skills, and 16 hooks.",
+    description:
+      "Agentic Spec-Driven Development plugin — 13 agents, 58 MCP tools, signed per-feature use-case contracts, EARS validation, 22 prompts, 14 skills, and 16 hooks.",
     websiteUrl: "https://getspecky.ai",
     ...(serverIcons.length > 0 ? { icons: serverIcons } : {}),
   },
   {
-    instructions: "Specky executes one explicit signed contract per feature. Start with sdd_init using lifecycle, workload, execution mode, capabilities, capability_config, spec_dir, and feature_number. Follow only the phase graph persisted in feature state. Use sdd_get_status with an explicit workspace or feature view. LGTM blocks only when workspace policy enables it.",
+    instructions:
+      "Specky executes one explicit signed contract per feature. Start with sdd_init using lifecycle, workload, execution mode, capabilities, capability_config, spec_dir, and feature_number. Follow only the phase graph persisted in feature state. Use sdd_get_status with an explicit workspace or feature view. LGTM blocks only when workspace policy enables it.",
   },
 );
 
 // Initialize services (v1)
 const fileManager = new FileManager(workspaceRoot);
 const stateMachine = new StateMachine(fileManager, workspaceRoot);
-const executionContextResolver = new ExecutionContextResolver(
-  fileManager,
-  stateMachine,
-  () => loadConfig(workspaceRoot),
+const executionContextResolver = new ExecutionContextResolver(fileManager, stateMachine, () =>
+  loadConfigCached(workspaceRoot),
 );
 const templateEngine = new TemplateEngine(fileManager, config.templates_path || undefined);
 const earsValidator = new EarsValidator();
@@ -185,22 +189,65 @@ installToolEnforcement(server, {
 // v1 tools
 registerPipelineTools(server, fileManager, stateMachine, templateEngine, earsValidator);
 registerAnalysisTools(server, fileManager, stateMachine, templateEngine, intentDriftEngine);
-registerUtilityTools(server, fileManager, stateMachine, templateEngine, codebaseScanner, intentDriftEngine);
-registerTranscriptTools(server, fileManager, stateMachine, templateEngine, earsValidator, transcriptParser);
+registerUtilityTools(
+  server,
+  fileManager,
+  stateMachine,
+  templateEngine,
+  codebaseScanner,
+  intentDriftEngine,
+);
+registerTranscriptTools(
+  server,
+  fileManager,
+  stateMachine,
+  templateEngine,
+  earsValidator,
+  transcriptParser,
+);
 
 // v2+ tools
 registerInputTools(server, fileManager, documentConverter, stateMachine);
-registerQualityTools(server, fileManager, stateMachine, templateEngine, complianceEngine, crossAnalyzer, earsValidator);
+registerQualityTools(
+  server,
+  fileManager,
+  stateMachine,
+  templateEngine,
+  complianceEngine,
+  crossAnalyzer,
+  earsValidator,
+);
 registerVisualizationTools(server, fileManager, stateMachine, diagramGenerator);
 registerInfrastructureTools(server, fileManager, stateMachine, iacGenerator);
 registerEnvironmentTools(server, fileManager, stateMachine, iacGenerator, codebaseScanner);
-registerIntegrationTools(server, fileManager, stateMachine, templateEngine, gitManager, workItemExporter);
+registerIntegrationTools(
+  server,
+  fileManager,
+  stateMachine,
+  templateEngine,
+  gitManager,
+  workItemExporter,
+);
 registerDocumentationTools(server, fileManager, stateMachine, docGenerator);
-registerTestingTools(server, fileManager, stateMachine, testGenerator, testResultParser, testTraceabilityMapper);
+registerTestingTools(
+  server,
+  fileManager,
+  stateMachine,
+  testGenerator,
+  testResultParser,
+  testTraceabilityMapper,
+);
 registerCheckpointTools(server, fileManager, stateMachine);
 registerTurnkeyTools(server, fileManager, stateMachine, templateEngine, earsValidator);
 registerPbtTools(server, fileManager, stateMachine, pbtGenerator);
-registerMetricsTools(server, fileManager, stateMachine, metricsGenerator, cognitiveDebtEngine, intentDriftEngine);
+registerMetricsTools(
+  server,
+  fileManager,
+  stateMachine,
+  metricsGenerator,
+  cognitiveDebtEngine,
+  intentDriftEngine,
+);
 registerRoutingTools(server, modelRoutingEngine);
 registerContextTools(server, fileManager, stateMachine, contextTieringEngine);
 registerRbacTools(server, rbacEngine);
@@ -213,13 +260,16 @@ function handleShutdown(signal: string): void {
   if (isShuttingDown) return;
   isShuttingDown = true;
   console.error(`[specky] Received ${signal}, shutting down gracefully...`);
-  server.close().then(() => {
-    console.error("[specky] Server closed.");
-    process.exit(0);
-  }).catch((err: unknown) => {
-    console.error("[specky] Error during shutdown:", err);
-    process.exit(1);
-  });
+  server
+    .close()
+    .then(() => {
+      console.error("[specky] Server closed.");
+      process.exit(0);
+    })
+    .catch((err: unknown) => {
+      console.error("[specky] Error during shutdown:", err);
+      process.exit(1);
+    });
 }
 
 process.on("SIGINT", () => handleShutdown("SIGINT"));
@@ -264,13 +314,13 @@ async function main(): Promise<void> {
     if (!isLoopback && !requireAuth) {
       console.error(
         `[specky] WARNING: HTTP transport bound to non-loopback host "${host}" WITHOUT authentication. ` +
-        "Set SDD_HTTP_TOKEN or SDD_HTTP_TOKENS_FILE and put it behind a TLS-terminating reverse proxy, or bind to 127.0.0.1.",
+          "Set SDD_HTTP_TOKEN or SDD_HTTP_TOKENS_FILE and put it behind a TLS-terminating reverse proxy, or bind to 127.0.0.1.",
       );
     }
     if (config.profile === "enterprise" && config.rbac.enabled && tokenTable.length === 0) {
       console.error(
         "[specky] NOTE: RBAC is on but no SDD_HTTP_TOKENS_FILE is configured — roles come from " +
-        "SDD_ROLE/default_role (self-asserted). Configure a token table for identity-based roles.",
+          "SDD_ROLE/default_role (self-asserted). Configure a token table for identity-based roles.",
       );
     }
 
@@ -291,9 +341,9 @@ async function main(): Promise<void> {
     // Rate limiter — only active in HTTP mode when enabled in config
     const rateLimiter = config.rate_limit.enabled
       ? new RateLimiter(
-        config.rate_limit.max_requests_per_minute ?? 60,
-        config.rate_limit.burst ?? 10,
-      )
+          config.rate_limit.max_requests_per_minute ?? 60,
+          config.rate_limit.burst ?? 10,
+        )
       : null;
 
     if (rateLimiter) {
@@ -305,11 +355,7 @@ async function main(): Promise<void> {
     const httpServer = http.createServer(async (req, res) => {
       if (req.url === "/mcp") {
         // Authenticate before doing any work.
-        const identity = resolveBearerIdentity(
-          req.headers["authorization"],
-          tokenTable,
-          authToken,
-        );
+        const identity = resolveBearerIdentity(req.headers["authorization"], tokenTable, authToken);
         if (!identity.authorized) {
           res.writeHead(401, {
             "Content-Type": "application/json",

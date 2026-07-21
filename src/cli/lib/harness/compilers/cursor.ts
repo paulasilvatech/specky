@@ -5,31 +5,29 @@
  */
 
 import type { HarnessCompiler } from "../types.js";
-import { transformAgentTools, stripYamlFrontmatter } from "./common.js";
+import { stripYamlFrontmatter, transformAgentTools } from "./common.js";
 
 export const cursorCompiler: HarnessCompiler = {
-    target: "cursor",
+  target: "cursor",
 
-    compileAgent(content, opts) {
-        return transformAgentTools(content, "cursor", "comma-list", opts);
-    },
+  compileAgent(content, opts) {
+    return transformAgentTools(content, "cursor", "comma-list", opts);
+  },
 
-    compilePrompt(content) {
-        return content
-            .replace(/^agent:\s*agent\s*\n/m, "")
-            .replace(/^mode:\s*agent\s*\n/m, "");
-    },
+  compilePrompt(content) {
+    return content.replace(/^agent:\s*agent\s*\n/m, "").replace(/^mode:\s*agent\s*\n/m, "");
+  },
 
-    compileInstruction(content) {
-        const body = stripYamlFrontmatter(content);
-        return `---\ndescription: Specky SDD pipeline rules\nalwaysApply: true\n---\n${body}`;
-    },
+  compileInstruction(content) {
+    const body = stripYamlFrontmatter(content);
+    return `---\ndescription: Specky SDD pipeline rules\nalwaysApply: true\n---\n${body}`;
+  },
 
-    renameAgent(fileName) {
-        return fileName.replace(/\.agent\.md$/, ".md");
-    },
+  renameAgent(fileName) {
+    return fileName.replace(/\.agent\.md$/, ".md");
+  },
 
-    renamePrompt(fileName) {
-        return fileName.replace(/\.prompt\.md$/, ".md");
-    },
+  renamePrompt(fileName) {
+    return fileName.replace(/\.prompt\.md$/, ".md");
+  },
 };

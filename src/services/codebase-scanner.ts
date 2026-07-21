@@ -3,19 +3,16 @@
  */
 
 import { PACKAGE_MANIFESTS } from "../constants.js";
-import type { CodebaseSummary, TechStack, DirectoryTree } from "../types.js";
+import type { CodebaseSummary, DirectoryTree, TechStack } from "../types.js";
 import type { FileManager } from "./file-manager.js";
 
 export class CodebaseScanner {
-  constructor(private fileManager: FileManager) { }
+  constructor(private fileManager: FileManager) {}
 
   /**
    * Full codebase scan: directory tree + tech stack detection.
    */
-  async scan(
-    depth: number,
-    exclude: readonly string[]
-  ): Promise<CodebaseSummary> {
+  async scan(depth: number, exclude: readonly string[]): Promise<CodebaseSummary> {
     const tree = await this.fileManager.scanDirectory(".", depth, exclude);
     const techStack = await this.detectTechStack();
     const counts = this.countNodes(tree);
@@ -39,10 +36,7 @@ export class CodebaseScanner {
         if (result) {
           return result;
         }
-      } catch {
-        // Manifest doesn't exist, try next
-        continue;
-      }
+      } catch {}
     }
 
     return {

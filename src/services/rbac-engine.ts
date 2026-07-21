@@ -32,9 +32,7 @@ const VIEWER_TOOLS: readonly string[] = [
  * Tools blocked for contributor role (release-gate protection).
  * Contributors can do everything except trigger production releases.
  */
-const BLOCKED_FOR_CONTRIBUTOR: readonly string[] = [
-  "sdd_create_pr",
-] as const;
+const BLOCKED_FOR_CONTRIBUTOR: readonly string[] = ["sdd_create_pr"] as const;
 
 export class RbacEngine {
   static readonly VIEWER_TOOLS = VIEWER_TOOLS;
@@ -43,16 +41,13 @@ export class RbacEngine {
   constructor(
     private readonly enabled: boolean,
     private readonly defaultRole: RbacRole,
-  ) { }
+  ) {}
 
   /**
    * Check whether a given role may invoke a specific tool.
    * When RBAC is disabled, always returns allowed:true.
    */
-  checkAccess(
-    role: RbacRole,
-    toolName: string,
-  ): { allowed: boolean; reason?: string } {
+  checkAccess(role: RbacRole, toolName: string): { allowed: boolean; reason?: string } {
     if (!this.enabled) {
       return { allowed: true };
     }

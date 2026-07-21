@@ -3,39 +3,52 @@
  * Snapshot and rollback spec artifacts.
  */
 
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { formatError } from "./tool-result.js";
 import { join } from "node:path";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { featureNumberSchema, specDirSchema } from "../schemas/common.js";
+import { requireExecutionContext } from "../services/execution-context.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import { enrichResponse } from "./response-builder.js";
-import { featureNumberSchema, specDirSchema } from "../schemas/common.js";
-import { requireExecutionContext } from "../services/execution-context.js";
+import { errorResult } from "./tool-result.js";
 
-const checkpointInputSchema = z.object({
-  feature_number: featureNumberSchema,
-  spec_dir: specDirSchema,
-  label: z
-    .string()
-    .max(100)
-    .optional()
-    .describe("Human-readable label for this checkpoint (e.g. 'before-redesign', 'v1-approved')"),
-}).strict().describe("Create a named snapshot of all spec artifacts for the feature. Allows rollback to this point later.");
+const checkpointInputSchema = z
+  .object({
+    feature_number: featureNumberSchema,
+    spec_dir: specDirSchema,
+    label: z
+      .string()
+      .max(100)
+      .optional()
+      .describe("Human-readable label for this checkpoint (e.g. 'before-redesign', 'v1-approved')"),
+  })
+  .strict()
+  .describe(
+    "Create a named snapshot of all spec artifacts for the feature. Allows rollback to this point later.",
+  );
 
-const restoreInputSchema = z.object({
-  feature_number: featureNumberSchema,
-  spec_dir: specDirSchema,
-  checkpoint_id: z
-    .string()
-    .min(1)
-    .describe("Checkpoint ID to restore (e.g. 'CP-001' or the label)"),
-}).strict().describe("Restore spec artifacts from a previous checkpoint. Overwrites current artifacts with the checkpoint snapshot.");
+const restoreInputSchema = z
+  .object({
+    feature_number: featureNumberSchema,
+    spec_dir: specDirSchema,
+    checkpoint_id: z
+      .string()
+      .min(1)
+      .describe("Checkpoint ID to restore (e.g. 'CP-001' or the label)"),
+  })
+  .strict()
+  .describe(
+    "Restore spec artifacts from a previous checkpoint. Overwrites current artifacts with the checkpoint snapshot.",
+  );
 
-const listCheckpointsInputSchema = z.object({
-  feature_number: featureNumberSchema,
-  spec_dir: specDirSchema,
-}).strict().describe("List all available checkpoints for a feature.");
+const listCheckpointsInputSchema = z
+  .object({
+    feature_number: featureNumberSchema,
+    spec_dir: specDirSchema,
+  })
+  .strict()
+  .describe("List all available checkpoints for a feature.");
 
 export function registerCheckpointTools(
   server: McpServer,
@@ -72,7 +85,7 @@ export function registerCheckpointTools(
         let existingCheckpoints: string[] = [];
         try {
           const checkpointFiles = await fileManager.listSpecFiles(checkpointsDir);
-          existingCheckpoints = checkpointFiles.filter(f => f.endsWith(".json"));
+          existingCheckpoints = checkpointFiles.filter((f) => f.endsWith(".json"));
         } catch {
           // Directory doesn't exist yet, that's fine
         }
@@ -81,9 +94,16 @@ export function registerCheckpointTools(
 
         // Snapshot all artifacts
         const artifactNames = [
-          "CONSTITUTION.md", "SPECIFICATION.md", "DESIGN.md", "TASKS.md",
-          "ANALYSIS.md", "CHECKLIST.md", "VERIFICATION.md", "BUGFIX_SPEC.md",
-          "COMPLIANCE.md", "CROSS_ANALYSIS.md",
+          "CONSTITUTION.md",
+          "SPECIFICATION.md",
+          "DESIGN.md",
+          "TASKS.md",
+          "ANALYSIS.md",
+          "CHECKLIST.md",
+          "VERIFICATION.md",
+          "BUGFIX_SPEC.md",
+          "COMPLIANCE.md",
+          "CROSS_ANALYSIS.md",
         ];
 
         const artifacts: Record<string, string> = {};
@@ -127,7 +147,8 @@ export function registerCheckpointTools(
           artifacts_saved: Object.keys(artifacts),
           created_at: checkpoint.created_at,
           next_steps: `Checkpoint ${cpId} saved. You can restore to this point with sdd_restore(checkpoint_id: "${cpId}"). Continue making changes safely.`,
-          learning_note: "Checkpoints are snapshots of your spec artifacts at a specific point in time. " +
+          learning_note:
+            "Checkpoints are snapshots of your spec artifacts at a specific point in time. " +
             "Create checkpoints before major changes (redesigns, scope changes) so you can rollback if the new direction doesn't work out. " +
             "Each checkpoint stores the full content of all artifacts plus the pipeline state.",
         };
@@ -135,10 +156,7 @@ export function registerCheckpointTools(
         const enriched = await enrichResponse("sdd_checkpoint", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
-        return {
-          content: [{ type: "text" as const, text: formatError("sdd_checkpoint", error as Error) }],
-          isError: true,
-        };
+        return errorResult("sdd_checkpoint", error);
       }
     },
   );
@@ -171,23 +189,32 @@ export function registerCheckpointTools(
         let checkpointContent: string;
         try {
           // Try direct ID match
-          checkpointContent = await fileManager.readSpecFile(checkpointsDir, `${checkpoint_id}.json`);
+          checkpointContent = await fileManager.readSpecFile(
+            checkpointsDir,
+            `${checkpoint_id}.json`,
+          );
         } catch {
           // Try finding by label
           const files = await fileManager.listSpecFiles(checkpointsDir);
           let found = false;
           for (const file of files) {
             if (!file.endsWith(".json")) continue;
-            const content = await fileManager.readSpecFile(checkpointsDir, file);
-            const cp = JSON.parse(content);
-            if (cp.label === checkpoint_id || cp.id === checkpoint_id) {
-              checkpointContent = content;
-              found = true;
-              break;
+            try {
+              const content = await fileManager.readSpecFile(checkpointsDir, file);
+              const cp = JSON.parse(content);
+              if (cp.label === checkpoint_id || cp.id === checkpoint_id) {
+                checkpointContent = content;
+                found = true;
+                break;
+              }
+            } catch {
+              // Skip corrupted checkpoint files
             }
           }
           if (!found) {
-            throw new Error(`Checkpoint "${checkpoint_id}" not found. Use sdd_list_checkpoints to see available checkpoints.`);
+            throw new Error(
+              `Checkpoint "${checkpoint_id}" not found. Use sdd_list_checkpoints to see available checkpoints.`,
+            );
           }
         }
 
@@ -198,7 +225,9 @@ export function registerCheckpointTools(
           !checkpoint["feature"] ||
           (checkpoint["feature"] as Record<string, unknown>)["number"] !== state.feature.number
         ) {
-          throw new Error(`Checkpoint ${checkpoint_id} does not belong to feature ${state.feature.number} under contract ${state.contract.id}.`);
+          throw new Error(
+            `Checkpoint ${checkpoint_id} does not belong to feature ${state.feature.number} under contract ${state.contract.id}.`,
+          );
         }
 
         // Auto-backup current state before restoring
@@ -234,7 +263,9 @@ export function registerCheckpointTools(
 
         // Restore artifacts
         const restored: string[] = [];
-        for (const [name, content] of Object.entries(checkpoint["artifact_contents"] as Record<string, string>)) {
+        for (const [name, content] of Object.entries(
+          checkpoint["artifact_contents"] as Record<string, string>,
+        )) {
           await fileManager.writeSpecFile(feature.directory, name, content, true);
           restored.push(name);
         }
@@ -255,17 +286,15 @@ export function registerCheckpointTools(
           restored_artifacts: restored,
           auto_backup: "CP-AUTO-BACKUP",
           next_steps: `Restored to ${String(checkpoint["id"])} ("${String(checkpoint["label"])}"). Current state before restore was saved as CP-AUTO-BACKUP. Review the restored artifacts and continue from the ${String(checkpoint["phase"])} phase.`,
-          learning_note: "The restore operation creates an automatic backup of your current state before overwriting. " +
+          learning_note:
+            "The restore operation creates an automatic backup of your current state before overwriting. " +
             "This means you can always undo a restore by running sdd_restore(checkpoint_id: 'CP-AUTO-BACKUP').",
         };
 
         const enriched = await enrichResponse("sdd_restore", result, stateMachine, stateDir);
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
-        return {
-          content: [{ type: "text" as const, text: formatError("sdd_restore", error as Error) }],
-          isError: true,
-        };
+        return errorResult("sdd_restore", error);
       }
     },
   );
@@ -275,7 +304,8 @@ export function registerCheckpointTools(
     "sdd_list_checkpoints",
     {
       title: "List Checkpoints",
-      description: "Lists all available checkpoints for a feature with their labels, dates, and phases.",
+      description:
+        "Lists all available checkpoints for a feature with their labels, dates, and phases.",
       inputSchema: listCheckpointsInputSchema,
       annotations: {
         readOnlyHint: true,
@@ -298,14 +328,21 @@ export function registerCheckpointTools(
           files = await fileManager.listSpecFiles(checkpointsDir);
         } catch {
           return {
-            content: [{
-              type: "text" as const,
-              text: JSON.stringify({
-                status: "no_checkpoints",
-                checkpoints: [],
-                next_steps: "No checkpoints found. Use sdd_checkpoint to create one before making major changes.",
-              }, null, 2),
-            }],
+            content: [
+              {
+                type: "text" as const,
+                text: JSON.stringify(
+                  {
+                    status: "no_checkpoints",
+                    checkpoints: [],
+                    next_steps:
+                      "No checkpoints found. Use sdd_checkpoint to create one before making major changes.",
+                  },
+                  null,
+                  2,
+                ),
+              },
+            ],
           };
         }
 
@@ -341,18 +378,21 @@ export function registerCheckpointTools(
           status: "checkpoints_listed",
           total: checkpoints.length,
           checkpoints,
-          next_steps: checkpoints.length > 0
-            ? `Use sdd_restore(checkpoint_id: "${checkpoints[0].id}") to restore to any checkpoint.`
-            : "No checkpoints yet. Use sdd_checkpoint to create one.",
+          next_steps:
+            checkpoints.length > 0
+              ? `Use sdd_restore(checkpoint_id: "${checkpoints[0].id}") to restore to any checkpoint.`
+              : "No checkpoints yet. Use sdd_checkpoint to create one.",
         };
 
-        const enriched = await enrichResponse("sdd_list_checkpoints", result, stateMachine, spec_dir);
+        const enriched = await enrichResponse(
+          "sdd_list_checkpoints",
+          result,
+          stateMachine,
+          spec_dir,
+        );
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
-        return {
-          content: [{ type: "text" as const, text: formatError("sdd_list_checkpoints", error as Error) }],
-          isError: true,
-        };
+        return errorResult("sdd_list_checkpoints", error);
       }
     },
   );

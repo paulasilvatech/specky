@@ -5,29 +5,28 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { RbacEngine, type RbacRole } from "../services/rbac-engine.js";
 import { TOOL_NAMES } from "../constants.js";
+import { RbacEngine, type RbacRole } from "../services/rbac-engine.js";
 import { getCallerIdentity } from "./tool-enforcement.js";
 
-const checkAccessInputSchema = z.object({
-  role_override: z
-    .enum(["viewer", "contributor", "admin"])
-    .optional()
-    .describe(
-      "Override the active role for this check (for testing access). Defaults to the authenticated token role, then SDD_ROLE env var, then the configured default_role.",
-    ),
-  tool_name: z
-    .string()
-    .optional()
-    .describe(
-      "Check access for a specific tool. If omitted, returns a summary of all role permissions.",
-    ),
-}).strict();
+const checkAccessInputSchema = z
+  .object({
+    role_override: z
+      .enum(["viewer", "contributor", "admin"])
+      .optional()
+      .describe(
+        "Override the active role for this check (for testing access). Defaults to the authenticated token role, then SDD_ROLE env var, then the configured default_role.",
+      ),
+    tool_name: z
+      .string()
+      .optional()
+      .describe(
+        "Check access for a specific tool. If omitted, returns a summary of all role permissions.",
+      ),
+  })
+  .strict();
 
-export function registerRbacTools(
-  server: McpServer,
-  rbacEngine: RbacEngine,
-): void {
+export function registerRbacTools(server: McpServer, rbacEngine: RbacEngine): void {
   server.registerTool(
     TOOL_NAMES.CHECK_ACCESS,
     {
@@ -40,7 +39,8 @@ export function registerRbacTools(
       const activeRole: RbacRole =
         (input.role_override as RbacRole | undefined) ??
         identity.role ??
-        ((process.env["SDD_ROLE"] as RbacRole | undefined) ?? rbacEngine.roleDefault);
+        (process.env["SDD_ROLE"] as RbacRole | undefined) ??
+        rbacEngine.roleDefault;
 
       let toolCheck: { tool: string; allowed: boolean; reason?: string } | undefined;
       if (input.tool_name) {
@@ -51,10 +51,10 @@ export function registerRbacTools(
       const roleSource = input.role_override
         ? "role_override parameter"
         : identity.role
-        ? "authenticated token (SDD_HTTP_TOKENS_FILE)"
-        : process.env["SDD_ROLE"]
-        ? "SDD_ROLE environment variable"
-        : "config default_role";
+          ? "authenticated token (SDD_HTTP_TOKENS_FILE)"
+          : process.env["SDD_ROLE"]
+            ? "SDD_ROLE environment variable"
+            : "config default_role";
 
       const response = {
         rbac_enabled: rbacEngine.isEnabled,

@@ -42,7 +42,7 @@ export class TestResultParser {
     // pytest JSON: { tests: [...] }
     if ("tests" in json && Array.isArray((json as Record<string, unknown>)["tests"])) {
       return ((json as Record<string, unknown>)["tests"] as unknown[]).map((t) =>
-        this.normalizeJsonTest(t as Record<string, unknown>)
+        this.normalizeJsonTest(t as Record<string, unknown>),
       );
     }
 
@@ -61,7 +61,9 @@ export class TestResultParser {
     const failureMessages = t["failureMessages"] as string[] | undefined;
     const error = failureMessages
       ? failureMessages.join(" ").slice(0, 500)
-      : t["message"] ? String(t["message"]).slice(0, 500) : undefined;
+      : t["message"]
+        ? String(t["message"]).slice(0, 500)
+        : undefined;
     const duration_ms = typeof t["duration"] === "number" ? (t["duration"] as number) : undefined;
     return {
       test_name: name,
@@ -76,16 +78,16 @@ export class TestResultParser {
     const results: TestResult[] = [];
     // Self-closing alternative must come first to avoid greedy [^>]* consuming the trailing slash
     const testcaseRegex = /<testcase\s([^>]*)\/>|<testcase\s([^>]*)(?<!\/)>([\s\S]*?)<\/testcase>/g;
-    let m: RegExpExecArray | null;
-    while ((m = testcaseRegex.exec(xml)) !== null) {
-      const attrs = m[1] ?? m[2] ?? "";   // m[1]: self-closing attrs; m[2]: open-tag attrs
-      const inner = m[3] ?? "";           // m[3]: content between open and close tags
+    for (const m of xml.matchAll(testcaseRegex)) {
+      const attrs = m[1] ?? m[2] ?? ""; // m[1]: self-closing attrs; m[2]: open-tag attrs
+      const inner = m[3] ?? ""; // m[3]: content between open and close tags
       const name = this.xmlAttr(attrs, "name") ?? this.xmlAttr(attrs, "classname") ?? "unknown";
       const timeStr = this.xmlAttr(attrs, "time");
       const duration_ms = timeStr ? Math.round(parseFloat(timeStr) * 1000) : undefined;
       const failureMatch = inner.match(/<failure[^>]*>([\s\S]*?)<\/failure>/);
       const errorMatch = inner.match(/<error[^>]*>([\s\S]*?)<\/error>/);
-      const errorText = ((failureMatch?.[1] ?? errorMatch?.[1] ?? "").slice(0, 500).trim()) || undefined;
+      const errorText =
+        (failureMatch?.[1] ?? errorMatch?.[1] ?? "").slice(0, 500).trim() || undefined;
       results.push({
         test_name: name,
         passed: !failureMatch && !errorMatch,

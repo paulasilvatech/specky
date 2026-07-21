@@ -3,13 +3,13 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { truncate } from "./tool-result.js";
+import { contextStatusInputSchema } from "../schemas/context.js";
+import type { ContextTieringEngine } from "../services/context-tiering-engine.js";
+import { requireExecutionContext } from "../services/execution-context.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
-import type { ContextTieringEngine } from "../services/context-tiering-engine.js";
-import { contextStatusInputSchema } from "../schemas/context.js";
 import { enrichResponse } from "./response-builder.js";
-import { requireExecutionContext } from "../services/execution-context.js";
+import { errorResult, truncate } from "./tool-result.js";
 
 export function registerContextTools(
   server: McpServer,
@@ -58,9 +58,8 @@ export function registerContextTools(
 
         const universalTokens = hotTokens + domainTokens + coldTokens;
         const sessionTokens = hotTokens + domainTokens; // Cold not loaded unless requested
-        const savingsPercent = universalTokens > 0
-          ? Math.round((1 - sessionTokens / universalTokens) * 100)
-          : 0;
+        const savingsPercent =
+          universalTokens > 0 ? Math.round((1 - sessionTokens / universalTokens) * 100) : 0;
 
         const result = {
           status: "context_status_returned",
@@ -82,15 +81,17 @@ export function registerContextTools(
             "Evidence: arXiv:2602.20478 — selective context loading improves accuracy by 8.3%.",
         };
 
-        const enriched = await enrichResponse("sdd_context_status", result, stateMachine, context.stateDir!);
+        const enriched = await enrichResponse(
+          "sdd_context_status",
+          result,
+          stateMachine,
+          context.stateDir!,
+        );
         return {
           content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
       } catch (error) {
-        return {
-          content: [{ type: "text" as const, text: `[sdd_context_status] Error: ${(error as Error).message}` }],
-          isError: true,
-        };
+        return errorResult("sdd_context_status", error);
       }
     },
   );

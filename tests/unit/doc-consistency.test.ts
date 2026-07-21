@@ -8,10 +8,10 @@
  */
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { parse } from "yaml";
 import { describe, expect, it } from "vitest";
-import { PHASE_ORDER, TOTAL_TOOLS, TEMPLATE_NAMES } from "../../src/constants.js";
+import { parse } from "yaml";
 import { SPECKY_REQUIRED_ALLOWS } from "../../src/cli/lib/settings-merger.js";
+import { PHASE_ORDER, TEMPLATE_NAMES, TOTAL_TOOLS } from "../../src/constants.js";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const read = (p: string): string => readFileSync(resolve(ROOT, p), "utf8");
@@ -35,7 +35,8 @@ function listMarkdownFiles(dir: string): string[] {
 const countFiles = (dir: string, suffix: string): number =>
   readdirSync(resolve(ROOT, dir)).filter((name) => name.endsWith(suffix)).length;
 const countDirs = (dir: string): number =>
-  readdirSync(resolve(ROOT, dir), { withFileTypes: true }).filter((entry) => entry.isDirectory()).length;
+  readdirSync(resolve(ROOT, dir), { withFileTypes: true }).filter((entry) => entry.isDirectory())
+    .length;
 
 const PUBLIC_COUNTS = {
   agents: countFiles(".apm/agents", ".agent.md"),
@@ -102,10 +103,7 @@ describe("README public counts match the source of truth", () => {
 });
 
 describe("public documentation links and website assets", () => {
-  const publicDocs = [
-    "README.md",
-    ...listMarkdownFiles("docs"),
-  ];
+  const publicDocs = ["README.md", ...listMarkdownFiles("docs")];
 
   it("has no missing relative Markdown file links", () => {
     const missing: string[] = [];
@@ -148,7 +146,11 @@ describe("public documentation links and website assets", () => {
     expect(site).toContain(summary);
     expect(site).not.toContain("8 skills");
     expect(site).toContain(`Open Source · MIT License · v${majorMinor}`);
-    expect(site).toMatch(new RegExp(`toolkit-stat-num">${PUBLIC_COUNTS.skills}<\\/div>\\s*<div class="toolkit-stat-label">Skills`));
+    expect(site).toMatch(
+      new RegExp(
+        `toolkit-stat-num">${PUBLIC_COUNTS.skills}<\\/div>\\s*<div class="toolkit-stat-label">Skills`,
+      ),
+    );
     expect(socialImage).toContain(`MIT License · v${majorMinor}`);
     expect(socialImage).toContain(summary);
     expect(socialImage).toContain("npm install -g specky-sdd@latest");
@@ -176,7 +178,9 @@ describe("public documentation links and website assets", () => {
     expect(site).not.toContain("@implementer");
     expect(site).not.toContain("/sdd:");
     expect(site).not.toContain("Cursor / Windsurf");
-    expect(site).not.toContain("Every published image ships a CycloneDX SBOM and a cosign signature");
+    expect(site).not.toContain(
+      "Every published image ships a CycloneDX SBOM and a cosign signature",
+    );
   });
 
   it("keeps the getting-started install inventory aligned with source", () => {
@@ -191,8 +195,12 @@ describe("public documentation links and website assets", () => {
     const enterpriseGuide = read("docs/ENTERPRISE-DEPLOYMENT.md");
     const readme = read("README.md");
 
-    expect(publishGuide).toMatch(/Cosign signatures are added only when the\s+signing secrets are configured/);
-    expect(enterpriseGuide).toMatch(/optional Cosign signatures when signing secrets are configured/);
+    expect(publishGuide).toMatch(
+      /Cosign signatures are added only when the\s+signing secrets are configured/,
+    );
+    expect(enterpriseGuide).toMatch(
+      /optional Cosign signatures when signing secrets are configured/,
+    );
     expect(readme).toContain("CycloneDX SBOM artifact + optional Cosign signing");
     expect(publishGuide).not.toContain("(cosign-signed + CycloneDX SBOM)");
   });

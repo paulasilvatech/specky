@@ -1,14 +1,14 @@
 /**
  * status.ts — `specky status` — show pipeline state and install summary.
  */
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { VERSION } from "../../constants.js";
-import { targetPaths } from "../lib/paths.js";
-import { loadConfig } from "../../config.js";
 import type { SpeckyConfig } from "../../config.js";
+import { loadConfig } from "../../config.js";
+import { VERSION } from "../../constants.js";
 import { FileManager } from "../../services/file-manager.js";
 import { StateMachine, StateMigrationRequiredError } from "../../services/state-machine.js";
+import { targetPaths } from "../lib/paths.js";
 
 export interface StatusOptions {
   workspace?: string;
@@ -32,7 +32,9 @@ function printInstallStatus(installJson: string): void {
   if (meta) {
     console.log(`Install: v${meta.version}, ide=${meta.ide}, at=${meta.installed_at}`);
     if (meta.version && meta.version !== VERSION) {
-      console.log(`⚠️  Installed assets are v${meta.version} but this CLI is v${VERSION} — run \`specky upgrade\` to refresh.`);
+      console.log(
+        `⚠️  Installed assets are v${meta.version} but this CLI is v${VERSION} — run \`specky upgrade\` to refresh.`,
+      );
     }
   } else if (existsSync(installJson)) {
     console.log("Install: metadata unreadable — run `npx specky doctor`");
@@ -47,13 +49,16 @@ function printIdeStatus(workspace: string, targets: ReturnType<typeof targetPath
   if (existsSync(targets.claude.root)) {
     console.log(
       `  .claude/      agents=${safeCount(targets.claude.agents)}, commands=${safeCount(targets.claude.commands)}, ` +
-      `skills=${safeCountDirs(targets.claude.skills)}, hooks=${safeCount(targets.claude.hooksScripts)}`,
+        `skills=${safeCountDirs(targets.claude.skills)}, hooks=${safeCount(targets.claude.hooksScripts)}`,
     );
   }
-  if (existsSync(resolve(workspace, ".github/agents")) || existsSync(resolve(workspace, ".github/prompts"))) {
+  if (
+    existsSync(resolve(workspace, ".github/agents")) ||
+    existsSync(resolve(workspace, ".github/prompts"))
+  ) {
     console.log(
       `  .github/      agents=${safeCount(targets.copilot.agents)}, prompts=${safeCount(targets.copilot.prompts)}, ` +
-      `skills=${safeCountDirs(targets.copilot.skills)}, hooks=${safeCount(targets.copilot.hooksScripts)}`,
+        `skills=${safeCountDirs(targets.copilot.skills)}, hooks=${safeCount(targets.copilot.hooksScripts)}`,
     );
   }
 }
@@ -100,10 +105,11 @@ async function printFeatureStatus(
     const gate = state.gate_decision ? ` gate=${state.gate_decision.decision}` : "";
     console.log(
       `  ${feature}: phase=${state.current_phase} (${completed}/${state.contract.phases.length})` +
-      ` contract=${state.contract.id}@${state.contract.version}${gate}`,
+        ` contract=${state.contract.id}@${state.contract.version}${gate}`,
     );
   } catch (error) {
-    const label = error instanceof StateMigrationRequiredError ? "migration required" : "invalid state";
+    const label =
+      error instanceof StateMigrationRequiredError ? "migration required" : "invalid state";
     console.log(`  ${feature}: ${label} — ${(error as Error).message}`);
   }
 }
@@ -111,7 +117,7 @@ async function printFeatureStatus(
 export async function runStatus(opts: StatusOptions): Promise<number> {
   const workspace = opts.workspace ?? process.cwd();
   const t = targetPaths(workspace);
-  let config;
+  let config: SpeckyConfig;
   try {
     config = loadConfig(workspace, { argv: [], env: {} });
   } catch (error) {

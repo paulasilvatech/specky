@@ -3,17 +3,20 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { truncate } from "./tool-result.js";
-import {} from "../constants.js";
-import type { ModelRoutingEngine } from "../services/model-routing-engine.js";
 import { modelRoutingInputSchema } from "../schemas/routing.js";
+import type { ModelRoutingEngine } from "../services/model-routing-engine.js";
+import { truncate } from "./tool-result.js";
 
-function buildMermaidDiagram(table: Array<{ phase: string; model: string; mode: string; thinking: boolean; premium_multiplier: string }>): string {
-  const lines = [
-    "```mermaid",
-    "graph TD",
-    '  subgraph "SDD Pipeline — Model Routing"',
-  ];
+function buildMermaidDiagram(
+  table: Array<{
+    phase: string;
+    model: string;
+    mode: string;
+    thinking: boolean;
+    premium_multiplier: string;
+  }>,
+): string {
+  const lines = ["```mermaid", "graph TD", '  subgraph "SDD Pipeline — Model Routing"'];
   for (const row of table) {
     const thinking = row.thinking ? " + thinking" : "";
     const label = `${row.phase}\\n${row.model}\\n${row.mode}${thinking}\\n${row.premium_multiplier}`;
@@ -28,10 +31,7 @@ function buildMermaidDiagram(table: Array<{ phase: string; model: string; mode: 
   return lines.join("\n");
 }
 
-export function registerRoutingTools(
-  server: McpServer,
-  routingEngine: ModelRoutingEngine,
-): void {
+export function registerRoutingTools(server: McpServer, routingEngine: ModelRoutingEngine): void {
   server.registerTool(
     "sdd_model_routing",
     {
@@ -70,9 +70,7 @@ export function registerRoutingTools(
       };
 
       return {
-        content: [
-          { type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) },
-        ],
+        content: [{ type: "text" as const, text: truncate(JSON.stringify(result, null, 2)) }],
       };
     },
   );

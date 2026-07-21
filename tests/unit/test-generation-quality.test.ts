@@ -13,19 +13,20 @@
  * 7. sdd_verify_tests enhanced_coverage only scanned the .specs feature dir and
  *    reported 0% right after sdd_generate_tests wrote tests elsewhere.
  */
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+
 import { spawnSync } from "node:child_process";
-import { join } from "node:path";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { FileManager } from "../../src/services/file-manager.js";
-import { TestGenerator, pascalIdentifier } from "../../src/services/test-generator.js";
-import type { TestFramework } from "../../src/services/test-generator.js";
 import { PbtGenerator } from "../../src/services/pbt-generator.js";
+import type { TestFramework } from "../../src/services/test-generator.js";
+import { pascalIdentifier, TestGenerator } from "../../src/services/test-generator.js";
 import { TestTraceabilityMapper } from "../../src/services/test-traceability-mapper.js";
 import {
-  GENERATED_TESTS_MANIFEST,
   collectTestFileContents,
+  GENERATED_TESTS_MANIFEST,
   recordGeneratedTest,
 } from "../../src/tools/testing.js";
 
@@ -122,28 +123,28 @@ function testBindingConfig(framework: TestFramework): {
     jest: 'import { describe, it, expect } from "@jest/globals";',
     playwright: 'import { test, expect } from "@playwright/test";',
     pytest: "import pytest",
-    junit: 'import org.junit.jupiter.api.Test;\nimport static org.junit.jupiter.api.Assertions.*;',
+    junit: "import org.junit.jupiter.api.Test;\nimport static org.junit.jupiter.api.Assertions.*;",
     xunit: "using Xunit;",
   };
   const bodies: Record<TestFramework, string[]> = {
     vitest: [
       "const response = { status: 201 };\nexpect(response.status).toBe(201);",
-      "const records = [\"todo\"];\nexpect(records).toContain(\"todo\");",
+      'const records = ["todo"];\nexpect(records).toContain("todo");',
       "const status = 401;\nexpect(status).toBe(401);",
     ],
     jest: [
       "const response = { status: 201 };\nexpect(response.status).toBe(201);",
-      "const records = [\"todo\"];\nexpect(records).toContain(\"todo\");",
+      'const records = ["todo"];\nexpect(records).toContain("todo");',
       "const status = 401;\nexpect(status).toBe(401);",
     ],
     playwright: [
-      "await page.setContent('<div data-status=\"201\">created</div>');\nawait expect(page.locator('[data-status=\"201\"]')).toHaveText(\"created\");",
-      "await page.setContent('<div data-persisted=\"true\">todo</div>');\nawait expect(page.locator('[data-persisted=\"true\"]')).toHaveText(\"todo\");",
-      "await page.setContent('<div data-status=\"401\">unauthorized</div>');\nawait expect(page.locator('[data-status=\"401\"]')).toHaveText(\"unauthorized\");",
+      'await page.setContent(\'<div data-status="201">created</div>\');\nawait expect(page.locator(\'[data-status="201"]\')).toHaveText("created");',
+      'await page.setContent(\'<div data-persisted="true">todo</div>\');\nawait expect(page.locator(\'[data-persisted="true"]\')).toHaveText("todo");',
+      'await page.setContent(\'<div data-status="401">unauthorized</div>\');\nawait expect(page.locator(\'[data-status="401"]\')).toHaveText("unauthorized");',
     ],
     pytest: [
       "response_status = 201\nassert response_status == 201",
-      "records = [\"todo\"]\nassert \"todo\" in records",
+      'records = ["todo"]\nassert "todo" in records',
       "response_status = 401\nassert response_status == 401",
     ],
     junit: [
@@ -236,7 +237,7 @@ describe("TestGenerator — pytest output is valid Python", () => {
     expect(result.content.startsWith('"""')).toBe(true);
     expect(result.content).not.toContain("/**");
     expect(result.content).toContain("import pytest");
-    expect(result.content).toMatch(/\n    def test_\w+\(self\):/);
+    expect(result.content).toMatch(/\n {4}def test_\w+\(self\):/);
   });
 
   it("uses an importable module filename (no hyphens)", async () => {
@@ -246,12 +247,16 @@ describe("TestGenerator — pytest output is valid Python", () => {
     expect(base).not.toContain("-");
   });
 
-  it.skipIf(!havePython)("compiles under python3 -m py_compile", async () => {
-    const result = await generateTests("pytest", "tests-pytest");
-    const { status, stderr } = pyCompile(result.content, "generated_pytest_test.py");
-    expect(stderr).toBe("");
-    expect(status).toBe(0);
-  }, 15_000);
+  it.skipIf(!havePython)(
+    "compiles under python3 -m py_compile",
+    async () => {
+      const result = await generateTests("pytest", "tests-pytest");
+      const { status, stderr } = pyCompile(result.content, "generated_pytest_test.py");
+      expect(stderr).toBe("");
+      expect(status).toBe(0);
+    },
+    15_000,
+  );
 });
 
 // ─── 2. junit ───
@@ -301,7 +306,10 @@ describe("TestGenerator — acceptance-criteria parsing filters markdown noise",
   it("extracts only the real criteria with their real requirement IDs", () => {
     const criteria = testGenerator.extractAcceptanceCriteria(SPEC_MD);
     expect(criteria).toEqual([
-      { id: "REQ-API-001", criterion: "Given a valid payload, when POST /todos is called, then a todo is created" },
+      {
+        id: "REQ-API-001",
+        criterion: "Given a valid payload, when POST /todos is called, then a todo is created",
+      },
       { id: "REQ-API-001", criterion: "The response includes the created todo id" },
       { id: "REQ-API-002", criterion: "Verify todos survive a service restart" },
       { id: "REQ-SEC-001", criterion: "Ensure unauthenticated requests receive 401" },
@@ -310,7 +318,14 @@ describe("TestGenerator — acceptance-criteria parsing filters markdown noise",
   });
 
   it("never emits ToC links, label lines, table rows, or REQ-000 traces", async () => {
-    const frameworks: TestFramework[] = ["vitest", "jest", "playwright", "pytest", "junit", "xunit"];
+    const frameworks: TestFramework[] = [
+      "vitest",
+      "jest",
+      "playwright",
+      "pytest",
+      "junit",
+      "xunit",
+    ];
     for (const framework of frameworks) {
       const result = await generateTests(framework, `tests-${framework}`);
       expect(result.total_tests, framework).toBe(3);
@@ -344,7 +359,7 @@ describe("PbtGenerator — fast-check output is importable and self-contained", 
   it("imports the real default export, never the nonexistent named fc", async () => {
     const result = await generateProperties("fast-check", "pbt");
     expect(result.content).toContain('import fc from "fast-check";');
-    expect(result.content).not.toContain('import { fc }');
+    expect(result.content).not.toContain("import { fc }");
     expect(result.content).toContain('import { it, expect } from "vitest";');
   });
 
@@ -394,12 +409,16 @@ describe("PbtGenerator — hypothesis output is runnable and traceable", () => {
     expect(result.content).toContain("[REQ-SEC-001]");
   });
 
-  it.skipIf(!havePython)("compiles under python3 -m py_compile", async () => {
-    const result = await generateProperties("hypothesis", "pbt");
-    const { status, stderr } = pyCompile(result.content, "generated_hypothesis_pbt_test.py");
-    expect(stderr).toBe("");
-    expect(status).toBe(0);
-  }, 15_000);
+  it.skipIf(!havePython)(
+    "compiles under python3 -m py_compile",
+    async () => {
+      const result = await generateProperties("hypothesis", "pbt");
+      const { status, stderr } = pyCompile(result.content, "generated_hypothesis_pbt_test.py");
+      expect(stderr).toBe("");
+      expect(status).toBe(0);
+    },
+    15_000,
+  );
 });
 
 // ─── 7. verify_tests coverage scanning ───
@@ -417,7 +436,12 @@ describe("collectTestFileContents — scans where sdd_generate_tests wrote", () 
   });
 
   it("scans the default tests/ directory even without a manifest", async () => {
-    await fileManager.writeSpecFile("tests", "todo.test.ts", '// REQ-API-001\nit("REQ-API-001: works", () => {});\n', true);
+    await fileManager.writeSpecFile(
+      "tests",
+      "todo.test.ts",
+      '// REQ-API-001\nit("REQ-API-001: works", () => {});\n',
+      true,
+    );
     const contents = await collectTestFileContents(fileManager, FEATURE_DIR);
     expect(Object.keys(contents)).toContain("tests/todo.test.ts");
   });

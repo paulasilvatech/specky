@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { extractRequirementIds, extractTaskIds, formatTaskId, normalizeTaskId, TASK_LINE_PATTERN } from "../../src/utils/id-contracts.js";
+import {
+  extractRequirementIds,
+  extractRequirementSections,
+  extractTaskIds,
+  formatTaskId,
+  normalizeTaskId,
+  TASK_LINE_PATTERN,
+} from "../../src/utils/id-contracts.js";
 
 describe("ID contracts", () => {
   it("normalizes canonical and legacy task IDs to T-001", () => {
@@ -36,5 +43,72 @@ describe("ID contracts", () => {
     expect(normalizeTaskId(matches[0][1])).toBe("T-001");
     expect(matches[0][3]).toContain("Implement parser");
     expect(normalizeTaskId(matches[1][1])).toBe("T-002");
+  });
+});
+
+describe("extractRequirementSections", () => {
+  it("parses requirement heading, title, and body", () => {
+    const spec = [
+      "# Specification",
+      "",
+      "### REQ-CORE-001: User login",
+      "When a user submits credentials, the system shall authenticate them.",
+      "",
+      "### REQ-CORE-002: Admin audit",
+      "When an admin deletes a record, the system shall log it.",
+    ].join("\n");
+
+    const sections = extractRequirementSections(spec);
+    expect(sections).toHaveLength(2);
+    expect(sections[0].id).toBe("REQ-CORE-001");
+    expect(sections[0].title).toBe("User login");
+    expect(sections[0].text).toContain("authenticate");
+    expect(sections[1].id).toBe("REQ-CORE-002");
+  });
+
+  it("excludes acceptance-criteria prose from the requirement text", () => {
+    const spec = [
+      "### REQ-CORE-001: Login",
+      "When a user logs in, the system shall issue a token.",
+      "",
+      "Acceptance Criteria:",
+      "- Token expires in 15 minutes",
+      "- Refresh token is rotated",
+    ].join("\n");
+
+    const [section] = extractRequirementSections(spec);
+    expect(section.text).toContain("issue a token");
+    expect(section.text).not.toContain("Token expires");
+    expect(section.text).not.toContain("Refresh token");
+  });
+
+  it("deduplicates repeated requirement IDs (first wins)", () => {
+    const spec = [
+      "### REQ-CORE-001: First",
+      "First body.",
+      "### REQ-CORE-001: Duplicate",
+      "Duplicate body.",
+    ].join("\n");
+
+    const sections = extractRequirementSections(spec);
+    expect(sections).toHaveLength(1);
+    expect(sections[0].title).toBe("First");
+  });
+
+  it("stops the body at the next non-requirement heading", () => {
+    const spec = [
+      "### REQ-CORE-001: Login",
+      "Login body.",
+      "## Non-Functional",
+      "Latency under 200ms.",
+    ].join("\n");
+
+    const [section] = extractRequirementSections(spec);
+    expect(section.text).toContain("Login body");
+    expect(section.text).not.toContain("Latency");
+  });
+
+  it("returns an empty list when there are no requirement sections", () => {
+    expect(extractRequirementSections("# Just a title\nSome prose.")).toEqual([]);
   });
 });

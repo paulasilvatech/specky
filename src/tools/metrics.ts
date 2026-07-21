@@ -3,19 +3,19 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { formatError, truncate } from "./tool-result.js";
-import type { FileManager } from "../services/file-manager.js";
-import type { StateMachine } from "../services/state-machine.js";
-import type { MetricsGenerator } from "../services/metrics-generator.js";
-import type { CognitiveDebtEngine } from "../services/cognitive-debt-engine.js";
-import type { IntentDriftEngine } from "../services/intent-drift-engine.js";
 import { metricsInputSchema } from "../schemas/metrics.js";
-import { enrichResponse } from "./response-builder.js";
+import type { CognitiveDebtEngine } from "../services/cognitive-debt-engine.js";
 import { requireExecutionContext } from "../services/execution-context.js";
+import type { FileManager } from "../services/file-manager.js";
+import type { IntentDriftEngine } from "../services/intent-drift-engine.js";
+import type { MetricsGenerator } from "../services/metrics-generator.js";
+import type { StateMachine } from "../services/state-machine.js";
+import { enrichResponse } from "./response-builder.js";
+import { errorResult, truncate } from "./tool-result.js";
 
 export function registerMetricsTools(
   server: McpServer,
-  fileManager: FileManager,
+  _fileManager: FileManager,
   stateMachine: StateMachine,
   metricsGenerator: MetricsGenerator,
   cognitiveDebtEngine?: CognitiveDebtEngine,
@@ -90,20 +90,10 @@ export function registerMetricsTools(
 
         const enriched = await enrichResponse("sdd_metrics", result, stateMachine, stateDir);
         return {
-          content: [
-            { type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) },
-          ],
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
       } catch (error) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: formatError("sdd_metrics", error as Error),
-            },
-          ],
-          isError: true,
-        };
+        return errorResult("sdd_metrics", error);
       }
     },
   );

@@ -1,8 +1,11 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { FeaturePackageGenerator, SPECKY_SCAFFOLD_MARKER } from "../../src/services/feature-package-generator.js";
+import {
+  FeaturePackageGenerator,
+  SPECKY_SCAFFOLD_MARKER,
+} from "../../src/services/feature-package-generator.js";
 import { FileManager } from "../../src/services/file-manager.js";
 
 describe("FeaturePackageGenerator", () => {
@@ -55,10 +58,16 @@ describe("FeaturePackageGenerator", () => {
       "SPEC_PACKAGE.json",
     ]);
 
-    expect(await fileManager.readSpecFile(featureDir, "DESIGN.md")).toContain(SPECKY_SCAFFOLD_MARKER);
-    expect(await fileManager.readSpecFile(featureDir, "TASKS.md")).toContain(SPECKY_SCAFFOLD_MARKER);
+    expect(await fileManager.readSpecFile(featureDir, "DESIGN.md")).toContain(
+      SPECKY_SCAFFOLD_MARKER,
+    );
+    expect(await fileManager.readSpecFile(featureDir, "TASKS.md")).toContain(
+      SPECKY_SCAFFOLD_MARKER,
+    );
     expect(await fileManager.readSpecFile(featureDir, "TDD_STATUS.md")).toContain("REQ-CORE-001");
-    expect(JSON.parse(await fileManager.readSpecFile(featureDir, "SPEC_PACKAGE.json"))).toMatchObject({
+    expect(
+      JSON.parse(await fileManager.readSpecFile(featureDir, "SPEC_PACKAGE.json")),
+    ).toMatchObject({
       feature_number: "001",
       feature_name: "complete-package",
       source_tool: "test",

@@ -1,22 +1,22 @@
 /**
  * User-story titles must come from EARS prose, not the "(event_driven)" heading suffix.
  */
-import { mkdirSync, mkdtempSync, cpSync, rmSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { cpSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { afterEach, describe, expect, it } from "vitest";
+import { join, resolve } from "node:path";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { FileManager } from "../../src/services/file-manager.js";
-import { StateMachine } from "../../src/services/state-machine.js";
-import { DiagramGenerator } from "../../src/services/diagram-generator.js";
-import { registerVisualizationTools } from "../../src/tools/visualization.js";
-import { AuditLogger } from "../../src/services/audit-logger.js";
-import { RbacEngine } from "../../src/services/rbac-engine.js";
-import { ExecutionContextResolver } from "../../src/services/execution-context.js";
-import { installToolEnforcement } from "../../src/tools/tool-enforcement.js";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { afterEach, describe, expect, it } from "vitest";
 import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
+import { AuditLogger } from "../../src/services/audit-logger.js";
+import { DiagramGenerator } from "../../src/services/diagram-generator.js";
+import { ExecutionContextResolver } from "../../src/services/execution-context.js";
+import { FileManager } from "../../src/services/file-manager.js";
+import { RbacEngine } from "../../src/services/rbac-engine.js";
+import { StateMachine } from "../../src/services/state-machine.js";
+import { installToolEnforcement } from "../../src/tools/tool-enforcement.js";
+import { registerVisualizationTools } from "../../src/tools/visualization.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 const TEMPLATES_SRC = join(REPO, "templates");
@@ -28,7 +28,8 @@ describe("sdd_generate_user_stories titles", () => {
 
   afterEach(async () => {
     for (const close of cleanups.splice(0)) await close();
-    for (const ws of workspaces.splice(0)) rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    for (const ws of workspaces.splice(0))
+      rmSync(ws, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
   it("does not use (event_driven) as the user-story title", async () => {
@@ -92,16 +93,19 @@ describe("sdd_generate_user_stories titles", () => {
       arguments: {
         feature_number: "001",
         spec_dir: ".specs",
-        stories: [{
-          requirement_id: "REQ-CORE-001",
-          role: "a checkout customer",
-          goal: "validate card input before payment",
-          benefit: "invalid payment details are corrected before submission",
-          priority: "P1",
-          acceptance_criteria: ["Invalid card input is rejected with a field-specific message"],
-          independent_test: "Submit invalid card data and verify the field-specific validation result.",
-          flow_steps: ["Enter card details", "Validate fields", "Show validation result"],
-        }],
+        stories: [
+          {
+            requirement_id: "REQ-CORE-001",
+            role: "a checkout customer",
+            goal: "validate card input before payment",
+            benefit: "invalid payment details are corrected before submission",
+            priority: "P1",
+            acceptance_criteria: ["Invalid card input is rejected with a field-specific message"],
+            independent_test:
+              "Submit invalid card data and verify the field-specific validation result.",
+            flow_steps: ["Enter card details", "Validate fields", "Show validation result"],
+          },
+        ],
       },
     });
     const text = (raw.content as Array<{ type: string; text?: string }>)

@@ -38,7 +38,9 @@ export async function runHooks(opts: HooksOptions): Promise<number> {
       console.error("[specky hooks run] Missing hook name.");
       return 2;
     }
-    const file = scripts.find((s) => s === opts.name || s === opts.name + ".sh" || s === opts.name + ".mjs");
+    const file = scripts.find(
+      (s) => s === opts.name || s === opts.name + ".sh" || s === opts.name + ".mjs",
+    );
     if (!file) {
       console.error(`[specky hooks run] Hook not found: ${opts.name}`);
       return 2;
@@ -54,7 +56,11 @@ export async function runHooks(opts: HooksOptions): Promise<number> {
     if (code > 2) failures++;
   }
   console.log("");
-  console.log(failures === 0 ? "[specky hooks test] ✅ All hooks ran without crashes" : `[specky hooks test] ❌ ${failures} crashed`);
+  console.log(
+    failures === 0
+      ? "[specky hooks test] ✅ All hooks ran without crashes"
+      : `[specky hooks test] ❌ ${failures} crashed`,
+  );
   return failures === 0 ? 0 : 1;
 }
 

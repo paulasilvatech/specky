@@ -6,7 +6,7 @@
  * exists inside plugin assets. Build resolves those paths and adapts matchers
  * for each client runtime.
  */
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -19,8 +19,18 @@ const CURSOR_OUTPUT = resolve(ROOT, "dist/cursor-hooks.json");
 
 // Native Claude/Cursor tools that must NOT be MCP-prefixed.
 const NATIVE_TOOLS = new Set([
-  "Write", "Edit", "MultiEdit", "Read", "Bash", "Glob", "Grep",
-  "WebFetch", "WebSearch", "Task", "TodoWrite", "NotebookEdit",
+  "Write",
+  "Edit",
+  "MultiEdit",
+  "Read",
+  "Bash",
+  "Glob",
+  "Grep",
+  "WebFetch",
+  "WebSearch",
+  "Task",
+  "TodoWrite",
+  "NotebookEdit",
 ]);
 
 const MCP_PREFIX = "mcp__specky__";
@@ -89,11 +99,16 @@ function scriptNameFromCommand(command) {
 function cursorHookEntries(group, event) {
   const matcher = group.matcher ?? "";
   const isNativeWrite = NATIVE_ONLY_MATCHER.test(matcher);
-  const bucket = event === "PreToolUse"
-    ? (isNativeWrite ? "preToolUse" : "beforeMCPExecution")
-    : event === "PostToolUse"
-      ? (isNativeWrite ? "postToolUse" : "afterMCPExecution")
-      : CURSOR_EVENT_MAP[event];
+  const bucket =
+    event === "PreToolUse"
+      ? isNativeWrite
+        ? "preToolUse"
+        : "beforeMCPExecution"
+      : event === "PostToolUse"
+        ? isNativeWrite
+          ? "postToolUse"
+          : "afterMCPExecution"
+        : CURSOR_EVENT_MAP[event];
 
   if (!bucket) return [];
 
@@ -131,7 +146,10 @@ async function writeManifest(outPath, manifest, label) {
   await mkdir(dirname(outPath), { recursive: true });
   await writeFile(outPath, JSON.stringify(manifest, null, 2) + "\n", "utf8");
   const counts = Object.fromEntries(
-    Object.entries(manifest.hooks ?? manifest).map(([key, value]) => [key, Array.isArray(value) ? value.length : 0]),
+    Object.entries(manifest.hooks ?? manifest).map(([key, value]) => [
+      key,
+      Array.isArray(value) ? value.length : 0,
+    ]),
   );
   console.log(`[${label}] wrote ${outPath}`);
   console.log(`[${label}] groups:`, counts);

@@ -1,6 +1,6 @@
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { resolve } from "node:path";
 import { tmpdir } from "node:os";
+import { resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { writeMcpRegistration } from "../../src/cli/lib/mcp-writer.js";
 

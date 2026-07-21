@@ -1,16 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { AuditLogger } from "../../src/services/audit-logger.js";
-import {
-  mkdtempSync,
-  rmSync,
-  readFileSync,
-  existsSync,
-  writeFileSync,
-  mkdirSync,
-} from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
 import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { AuditLogger } from "../../src/services/audit-logger.js";
 
 describe("AuditLogger — enhanced (v3.2.0)", () => {
   let tempDir: string;

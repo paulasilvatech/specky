@@ -5,12 +5,7 @@
   "feature_dir": ".specs/001-todo-api",
   "source_tool": "sdd_write_spec",
   "generated_at": "2026-07-01T12:00:00.000Z",
-  "requirements": [
-    "REQ-TODO-001",
-    "REQ-TODO-002",
-    "REQ-TODO-003",
-    "REQ-TODO-004"
-  ],
+  "requirements": ["REQ-TODO-001", "REQ-TODO-002", "REQ-TODO-003", "REQ-TODO-004"],
   "required_artifacts": [
     "CONSTITUTION.md",
     "SPECIFICATION.md",

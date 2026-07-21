@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 const ROOT = process.cwd();
@@ -69,14 +69,7 @@ function isCapability(value) {
   return CANONICAL_CAPABILITIES.has(value) || /^mcp\.(specky|github)\.[a-z][a-z0-9_]*$/.test(value);
 }
 
-const COPILOT_AGENT_TOOLS = new Set([
-  "agent",
-  "edit",
-  "fetch",
-  "runCommands",
-  "search",
-  "todos",
-]);
+const COPILOT_AGENT_TOOLS = new Set(["agent", "edit", "fetch", "runCommands", "search", "todos"]);
 
 const CLAUDE_TOOL_NAMES = new Set([
   "Bash",
@@ -93,9 +86,7 @@ const CLAUDE_TOOL_NAMES = new Set([
 ]);
 
 function parseSddTokens(text) {
-  return [...new Set(text.match(/\bsdd_[a-z0-9_]+\b/g) ?? [])].sort((a, b) =>
-    a.localeCompare(b),
-  );
+  return [...new Set(text.match(/\bsdd_[a-z0-9_]+\b/g) ?? [])].sort((a, b) => a.localeCompare(b));
 }
 
 // Build the authoritative set of real sdd_* tool names from the source tree.
@@ -137,12 +128,10 @@ function main() {
     const capabilities = parseArray(fm, "capabilities");
     const sddTokens = parseSddTokens(text);
 
-    if (/^model:/m.test(fm))
-      errors.push(`${filePath}: remove hardcoded model from frontmatter`);
+    if (/^model:/m.test(fm)) errors.push(`${filePath}: remove hardcoded model from frontmatter`);
     if (/^model_fallback:/m.test(fm))
       errors.push(`${filePath}: remove model_fallback from frontmatter`);
-    if (!fmValue(fm, "name"))
-      errors.push(`${filePath}: missing 'name' in frontmatter`);
+    if (!fmValue(fm, "name")) errors.push(`${filePath}: missing 'name' in frontmatter`);
     if (!fmValue(fm, "description"))
       errors.push(`${filePath}: missing 'description' in frontmatter`);
 
@@ -155,18 +144,19 @@ function main() {
 
     for (const tool of tools) {
       if (CLAUDE_TOOL_NAMES.has(tool)) {
-        errors.push(`${filePath}: Claude-native tool "${tool}" is not allowed in .apm Copilot source`);
+        errors.push(
+          `${filePath}: Claude-native tool "${tool}" is not allowed in .apm Copilot source`,
+        );
       }
       if (tool.startsWith("sdd_")) {
-        errors.push(`${filePath}: use namespaced Copilot MCP tool "specky/${tool}" instead of "${tool}"`);
+        errors.push(
+          `${filePath}: use namespaced Copilot MCP tool "specky/${tool}" instead of "${tool}"`,
+        );
       }
       if (tool.startsWith("mcp__")) {
         errors.push(`${filePath}: Claude MCP tool "${tool}" is not allowed in .apm Copilot source`);
       }
-      if (
-        !COPILOT_AGENT_TOOLS.has(tool) &&
-        !tool.startsWith("specky/sdd_")
-      ) {
+      if (!COPILOT_AGENT_TOOLS.has(tool) && !tool.startsWith("specky/sdd_")) {
         errors.push(`${filePath}: unknown Copilot tool "${tool}"`);
       }
     }
@@ -177,9 +167,14 @@ function main() {
       }
     }
 
-    const declaredSpeckyTools = capabilities.length > 0
-      ? capabilities.filter((capability) => capability.startsWith("mcp.specky.")).map((capability) => capability.slice("mcp.specky.".length))
-      : tools.filter((tool) => tool.startsWith("specky/")).map((tool) => tool.slice("specky/".length));
+    const declaredSpeckyTools =
+      capabilities.length > 0
+        ? capabilities
+            .filter((capability) => capability.startsWith("mcp.specky."))
+            .map((capability) => capability.slice("mcp.specky.".length))
+        : tools
+            .filter((tool) => tool.startsWith("specky/"))
+            .map((tool) => tool.slice("specky/".length));
     const missingTools = sddTokens.filter((tool) => !declaredSpeckyTools.includes(tool));
     if (missingTools.length > 0)
       errors.push(
@@ -206,9 +201,7 @@ function main() {
         errors.push(`${skillFile}: missing 'name' in frontmatter`);
       } else {
         if (name !== dirName)
-          errors.push(
-            `${skillFile}: name "${name}" must equal folder name "${dirName}"`,
-          );
+          errors.push(`${skillFile}: name "${name}" must equal folder name "${dirName}"`);
         if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(name))
           errors.push(`${skillFile}: name "${name}" must be lowercase kebab-case`);
       }
@@ -231,8 +224,7 @@ function main() {
       if (fmValue(fm, "mode"))
         errors.push(`${filePath}: use 'agent: agent' instead of legacy 'mode'`);
       const agent = fmValue(fm, "agent");
-      if (!agent)
-        errors.push(`${filePath}: missing 'agent' in frontmatter (expected agent)`);
+      if (!agent) errors.push(`${filePath}: missing 'agent' in frontmatter (expected agent)`);
       else if (!["agent", "ask", "edit", "plan"].includes(agent))
         errors.push(`${filePath}: invalid agent "${agent}"`);
     }
@@ -243,8 +235,7 @@ function main() {
   for (const filePath of listFiles(INSTRUCTIONS_DIR, ".instructions.md")) {
     const text = readFileSync(filePath, "utf8");
     const fm = readFrontmatter(text);
-    if (!fmValue(fm, "applyTo"))
-      errors.push(`${filePath}: missing 'applyTo' in frontmatter`);
+    if (!fmValue(fm, "applyTo")) errors.push(`${filePath}: missing 'applyTo' in frontmatter`);
     checkUnknownTools(filePath, text);
   }
 
@@ -254,9 +245,7 @@ function main() {
   }
 
   const skillCount = existsSync(SKILLS_DIR)
-    ? readdirSync(SKILLS_DIR).filter((d) =>
-      statSync(join(SKILLS_DIR, d)).isDirectory(),
-    ).length
+    ? readdirSync(SKILLS_DIR).filter((d) => statSync(join(SKILLS_DIR, d)).isDirectory()).length
     : 0;
   const counts = `${agentFiles.length} agents, ${listFiles(PROMPTS_DIR, ".prompt.md").length} prompts, ${skillCount} skills`;
 
@@ -266,9 +255,7 @@ function main() {
     process.exit(2);
   }
 
-  console.log(
-    `Specky primitive audit passed (${counts}, ${known.size} known tools).`,
-  );
+  console.log(`Specky primitive audit passed (${counts}, ${known.size} known tools).`);
 }
 
 main();

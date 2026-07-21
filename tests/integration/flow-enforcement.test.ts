@@ -73,7 +73,9 @@ function activatePipeline(workspace: string, phase = 7, feature = "001-test"): v
       },
     },
   });
-  const phases = Object.fromEntries(PHASE_NAMES.map((phaseName) => [phaseName, { status: "pending" }]));
+  const phases = Object.fromEntries(
+    PHASE_NAMES.map((phaseName) => [phaseName, { status: "pending" }]),
+  );
   const state = {
     version: "5.0.0",
     project_name: name,
@@ -85,8 +87,9 @@ function activatePipeline(workspace: string, phase = 7, feature = "001-test"): v
     gate_decision: null,
   };
   const raw = JSON.stringify(state, null, 2);
-  const key = process.env["SDD_STATE_KEY"]
-    ?? createHash("sha256").update(`specky-state-v1:${workspace}`).digest("hex");
+  const key =
+    process.env["SDD_STATE_KEY"] ??
+    createHash("sha256").update(`specky-state-v1:${workspace}`).digest("hex");
   writeFileSync(resolve(dir, ".sdd-state.json"), raw);
   writeFileSync(
     resolve(dir, ".sdd-state.json.sig"),
@@ -101,17 +104,18 @@ function checkoutBranch(workspace: string, branch: string): void {
 function hookFeatureContext(workspace: string): Record<string, string> {
   const specRoot = resolve(workspace, ".specs");
   if (!existsSync(specRoot)) return {};
-  const feature = readdirSync(specRoot).find((name) =>
-    name.startsWith("001-") &&
-    existsSync(resolve(specRoot, name, ".sdd-state.json")) &&
-    existsSync(resolve(specRoot, name, ".sdd-state.json.sig"))
+  const feature = readdirSync(specRoot).find(
+    (name) =>
+      name.startsWith("001-") &&
+      existsSync(resolve(specRoot, name, ".sdd-state.json")) &&
+      existsSync(resolve(specRoot, name, ".sdd-state.json.sig")),
   );
   return feature
     ? {
-      SPECKY_HOOK_WORKSPACE: workspace,
-      SDD_SPEC_DIR: ".specs",
-      SDD_FEATURE_NUMBER: "001",
-    }
+        SPECKY_HOOK_WORKSPACE: workspace,
+        SDD_SPEC_DIR: ".specs",
+        SDD_FEATURE_NUMBER: "001",
+      }
     : {};
 }
 
@@ -211,7 +215,9 @@ describe("pipeline-guard.sh", { timeout: INTEGRATION_TIMEOUT }, () => {
   });
 });
 
-describe("branch-validator.sh (Write|Edit|MultiEdit enforcement)", { timeout: INTEGRATION_TIMEOUT }, () => {
+describe("branch-validator.sh (Write|Edit|MultiEdit enforcement)", {
+  timeout: INTEGRATION_TIMEOUT,
+}, () => {
   let ws: string;
   beforeEach(() => {
     ws = makeWorkspace();

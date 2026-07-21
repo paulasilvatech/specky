@@ -60,7 +60,7 @@
 | **Enterprise** | [Compliance Frameworks](#compliance-frameworks) | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 |
 | | [Enterprise Ready](#enterprise-ready) | Security, audit trail, quality gates |
 | **Platform** | [The SDD Platform](#the-spec-driven-development-platform) | Built on Spec-Kit, everything included |
-| | [Roadmap](#roadmap) | v3.11.1 current, future capabilities planned |
+| | [Roadmap](#roadmap) | v3.12.0 current, future capabilities planned |
 
 ## What is Specky?
 
@@ -215,8 +215,8 @@ Specky adds a **deterministic engine** between your intent and your code:
 | EARS validation (programmatic, not AI guessing) | 6 patterns enforced at schema level |
 | Enforced pipeline (not suggestions) | Contract-specific phases, central analysis gate, optional configured LGTM blocking |
 | Pre/post hooks on every phase | specky-artifact-validator, specky-branch-validator, specky-phase-gate, specky-lgtm-gate |
-| Workload-specific diagrams | Exact required manifest, explicit Mermaid/FigJam payloads, source evidence references |
-| Infrastructure as Code | Terraform from persisted cloud/resources; DESIGN.md evidence required |
+| Workload-specific diagrams | Explicit evidence validation or deterministic auto-generation from specification/design content |
+| Infrastructure as Code | DESIGN.md-driven Terraform with exact resource templates and fail-fast preflight |
 | Work item export | GitHub Issues, Azure Boards, Jira via MCP-to-MCP routing |
 | 5 compliance frameworks | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 with explicit control-ID evidence |
 | Cross-artifact traceability | Requirement to design to task to test to code |
@@ -566,7 +566,7 @@ The AI calls:
 
 - `sdd_run_analysis` → completeness audit, orphaned criteria detection
 - `sdd_compliance_check` → evaluates the persisted SOC2 pack using evidence keyed by control ID
-- `sdd_generate_all_diagrams` → validates exactly the workload-required Mermaid payloads against source evidence
+- `sdd_generate_all_diagrams` → validates explicit Mermaid payloads or uses `mode: "auto"` to derive the complete supported set from source evidence before an atomic write
 
 ### Step 6: Generate infrastructure and tests
 
@@ -576,7 +576,7 @@ The AI calls:
 
 The AI calls:
 
-- `sdd_generate_iac` → Terraform for the exact cloud/resources stored in the feature contract
+- `sdd_generate_iac` → Terraform for the exact cloud/resources grounded in the relevant `DESIGN.md` sections; excluded or unsupported resources fail before files are written
 - `sdd_generate_dockerfile` → Dockerfile/compose from the persisted development stack
 - `sdd_generate_tests` → executable tests from fingerprinted requirement bindings
 
@@ -839,16 +839,18 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 
 | Tool | Description |
 |------|-------------|
-| `sdd_generate_diagram` | Single Mermaid diagram validated against the workload contract's required set |
-| `sdd_generate_all_diagrams` | The exact diagram set the feature contract requires, written atomically |
+| `sdd_generate_diagram` | Explicit Mermaid validation by default, or evidence-grounded auto-generation for supported types |
+| `sdd_generate_all_diagrams` | Explicit validation or atomic auto-generation of the complete supported contracted set |
 | `sdd_generate_user_stories` | User stories with flow diagrams (web-application workload) |
 | `sdd_figma_diagram` | FigJam-ready diagram via Figma MCP |
+
+`mode: "explicit"` remains the compatibility default and requires caller-supplied Mermaid plus evidence references. `mode: "auto"` derives C4 context, sequence, ER, and deployment diagrams from `SPECIFICATION.md` and `DESIGN.md`; unsupported contracted types fail before any file is written.
 
 ### Infrastructure as Code (3)
 
 | Tool | Description |
 |------|-------------|
-| `sdd_generate_iac` | Terraform/Bicep from architecture design |
+| `sdd_generate_iac` | Terraform from canonical `module:service` resources grounded in relevant `DESIGN.md` sections; unsupported templates fail preflight |
 | `sdd_validate_iac` | Validation via Terraform MCP + Azure MCP |
 | `sdd_generate_dockerfile` | Dockerfile + docker-compose from tech stack |
 
@@ -1248,6 +1250,10 @@ npm test
 # Run tests with coverage report
 npm run test:coverage
 
+# Lint and format with Biome
+npm run lint
+npm run format
+
 # Development mode (auto-reload on file changes)
 npm run dev
 
@@ -1255,9 +1261,9 @@ npm run dev
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | node dist/index.js 2>/dev/null
 
 # Run the published image from GHCR (multi-arch: linux/amd64 + linux/arm64)
-docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.11.1
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.12.0
 docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
-curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.11.1"}
+curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.12.0"}
 
 # Or build and run locally from source
 docker build -t specky-sdd:dev .
@@ -1272,7 +1278,7 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 
 ## Roadmap
 
-### v3.11.1 (current)
+### v3.12.0 (current)
 
 | Capability | Status |
 |------------|--------|
@@ -1281,7 +1287,8 @@ deployments (enterprise profile, token auth, TLS proxy, private packages) see
 | Target-specific install: `--target=copilot`, `claude`, `cursor`, `opencode`, or `agent-skills` | Stable |
 | Copilot-safe hook manifests (no lifecycle event cross-read) | Stable |
 | Phase validation on every tool with gate enforcement | Stable |
-| Workload-contracted diagram sets (C4, sequence, ER, DFD, deployment, network) | Stable |
+| Evidence-grounded diagram generation with explicit and auto modes | Stable |
+| DESIGN.md-driven Terraform with unsupported-resource preflight | Stable |
 | 12-section system design template (C4 model, security, infrastructure) | Stable |
 | Enriched interactive responses on all tools (progress, handoff, education) | Stable |
 | Parallel documentation generation (5 types via Promise.all) | Stable |

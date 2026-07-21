@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { RbacEngine, type RbacRole } from "../../src/services/rbac-engine.js";
+import { beforeEach, describe, expect, it } from "vitest";
+import { RbacEngine } from "../../src/services/rbac-engine.js";
 
 describe("RbacEngine", () => {
   // ── Disabled mode (default) ────────────────────────────────────

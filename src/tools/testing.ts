@@ -3,15 +3,16 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { formatError, truncate } from "./tool-result.js";
+import { generateTestsInputSchema, verifyTestsInputSchema } from "../schemas/testing.js";
+import { requireCapabilityConfig, requireFeatureContext } from "../services/execution-context.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
 import type { TestGenerator } from "../services/test-generator.js";
 import type { TestResultParser } from "../services/test-result-parser.js";
 import type { TestTraceabilityMapper } from "../services/test-traceability-mapper.js";
-import { generateTestsInputSchema, verifyTestsInputSchema } from "../schemas/testing.js";
+import { REQUIREMENT_HEADING_PATTERN } from "../utils/id-contracts.js";
 import { enrichResponse } from "./response-builder.js";
-import { requireExecutionContext } from "../services/execution-context.js";
+import { errorResult, truncate } from "./tool-result.js";
 
 export function registerTestingTools(
   server: McpServer,
@@ -37,10 +38,10 @@ export function registerTestingTools(
     },
     async () => {
       try {
-        const context = requireExecutionContext("sdd_generate_tests");
-        const feature = context.feature!;
-        const stateDir = context.stateDir!;
-        const tdd = context.state!.contract.capability_config.tdd!;
+        const context = requireFeatureContext("sdd_generate_tests");
+        const feature = context.feature;
+        const stateDir = context.stateDir;
+        const tdd = requireCapabilityConfig(context.state.contract.capability_config, "tdd");
 
         const genResult = await testGenerator.generate(
           feature.directory,
@@ -52,18 +53,20 @@ export function registerTestingTools(
 
         const fileName = genResult.output_file.split("/").pop() || genResult.output_file;
         const dirPart = genResult.output_file.replace(/\/[^/]+$/, "");
-        await fileManager.writeSpecFile(
-          dirPart,
-          fileName,
-          genResult.content,
-          true,
-        );
+        await fileManager.writeSpecFile(dirPart, fileName, genResult.content, true);
 
         // Record where the tests landed so sdd_verify_tests can scan the
         // same directory for its coverage mapping (best-effort).
         try {
-          await recordGeneratedTest(fileManager, feature.directory, tdd.framework, genResult.output_file);
-        } catch { /* generation already succeeded — manifest is advisory */ }
+          await recordGeneratedTest(
+            fileManager,
+            feature.directory,
+            tdd.framework,
+            genResult.output_file,
+          );
+        } catch {
+          /* generation already succeeded — manifest is advisory */
+        }
 
         const traceability = genResult.stubs.map((s) => ({
           test_id: s.id,
@@ -71,18 +74,21 @@ export function registerTestingTools(
           description: s.description,
         }));
 
-        const recommendedServers = tdd.framework === "playwright"
-          ? [{
-            id: "playwright-mcp",
-            name: "Playwright MCP",
-            purpose: "Execute generated Playwright tests directly from the AI client",
-            install_command: "npx @anthropic/mcp-playwright",
-            install_note: "Enables automated browser testing via MCP",
-            required: false,
-            status: "recommended" as const,
-            enhances: ["sdd_generate_tests"],
-          }]
-          : [];
+        const recommendedServers =
+          tdd.framework === "playwright"
+            ? [
+                {
+                  id: "playwright-mcp",
+                  name: "Playwright MCP",
+                  purpose: "Execute generated Playwright tests directly from the AI client",
+                  install_command: "npx @anthropic/mcp-playwright",
+                  install_note: "Enables automated browser testing via MCP",
+                  required: false,
+                  status: "recommended" as const,
+                  enhances: ["sdd_generate_tests"],
+                },
+              ]
+            : [];
 
         const result = {
           status: "tests_generated",
@@ -104,20 +110,10 @@ export function registerTestingTools(
 
         const enriched = await enrichResponse("sdd_generate_tests", result, stateMachine, stateDir);
         return {
-          content: [
-            { type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) },
-          ],
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
       } catch (error) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: formatError("sdd_generate_tests", error as Error),
-            },
-          ],
-          isError: true,
-        };
+        return errorResult("sdd_generate_tests", error);
       }
     },
   );
@@ -140,10 +136,10 @@ export function registerTestingTools(
     },
     async ({ test_results_json }) => {
       try {
-        const context = requireExecutionContext("sdd_verify_tests");
-        const feature = context.feature!;
-        const stateDir = context.stateDir!;
-        const tdd = context.state!.contract.capability_config.tdd!;
+        const context = requireFeatureContext("sdd_verify_tests");
+        const feature = context.feature;
+        const stateDir = context.stateDir;
+        const tdd = requireCapabilityConfig(context.state.contract.capability_config, "tdd");
 
         const verification = await testGenerator.verifyTestResults(
           feature.directory,
@@ -157,23 +153,36 @@ export function registerTestingTools(
           try {
             const parsedResults = testResultParser.parse(test_results_json);
             let specContent = "";
-            try { specContent = await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md"); } catch { /* ok */ }
-            const reqIds = [...specContent.matchAll(/### (REQ-[A-Z]+-\d{3})/g)].map((r) => r[1]);
+            try {
+              specContent = await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md");
+            } catch {
+              /* ok */
+            }
+            const reqIds = [...specContent.matchAll(REQUIREMENT_HEADING_PATTERN)].map((r) => r[1]);
 
             // Scan the feature dir PLUS the directories sdd_generate_tests
             // actually wrote to — otherwise coverage reports 0% for tests
             // that were just generated outside .specs.
             const testFileContents = await collectTestFileContents(fileManager, feature.directory);
 
-            const report = testTraceabilityMapper.buildCoverageReport(testFileContents, parsedResults, reqIds);
-            failureDetails = testTraceabilityMapper.buildFailureDetails(parsedResults, testFileContents);
+            const report = testTraceabilityMapper.buildCoverageReport(
+              testFileContents,
+              parsedResults,
+              reqIds,
+            );
+            failureDetails = testTraceabilityMapper.buildFailureDetails(
+              parsedResults,
+              testFileContents,
+            );
             coverageReport = {
               overall_percent: report.overall_percent,
               failing_requirements: report.failing_requirements,
               untested_requirements: report.untested_requirements,
               per_requirement: report.per_requirement,
             };
-          } catch { /* fall back to legacy result */ }
+          } catch {
+            /* fall back to legacy result */
+          }
         }
 
         const effectiveCoverage = coverageReport
@@ -187,7 +196,9 @@ export function registerTestingTools(
           status: verification.error ? "error" : "verified",
           ...verification,
           ...(coverageReport ? { enhanced_coverage: coverageReport } : {}),
-          ...(failureDetails && failureDetails.length > 0 ? { failure_details: failureDetails } : {}),
+          ...(failureDetails && failureDetails.length > 0
+            ? { failure_details: failureDetails }
+            : {}),
           coverage_threshold: tdd.coverage_threshold,
           meets_threshold: effectiveCoverage >= tdd.coverage_threshold,
           next_steps:
@@ -205,10 +216,7 @@ export function registerTestingTools(
           content: [{ type: "text" as const, text: truncate(JSON.stringify(enriched, null, 2)) }],
         };
       } catch (error) {
-        return {
-          content: [{ type: "text" as const, text: formatError("sdd_verify_tests", error as Error) }],
-          isError: true,
-        };
+        return errorResult("sdd_verify_tests", error);
       }
     },
   );
@@ -251,7 +259,9 @@ export async function recordGeneratedTest(
   let entries: GeneratedTestEntry[] = [];
   try {
     entries = parseManifest(await fileManager.readSpecFile(featureDir, GENERATED_TESTS_MANIFEST));
-  } catch { /* first generation for this feature */ }
+  } catch {
+    /* first generation for this feature */
+  }
 
   const next = entries.filter((entry) => entry.file !== outputFile);
   next.push({ framework, file: outputFile });
@@ -276,13 +286,17 @@ export async function collectTestFileContents(
 
   const scanDirs = new Set<string>([featureDir, DEFAULT_TEST_OUTPUT_DIR]);
   try {
-    const entries = parseManifest(await fileManager.readSpecFile(featureDir, GENERATED_TESTS_MANIFEST));
+    const entries = parseManifest(
+      await fileManager.readSpecFile(featureDir, GENERATED_TESTS_MANIFEST),
+    );
     for (const entry of entries) {
       if (entry.file.includes("/")) {
         scanDirs.add(entry.file.slice(0, entry.file.lastIndexOf("/")));
       }
     }
-  } catch { /* no manifest yet — scan the defaults */ }
+  } catch {
+    /* no manifest yet — scan the defaults */
+  }
 
   for (const dir of scanDirs) {
     const files = await fileManager.listSpecFiles(dir);
@@ -290,7 +304,9 @@ export async function collectTestFileContents(
       if (!TEST_FILE_PATTERN.test(name)) continue;
       try {
         contents[`${dir}/${name}`] = await fileManager.readSpecFile(dir, name);
-      } catch { /* unreadable — skip */ }
+      } catch {
+        /* unreadable — skip */
+      }
     }
   }
 

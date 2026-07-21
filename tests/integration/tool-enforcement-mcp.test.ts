@@ -2,7 +2,7 @@
  * tool-enforcement-mcp.test.ts — validates global MCP tool enforcement.
  */
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -11,21 +11,33 @@ import { writeTestWorkspaceConfig } from "../helpers/runtime-workspace.js";
 const REPO = resolve(import.meta.dirname, "../..");
 const SERVER = resolve(REPO, "dist/index.js");
 
-function callTool(cwd: string, toolName: string, args: Record<string, unknown>, role: string): Record<string, unknown> {
+function callTool(
+  cwd: string,
+  toolName: string,
+  args: Record<string, unknown>,
+  role: string,
+): Record<string, unknown> {
   const input =
     JSON.stringify({
       jsonrpc: "2.0",
       id: 1,
       method: "initialize",
-      params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "enforcement-test", version: "1" } },
-    }) + "\n" +
-    JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n" +
+      params: {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: { name: "enforcement-test", version: "1" },
+      },
+    }) +
+    "\n" +
+    JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) +
+    "\n" +
     JSON.stringify({
       jsonrpc: "2.0",
       id: 2,
       method: "tools/call",
       params: { name: toolName, arguments: args },
-    }) + "\n";
+    }) +
+    "\n";
 
   const res = spawnSync("node", [SERVER], {
     cwd,
@@ -55,7 +67,10 @@ function extractText(response: Record<string, unknown>): string {
 
 function readAuditEntries(workspace: string): Array<Record<string, unknown>> {
   const raw = readFileSync(resolve(workspace, ".specs", ".audit.jsonl"), "utf8");
-  return raw.trim().split("\n").map((line) => JSON.parse(line) as Record<string, unknown>);
+  return raw
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line) as Record<string, unknown>);
 }
 
 describe("MCP tool enforcement", () => {
@@ -76,7 +91,12 @@ describe("MCP tool enforcement", () => {
   });
 
   it("allows viewer read-only tools and writes audit entries", () => {
-    const response = callTool(ws, "sdd_get_status", { view: "workspace", spec_dir: ".specs" }, "viewer");
+    const response = callTool(
+      ws,
+      "sdd_get_status",
+      { view: "workspace", spec_dir: ".specs" },
+      "viewer",
+    );
     const text = extractText(response);
 
     expect(text).toContain("workspace_status");
@@ -90,24 +110,32 @@ describe("MCP tool enforcement", () => {
     expect(entries[1].output_hash).toEqual(expect.any(String));
 
     const verifyResponse = callTool(ws, "sdd_verify_audit", { spec_dir: ".specs" }, "viewer");
-    const verification = JSON.parse(extractText(verifyResponse)) as { valid: boolean; total_entries: number };
+    const verification = JSON.parse(extractText(verifyResponse)) as {
+      valid: boolean;
+      total_entries: number;
+    };
     expect(verification.valid).toBe(true);
     expect(verification.total_entries).toBeGreaterThanOrEqual(3);
   });
 
   it("blocks viewer write tools before execution and records denial", () => {
-    const response = callTool(ws, "sdd_init", {
-      project_name: "demo",
-      spec_dir: ".specs",
-      feature_number: "001",
-      use_case: {
-        lifecycle: "greenfield",
-        workload: "service",
-        execution_mode: "full",
-        capabilities: [],
-        capability_config: {},
+    const response = callTool(
+      ws,
+      "sdd_init",
+      {
+        project_name: "demo",
+        spec_dir: ".specs",
+        feature_number: "001",
+        use_case: {
+          lifecycle: "greenfield",
+          workload: "service",
+          execution_mode: "full",
+          capabilities: [],
+          capability_config: {},
+        },
       },
-    }, "viewer");
+      "viewer",
+    );
     const payload = JSON.parse(extractText(response)) as { error: string; active_role: string };
 
     expect(payload.error).toBe("access_denied");

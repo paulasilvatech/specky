@@ -3,23 +3,23 @@
  */
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { formatError, truncate } from "./tool-result.js";
-import type { FileManager } from "../services/file-manager.js";
-import type { DocumentConverter } from "../services/document-converter.js";
-import type { StateMachine } from "../services/state-machine.js";
 import {
-  importDocumentInputSchema,
-  figmaToSpecInputSchema,
   batchImportInputSchema,
+  figmaToSpecInputSchema,
+  importDocumentInputSchema,
 } from "../schemas/input.js";
-import { enrichResponse } from "./response-builder.js";
+import type { DocumentConverter } from "../services/document-converter.js";
 import { requireExecutionContext } from "../services/execution-context.js";
+import type { FileManager } from "../services/file-manager.js";
+import type { StateMachine } from "../services/state-machine.js";
+import { enrichResponse } from "./response-builder.js";
+import { errorResult, truncate } from "./tool-result.js";
 
 export function registerInputTools(
   server: McpServer,
   fileManager: FileManager,
   documentConverter: DocumentConverter,
-  stateMachine: StateMachine
+  stateMachine: StateMachine,
 ): void {
   // ─── sdd_import_document ───
   server.registerTool(
@@ -65,28 +65,33 @@ export function registerInputTools(
           ],
           learning_note:
             "SDD processes work best with structured Markdown input. Converting documents first ensures consistent parsing and traceability across the pipeline.",
-          recommended_servers: needsMarkitdown ? [{
-            id: "markitdown",
-            name: "Microsoft MarkItDown",
-            purpose: "Enhanced conversion for PDF/DOCX/PPTX with better formatting, tables, and image handling",
-            install_command: "Add to MCP settings: uvx markitdown-mcp",
-            install_note: "Specky used its built-in converter. For better results, install MarkItDown MCP — the AI client will automatically use it when available.",
-            required: false,
-            status: "recommended",
-            enhances: ["sdd_import_document", "sdd_batch_import"]
-          }] : [],
+          recommended_servers: needsMarkitdown
+            ? [
+                {
+                  id: "markitdown",
+                  name: "Microsoft MarkItDown",
+                  purpose:
+                    "Enhanced conversion for PDF/DOCX/PPTX with better formatting, tables, and image handling",
+                  install_command: "Add to MCP settings: uvx markitdown-mcp",
+                  install_note:
+                    "Specky used its built-in converter. For better results, install MarkItDown MCP — the AI client will automatically use it when available.",
+                  required: false,
+                  status: "recommended",
+                  enhances: ["sdd_import_document", "sdd_batch_import"],
+                },
+              ]
+            : [],
           contract_id: contract.id,
           contract_fingerprint: contract.fingerprint,
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(output, null, 2)) }] };
-      } catch (error) {
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_import_document", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(output, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_import_document", error);
       }
-    }
+    },
   );
 
   // ─── sdd_figma_to_spec ───
@@ -123,8 +128,7 @@ export function registerInputTools(
               " to retrieve the design structure, components, and layout information.",
             step_2:
               "Parse the Figma design context to identify UI components, user flows, and interaction patterns.",
-            step_3:
-              `Use sdd_discover with the extracted design context to generate a specification in '${featureDir}'.`,
+            step_3: `Use sdd_discover with the extracted design context to generate a specification in '${featureDir}'.`,
             step_4:
               "Proceed through the SDD pipeline: sdd_write_spec, sdd_write_design, sdd_write_tasks.",
           },
@@ -139,15 +143,17 @@ export function registerInputTools(
             "Figma-to-spec conversion bridges visual design with formal requirements. The design context provides UI structure that maps to EARS requirements: components become features, interactions become behavioral requirements, and layout constraints become interface requirements.",
         };
 
-        const enriched = await enrichResponse("sdd_figma_to_spec", output, stateMachine, context.stateDir!);
+        const enriched = await enrichResponse(
+          "sdd_figma_to_spec",
+          output,
+          stateMachine,
+          context.stateDir!,
+        );
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
-        return {
-          content: [{ type: "text" as const, text: formatError("sdd_figma_to_spec", error as Error) }],
-          isError: true,
-        };
+        return errorResult("sdd_figma_to_spec", error);
       }
-    }
+    },
   );
 
   // ─── sdd_batch_import ───
@@ -177,8 +183,7 @@ export function registerInputTools(
             total: 0,
             successful: 0,
             failed: 0,
-            explanation:
-              `No supported documents found in '${documents_dir}'. Supported formats: PDF, DOCX, PPTX, MD, TXT, VTT, SRT.`,
+            explanation: `No supported documents found in '${documents_dir}'. Supported formats: PDF, DOCX, PPTX, MD, TXT, VTT, SRT.`,
             next_steps: [
               "Verify the directory path is correct.",
               "Ensure the directory contains files with supported extensions.",
@@ -211,8 +216,12 @@ export function registerInputTools(
               status: "success",
               format: conversionResult.format,
               word_count: conversionResult.word_count,
-              ...(conversionResult.page_count !== undefined && { page_count: conversionResult.page_count }),
-              markdown_preview: conversionResult.markdown.slice(0, 200) + (conversionResult.markdown.length > 200 ? "..." : ""),
+              ...(conversionResult.page_count !== undefined && {
+                page_count: conversionResult.page_count,
+              }),
+              markdown_preview:
+                conversionResult.markdown.slice(0, 200) +
+                (conversionResult.markdown.length > 200 ? "..." : ""),
             });
             successful++;
           } catch (err) {
@@ -244,13 +253,12 @@ export function registerInputTools(
           contract_fingerprint: contract.fingerprint,
         };
 
-        return { content: [{ type: "text" as const, text: truncate(JSON.stringify(output, null, 2)) }] };
-      } catch (error) {
         return {
-          content: [{ type: "text" as const, text: formatError("sdd_batch_import", error as Error) }],
-          isError: true,
+          content: [{ type: "text" as const, text: truncate(JSON.stringify(output, null, 2)) }],
         };
+      } catch (error) {
+        return errorResult("sdd_batch_import", error);
       }
-    }
+    },
   );
 }

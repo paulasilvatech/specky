@@ -115,15 +115,15 @@ async function dispatchInstall(flags: ArgMap): Promise<number> {
   const { runInit } = await import("./commands/init.js");
   const ideRaw = flags["ide"];
   const targetRaw = flags["target"];
-  const ide = typeof ideRaw === "string" ? (ideRaw as "claude" | "copilot" | "both" | "auto") : "auto";
+  const ide =
+    typeof ideRaw === "string" ? (ideRaw as "claude" | "copilot" | "both" | "auto") : "auto";
   return runInit({
     ide,
     target: typeof targetRaw === "string" ? targetRaw : undefined,
     force: flags["force"] === true,
     dryRun: flags["dry-run"] === true,
-    permissionProfile: typeof flags["permission-profile"] === "string"
-      ? flags["permission-profile"]
-      : undefined,
+    permissionProfile:
+      typeof flags["permission-profile"] === "string" ? flags["permission-profile"] : undefined,
     integration: typeof flags["integration"] === "string" ? flags["integration"] : undefined,
   });
 }
@@ -151,9 +151,11 @@ async function dispatchMigrateContracts(flags: ArgMap): Promise<number> {
     mappingFile: typeof flags["mapping"] === "string" ? flags["mapping"] : undefined,
     lifecycle: typeof flags["lifecycle"] === "string" ? flags["lifecycle"] : undefined,
     workload: typeof flags["workload"] === "string" ? flags["workload"] : undefined,
-    executionMode: typeof flags["execution-mode"] === "string" ? flags["execution-mode"] : undefined,
+    executionMode:
+      typeof flags["execution-mode"] === "string" ? flags["execution-mode"] : undefined,
     capabilities: typeof flags["capabilities"] === "string" ? flags["capabilities"] : undefined,
-    capabilityConfigFile: typeof flags["capability-config"] === "string" ? flags["capability-config"] : undefined,
+    capabilityConfigFile:
+      typeof flags["capability-config"] === "string" ? flags["capability-config"] : undefined,
   });
 }
 
@@ -236,7 +238,13 @@ async function dispatch(command: string, rest: string[]): Promise<number> {
  * zero outbound calls, ever.
  */
 const UPDATE_BANNER_COMMANDS = new Set([
-  "install", "init", "doctor", "status", "upgrade", "--version", "-v",
+  "install",
+  "init",
+  "doctor",
+  "status",
+  "upgrade",
+  "--version",
+  "-v",
   "migrate-contracts",
 ]);
 
@@ -270,8 +278,21 @@ async function main(): Promise<void> {
 
   // Legacy back-compat: `specky-sdd` with no subcommand OR with --http maps to serve
   const knownCommands = new Set([
-    "install", "init", "doctor", "status", "compile", "upgrade", "migrate-contracts", "hooks", "apm", "serve",
-    "help", "--help", "-h", "--version", "-v",
+    "install",
+    "init",
+    "doctor",
+    "status",
+    "compile",
+    "upgrade",
+    "migrate-contracts",
+    "hooks",
+    "apm",
+    "serve",
+    "help",
+    "--help",
+    "-h",
+    "--version",
+    "-v",
   ]);
 
   const firstArg = args[0];

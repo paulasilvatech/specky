@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RateLimiter } from "../../src/services/rate-limiter.js";
 
 describe("RateLimiter", () => {
@@ -87,9 +87,7 @@ describe("RateLimiter", () => {
 
   it("allows high burst without deny", () => {
     const limiter = new RateLimiter(600, 10);
-    const results = Array.from({ length: 10 }, () =>
-      limiter.checkRateLimit("highburst")
-    );
+    const results = Array.from({ length: 10 }, () => limiter.checkRateLimit("highburst"));
     expect(results.every((r) => r.allowed)).toBe(true);
   });
 
@@ -100,5 +98,31 @@ describe("RateLimiter", () => {
     expect(result.allowed).toBe(false);
     // At 60 rpm, refill interval is 1000ms
     expect(result.retry_after_ms).toBeLessThanOrEqual(1000);
+  });
+
+  it("evicts buckets idle longer than two full refill windows", () => {
+    // 60 rpm, burst 3 → 1s per token, 3s full window → evict after 6s idle
+    const limiter = new RateLimiter(60, 3);
+    limiter.checkRateLimit("stale");
+    vi.advanceTimersByTime(7_000);
+    limiter.checkRateLimit("fresh"); // any check triggers the lazy sweep
+    expect(limiter.activeClients).toBe(1);
+  });
+
+  it("keeps recently active buckets during the eviction sweep", () => {
+    const limiter = new RateLimiter(60, 3);
+    limiter.checkRateLimit("stale");
+    vi.advanceTimersByTime(5_000); // below the 6s eviction threshold
+    limiter.checkRateLimit("active");
+    expect(limiter.activeClients).toBe(2);
+  });
+
+  it("treats an evicted client like a new one (full burst)", () => {
+    const limiter = new RateLimiter(60, 2);
+    limiter.checkRateLimit("c"); // 1 token left
+    vi.advanceTimersByTime(5_000); // idle > 2 × 2s window → evicted
+    expect(limiter.checkRateLimit("c").allowed).toBe(true);
+    expect(limiter.checkRateLimit("c").allowed).toBe(true);
+    expect(limiter.checkRateLimit("c").allowed).toBe(false);
   });
 });

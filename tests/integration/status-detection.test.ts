@@ -10,7 +10,7 @@
  * and aggregate. This test pins that behavior.
  */
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -35,14 +35,25 @@ function callGetStatus(cwd: string, featureNumber?: string): Record<string, unkn
     : { view: "workspace", spec_dir: ".specs" };
   const input =
     JSON.stringify({
-      jsonrpc: "2.0", id: 1, method: "initialize",
-      params: { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "t", version: "1" } },
-    }) + "\n" +
-    JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) + "\n" +
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: { name: "t", version: "1" },
+      },
+    }) +
+    "\n" +
+    JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }) +
+    "\n" +
     JSON.stringify({
-      jsonrpc: "2.0", id: 2, method: "tools/call",
+      jsonrpc: "2.0",
+      id: 2,
+      method: "tools/call",
       params: { name: "sdd_get_status", arguments: args },
-    }) + "\n";
+    }) +
+    "\n";
 
   const res = spawnSync("node", [SERVER], {
     cwd,
@@ -55,7 +66,10 @@ function callGetStatus(cwd: string, featureNumber?: string): Record<string, unkn
   const lines = (res.stdout ?? "").split("\n").filter(Boolean);
   for (const line of lines) {
     try {
-      const parsed = JSON.parse(line) as { id?: number; result?: { content?: Array<{ text?: string }> } };
+      const parsed = JSON.parse(line) as {
+        id?: number;
+        result?: { content?: Array<{ text?: string }> };
+      };
       if (parsed.id === 2 && parsed.result?.content?.[0]?.text) {
         return JSON.parse(parsed.result.content[0].text) as Record<string, unknown>;
       }
@@ -86,13 +100,15 @@ describe("sdd_get_status — feature detection regression (rc.8 fix)", () => {
   });
 
   it("detects a feature with state file and reports its phase", () => {
-    writeValidState(
-      ws,
-      "001",
-      "sifap",
-      "implement",
-      ["init", "discover", "specify", "clarify", "design", "tasks", "analyze"],
-    );
+    writeValidState(ws, "001", "sifap", "implement", [
+      "init",
+      "discover",
+      "specify",
+      "clarify",
+      "design",
+      "tasks",
+      "analyze",
+    ]);
 
     const res = callGetStatus(ws);
     expect(Array.isArray(res["features"])).toBe(true);
@@ -107,7 +123,16 @@ describe("sdd_get_status — feature detection regression (rc.8 fix)", () => {
 
   it("aggregates multiple features independently", () => {
     writeValidState(ws, "001", "foo", "design", ["init", "discover", "specify", "clarify"]);
-    writeValidState(ws, "002", "bar", "verify", ["init", "discover", "specify", "clarify", "design", "tasks", "analyze", "implement"]);
+    writeValidState(ws, "002", "bar", "verify", [
+      "init",
+      "discover",
+      "specify",
+      "clarify",
+      "design",
+      "tasks",
+      "analyze",
+      "implement",
+    ]);
 
     const res = callGetStatus(ws);
     const features = res["features"] as Array<Record<string, unknown>>;
@@ -122,7 +147,16 @@ describe("sdd_get_status — feature detection regression (rc.8 fix)", () => {
 
   it("selects specific feature when feature_number provided", () => {
     writeValidState(ws, "001", "foo", "design", ["init", "discover", "specify", "clarify"]);
-    writeValidState(ws, "002", "bar", "verify", ["init", "discover", "specify", "clarify", "design", "tasks", "analyze", "implement"]);
+    writeValidState(ws, "002", "bar", "verify", [
+      "init",
+      "discover",
+      "specify",
+      "clarify",
+      "design",
+      "tasks",
+      "analyze",
+      "implement",
+    ]);
 
     const res = callGetStatus(ws, "001");
     expect(res["active_feature"]).toMatchObject({ number: "001", phase: "design" });
