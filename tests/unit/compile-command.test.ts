@@ -19,6 +19,7 @@ describe("specky compile", () => {
     ["copilot", ".github/copilot-instructions.md"],
     ["claude", "CLAUDE.md"],
     ["cursor", "AGENTS.md"],
+    ["opencode", "AGENTS.md"],
   ])("writes %s root instructions", async (target, outputPath) => {
     await expect(runCompile({ target, dryRun: false, workspace })).resolves.toBe(0);
 

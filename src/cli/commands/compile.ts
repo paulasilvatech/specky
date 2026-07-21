@@ -2,7 +2,15 @@
  * compile.ts — `specky compile` — compile instruction primitives into root
  * context files for target harnesses.
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import {
+  closeSync,
+  fstatSync,
+  mkdirSync,
+  openSync,
+  readdirSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { dirname, resolve } from "node:path";
 import { getCompiler, type HarnessTarget, SUPPORTED_TARGETS } from "../lib/harness/index.js";
 import { packageRoot, sourcePaths } from "../lib/paths.js";
@@ -61,21 +69,42 @@ function instructionFileForTarget(target: HarnessTarget): string {
   }
 }
 
+function errorCode(error: unknown): string | undefined {
+  if (typeof error !== "object" || error === null || !("code" in error)) return undefined;
+  return typeof error.code === "string" ? error.code : undefined;
+}
+
 /**
  * Select the single instruction primitive for a target. Each target has its own
  * native variant; the Copilot primitive is the neutral fallback. Never merge all
  * primitives — that would leak cross-target naming and duplicate content.
  */
 function readInstructionForTarget(instructionsDir: string, target: HarnessTarget): string | null {
-  if (!existsSync(instructionsDir)) return null;
   const candidates = [instructionFileForTarget(target), "copilot-instructions.instructions.md"];
   for (const candidate of candidates) {
     const path = resolve(instructionsDir, candidate);
-    if (existsSync(path) && statSync(path).isFile()) {
-      return readFileSync(path, "utf8");
+    let fileDescriptor: number | undefined;
+    try {
+      fileDescriptor = openSync(path, "r");
+      if (!fstatSync(fileDescriptor).isFile()) continue;
+      return readFileSync(fileDescriptor, "utf8");
+    } catch (error) {
+      if (["ENOENT", "ENOTDIR", "EISDIR"].includes(errorCode(error) ?? "")) continue;
+      throw error;
+    } finally {
+      if (fileDescriptor !== undefined) closeSync(fileDescriptor);
     }
   }
   return null;
+}
+
+function hasInstructionPrimitives(instructionsDir: string): boolean {
+  try {
+    return readdirSync(instructionsDir).length > 0;
+  } catch (error) {
+    if (["ENOENT", "ENOTDIR"].includes(errorCode(error) ?? "")) return false;
+    throw error;
+  }
 }
 
 function outputPathForTarget(workspace: string, target: HarnessTarget): string | null {
@@ -104,7 +133,7 @@ export async function runCompile(opts: CompileOptions): Promise<number> {
   const src = sourcePaths(pkg);
   const targets = resolveTargets(opts.target);
 
-  if (!existsSync(src.instructionsDir) || readdirSync(src.instructionsDir).length === 0) {
+  if (!hasInstructionPrimitives(src.instructionsDir)) {
     console.error(`[specky compile] No instruction primitives found at ${src.instructionsDir}`);
     return 1;
   }
