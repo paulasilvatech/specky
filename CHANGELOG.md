@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Unsupported Terraform resource types now fail preflight with an actionable error instead of emitting placeholder comments.
 - `specky compile` now validates and reads instruction primitives through a single file descriptor, eliminating the CodeQL-reported filesystem race.
+- The release Docker build now includes Cursor plugin metadata required by the manifest synchronization gate.
 - Feature directory identifiers use stable forward-slash separators in user-facing MCP errors on Windows.
 - Integration test and hook timeouts allow subprocess-heavy tests to complete under full-suite CPU contention.
 - Biome warnings for unused imports, unused variables, optional chains, and static-only classes.

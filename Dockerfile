@@ -18,6 +18,7 @@ COPY src ./src
 COPY templates ./templates
 COPY scripts ./scripts
 COPY .apm ./.apm
+COPY .cursor-plugin ./.cursor-plugin
 RUN npm run build
 
 # ---- Runtime stage: production dependencies + built artifacts only ----

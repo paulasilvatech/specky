@@ -24,7 +24,7 @@ Every requested resource must have a concrete template for the selected cloud. U
 
 ### Cross-Platform and Developer Quality
 
-Feature directories use stable forward-slash identifiers in user-facing MCP messages on Windows. The `specky compile` command validates and reads each instruction primitive through one file descriptor, eliminating a CodeQL-reported filesystem race. The release also adds Biome lint/format commands, broader unit coverage, and longer integration-test timeouts for subprocess-heavy suites under CPU contention.
+Feature directories use stable forward-slash identifiers in user-facing MCP messages on Windows. The `specky compile` command validates and reads each instruction primitive through one file descriptor, eliminating a CodeQL-reported filesystem race. The release Docker build includes the Cursor plugin metadata consumed by manifest validation. The release also adds Biome lint/format commands, broader unit coverage, and longer integration-test timeouts for subprocess-heavy suites under CPU contention.
 
 ## Compatibility
 
