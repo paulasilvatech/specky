@@ -1,7 +1,7 @@
 /**
  * pipeline-writers.test.ts — shared artifact writers for the SDD pipeline.
  */
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -242,9 +242,12 @@ describe("writeSpecification", () => {
 });
 
 describe("writeDesign", () => {
-  it("writes a rendered DESIGN.md with diagrams and ADRs", async () => {
+  it("writes a rendered DESIGN.md with diagrams and ADRs from a CRLF template", async () => {
     const { workspace, fileManager, templateEngine } = setup();
     mkdirSync(join(workspace, FEATURE_DIR), { recursive: true });
+    const templatePath = join(workspace, "templates", "design.md");
+    const template = readFileSync(templatePath, "utf-8").replaceAll("\r\n", "\n");
+    writeFileSync(templatePath, template.replaceAll("\n", "\r\n"), "utf-8");
 
     const formatting: DesignFormatting = {
       sectionTrailingNewline: false,

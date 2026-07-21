@@ -311,7 +311,8 @@ function replaceDesignEvidenceSections(
   diagramsContent: string,
   adrsContent: string,
 ): string {
-  return content
+  const normalizedContent = content.replaceAll("\r\n", "\n");
+  return normalizedContent
     .replace(
       /## 5\. System Diagrams\n\n[\s\S]*?(?=\n---\n\n## 6)/,
       `## 5. System Diagrams\n\n${diagramsContent}`,
