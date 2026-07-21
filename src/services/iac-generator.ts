@@ -142,7 +142,8 @@ const RESOURCE_PATTERNS: readonly ResourcePattern[] = [
 
   // Compute
   {
-    regex: /\bcontainer\s*app(s)?\b|\baca\b|\bcontainers?\b|\bdocker\b|\becs\b|\bfargate\b|\bcloud\s*run\b/i,
+    regex:
+      /\bcontainer\s*app(s)?\b|\baca\b|\bcontainers?\b|\bdocker\b|\becs\b|\bfargate\b|\bcloud\s*run\b/i,
     module: "compute",
     service: "container",
   },
@@ -152,7 +153,8 @@ const RESOURCE_PATTERNS: readonly ResourcePattern[] = [
     service: "kubernetes",
   },
   {
-    regex: /\bserverless\b|\bfunction(s)?\b|\blambda\b|\bazure\s*function(s)?\b|\bcloud\s*function(s)?\b/i,
+    regex:
+      /\bserverless\b|\bfunction(s)?\b|\blambda\b|\bazure\s*function(s)?\b|\bcloud\s*function(s)?\b/i,
     module: "compute",
     service: "serverless",
   },
@@ -186,14 +188,16 @@ const RESOURCE_PATTERNS: readonly ResourcePattern[] = [
 
   // Identity
   {
-    regex: /\bactive\s*directory\b|\bazure\s*ad\b|\bentra\b|\bcognito\b|\bidentity\s*platform\b|\bmanaged\s*identit(y|ies)\b/i,
+    regex:
+      /\bactive\s*directory\b|\bazure\s*ad\b|\bentra\b|\bcognito\b|\bidentity\s*platform\b|\bmanaged\s*identit(y|ies)\b/i,
     module: "identity",
     service: "identity",
   },
 
   // Monitoring
   {
-    regex: /\blog\s*analytics\b|\bcloud\s*watch\b|\bcloudwatch\b|\bapp(lication)?\s*insights\b|\bobservability\b/i,
+    regex:
+      /\blog\s*analytics\b|\bcloud\s*watch\b|\bcloudwatch\b|\bapp(lication)?\s*insights\b|\bobservability\b/i,
     module: "monitoring",
     service: "logs",
   },
@@ -206,7 +210,10 @@ const RESOURCE_PATTERNS: readonly ResourcePattern[] = [
  */
 const UNSUPPORTED_PATTERNS: readonly { regex: RegExp; label: string }[] = [
   { regex: /\bapp\s*service\b|\bweb\s*app\b/i, label: "app-service" },
-  { regex: /\bvirtual\s*machine(s)?\b|\bvm(s)?\b|\bec2\b|\bcompute\s*engine\b/i, label: "virtual-machine" },
+  {
+    regex: /\bvirtual\s*machine(s)?\b|\bvm(s)?\b|\bec2\b|\bcompute\s*engine\b/i,
+    label: "virtual-machine",
+  },
   { regex: /\bsqlite\b/i, label: "sqlite" },
   { regex: /\bmemcached\b/i, label: "memcached" },
   { regex: /\brabbitmq\b|\bamqp\b/i, label: "rabbitmq" },
@@ -219,7 +226,8 @@ const UNSUPPORTED_PATTERNS: readonly { regex: RegExp; label: string }[] = [
 ];
 
 /** Words that negate a nearby resource mention on the same line. */
-const NEGATION_REGEX = /\b(?:no|not|without|avoid|avoids|never|exclude|excludes|excluded|excluding)\b/i;
+const NEGATION_REGEX =
+  /\b(?:no|not|without|avoid|avoids|never|exclude|excludes|excluded|excluding)\b/i;
 
 /**
  * Isolate the infrastructure/deployment section of a DESIGN.md document. When a
@@ -395,7 +403,8 @@ export function resolveIacResources(
   return {
     resolved: folded,
     contractResources: canonicalContract,
-    designResources: foldedDesign.length > 0 ? foldedDesign : designResources.filter((c) => folded.includes(c)),
+    designResources:
+      foldedDesign.length > 0 ? foldedDesign : designResources.filter((c) => folded.includes(c)),
     unsupported: detectUnsupportedResources(designContent),
   };
 }
@@ -466,7 +475,7 @@ function renderDockerfile(language: string, multiStage: boolean): string {
 }
 
 export class IacGenerator {
-  constructor(_fileManager: FileManager) { }
+  constructor(_fileManager: FileManager) {}
 
   async generateTerraform(cloud: CloudProvider, components: InfraComponent[]): Promise<IacResult> {
     if (components.length === 0) {
@@ -484,7 +493,7 @@ export class IacGenerator {
       const list = unrenderable.map((c) => `${c.module}:${c.service}`).join(", ");
       throw new Error(
         `Cannot generate Terraform for ${cloud}: no template exists for ${list}. ` +
-        "Remove the resource from the capability contract or design, or target a supported resource type.",
+          "Remove the resource from the capability contract or design, or target a supported resource type.",
       );
     }
 
@@ -541,15 +550,15 @@ export class IacGenerator {
     const routing: RoutingInstructions =
       provider === "terraform"
         ? {
-          mcp_server: "terraform",
-          tool_name: "plan",
-          note: "Call Terraform MCP plan/validate with the generated files",
-        }
+            mcp_server: "terraform",
+            tool_name: "plan",
+            note: "Call Terraform MCP plan/validate with the generated files",
+          }
         : {
-          mcp_server: "azure",
-          tool_name: "validate_template",
-          note: "Call Azure MCP to validate Bicep/ARM template",
-        };
+            mcp_server: "azure",
+            tool_name: "validate_template",
+            note: "Call Azure MCP to validate Bicep/ARM template",
+          };
     return {
       provider,
       cloud,

@@ -6,12 +6,12 @@ import {
   generateDiagramInputSchema,
   generateUserStoriesInputSchema,
 } from "../schemas/visualization.js";
-import type { DiagramGenerator } from "../services/diagram-generator.js";
 import {
   type AutoDiagramType,
   generateDiagramFromContent,
   isAutoDiagramType,
 } from "../services/content-diagram-generator.js";
+import type { DiagramGenerator } from "../services/diagram-generator.js";
 import { requireCapabilityConfig, requireFeatureContext } from "../services/execution-context.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { StateMachine } from "../services/state-machine.js";
@@ -167,7 +167,7 @@ export function registerVisualizationTools(
         if (!required) {
           throw new Error(
             `Diagram ${diagram_type} is not required by ${context.state.contract.id}. ` +
-            `Allowed: ${context.state.contract.required_diagrams.map((diagram) => diagram.type).join(", ")}.`,
+              `Allowed: ${context.state.contract.required_diagrams.map((diagram) => diagram.type).join(", ")}.`,
           );
         }
 
@@ -194,7 +194,12 @@ export function registerVisualizationTools(
             context.feature.directory,
             required.source,
           );
-          validateDiagramEvidence(diagram_type, mermaid_code as string, evidence_refs as string[], source);
+          validateDiagramEvidence(
+            diagram_type,
+            mermaid_code as string,
+            evidence_refs as string[],
+            source,
+          );
           finalMermaid = mermaid_code as string;
           finalEvidence = evidence_refs as string[];
         }
@@ -255,7 +260,7 @@ export function registerVisualizationTools(
           if (unsupported.length > 0) {
             throw new Error(
               `auto mode cannot synthesize ${unsupported.map((d) => d.type).join(", ")}. ` +
-              "Use mode=explicit and supply Mermaid for the full diagram set.",
+                "Use mode=explicit and supply Mermaid for the full diagram set.",
             );
           }
           const sources = await buildDiagramSources(
@@ -285,14 +290,12 @@ export function registerVisualizationTools(
           const inputTypes = explicitInputs.map((diagram) => diagram.diagram_type);
           const missing = requiredTypes.filter((type) => !inputTypes.includes(type));
           const extra = inputTypes.filter((type) => !requiredTypes.includes(type));
-          const duplicates = inputTypes.filter(
-            (type, index) => inputTypes.indexOf(type) !== index,
-          );
+          const duplicates = inputTypes.filter((type, index) => inputTypes.indexOf(type) !== index);
           if (missing.length > 0 || extra.length > 0 || duplicates.length > 0) {
             throw new Error(
               `Diagram set mismatch. Missing: ${missing.join(", ") || "none"}. ` +
-              `Extra: ${extra.join(", ") || "none"}. ` +
-              `Duplicate: ${[...new Set(duplicates)].join(", ") || "none"}.`,
+                `Extra: ${extra.join(", ") || "none"}. ` +
+                `Duplicate: ${[...new Set(duplicates)].join(", ") || "none"}.`,
             );
           }
 
@@ -389,7 +392,7 @@ export function registerVisualizationTools(
         if (unknown.length > 0 || missing.length > 0) {
           throw new Error(
             `User-story bindings mismatch. Missing: ${missing.join(", ") || "none"}. ` +
-            `Unknown: ${unknown.join(", ") || "none"}.`,
+              `Unknown: ${unknown.join(", ") || "none"}.`,
           );
         }
 
@@ -448,7 +451,7 @@ export function registerVisualizationTools(
         if (!figma.diagram_types.includes(diagram_type)) {
           throw new Error(
             `FigJam diagram ${diagram_type} is not enabled by ${context.state.contract.id}. ` +
-            `Allowed: ${figma.diagram_types.join(", ")}.`,
+              `Allowed: ${figma.diagram_types.join(", ")}.`,
           );
         }
         const design = await sourceArtifact(fileManager, context.feature.directory, "design");

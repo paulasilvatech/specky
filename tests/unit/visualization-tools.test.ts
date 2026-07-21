@@ -341,7 +341,7 @@ describe("sdd_generate_diagram (auto mode)", () => {
       ...baseArgs,
       mode: "auto",
       diagram_type: "c4_context",
-      mermaid_code: "C4Context\n  Person(a, \"A\")",
+      mermaid_code: 'C4Context\n  Person(a, "A")',
       evidence_refs: ["Order Client"],
     });
     expect(result.isError).toBe(true);

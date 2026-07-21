@@ -1,6 +1,6 @@
 # Contributing to Specky
 
-Thank you for your interest in contributing to Specky. This guide covers the v3.11.1 architecture, development patterns, and submission process.
+Thank you for your interest in contributing to Specky. This guide covers the v3.12.0 architecture, development patterns, and submission process.
 
 ---
 
@@ -22,7 +22,7 @@ Thank you for your interest in contributing to Specky. This guide covers the v3.
 
 ## Architecture Overview
 
-Specky v3.11.1 is an MCP server that exposes **58 tools** organized around signed, per-feature use-case contracts. The codebase comprises **119 TypeScript source files**, **22 templates**, and is structured as follows:
+Specky v3.12.0 is an MCP server that exposes **58 tools** organized around signed, per-feature use-case contracts. The codebase comprises **124 TypeScript source files**, **22 templates**, and is structured as follows:
 
 ```
 src/

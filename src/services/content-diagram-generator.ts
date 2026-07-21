@@ -66,7 +66,7 @@ export class InsufficientEvidenceError extends Error {
   constructor(diagramType: string, detail: string) {
     super(
       `Cannot synthesize ${diagramType} diagram: ${detail}. ` +
-      "Provide the diagram explicitly (mode=explicit) or enrich the source artifact.",
+        "Provide the diagram explicitly (mode=explicit) or enrich the source artifact.",
     );
     this.name = "InsufficientEvidenceError";
     this.diagramType = diagramType;
@@ -354,10 +354,7 @@ export function generateSequenceDiagram(
 /** Generate an ER diagram from data entities. */
 export function generateErDiagram(entities: DataEntity[]): string {
   if (entities.length === 0) {
-    throw new InsufficientEvidenceError(
-      "er",
-      "no data entities were found in the design content",
-    );
+    throw new InsufficientEvidenceError("er", "no data entities were found in the design content");
   }
 
   const lines = ["erDiagram"];
@@ -406,10 +403,7 @@ const DEPLOYMENT_TARGETS: readonly DeploymentTarget[] = [
 ];
 
 /** Generate a deployment diagram from infrastructure content. */
-export function generateDeploymentDiagram(
-  system: SystemComponent,
-  designContent: string,
-): string {
+export function generateDeploymentDiagram(system: SystemComponent, designContent: string): string {
   const inner: string[] = [];
   for (const target of DEPLOYMENT_TARGETS) {
     if (target.regex.test(designContent)) {

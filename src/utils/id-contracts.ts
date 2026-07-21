@@ -101,4 +101,3 @@ export function extractRequirementSections(spec: string): RequirementSection[] {
 
   return sections;
 }
-

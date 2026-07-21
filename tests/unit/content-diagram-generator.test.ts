@@ -242,18 +242,16 @@ describe("generateDeploymentDiagram", () => {
   });
 
   it("throws InsufficientEvidenceError when no deployment target is present", () => {
-    expect(() =>
-      generateDeploymentDiagram({ id: "s", name: "S" }, "Simple deployment"),
-    ).toThrow(InsufficientEvidenceError);
+    expect(() => generateDeploymentDiagram({ id: "s", name: "S" }, "Simple deployment")).toThrow(
+      InsufficientEvidenceError,
+    );
   });
 });
 
 describe("generateDiagramFromContent dispatcher", () => {
   const sources = {
     featureName: "Todo API",
-    requirements: [
-      { id: "REQ-001", text: "When a user logs in, the system shall issue a token." },
-    ],
+    requirements: [{ id: "REQ-001", text: "When a user logs in, the system shall issue a token." }],
     designContent: [
       "## Infrastructure",
       "Deploy with Docker containers.",

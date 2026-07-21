@@ -8,7 +8,6 @@
  * negation, and reports recognized-but-unrenderable resources.
  */
 import { describe, expect, it } from "vitest";
-import type { InfraComponent } from "../../src/types.js";
 import {
   detectUnsupportedResources,
   extractInfraComponentsForCloud,
@@ -17,6 +16,7 @@ import {
   normalizeInfraComponent,
   resolveIacResources,
 } from "../../src/services/iac-generator.js";
+import type { InfraComponent } from "../../src/types.js";
 
 describe("extractInfraComponentsFromDesign — canonical keys", () => {
   it("maps datastores to canonical renderer services", () => {
@@ -250,8 +250,6 @@ describe("resolveIacResources — contract + design merge", () => {
     const gcpContract: InfraComponent[] = [{ module: "compute", service: "container" }];
     const design = "## Infrastructure\nAlso Cloud Functions.";
     const resolved = resolveIacResources(gcpContract, design, "gcp");
-    expect(
-      resolved.resolved.filter((c) => c.module === "compute"),
-    ).toHaveLength(1);
+    expect(resolved.resolved.filter((c) => c.module === "compute")).toHaveLength(1);
   });
 });
