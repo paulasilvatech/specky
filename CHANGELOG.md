@@ -7,19 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.12.0] - 2026-07-20
+
 ### Added
 
+- Backward-compatible `mode: "explicit" | "auto"` inputs for `sdd_generate_diagram` and `sdd_generate_all_diagrams`; explicit remains the default.
+- Evidence-grounded automatic Mermaid generation for C4 context, sequence, ER, and deployment diagrams from `SPECIFICATION.md` and `DESIGN.md`.
+- Source evidence tracking for derived actors, requirements, exchanges, use cases, components, entities, and deployment nodes.
 - Biome lint and format integration with `biome.json` and npm scripts (`lint`, `lint:fix`, `format`).
 - Unit tests for previously uncovered modules: `slug`, `routing-helper`, `audit-tools`, `transcript-tools`, `cli-commands`, `vscode-settings-writer`, and `agent-skills`.
 - `.specs/001-biome-lint-integration/` spec package for dogfooding the SDD pipeline on Specky itself.
 
 ### Changed
 
-- Coverage thresholds ratcheted to 85% statements, 71% branches, 94% functions, and 86% lines.
-- Test suite expanded from 663 to 769 tests across 90 files.
+- Terraform resource discovery now uses canonical `module:service` keys derived from the relevant `DESIGN.md` sections, with clause-scoped handling for exclusions such as `without`, `avoid`, and `not use`.
+- Diagram-set auto mode synthesizes and validates the complete contracted set in memory before atomically writing `DIAGRAMS.md`.
+- Coverage thresholds ratcheted to 89% statements, 77% branches, 95% functions, and 90% lines.
+- Test suite expanded from 663 to 1019 tests across 99 files.
 
 ### Fixed
 
+- Unsupported Terraform resource types now fail preflight with an actionable error instead of emitting placeholder comments.
+- Feature directory identifiers use stable forward-slash separators in user-facing MCP errors on Windows.
+- Integration test and hook timeouts allow subprocess-heavy tests to complete under full-suite CPU contention.
 - Biome warnings for unused imports, unused variables, optional chains, and static-only classes.
 - `useOptionalChain` violations in `settings-merger`, `audit-logger`, `http-auth`, and `token-table`.
 - `noUnusedVariables` violations in `pipeline.ts`, `cross-analyzer.ts`, and `vscode-settings-writer.ts`.
