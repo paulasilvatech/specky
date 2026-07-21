@@ -63,6 +63,11 @@ docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
 curl -s http://localhost:3200/health                    # -> {"status":"ok","version":"3.12.0"}
 ```
 
+The image includes an ephemeral standard workspace contract for this unmounted
+health check. If you mount a host directory at `/workspace`, initialize that
+directory with `specky install` first; the mounted workspace must contain the
+mandatory `.specky/config.yml` runtime contract.
+
 Production deployments should pin an explicit version tag and enable token auth
 behind TLS. See [ENTERPRISE-DEPLOYMENT.md](ENTERPRISE-DEPLOYMENT.md) for the
 full container model, secrets layout, and private-package login guidance.

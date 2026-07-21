@@ -252,6 +252,10 @@ box. `GET /health` stays unauthenticated for liveness probes.
 # Public package: no login needed. Pin a release tag for reproducible deploys.
 docker pull ghcr.io/paulasilvatech/specky:3.12.0            # or :latest
 
+# Prepare a host workspace once before mounting it into the container.
+mkdir -p workspace
+(cd workspace && npx specky-sdd@3.12.0 install --target=agent-skills --yes)
+
 # Hardened run: enterprise profile + token auth behind your TLS proxy
 docker run --rm -p 127.0.0.1:3200:3200 \
   -e SPECKY_PROFILE=enterprise \
@@ -263,6 +267,11 @@ docker run --rm -p 127.0.0.1:3200:3200 \
 
 curl -s http://127.0.0.1:3200/health     # -> {"status":"ok","version":"3.12.0"}
 ```
+
+Without a `/workspace` mount, the image uses its bundled ephemeral standard
+contract, which is suitable for the basic health smoke. A mount replaces the
+internal workspace entirely, so production mounts must already contain the
+strict `.specky/config.yml` written by `specky install`.
 
 If the package is **private**, authenticate first with a token that has
 `read:packages`:

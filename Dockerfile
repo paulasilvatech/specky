@@ -18,6 +18,7 @@ COPY src ./src
 COPY templates ./templates
 COPY scripts ./scripts
 COPY .apm ./.apm
+COPY .cursor-plugin ./.cursor-plugin
 RUN npm run build
 
 # ---- Runtime stage: production dependencies + built artifacts only ----
@@ -44,7 +45,9 @@ COPY apm.yml config.yml apm.lock.yaml apm-policy.yml ./
 
 # Run unprivileged; /workspace is the project root mounted at runtime
 # (README: `docker run -p 3200:3200 -v $(pwd):/workspace ...`).
-RUN mkdir -p /workspace && chown -R node:node /workspace
+RUN mkdir -p /workspace/.specky \
+  && node --input-type=module --eval 'import { writeFileSync } from "node:fs"; import { createWorkspaceConfig, serializeWorkspaceConfig } from "./dist/config.js"; writeFileSync("/workspace/.specky/config.yml", serializeWorkspaceConfig(createWorkspaceConfig()), { flag: "wx" });' \
+  && chown -R node:node /workspace
 USER node
 WORKDIR /workspace
 

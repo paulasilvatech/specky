@@ -3345,6 +3345,10 @@ npx specky upgrade">Copy</button>
             <button class="code-copy-btn" data-copy-id="c-enterprise-run">Copy</button>
           </div>
           <pre id="c-enterprise-run"><span class="cm"># Enterprise profile: RBAC, rate limiting, HMAC-signed audit trail</span>
+<span class="cm"># Initialize a mounted workspace once; .specky/config.yml is mandatory.</span>
+<span class="dk">$</span> mkdir -p workspace
+<span class="dk">$</span> (cd workspace &amp;&amp; npx specky-sdd@3.12.0 install --target=agent-skills --yes)
+
 <span class="dk">$</span> docker run --rm -p 127.0.0.1:3200:3200 \
     -e SPECKY_PROFILE=enterprise \
     -e SDD_HTTP_TOKENS_FILE=/run/secrets/tokens.yml \
