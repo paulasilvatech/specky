@@ -18,6 +18,15 @@ import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { MAX_SCAN_DEPTH } from "../constants.js";
 import type { DirectoryTree, FeatureInfo } from "../types.js";
 
+/**
+ * Normalize a filesystem path to forward-slash separators so logical,
+ * user-facing directory identifiers stay stable across POSIX and Windows.
+ * Node.js accepts forward slashes for filesystem operations on every OS.
+ */
+function toPosixPath(value: string): string {
+  return value.split(sep).join("/");
+}
+
 interface BulkWriteTarget {
   directory: string;
   fileName: string;
@@ -255,7 +264,7 @@ export class FileManager {
             features.push({
               number: match[1],
               name: match[2],
-              directory: featureDir,
+              directory: toPosixPath(featureDir),
               files,
             });
           }
