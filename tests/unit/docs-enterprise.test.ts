@@ -63,5 +63,8 @@ describe("enterprise documentation baseline", () => {
     expect(read("Dockerfile")).toContain('serve", "--http');
     expect(read("Dockerfile")).toContain("EXPOSE 3200");
     expect(read("Dockerfile")).toContain("COPY .cursor-plugin ./.cursor-plugin");
+    expect(read("Dockerfile")).toContain("createWorkspaceConfig");
+    expect(read("Dockerfile")).toContain('/workspace/.specky/config.yml');
+    expect(read(".github/workflows/publish.yml")).toContain("Smoke test published image");
   });
 });

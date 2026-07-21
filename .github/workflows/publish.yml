@@ -132,6 +132,19 @@ jobs:
       - name: Verify published image manifest
         run: docker buildx imagetools inspect ghcr.io/paulasilvatech/specky:${{ steps.pkg.outputs.version }}
 
+      - name: Smoke test published image
+        env:
+          IMAGE_VERSION: ${{ steps.pkg.outputs.version }}
+        run: |
+          IMAGE="ghcr.io/paulasilvatech/specky:${IMAGE_VERSION}"
+          docker run --detach --name specky-release-smoke \
+            --publish 127.0.0.1:3200:3200 "$IMAGE"
+          trap 'docker logs specky-release-smoke || true; docker rm --force specky-release-smoke || true' EXIT
+          curl --fail --silent --show-error \
+            --retry 15 --retry-all-errors --retry-delay 1 \
+            http://127.0.0.1:3200/health \
+            | grep --fixed-strings '"version":"${{ steps.pkg.outputs.version }}"'
+
       # T-082: Sign Docker image with cosign (requires COSIGN_PRIVATE_KEY + COSIGN_PASSWORD secrets)
       - name: Install cosign
         if: env.HAS_COSIGN == 'true'

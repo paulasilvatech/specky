@@ -319,7 +319,7 @@ your-project/
 │   ├── 002-payment-gateway/      ← Feature #2
 │   └── 003-notification-system/  ← Feature #3
 ├── reports/                      ← Cross-feature analysis reports
-└── .specky/config.yml            ← Optional project-level configuration
+└── .specky/config.yml            ← Required runtime workspace contract
 ```
 
 **Naming convention:** `NNN-feature-name`, zero-padded number + kebab-case name. Each directory is independent; you can work on multiple features simultaneously.
@@ -1267,13 +1267,16 @@ curl http://localhost:3200/health                       # -> {"status":"ok","ver
 
 # Or build and run locally from source
 docker build -t specky-sdd:dev .
-docker run -p 3200:3200 -v $(pwd):/workspace specky-sdd:dev
+docker run --rm -p 3200:3200 specky-sdd:dev
 curl http://localhost:3200/health
 ```
 
 The published image binds `0.0.0.0:3200` inside the container (so `-p` works)
-and serves an unauthenticated `GET /health`. For hardened/authenticated
-deployments (enterprise profile, token auth, TLS proxy, private packages) see
+and includes an ephemeral standard workspace contract so an unmounted container
+can serve the unauthenticated `GET /health`. Mounting `/workspace` replaces that
+internal directory; initialize the mounted workspace with `specky install` so it
+contains `.specky/config.yml`. For hardened/authenticated deployments (enterprise
+profile, token auth, TLS proxy, private packages) see
 [docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md).
 
 ## Roadmap
