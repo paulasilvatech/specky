@@ -1,3 +1,5 @@
+[![MCP Toplist](https://mcptoplist.com/badge/glama%2Fpaulasilvatech%2Fspecky.svg)](https://mcptoplist.com/server/glama%2Fpaulasilvatech%2Fspecky)
+
 <div align="center">
   <br>
   <img src="site/specky-brand-logo.svg" alt="Specky" height="80">
