@@ -44,8 +44,14 @@ jobs:
           VERSION=$(jq -r '.version' package.json)
           test "${{ github.event.release.tag_name }}" = "v$VERSION"
 
-      - name: Audit dependencies
-        run: npm audit --audit-level=high
+      - name: Audit runtime dependencies
+        run: npm audit --audit-level=high --omit=dev
+
+      - name: Verify fail-closed audit policy
+        run: node --test scripts/npm-audit-gate-policy.mjs
+
+      - name: Audit all dependencies with exact policy
+        run: node scripts/npm-audit-gate.mjs --audit-level=high --policy=scripts/npm-audit-allowlist.json
 
       - run: npm run build
 
