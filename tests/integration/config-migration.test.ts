@@ -49,7 +49,7 @@ describe("workspace config migration", () => {
     const packageManifest = JSON.parse(readFileSync(resolve(REPO, "package.json"), "utf8")) as {
       version: string;
     };
-    expect(packageManifest.version).toBe("3.12.0");
+    expect(packageManifest.version).toBe("3.12.1");
 
     copyFileSync(LEGACY_CONFIG, configPath);
     chmodSync(configPath, 0o640);

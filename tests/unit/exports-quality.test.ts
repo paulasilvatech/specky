@@ -543,6 +543,38 @@ describe("export & quality-report regressions", () => {
     expect(persisted).toContain("| T-002 |");
   });
 
+  it("sdd_verify_tasks honors feature-scoped Done statuses and REQ columns", async () => {
+    const ws = makeWorkspace("specky-verify-feature-scoped-");
+    seedFeature(ws, ".specs/001-checkout-service", {
+      "SPECIFICATION.md": SPEC_MD,
+      "TASKS.md": `| ID | Task | REQ | Complexity | Depends on | Status |
+|---|---|---|---|---|---|
+| T-023-001 | Build payment form | REQ-CORE-001 | M | — | **Done** — covered |
+| T-023-002 [P] | Persist orders | REQ-CORE-002 | S | T-023-001 | **Done** — covered |
+`,
+    });
+    writeFileSync(
+      join(ws, "payment.ts"),
+      "// T-023-001 Build payment form REQ-CORE-001\n// T-023-002 Persist orders REQ-CORE-002\n",
+      "utf8",
+    );
+    const h = await buildHarness(ws, Phase.Verify);
+    cleanups.push(h.close);
+
+    const res = await callTool(h.client, "sdd_verify_tasks", {
+      feature_number: "001",
+      spec_dir: ".specs",
+      force: false,
+      code_paths: ["payment.ts"],
+    });
+
+    expect(res.isError).toBe(false);
+    expect(res.payload).toMatchObject({ total_tasks: 2, verified_count: 2, phantom_count: 0 });
+    const results = res.payload["results"] as Array<Record<string, unknown>>;
+    expect(results.every((result) => result["claimed_status"] === "complete")).toBe(true);
+    expect(results.every((result) => result["verified_status"] === "verified")).toBe(true);
+  });
+
   // ── Fix: persisted CROSS_ANALYSIS.md carries alignment tables + recommendation ──
   it("sdd_cross_analyze persists CROSS_ANALYSIS.md with real alignment rows and a recommendation", async () => {
     const ws = makeWorkspace("specky-crossanalysis-");

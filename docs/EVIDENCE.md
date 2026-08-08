@@ -71,7 +71,7 @@ stash@{0}: On develop: specky-pre-branch-reset-develop-dirty-20260617T205947Z
 | Audit chain | Hash-chain generated and verification detects tampering | In progress; global tool execution writes audit entries and `sdd_verify_audit` verifies chain integrity |
 | Determinism | Same input and fixed clock generate identical artifacts | Fixed clock tested for frontmatter, strict docs, and executable test bindings |
 | Filesystem boundary | Path traversal and outside-workspace paths rejected | Passed for document import |
-| ID contracts | Shared requirement/task ID helpers and parser tests | In progress; core parsers now accept canonical `T-001` and legacy `T001` |
+| ID contracts | Shared requirement/task ID helpers and parser tests | Complete; core parsers accept canonical `T-001`, legacy `T001`, and feature-scoped `T-023-001` |
 | Semantic gate | Orphaned requirements/tests/compliance failures block approval | In progress; EARS/design/task mapping gate tested |
 | Spec package completeness | New specs generate companion docs, diagrams, TDD status, evidence, and manifest | In progress; `sdd_write_spec`, `sdd_turnkey_spec`, `sdd_auto_pipeline`, and `sdd_batch_transcripts` now create companion package artifacts; `sdd_write_spec` is verified through MCP and scaffold phase blocking is tested |
 | Agent portability and permissions | `.apm` agents avoid hardcoded model IDs and declare required `sdd_*` tools used in instructions | Passed on 2026-06-17 via `node scripts/audit-agent-frontmatter.mjs` and model-frontmatter grep audit |
@@ -222,7 +222,7 @@ Tests       6 passed (6)
 
 Coverage added:
 
-- Canonical task ID formatting as `T-001`.
+- Canonical task ID formatting as `T-001` or feature-scoped `T-023-001` when repository governance includes the feature number.
 - Legacy `T001` compatibility in extractors/parsers.
 - Sorted unique requirement and task extraction.
 

@@ -6,6 +6,44 @@ import { z } from "zod";
 import { TEMPLATE_NAMES } from "../constants.js";
 import { featureNumberSchema, forceSchema, specDirSchema } from "./common.js";
 
+const tddBindingSchema = z
+  .object({
+    requirement_id: z.string().regex(/^REQ-[A-Z]+-\d{3}$/),
+    test_name: z.string().min(1),
+    body: z.string().min(10),
+  })
+  .strict();
+
+const tddPropertyBindingSchema = z
+  .object({
+    requirement_id: z.string().regex(/^REQ-[A-Z]+-\d{3}$/),
+    property_name: z.string().min(1),
+    property_type: z.enum([
+      "invariant",
+      "state_transition",
+      "conditional",
+      "negative",
+      "round_trip",
+      "idempotence",
+      "commutativity",
+      "monotonicity",
+    ]),
+    body: z.string().min(20),
+  })
+  .strict();
+
+export const tddAmendmentSchema = z
+  .object({
+    imports: z.string().min(1).optional(),
+    bindings: z.array(tddBindingSchema).min(1).optional(),
+    property_imports: z.string().min(1).optional(),
+    property_bindings: z.array(tddPropertyBindingSchema).min(1).optional(),
+  })
+  .strict()
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "TDD amendment must replace at least one configured field.",
+  });
+
 export const getStatusInputSchema = z.discriminatedUnion("view", [
   z
     .object({
@@ -73,6 +111,9 @@ export const amendInputSchema = z
       .min(1)
       .describe("Which Constitution articles are affected"),
     changes_description: z.string().min(1).describe("Description of the changes"),
+    tdd_amendment: tddAmendmentSchema
+      .optional()
+      .describe("Optional replacement imports/bindings for the enabled TDD capability"),
     spec_dir: specDirSchema,
     feature_number: featureNumberSchema,
     force: forceSchema,

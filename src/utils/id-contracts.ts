@@ -5,16 +5,22 @@ export const REQUIREMENT_ID_SOURCE = String.raw`REQ-[A-Z]+-\d{3}`;
 export const REQUIREMENT_HEADING_PATTERN = /### (REQ-[A-Z]+-\d{3})/g;
 /** Requirement ID at the start of a spec heading or table row (metrics extraction). */
 export const REQUIREMENT_REF_PATTERN = /^##?\s+REQ-[A-Z]+-\d+|^\|\s*REQ-[A-Z]+-\d+/gm;
-export const TASK_ID_PATTERN = /\bT-?\d{3}\b/g;
-export const TASK_LINE_PATTERN =
-  /^-\s+\[[ x]\]\s+(T-?\d{3})(?::)?\s+(?:\[P\]\s+)?(?:\[(US\d+)\]\s+)?(.+)/gm;
+/** Supported task IDs: canonical `T-001`, legacy `T001`, and feature-scoped `T-023-001`. */
+export const TASK_ID_SOURCE = String.raw`T-(?:\d{3}-)?\d{3}|T\d{3}`;
+export const TASK_ID_PATTERN = new RegExp(String.raw`\b(?:${TASK_ID_SOURCE})\b`, "g");
+export const TASK_LINE_PATTERN = new RegExp(
+  String.raw`^-\s+\[[ x]\]\s+(${TASK_ID_SOURCE})(?::)?\s+(?:\[P\]\s+)?(?:\[(US\d+)\]\s+)?(.+)`,
+  "gm",
+);
 
 export function normalizeTaskId(taskId: string): string {
-  const match = /^T-?(\d{3})$/i.exec(taskId);
-  if (!match) {
-    throw new Error(`Invalid task ID: ${taskId}. Expected T-001.`);
-  }
-  return `T-${match[1]}`;
+  const featureScoped = /^T-(\d{3})-(\d{3})$/i.exec(taskId);
+  if (featureScoped) return `T-${featureScoped[1]}-${featureScoped[2]}`;
+
+  const local = /^T-?(\d{3})$/i.exec(taskId);
+  if (local) return `T-${local[1]}`;
+
+  throw new Error(`Invalid task ID: ${taskId}. Expected T-001 or T-023-001.`);
 }
 
 export function formatTaskId(sequence: number): string {

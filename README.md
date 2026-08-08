@@ -60,7 +60,7 @@
 | **Enterprise** | [Compliance Frameworks](#compliance-frameworks) | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 |
 | | [Enterprise Ready](#enterprise-ready) | Security, audit trail, quality gates |
 | **Platform** | [The SDD Platform](#the-spec-driven-development-platform) | Built on Spec-Kit, everything included |
-| | [Roadmap](#roadmap) | v3.12.0 current, future capabilities planned |
+| | [Roadmap](#roadmap) | v3.12.1 current, future capabilities planned |
 
 ## What is Specky?
 
@@ -890,7 +890,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_get_template` | Get any template |
 | `sdd_scan_codebase` | Detect tech stack and structure |
 | `sdd_metrics` | Project metrics dashboard |
-| `sdd_amend` | Amend project constitution |
+| `sdd_amend` | Amend project constitution and optionally replace signed TDD bindings |
 | `sdd_write_bugfix` | Generate bugfix spec with root cause analysis and test plan |
 
 ### Testing (3)
@@ -1261,9 +1261,9 @@ npm run dev
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | node dist/index.js 2>/dev/null
 
 # Run the published image from GHCR (multi-arch: linux/amd64 + linux/arm64)
-docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.12.0
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.12.1
 docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
-curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.12.0"}
+curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.12.1"}
 
 # Or build and run locally from source
 docker build -t specky-sdd:dev .
@@ -1281,11 +1281,13 @@ profile, token auth, TLS proxy, private packages) see
 
 ## Roadmap
 
-### v3.12.0 (current)
+### v3.12.1 (current)
 
 | Capability | Status |
 |------------|--------|
 | 58 MCP tools driven by signed per-feature use-case contracts | Stable |
+| Feature-scoped task IDs (`T-023-001`) with legacy ID compatibility | Stable |
+| Signed TDD binding amendments on existing v5 features | Stable |
 | Unified `specky` CLI: install, doctor, status, upgrade, hooks, serve | Stable |
 | Target-specific install: `--target=copilot`, `claude`, `cursor`, `opencode`, or `agent-skills` | Stable |
 | Copilot-safe hook manifests (no lifecycle event cross-read) | Stable |

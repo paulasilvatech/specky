@@ -95,4 +95,57 @@ describe("parseTasksFromMarkdown", () => {
     expect(tasks[0].id).toBe("T-001");
     expect(tasks[0].parallel).toBe(true);
   });
+
+  it("parses feature-scoped table IDs and mixed dependency formats", () => {
+    const content = [
+      "| ID | Task | REQ | Complexity | Depends on | Status |",
+      "|---|---|---|---|---|---|",
+      "| T-023-001 | Build registered-route matrix | REQ-ROLE-016, 006–010 | L | — | **Done** — route matrix passes |",
+      "| T-023-010 [P] | Enforce company scope | REQ-ROLE-008 | M | T-023-001, T-002 | Pending |",
+    ].join("\n");
+
+    const tasks = parseTasksFromMarkdown(content);
+    expect(tasks).toHaveLength(2);
+    expect(tasks[0]).toMatchObject({
+      id: "T-023-001",
+      effort: "L",
+      claimed_done: true,
+      dependencies: [],
+      traces_to: [
+        "REQ-ROLE-006",
+        "REQ-ROLE-007",
+        "REQ-ROLE-008",
+        "REQ-ROLE-009",
+        "REQ-ROLE-010",
+        "REQ-ROLE-016",
+      ],
+    });
+    expect(tasks[1]).toMatchObject({
+      id: "T-023-010",
+      parallel: true,
+      claimed_done: false,
+      dependencies: ["T-023-001", "T-002"],
+      traces_to: ["REQ-ROLE-008"],
+    });
+  });
+
+  it("merges feature-scoped table and checkbox entries by complete ID", () => {
+    const content = [
+      "| ID | Task | REQ | Complexity | Depends on | Status |",
+      "|---|---|---|---|---|---|",
+      "| T-023-015 | Prove mandate policies | REQ-ROLE-015 | M | T-023-013 | Pending |",
+      "",
+      "- [x] T-023-015: Prove mandate policies REQ-ROLE-015",
+      "  - Run PostgreSQL matrix",
+    ].join("\n");
+
+    expect(parseTasksFromMarkdown(content)).toEqual([
+      expect.objectContaining({
+        id: "T-023-015",
+        claimed_done: true,
+        dependencies: ["T-023-013"],
+        subtasks: ["Run PostgreSQL matrix"],
+      }),
+    ]);
+  });
 });

@@ -250,11 +250,11 @@ box. `GET /health` stays unauthenticated for liveness probes.
 
 ```bash
 # Public package: no login needed. Pin a release tag for reproducible deploys.
-docker pull ghcr.io/paulasilvatech/specky:3.12.0            # or :latest
+docker pull ghcr.io/paulasilvatech/specky:3.12.1            # or :latest
 
 # Prepare a host workspace once before mounting it into the container.
 mkdir -p workspace
-(cd workspace && npx specky-sdd@3.12.0 install --target=agent-skills --yes)
+(cd workspace && npx specky-sdd@3.12.1 install --target=agent-skills --yes)
 
 # Hardened run: enterprise profile + token auth behind your TLS proxy
 docker run --rm -p 127.0.0.1:3200:3200 \
@@ -263,9 +263,9 @@ docker run --rm -p 127.0.0.1:3200:3200 \
   -e SDD_AUDIT_HMAC_KEY_FILE=/run/secrets/audit.key \
   -v "$PWD/workspace:/workspace" \
   -v /etc/specky:/run/secrets:ro \
-  ghcr.io/paulasilvatech/specky:3.12.0
+  ghcr.io/paulasilvatech/specky:3.12.1
 
-curl -s http://127.0.0.1:3200/health     # -> {"status":"ok","version":"3.12.0"}
+curl -s http://127.0.0.1:3200/health     # -> {"status":"ok","version":"3.12.1"}
 ```
 
 Without a `/workspace` mount, the image uses its bundled ephemeral standard
