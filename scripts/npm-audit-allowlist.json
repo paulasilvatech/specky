@@ -1,0 +1,8 @@
+{
+  "1138813": {
+    "package": "nanoid",
+    "title": "nanoid: custom generators can loop indefinitely when size is zero",
+    "reason": "Nanoid 3.x is pulled only by the Vite/PostCSS test and build toolchain; published Specky packages do not ship devDependencies or expose Nanoid generators to user input. No corrected Nanoid 3.x release is currently published.",
+    "expiresWhen": "Remove when Nanoid publishes 3.3.17 or later in the 3.x line, or when PostCSS no longer depends on the affected line."
+  }
+}

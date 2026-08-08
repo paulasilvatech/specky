@@ -77,6 +77,13 @@ const CHECKBOX_TASKS = `- [ ] T-001: Create item endpoint REQ-API-001
   - Validate the request body
 `;
 
+const FEATURE_SCOPED_TASKS = `| ID | Task | REQ | Complexity | Depends on | Status |
+|---|---|---|---|---|---|
+| T-023-001 | Build route matrix | REQ-API-001 | L | — | **Done** |
+| T-023-002 [P] | Add scope checks | REQ-API-001 | M | T-023-001 | **Done** |
+| T-023-003 | Wire CI gate | REQ-API-001 | S | T-023-001 | **Done** |
+`;
+
 interface Harness {
   workspace: string;
   client: Client;
@@ -427,6 +434,30 @@ describe("integration MCP tools", () => {
       expect(tasks[0]).toMatchObject({ id: "T-002", parallel: false });
       expect(phases[0]?.["checkpoint"]).toBe(false);
       expect(String(result.payload["diagram"])).not.toContain("milestone");
+    });
+
+    it("preserves explicit feature-scoped parallel markers and requirement traces", async () => {
+      const harness = await implementHarness(workspace("specky-int-implement-feature-scoped-"), {
+        tasks: FEATURE_SCOPED_TASKS,
+      });
+      closes.push(harness.close);
+      const result = await callTool(harness.client, "sdd_implement", {
+        ...FEATURE_ARGS,
+        task_ids: [],
+        checkpoint: false,
+      });
+
+      expect(result.isError).toBe(false);
+      expect(result.payload["total_tasks"]).toBe(3);
+      const phases = result.payload["phases"] as Array<Record<string, unknown>>;
+      const tasks = phases.flatMap((phase) => phase["tasks"] as Array<Record<string, unknown>>);
+      expect(tasks.map((task) => task["id"])).toEqual(["T-023-001", "T-023-002", "T-023-003"]);
+      expect(tasks.filter((task) => task["parallel"] === true).map((task) => task["id"])).toEqual([
+        "T-023-002",
+      ]);
+      expect(tasks.every((task) => (task["traces_to"] as string[]).includes("REQ-API-001"))).toBe(
+        true,
+      );
     });
 
     it("fails when TASKS.md contains no parseable tasks", async () => {

@@ -16,6 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `specky install` and `specky upgrade` migrate compatible package-versioned workspace configs atomically while preserving every validated user setting.
 - Incompatible workspace schema versions now produce an actionable compatibility message instead of a raw Zod literal mismatch.
 
+## [3.12.1] - 2026-08-08
+
+### Added
+
+- Feature-scoped task IDs such as `T-023-001` are accepted throughout task extraction, table parsing, checkbox parsing, dependency resolution, verification, and implementation planning while preserving `T-001` and legacy `T001` compatibility.
+- `sdd_amend` can optionally replace TDD imports, executable bindings, property imports, and property bindings on an existing signed v5 feature without reinitializing the pipeline.
+
+### Changed
+
+- TDD amendments validate the complete resulting binding set against active `SPECIFICATION.md` requirement IDs, reject missing, unknown, duplicate requirement bindings and duplicate test names, recompute the use-case contract fingerprint, and persist the state/signature atomically while preserving phase, gate, and drift history.
+- Runtime and development dependencies were refreshed; CI now audits production dependencies directly and applies a fail-closed exact advisory policy to the unpatched build-only Nanoid 3.x finding.
+
 ## [3.12.0] - 2026-07-20
 
 ### Added

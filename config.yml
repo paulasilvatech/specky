@@ -1,5 +1,5 @@
 kind: "specky-package-catalog"
-version: "3.12.0"
+version: "3.12.1"
 runtime_config:
   path: ".specky/config.yml"
   required: true

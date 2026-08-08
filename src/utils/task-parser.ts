@@ -9,6 +9,7 @@ import {
   extractRequirementIds,
   normalizeTaskId,
   TASK_ID_PATTERN,
+  TASK_ID_SOURCE,
   TASK_LINE_PATTERN,
 } from "./id-contracts.js";
 
@@ -24,12 +25,9 @@ export interface ParsedTask {
   subtasks: string[];
 }
 
-const TASK_TABLE_ROW =
-  /^\|\s*(T-?\d{3})\s*\|\s*([^|]*?)\s*\|\s*([^|]*?)\s*\|\s*([^|]*?)\s*\|\s*([^|]*?)\s*\|\s*([^|]*?)\s*\|$/i;
+const TASK_ID_CELL = new RegExp(String.raw`^(${TASK_ID_SOURCE})(?:\s+\[P\])?$`, "i");
 
 const SUBTASK_LINE = /^\s{2,}-\s+(?:\[[ x]\]\s+)?(.+)/;
-const TRAILING_TRACE_SUFFIX =
-  /\s*[([]?\s*(?:traces?(?:_to)?\s*:\s*)?REQ-[A-Z]+-\d{3}(?:\s*,\s*REQ-[A-Z]+-\d{3})*\s*[)\]]?\s*$/i;
 
 function splitCellList(cell: string): string[] {
   const trimmed = cell.trim();
@@ -55,56 +53,148 @@ function parseDependencies(cell: string): string[] {
 }
 
 function parseTraces(cell: string, title: string): string[] {
-  const fromCell = extractRequirementIds(cell);
+  const fromCell = expandRequirementIds(cell);
   const fromTitle = extractRequirementIds(title);
   return [...new Set([...fromCell, ...fromTitle])].sort((a, b) => a.localeCompare(b));
 }
 
-function cleanTitle(raw: string): string {
-  return raw.replace(TRAILING_TRACE_SUFFIX, "").trim() || raw.trim();
+function expandRequirementIds(cell: string): string[] {
+  const ids: string[] = [];
+  let prefix: string | null = null;
+  for (const part of cell.split(/[,;]/)) {
+    const full = extractRequirementIds(part);
+    if (full.length > 0) {
+      ids.push(...full);
+      prefix = full.at(-1)?.replace(/\d{3}$/, "") ?? prefix;
+      continue;
+    }
+    if (!prefix) continue;
+    const shorthand = /^\s*(\d{3})(?:\s*[-–]\s*(\d{3}))?\s*$/.exec(part);
+    if (!shorthand) continue;
+    const start = Number(shorthand[1]);
+    const end = Number(shorthand[2] ?? shorthand[1]);
+    if (end < start || end - start > 99) continue;
+    for (let sequence = start; sequence <= end; sequence++) {
+      ids.push(`${prefix}${String(sequence).padStart(3, "0")}`);
+    }
+  }
+  return ids;
 }
 
-function isSeparatorOrHeader(line: string): boolean {
-  if (/^\|\s*[-:| ]+\s*\|$/.test(line)) return true;
-  if (/^\|\s*ID\s*\|/i.test(line)) return true;
-  if (/^\|\s*\*\*/.test(line)) return true; // effort summary totals
-  return false;
+function cleanTitle(raw: string): string {
+  const requirementIndex = raw.search(/\bREQ-[A-Z]+-\d{3}\b/);
+  if (requirementIndex < 0) return raw.trim();
+  const prefix = raw.slice(0, requirementIndex);
+  const withoutLabel = prefix.replace(/traces?(?:_to)?\s*:\s*$/i, "");
+  let end = withoutLabel.length;
+  while (end > 0 && " ([\t\n\r".includes(withoutLabel[end - 1])) end--;
+  return withoutLabel.slice(0, end).trim() || raw.trim();
+}
+
+interface TaskTableColumns {
+  id: number;
+  title: number;
+  parallel?: number;
+  effort?: number;
+  dependencies?: number;
+  traces?: number;
+  status?: number;
+}
+
+function tableCells(line: string): string[] {
+  const trimmed = line.trim();
+  if (!trimmed.startsWith("|") || !trimmed.endsWith("|")) return [];
+  return trimmed
+    .slice(1, -1)
+    .split("|")
+    .map((cell) => cell.trim());
+}
+
+function normalizedHeader(cell: string): string {
+  return cell
+    .replace(/[*_`[\]]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+}
+
+function findHeader(headers: string[], names: string[]): number | undefined {
+  const index = headers.findIndex((header) => names.includes(header));
+  return index >= 0 ? index : undefined;
+}
+
+function taskTableColumns(cells: string[]): TaskTableColumns | null {
+  const headers = cells.map(normalizedHeader);
+  const id = findHeader(headers, ["id"]);
+  const title = findHeader(headers, ["task", "title", "description"]);
+  if (id === undefined || title === undefined) return null;
+  return {
+    id,
+    title,
+    parallel: findHeader(headers, ["[p]", "p", "parallel"]),
+    effort: findHeader(headers, ["effort", "complexity"]),
+    dependencies: findHeader(headers, ["depends", "depends on", "dependencies"]),
+    traces: findHeader(headers, ["req", "requirements", "traces", "traces to"]),
+    status: findHeader(headers, ["status"]),
+  };
+}
+
+function isSeparatorRow(cells: string[]): boolean {
+  return cells.length > 0 && cells.every((cell) => /^:?-+:?$/.test(cell));
+}
+
+function cellAt(cells: string[], index: number | undefined): string {
+  return index === undefined ? "" : (cells[index] ?? "");
+}
+
+function isDoneStatus(status: string): boolean {
+  return /^(done|complete|completed)\b/i.test(status.replaceAll("*", "").trim());
+}
+
+function parseTaskRow(cells: string[], columns: TaskTableColumns): ParsedTask | null {
+  const idCell = cellAt(cells, columns.id);
+  const idMatch = TASK_ID_CELL.exec(idCell);
+  if (!idMatch) return null;
+  const rawTitle = cellAt(cells, columns.title);
+  if (!rawTitle) return null;
+  const parallelCell = cellAt(cells, columns.parallel);
+  const effortCell = cellAt(cells, columns.effort);
+  const dependenciesCell = cellAt(cells, columns.dependencies);
+  const tracesCell = cellAt(cells, columns.traces);
+  return {
+    id: normalizeTaskId(idMatch[1]),
+    title: cleanTitle(rawTitle),
+    parallel: /\[P\]/i.test(idCell) || /^(\[P\]|yes|true)$/i.test(parallelCell),
+    effort: effortCell && effortCell !== "—" ? effortCell : undefined,
+    dependencies: parseDependencies(dependenciesCell),
+    traces_to: parseTraces(tracesCell, rawTitle),
+    claimed_done: isDoneStatus(cellAt(cells, columns.status)),
+    subtasks: [],
+  };
 }
 
 function parseTableRows(content: string): ParsedTask[] {
   const tasks: ParsedTask[] = [];
+  let columns: TaskTableColumns | null = null;
   for (const line of content.split("\n")) {
-    const trimmed = line.trim();
-    if (!trimmed.startsWith("|") || isSeparatorOrHeader(trimmed)) continue;
-
-    const match = TASK_TABLE_ROW.exec(trimmed);
-    if (!match) continue;
-
-    let id: string;
-    try {
-      id = normalizeTaskId(match[1]);
-    } catch {
+    const cells = tableCells(line);
+    if (cells.length === 0 || isSeparatorRow(cells)) continue;
+    const nextColumns = taskTableColumns(cells);
+    if (nextColumns) {
+      columns = nextColumns;
       continue;
     }
-
-    const rawTitle = match[2].trim();
-    if (!rawTitle) continue;
-
-    const parallelCell = match[3].trim();
-    const effortCell = match[4].trim();
-    const depsCell = match[5];
-    const tracesCell = match[6];
-
-    tasks.push({
-      id,
-      title: cleanTitle(rawTitle),
-      parallel: /\[P\]/i.test(parallelCell) || /\[P\]/i.test(rawTitle),
-      effort: effortCell && effortCell !== "—" ? effortCell : undefined,
-      dependencies: parseDependencies(depsCell),
-      traces_to: parseTraces(tracesCell, rawTitle),
-      claimed_done: false,
-      subtasks: [],
-    });
+    if (cells[0]?.startsWith("**")) continue;
+    const fallback: TaskTableColumns = {
+      id: 0,
+      title: 1,
+      parallel: 2,
+      effort: 3,
+      dependencies: 4,
+      traces: 5,
+    };
+    const task = parseTaskRow(cells, columns ?? fallback);
+    if (task) tasks.push(task);
   }
   return tasks;
 }
@@ -140,7 +230,6 @@ function parseCheckboxTasks(content: string): ParsedTask[] {
       const sub = SUBTASK_LINE.exec(lines[j]);
       if (!sub) break;
       subtasks.push(sub[1].trim());
-      i = j;
     }
 
     tasks.push({

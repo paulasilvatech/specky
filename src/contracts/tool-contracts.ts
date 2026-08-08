@@ -113,7 +113,7 @@ export const TOOL_CONTRACTS = {
     scope: "feature",
     state: "feature",
     phases: ANY,
-    reads: ["CONSTITUTION.md"],
+    reads: ["CONSTITUTION.md", "SPECIFICATION.md", "feature contract"],
     writes: ["CONSTITUTION.md", "feature state"],
   },
 

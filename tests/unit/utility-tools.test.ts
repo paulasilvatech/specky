@@ -6,10 +6,14 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { afterEach, describe, expect, it } from "vitest";
 import { MCP_ECOSYSTEM, Phase, TOTAL_TOOLS, VERSION } from "../../src/constants.js";
-import { resolveUseCaseContract } from "../../src/contracts/use-case.js";
+import {
+  type ResolvedUseCaseContract,
+  resolveUseCaseContract,
+} from "../../src/contracts/use-case.js";
 import { AuditLogger } from "../../src/services/audit-logger.js";
 import { CodebaseScanner } from "../../src/services/codebase-scanner.js";
 import { ExecutionContextResolver } from "../../src/services/execution-context.js";
+import { amendFeature } from "../../src/services/feature-amendment.js";
 import { FileManager } from "../../src/services/file-manager.js";
 import { IntentDriftEngine } from "../../src/services/intent-drift-engine.js";
 import { RbacEngine } from "../../src/services/rbac-engine.js";
@@ -17,7 +21,7 @@ import { StateMachine } from "../../src/services/state-machine.js";
 import { TemplateEngine } from "../../src/services/template-engine.js";
 import { installToolEnforcement } from "../../src/tools/tool-enforcement.js";
 import { registerUtilityTools } from "../../src/tools/utility.js";
-import type { GateDecision, SddState } from "../../src/types.js";
+import type { FeatureContext, GateDecision, SddState } from "../../src/types.js";
 
 const REPO = resolve(import.meta.dirname, "../..");
 const FEATURE_DIR = ".specs/001-api";
@@ -42,6 +46,7 @@ interface FeatureStateOptions {
   completedPhases?: Phase[];
   gate?: GateDecision | null;
   driftHistory?: SddState["drift_history"];
+  contract?: ResolvedUseCaseContract;
 }
 
 async function writeFeatureState(
@@ -53,13 +58,15 @@ async function writeFeatureState(
   const state = stateMachine.createFeatureState({
     projectName: "api",
     feature: { number: "001", name: "api", directory: FEATURE_DIR },
-    contract: resolveUseCaseContract({
-      lifecycle: "greenfield",
-      workload: "service",
-      execution_mode: "full",
-      capabilities: [],
-      capability_config: {},
-    }),
+    contract:
+      options.contract ??
+      resolveUseCaseContract({
+        lifecycle: "greenfield",
+        workload: "service",
+        execution_mode: "full",
+        capabilities: [],
+        capability_config: {},
+      }),
   });
   const phase = options.phase ?? Phase.Specify;
   for (const completed of options.completedPhases ?? []) {
@@ -473,6 +480,318 @@ describe("utility MCP tools", () => {
       articles_affected: ["Article II"],
       changes_description: "Adds the contract-testing obligation to the quality article.",
     };
+
+    const TDD_CONTRACT = resolveUseCaseContract({
+      lifecycle: "greenfield",
+      workload: "service",
+      execution_mode: "full",
+      capabilities: ["tdd"],
+      capability_config: {
+        tdd: {
+          framework: "vitest",
+          property_framework: "fast-check",
+          output_dir: "tests",
+          coverage_threshold: 85,
+          trace_marker: "Requirement trace",
+          imports: 'import { expect, it } from "vitest";',
+          bindings: [
+            {
+              requirement_id: "REQ-CORE-001",
+              test_name: "Original core behavior",
+              body: 'it("REQ-CORE-001 original", () => { expect(1).toBe(1); });',
+            },
+            {
+              requirement_id: "REQ-CORE-002",
+              test_name: "Original secondary behavior",
+              body: 'it("REQ-CORE-002 original", () => { expect(2).toBe(2); });',
+            },
+          ],
+          property_imports: 'import { expect, it } from "vitest";',
+          property_bindings: [
+            {
+              requirement_id: "REQ-CORE-001",
+              property_name: "Core invariant",
+              property_type: "invariant",
+              body: 'it("REQ-CORE-001 property", () => { expect("REQ-CORE-001").toContain("CORE"); });',
+            },
+          ],
+        },
+      },
+    });
+
+    const REPLACEMENT_BINDINGS = [
+      {
+        requirement_id: "REQ-CORE-001",
+        test_name: "Updated core behavior",
+        body: 'it("REQ-CORE-001 updated", () => { expect(10).toBeGreaterThan(1); });',
+      },
+      {
+        requirement_id: "REQ-CORE-002",
+        test_name: "Updated secondary behavior",
+        body: 'it("REQ-CORE-002 updated", () => { expect([1, 2]).toHaveLength(2); });',
+      },
+    ];
+
+    async function prepareTddFeature(harness: Harness, ws: string): Promise<void> {
+      await writeFeatureState(harness.stateMachine, ws, {
+        phase: Phase.Implement,
+        completedPhases: [
+          Phase.Init,
+          Phase.Discover,
+          Phase.Specify,
+          Phase.Clarify,
+          Phase.Design,
+          Phase.Tasks,
+          Phase.Analyze,
+        ],
+        contract: TDD_CONTRACT,
+      });
+      writeFileSync(join(ws, FEATURE_DIR, "CONSTITUTION.md"), CONSTITUTION);
+      writeFileSync(
+        join(ws, FEATURE_DIR, "SPECIFICATION.md"),
+        [
+          "### REQ-CORE-001: Core behavior",
+          "The system shall preserve core behavior.",
+          "",
+          "### REQ-CORE-002: Secondary behavior",
+          "The system shall preserve secondary behavior.",
+        ].join("\n"),
+      );
+    }
+
+    it("atomically replaces TDD bindings and preserves pipeline progress", async () => {
+      const ws = workspace("specky-util-amend-tdd-");
+      const harness = await buildHarness(ws);
+      closes.push(harness.close);
+      await prepareTddFeature(harness, ws);
+      const before = await harness.stateMachine.loadState(FEATURE_DIR);
+
+      const result = await callTool(harness.client, "sdd_amend", {
+        ...AMEND_INPUT,
+        spec_dir: ".specs",
+        feature_number: "001",
+        force: true,
+        tdd_amendment: { bindings: REPLACEMENT_BINDINGS },
+      });
+
+      expect(result.isError).toBe(false);
+      expect(result.payload).toMatchObject({
+        status: "amendment_added",
+        tdd_amendment: {
+          replaced_bindings: 2,
+          contract_fingerprint_before: before.contract.fingerprint,
+        },
+      });
+      const after = await harness.stateMachine.loadState(FEATURE_DIR);
+      expect(after.contract.fingerprint).not.toBe(before.contract.fingerprint);
+      expect(after.contract.capability_config.tdd).toMatchObject({
+        framework: "vitest",
+        coverage_threshold: 85,
+        bindings: REPLACEMENT_BINDINGS,
+        property_bindings: TDD_CONTRACT.capability_config.tdd?.property_bindings,
+      });
+      expect(after.current_phase).toBe(Phase.Implement);
+      expect(after.phases).toEqual(before.phases);
+      expect(after.gate_decision).toEqual(APPROVE_GATE);
+      expect(after.amendments).toHaveLength(1);
+      expect(result.payload["tdd_amendment"]).toMatchObject({
+        contract_fingerprint_after: after.contract.fingerprint,
+      });
+    });
+
+    it("rejects incomplete replacement bindings without modifying artifacts", async () => {
+      const ws = workspace("specky-util-amend-tdd-incomplete-");
+      const harness = await buildHarness(ws);
+      closes.push(harness.close);
+      await prepareTddFeature(harness, ws);
+      const before = await harness.stateMachine.loadState(FEATURE_DIR);
+      const constitutionBefore = readFileSync(join(ws, FEATURE_DIR, "CONSTITUTION.md"), "utf8");
+
+      const result = await callTool(harness.client, "sdd_amend", {
+        ...AMEND_INPUT,
+        spec_dir: ".specs",
+        feature_number: "001",
+        force: true,
+        tdd_amendment: { bindings: [REPLACEMENT_BINDINGS[0]] },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.raw).toContain("Missing: REQ-CORE-002");
+      expect(await harness.stateMachine.loadState(FEATURE_DIR)).toEqual(before);
+      expect(readFileSync(join(ws, FEATURE_DIR, "CONSTITUTION.md"), "utf8")).toBe(
+        constitutionBefore,
+      );
+    });
+
+    it("rejects a TDD amendment when the capability is disabled", async () => {
+      const ws = workspace("specky-util-amend-tdd-disabled-");
+      const harness = await buildHarness(ws);
+      closes.push(harness.close);
+      await writeFeatureState(harness.stateMachine, ws);
+      writeFileSync(join(ws, FEATURE_DIR, "CONSTITUTION.md"), CONSTITUTION);
+      writeFileSync(
+        join(ws, FEATURE_DIR, "SPECIFICATION.md"),
+        "### REQ-CORE-001: Core behavior\nThe system shall preserve core behavior.\n",
+      );
+
+      const result = await callTool(harness.client, "sdd_amend", {
+        ...AMEND_INPUT,
+        spec_dir: ".specs",
+        feature_number: "001",
+        force: true,
+        tdd_amendment: { bindings: [REPLACEMENT_BINDINGS[0]] },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.raw).toContain("TDD capability is not enabled");
+    });
+
+    it("rejects duplicate replacement test names without modifying state", async () => {
+      const ws = workspace("specky-util-amend-tdd-duplicate-name-");
+      const harness = await buildHarness(ws);
+      closes.push(harness.close);
+      await prepareTddFeature(harness, ws);
+      const before = await harness.stateMachine.loadState(FEATURE_DIR);
+
+      const result = await callTool(harness.client, "sdd_amend", {
+        ...AMEND_INPUT,
+        spec_dir: ".specs",
+        feature_number: "001",
+        force: true,
+        tdd_amendment: {
+          bindings: REPLACEMENT_BINDINGS.map((binding) => ({
+            ...binding,
+            test_name: "Duplicated test name",
+          })),
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.raw).toContain("Duplicate test names: Duplicated test name");
+      expect(await harness.stateMachine.loadState(FEATURE_DIR)).toEqual(before);
+    });
+
+    it("rejects TDD amendments after the feature enters release", async () => {
+      const ws = workspace("specky-util-amend-tdd-release-");
+      const harness = await buildHarness(ws);
+      closes.push(harness.close);
+      await prepareTddFeature(harness, ws);
+      await harness.stateMachine.mutateState(FEATURE_DIR, (state) => {
+        state.current_phase = Phase.Release;
+        state.phases[Phase.Implement] = { status: "completed" };
+        state.phases[Phase.Verify] = { status: "completed" };
+        state.phases[Phase.Release] = { status: "in_progress" };
+      });
+
+      const result = await callTool(harness.client, "sdd_amend", {
+        ...AMEND_INPUT,
+        spec_dir: ".specs",
+        feature_number: "001",
+        force: true,
+        tdd_amendment: { bindings: REPLACEMENT_BINDINGS },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.raw).toContain("cannot be amended after the feature enters the release phase");
+    });
+
+    it("rejects duplicate property requirements and property names", async () => {
+      const ws = workspace("specky-util-amend-tdd-property-duplicates-");
+      const harness = await buildHarness(ws);
+      closes.push(harness.close);
+      await prepareTddFeature(harness, ws);
+
+      const result = await callTool(harness.client, "sdd_amend", {
+        ...AMEND_INPUT,
+        spec_dir: ".specs",
+        feature_number: "001",
+        force: true,
+        tdd_amendment: {
+          property_bindings: [
+            {
+              requirement_id: "REQ-CORE-001",
+              property_name: "Duplicated property",
+              property_type: "invariant",
+              body: 'it("REQ-CORE-001 property one", () => { expect("REQ-CORE-001").toContain("CORE"); });',
+            },
+            {
+              requirement_id: "REQ-CORE-001",
+              property_name: "Duplicated property",
+              property_type: "negative",
+              body: 'it("REQ-CORE-001 property two", () => { expect("REQ-CORE-001").not.toContain("OTHER"); });',
+            },
+          ],
+        },
+      });
+
+      expect(result.isError).toBe(true);
+      expect(result.raw).toContain("Duplicate property requirements: REQ-CORE-001");
+      expect(result.raw).toContain("Duplicate property names: Duplicated property");
+    });
+
+    it("allows imports-only amendments to grandfather legacy binding coverage", async () => {
+      const ws = workspace("specky-util-amend-tdd-imports-only-");
+      const harness = await buildHarness(ws);
+      closes.push(harness.close);
+      await prepareTddFeature(harness, ws);
+      writeFileSync(
+        join(ws, FEATURE_DIR, "SPECIFICATION.md"),
+        [
+          "### REQ-CORE-001: Core behavior",
+          "The system shall preserve core behavior.",
+          "### REQ-CORE-002: Secondary behavior",
+          "The system shall preserve secondary behavior.",
+          "### REQ-CORE-003: Newly documented behavior",
+          "The system shall document newly discovered behavior.",
+        ].join("\n"),
+      );
+
+      const result = await callTool(harness.client, "sdd_amend", {
+        ...AMEND_INPUT,
+        spec_dir: ".specs",
+        feature_number: "001",
+        force: true,
+        tdd_amendment: { imports: 'import { describe, expect, it } from "vitest";' },
+      });
+
+      expect(result.isError).toBe(false);
+      const state = await harness.stateMachine.loadState(FEATURE_DIR);
+      expect(state.contract.capability_config.tdd?.bindings).toHaveLength(2);
+      expect(state.contract.capability_config.tdd?.imports).toContain("describe");
+    });
+
+    it("serializes concurrent Constitution and signed-state amendments", async () => {
+      const ws = workspace("specky-util-amend-tdd-concurrent-");
+      const harness = await buildHarness(ws);
+      closes.push(harness.close);
+      await prepareTddFeature(harness, ws);
+      const fileManager = new FileManager(ws);
+      const resolver = new ExecutionContextResolver(fileManager, harness.stateMachine);
+      const context = (await resolver.resolve("sdd_amend", {
+        spec_dir: ".specs",
+        feature_number: "001",
+      })) as FeatureContext;
+      const input = {
+        rationale: AMEND_INPUT.rationale,
+        articlesAffected: AMEND_INPUT.articles_affected,
+        changesDescription: AMEND_INPUT.changes_description,
+        force: true,
+        tddAmendment: { bindings: REPLACEMENT_BINDINGS },
+      };
+
+      const outcomes = await Promise.allSettled([
+        amendFeature(fileManager, harness.stateMachine, undefined, context, input),
+        amendFeature(fileManager, harness.stateMachine, undefined, context, input),
+      ]);
+
+      expect(outcomes.filter((outcome) => outcome.status === "fulfilled")).toHaveLength(1);
+      expect(outcomes.filter((outcome) => outcome.status === "rejected")).toHaveLength(1);
+      const state = await harness.stateMachine.loadState(FEATURE_DIR);
+      expect(state.amendments).toHaveLength(1);
+      const constitution = readFileSync(join(ws, FEATURE_DIR, "CONSTITUTION.md"), "utf8");
+      expect(constitution.match(/^\| 1 \|/gm)).toHaveLength(1);
+      expect(constitution).not.toContain("| 2 |");
+    });
 
     it("appends an amendment row after the initial-version marker and bumps the count", async () => {
       const ws = workspace("specky-util-amend-");
