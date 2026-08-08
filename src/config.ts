@@ -179,6 +179,7 @@ export function resolveProfile(
 
 export interface WorkspaceConfigFile {
   configPath: string;
+  raw: string;
   parsed: unknown;
 }
 
@@ -198,7 +199,8 @@ export function readWorkspaceConfigFile(workspaceRoot: string): WorkspaceConfigF
   }
 
   try {
-    return { configPath, parsed: parse(readFileSync(configPath, "utf-8")) };
+    const raw = readFileSync(configPath, "utf-8");
+    return { configPath, raw, parsed: parse(raw) };
   } catch (error) {
     throw new ConfigValidationError(configPath, `malformed YAML: ${(error as Error).message}`);
   }

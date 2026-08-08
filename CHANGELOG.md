@@ -10,11 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Workspace `.specky/config.yml` now uses an independent integer `schema_version` instead of the npm package version.
+- Automatic config migration covers workspaces without config, strict allowlisted unversioned 3.x configs, generated package catalogs from `v3.4.0–v3.11.0`, and complete package-versioned runtime configs from `v3.11.1–v3.12.0`; original files are retained as backups.
+- The MCP SDK is pinned to `1.30.0`; CI and publishing use separate runtime and full-lockfile audit thresholds documented in `SECURITY.md`.
 
 ### Fixed
 
 - `specky install` and `specky upgrade` migrate compatible package-versioned workspace configs atomically while preserving every validated user setting.
 - Incompatible workspace schema versions now produce an actionable compatibility message instead of a raw Zod literal mismatch.
+- README, CLI, install, enterprise, contract, security, evidence, and onboarding guidance now describe the complete schema and the separate npm-package/workspace upgrade steps.
 
 ## [3.12.1] - 2026-08-08
 

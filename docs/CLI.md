@@ -85,13 +85,13 @@ If Copilot is part of the target set (`copilot`, `both`, or `all`), Specky strip
 
 Both modes also write:
 
-- `.specky/config.yml` — project pipeline config
+- `.specky/config.yml` — complete schema-versioned workspace runtime config
 - `.specky/install.lock` — SHA256 manifest of every installed file
 - `.specky/install.json` — install metadata (version, ide, timestamp)
 
 Never overwrites `.specs/`, `.specky/profile.json`, or existing user-authored keys in `settings.json`.
 
-`.specky/config.yml` is mandatory for runtime commands and MCP server startup. It is complete and strict: missing files, partial documents, malformed YAML, unknown keys, and escaping paths are rejected. The installer is the bootstrap path that writes the full document.
+`.specky/config.yml` is mandatory for runtime commands and MCP server startup. It uses an integer `schema_version` independent of the npm package version and is complete and strict: missing files, partial documents, malformed YAML, unknown keys, and escaping paths are rejected. The installer is the bootstrap path that writes the full document. Legacy generated configs are migrated only by `specky install` or `specky upgrade`; normal runtime loading remains read-only and reports the exact compatibility action.
 
 **Why `.vscode/settings.json` auto-config matters:**
 Without `chat.mcp.enabled` and `chat.mcp.discovery.enabled`, GitHub Copilot in VS Code won't discover the Specky MCP server even if `.vscode/mcp.json` is correct. Users previously had to manually toggle tools in the Copilot Chat tool selector — now it Just Works. The Specky MCP server advertises its icon via `file://` in the handshake (v3.10.2+); VS Code ignores HTTPS icon URLs on stdio transports.
@@ -193,9 +193,11 @@ Refresh installed assets to the current package version while preserving `.specs
 specky upgrade
 ```
 
-Reads the harness target(s) from `.specky/install.json` — **no `--target` flag**. Refreshes installed assets to the current CLI version while preserving `.specs/` and `.specky/profile.json`. To switch harness (e.g. Copilot → Cursor), use `specky install --target=...` instead.
+Reads the harness target(s) from `.specky/install.json` — **no `--target` flag**. Refreshes installed assets to the current CLI version while preserving `.specs/` and `.specky/profile.json`. Supported legacy configs are validated and prepared before installation, then replaced atomically only after the asset refresh succeeds. To switch harness (e.g. Copilot → Cursor), use `specky install --target=...` instead.
 
 Internally runs `init --force` with the stored target(s). This also re-pins `.mcp.json` / `.vscode/mcp.json` to the new version — updating the npm package alone leaves the MCP registration pointing at the old pinned server.
+
+`specky upgrade` does not install a newer npm package or remediate that package's dependencies. Update the global or project-local package first, then run `specky upgrade` and `specky doctor`.
 
 ---
 

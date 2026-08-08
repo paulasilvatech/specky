@@ -4,9 +4,8 @@
 
 | Version | Supported |
 | --- | --- |
-| 3.7.x | ✅ Active |
-| 3.6.x | ✅ Security fixes only |
-| 3.0.x–3.5.x | ❌ End of life |
+| 3.12.x | ✅ Active |
+| 3.0.x–3.11.x | ❌ End of life; recognized Specky 3.x config migration remains supported |
 | 2.x | ❌ End of life |
 | 1.0.x | ❌ End of life |
 
@@ -15,7 +14,7 @@
 If you discover a security vulnerability in Specky, please report it responsibly:
 
 1. **Do NOT open a public issue.**
-2. Email **paulasilvatech@github.com** with:
+2. Email **[paulasilvatech@github.com](mailto:paulasilvatech@github.com)** with:
    - Description of the vulnerability
    - Steps to reproduce
    - Impact assessment
@@ -65,7 +64,7 @@ The local version-drift warning printed by `specky doctor`/`specky status` and a
 
 ### Dependency Minimalism
 
-Specky has only **3 runtime dependencies**:
+Specky declares only **3 direct runtime dependencies**. Their transitives are included in runtime audits and the published SBOM:
 
 | Dependency | Purpose | Security Profile |
 | --- | --- | --- |
@@ -90,7 +89,7 @@ Runtime dependencies are kept intentionally small and are audited in CI.
 | A03 Injection | Zod `.strict()` validation on all inputs; no SQL/eval/shell execution |
 | A04 Insecure Design | State machine enforces phase ordering; thin tools / fat services separation |
 | A05 Security Misconfiguration | Minimal config surface; no default credentials; no admin endpoints |
-| A06 Vulnerable Components | 3 runtime deps only; Dependabot enabled; regular audits |
+| A06 Vulnerable Components | 3 direct runtime deps; transitives included in runtime audit and SBOM; Dependabot enabled |
 | A07 Authentication Failures | stdio mode is process-isolated (no network). HTTP mode binds to `127.0.0.1` by default and supports optional bearer-token auth — a shared token (`SDD_HTTP_TOKEN`) or a named token table (`SDD_HTTP_TOKENS_FILE`, principal + RBAC role per token, sha256 storage supported) — all constant-time compared, plus DNS-rebinding protection |
 | A08 Data Integrity Failures | Atomic file writes via FileManager; Zod schema enforcement |
 | A09 Logging Failures | Structured stderr logging; no stdout pollution |
@@ -99,14 +98,35 @@ Runtime dependencies are kept intentionally small and are audited in CI.
 ## Dependency Auditing
 
 ```bash
-# Check for known vulnerabilities
-npm audit
+# Block high/critical findings in the package shipped to users
+npm run security:audit:runtime
 
-# Check for outdated dependencies
-npm outdated
+# Report runtime and development findings; block critical findings
+npm run security:audit:all
 ```
 
-We run `npm audit` in CI on every pull request. Any `high` or `critical` vulnerability blocks the merge.
+CI and publishing block high/critical findings in production dependencies and critical findings anywhere in the lockfile. The full audit still prints high findings from development tooling so they remain visible while an upstream-compatible fix is unavailable.
+
+As of 2026-08-08, the direct MCP SDK is pinned to `1.30.0` to avoid the SDK data-isolation and ReDoS advisories affecting older releases. Its Hono dependency resolves to `4.12.33`; npm advisories require `4.12.34`, which is not yet available in the configured registry, leaving three moderate runtime findings. The development-only PostCSS path resolves NanoID `3.3.16`; the zero-size generator advisory requires `3.3.17`, also not yet available in that line. Do not use `npm audit fix --force` to cross declared major/version boundaries. These temporary residuals must be removed when compatible upstream releases become available.
+
+### Applying Security Updates
+
+Updating the npm package and upgrading a workspace are separate steps:
+
+```bash
+# Global installation
+npm install -g specky-sdd@latest
+cd your-project
+specky upgrade
+specky doctor
+
+# Project-local installation
+npm install --save-dev specky-sdd@latest
+npx specky upgrade
+npx specky doctor
+```
+
+The npm command installs fixed Specky code and dependencies. `specky upgrade` does not modify npm packages; it migrates supported workspace config, refreshes generated assets, and re-pins MCP registration to the package version already installed. `specky doctor` then verifies installed asset hashes.
 
 ## Security-Related Configuration
 
@@ -257,7 +277,7 @@ Specky addresses the 12 threat categories from the CoSAI MCP Security White Pape
 | T-05 | Insufficient Input Validation | All inputs validated with Zod schemas before reaching service layer |
 | T-06 | Uncontrolled Resource Consumption | Rate limiter (opt-in) for HTTP mode; stdio is single-session |
 | T-07 | Broken Access Control | RBAC engine (opt-in) — viewer/contributor/admin roles; path sanitization |
-| T-08 | Supply Chain Compromise | 3 runtime deps only; Dependabot enabled; global install recommended |
+| T-08 | Supply Chain Compromise | 3 direct runtime deps; runtime audit + SBOM; Dependabot enabled; pinned install recommended |
 | T-09 | Credential Leakage | No secrets in logs (stderr only); no credentials in spec artifacts |
 | T-10 | Insecure Communication | stdio mode has zero network exposure; HTTP mode binds to localhost |
 | T-11 | State Manipulation | HMAC-SHA256 signature on `.sdd-state.json`; tamper detection on load |
@@ -276,4 +296,13 @@ Specky addresses the 12 threat categories from the CoSAI MCP Security White Pape
 | M7 | Insecure Plugin Composition | Fixed tool set at startup — no dynamic loading |
 | M8 | Improper Error Handling | All service errors caught; tools return structured error responses |
 | M9 | Insufficient Logging | Hash-chained audit trail; syslog export available |
-| M10 | Vulnerable Dependencies | 3 runtime deps; `npm audit` in CI; Dependabot on GitHub |
+| M10 | Vulnerable Dependencies | 3 direct runtime deps; runtime and full-graph audit gates in CI; Dependabot on GitHub |
+
+## References
+
+- [npm audit command](https://docs.npmjs.com/cli/commands/npm-audit)
+- [npm `force` configuration](https://docs.npmjs.com/cli/using-npm/config#force)
+- [MCP SDK cross-client data isolation advisory](https://github.com/advisories/GHSA-345p-7cg4-v4c7)
+- [MCP SDK ReDoS advisory](https://github.com/advisories/GHSA-8r9q-7v3j-jr4g)
+- [Hono CORS ReDoS advisory](https://github.com/advisories/GHSA-8j4g-w8fx-2239)
+- [NanoID zero-size generator advisory](https://github.com/advisories/GHSA-2v37-7h3g-55p8)

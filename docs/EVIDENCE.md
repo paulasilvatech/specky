@@ -400,7 +400,7 @@ remediation-status table and the `CHANGELOG` for detail.
 | State | Per-spec-dir async mutex; atomic state + signature writes |
 | HTTP | Binds `127.0.0.1` by default; opt-in bearer-token auth (`SDD_HTTP_TOKEN`); DNS-rebinding protection |
 | Installer | Pre-authorized allow-list reduced 37 → 11 (no arbitrary shell/`rm`/network); `.mcp.json` pinned to the installed version |
-| Config | `.specky/config.yml` parsed with the `yaml` library + Zod schema; `spec_dir`/`templates_path` reject traversal |
+| Config | `.specky/config.yml` parsed with `yaml` + a strict versioned Zod schema; recognized generated 3.x formats use dedicated parsers and atomic migration; `spec_root`/`templates_path` reject traversal |
 | Coverage | Measured over the whole `src/**` tree (`all:true`); honest baseline ~24% (was 56% over imported files only) |
 | Docs | Public counts/phases/lineage corrected; `docs/API_REFERENCE.md` generated from `tools/list` with a CI `--check`; source count 88 → 92 |
 | Dedup | Single `tool-result` helper replaces 16× `formatError` + 18× `truncate` copies |
@@ -423,7 +423,8 @@ node scripts/audit-agent-frontmatter.mjs
 npm run build
 npm test
 npm run test:coverage
-npm audit --audit-level=high
+npm run security:audit:runtime
+npm run security:audit:all
 npm pack
 ```
 

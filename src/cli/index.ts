@@ -75,7 +75,8 @@ Commands:
                                         opencode, agent-skills, both, all
     --dry-run                           Show output paths without writing
 
-  upgrade                Refresh installed assets (preserves .specs/)
+  upgrade                Migrate supported workspace config and refresh installed assets
+                         (preserves .specs/; does not update the npm package)
 
   migrate-contracts      Migrate legacy state metadata to signed per-feature v5 state
     --spec-dir=<path>                   Explicit specs root (required)

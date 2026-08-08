@@ -51,7 +51,8 @@ Specky does not rely on model choice alone for quality. Every important step sho
 - `npm run build`
 - `npm test`
 - `npm run test:coverage`
-- `npm audit --audit-level=high`
+- `npm run security:audit:runtime`
+- `npm run security:audit:all`
 - `node scripts/audit-agent-frontmatter.mjs`
 - `sdd_run_analysis`
 - `sdd_verify_audit`

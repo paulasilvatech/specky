@@ -4,7 +4,11 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createWorkspaceConfig, serializeWorkspaceConfig } from "../../config.js";
-import { prepareWorkspaceConfig } from "../../config-migrations.js";
+import {
+  persistWorkspaceConfigMigration,
+  prepareWorkspaceConfig,
+  type WorkspaceConfigMigrationResult,
+} from "../../config-migrations.js";
 import { CONFIG_SCHEMA_VERSION, VERSION } from "../../constants.js";
 import {
   type CopyResult,
@@ -143,12 +147,10 @@ function resolveInstallationConfiguration(
 ): {
   permissionProfile: PermissionProfile;
   integrations: Integration[];
-  migratedFromPackageVersion?: string;
+  preparedConfig?: WorkspaceConfigMigrationResult;
 } {
   const configPath = resolve(workspace, ".specky/config.yml");
-  const prepared = existsSync(configPath)
-    ? prepareWorkspaceConfig(workspace, { write: !opts.dryRun })
-    : null;
+  const prepared = existsSync(configPath) ? prepareWorkspaceConfig(workspace) : undefined;
   const workspaceConfig = prepared?.config ?? null;
   return {
     permissionProfile: resolvePermissionProfile(
@@ -158,7 +160,7 @@ function resolveInstallationConfiguration(
       opts.integration === undefined
         ? (workspaceConfig?.installation.integrations ?? [])
         : resolveIntegrations(opts.integration),
-    migratedFromPackageVersion: prepared?.migratedFromPackageVersion,
+    preparedConfig: prepared,
   };
 }
 
@@ -397,15 +399,23 @@ function printFooter(resolvedTargets: HarnessTarget[]): void {
 }
 
 function printConfigMigration(
-  migratedFromPackageVersion: string | undefined,
+  prepared: WorkspaceConfigMigrationResult | undefined,
   dryRun: boolean,
+  backupPath?: string,
 ): void {
-  if (!migratedFromPackageVersion) return;
+  if (!prepared?.migration) return;
   const action = dryRun ? "Would migrate" : "Migrated";
   const detail = dryRun ? "without writing" : "using an atomic rewrite";
   console.log(
-    `[specky init] ${action} workspace config from package v${migratedFromPackageVersion} to schema ${CONFIG_SCHEMA_VERSION} (${detail}).`,
+    `[specky init] ${action} workspace config from ${prepared.migration.source} to schema ${CONFIG_SCHEMA_VERSION} (${detail}).`,
   );
+  if (prepared.migration.removedFields.length > 0) {
+    const removeAction = dryRun ? "Would remove" : "Removed";
+    console.log(
+      `[specky init] ${removeAction} obsolete config fields: ${prepared.migration.removedFields.join(", ")}.`,
+    );
+  }
+  if (backupPath) console.log(`[specky init] Original config backup: ${backupPath}`);
   console.log("");
 }
 
@@ -432,8 +442,13 @@ function installTargets(ctx: Ctx, resolvedTargets: HarnessTarget[]): CopyResult[
 export async function runInit(opts: InitOptions): Promise<number> {
   const workspace = opts.workspace ?? process.cwd();
   const pkg = packageRoot();
-  const { permissionProfile, integrations, migratedFromPackageVersion } =
-    resolveInstallationConfiguration(opts, workspace);
+  const detected = detectIde(workspace);
+  const resolvedTargets = resolveInstallTargets(opts, detected);
+  const resolvedIde = legacyIdeFromTargets(resolvedTargets);
+  const { permissionProfile, integrations, preparedConfig } = resolveInstallationConfiguration(
+    opts,
+    workspace,
+  );
   const ctx: Ctx = {
     workspace,
     pkg,
@@ -446,10 +461,6 @@ export async function runInit(opts: InitOptions): Promise<number> {
     dryRun: opts.dryRun,
   };
 
-  const detected = detectIde(workspace);
-  const resolvedTargets = resolveInstallTargets(opts, detected);
-  const resolvedIde = legacyIdeFromTargets(resolvedTargets);
-
   printHeader(
     opts,
     workspace,
@@ -459,7 +470,6 @@ export async function runInit(opts: InitOptions): Promise<number> {
     permissionProfile,
     integrations,
   );
-  printConfigMigration(migratedFromPackageVersion, opts.dryRun);
 
   const results = installTargets(ctx, resolvedTargets);
 
@@ -489,6 +499,11 @@ export async function runInit(opts: InitOptions): Promise<number> {
 
   const lockPath = writeInstallLock(ctx.targets, results, VERSION, ctx.copyOpts);
   console.log(`[specky init] Integrity manifest: ${lockPath}`);
+
+  const backupPath = ctx.dryRun
+    ? undefined
+    : persistWorkspaceConfigMigration(workspace, preparedConfig);
+  printConfigMigration(preparedConfig, ctx.dryRun, backupPath);
 
   printFooter(resolvedTargets);
   return 0;

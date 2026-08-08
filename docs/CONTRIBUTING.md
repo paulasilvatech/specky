@@ -28,7 +28,8 @@ Specky v3.12.1 is an MCP server that exposes **58 tools** organized around signe
 src/
 ├── index.ts                  Entry point: creates MCP server, wires all services and tools
 ├── constants.ts              Enums, tool names, config values, type aliases
-├── config.ts                 Project-local configuration loader (.specky/config.yml)
+├── config.ts                 Current project configuration schema and read-only loader
+├── config-migrations.ts      Explicit legacy config parsers and atomic migrations
 ├── types.ts                  All TypeScript interfaces (zero `any`)
 ├── contracts/                3 use-case, tool, and pipeline-profile contracts
 ├── schemas/                  16 strict Zod input schemas
@@ -60,7 +61,7 @@ specky/
 ├── apm.yml                      ← APM manifest (legacy; CLI is primary)
 ├── .apm/                        ← Asset source (agents, prompts, skills, hooks, instructions)
 ├── .claude-plugin/              ← Claude Code native plugin manifest (legacy)
-├── config.yml                   ← Pipeline configuration
+├── config.yml                   ← Published package catalog metadata (not workspace config)
 ├── scripts/                     ← Build tooling (build-hook-manifests.mjs, finalize-build.mjs, release.mjs)
 ├── src/                         ← MCP engine + CLI (TypeScript, published to npm)
 │   ├── cli/                     ← Unified `specky` CLI (install, doctor, status, upgrade, hooks, serve)

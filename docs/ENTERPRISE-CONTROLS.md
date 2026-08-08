@@ -115,15 +115,16 @@ Minimum evidence:
 
 Before publish:
 
-1. `npm audit --audit-level=high`
-2. `npm run build`
-3. `npm test`
-4. `npm run test:coverage`
-5. `npm pack --dry-run`
-6. Fresh install smoke test
-7. MCP initialize handshake
-8. Changelog/version check
-9. Evidence pack update
+1. `npm run security:audit:runtime`
+2. `npm run security:audit:all`
+3. `npm run build`
+4. `npm test`
+5. `npm run test:coverage`
+6. `npm pack --dry-run`
+7. Fresh install smoke test
+8. MCP initialize handshake
+9. Changelog/version check
+10. Evidence pack update
 
 ## References
 
