@@ -60,7 +60,7 @@
 | **Enterprise** | [Compliance Frameworks](#compliance-frameworks) | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 |
 | | [Enterprise Ready](#enterprise-ready) | Security, audit trail, quality gates |
 | **Platform** | [The SDD Platform](#the-spec-driven-development-platform) | Built on Spec-Kit, everything included |
-| | [Roadmap](#roadmap) | v3.12.1 current, future capabilities planned |
+| | [Roadmap](#roadmap) | v3.13.0 current, future capabilities planned |
 
 ## What is Specky?
 
@@ -1277,9 +1277,9 @@ npm run dev
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | node dist/index.js 2>/dev/null
 
 # Run the published image from GHCR (multi-arch: linux/amd64 + linux/arm64)
-docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.12.1
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.13.0
 docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
-curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.12.1"}
+curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.13.0"}
 
 # Or build and run locally from source
 docker build -t specky-sdd:dev .
@@ -1297,11 +1297,13 @@ profile, token auth, TLS proxy, private packages) see
 
 ## Roadmap
 
-### v3.12.1 (current)
+### v3.13.0 (current)
 
 | Capability | Status |
 |------------|--------|
 | 58 MCP tools driven by signed per-feature use-case contracts | Stable |
+| Independent workspace config schema with guarded Specky 3.x migration | Stable |
+| Atomic config backup and concurrent-edit conflict preservation | Stable |
 | Feature-scoped task IDs (`T-023-001`) with legacy ID compatibility | Stable |
 | Signed TDD binding amendments on existing v5 features | Stable |
 | Unified `specky` CLI: install, doctor, status, upgrade, hooks, serve | Stable |

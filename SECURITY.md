@@ -107,7 +107,7 @@ npm run security:audit:all
 
 CI and publishing block high/critical findings in production dependencies and critical findings anywhere in the lockfile. The full audit still prints high findings from development tooling so they remain visible while an upstream-compatible fix is unavailable.
 
-As of 2026-08-08, the direct MCP SDK is pinned to `1.30.0` to avoid the SDK data-isolation and ReDoS advisories affecting older releases. Its Hono dependency resolves to `4.12.33`; npm advisories require `4.12.34`, which is not yet available in the configured registry, leaving three moderate runtime findings. The development-only PostCSS path resolves NanoID `3.3.16`; the zero-size generator advisory requires `3.3.17`, also not yet available in that line. Do not use `npm audit fix --force` to cross declared major/version boundaries. These temporary residuals must be removed when compatible upstream releases become available.
+As of 2026-08-08, the direct MCP SDK range starts at `^1.30.0` and the lockfile resolves `1.30.0`, avoiding the SDK data-isolation and ReDoS advisories affecting older releases. Its Hono dependency resolves to `4.12.33`; npm advisories require `4.12.34`, which is not yet available in the configured registry, leaving three moderate runtime findings. The development-only PostCSS path resolves NanoID `3.3.16`; the zero-size generator advisory requires `3.3.17`, also not yet available in that line. Do not use `npm audit fix --force` to cross declared major/version boundaries. These temporary residuals must be removed when compatible upstream releases become available.
 
 ### Applying Security Updates
 

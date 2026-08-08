@@ -67,12 +67,7 @@ describe("workspace config migration", () => {
     rmSync(workspace, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   });
 
-  it("migrates the real N-1 config through runInit and preserves every user choice", () => {
-    const packageManifest = JSON.parse(readFileSync(resolve(REPO, "package.json"), "utf8")) as {
-      version: string;
-    };
-    expect(packageManifest.version).toBe("3.12.1");
-
+  it("migrates a complete v3.11.1 config and preserves every user choice", () => {
     copyFileSync(LEGACY_CONFIG, configPath);
     chmodSync(configPath, 0o660);
     const originalMode = statSync(configPath).mode & 0o777;
