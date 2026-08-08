@@ -3,8 +3,9 @@
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { createWorkspaceConfig, loadConfig, serializeWorkspaceConfig } from "../../config.js";
-import { VERSION } from "../../constants.js";
+import { createWorkspaceConfig, serializeWorkspaceConfig } from "../../config.js";
+import { prepareWorkspaceConfig } from "../../config-migrations.js";
+import { CONFIG_SCHEMA_VERSION, VERSION } from "../../constants.js";
 import {
   type CopyResult,
   copyToAgentSkills,
@@ -139,9 +140,16 @@ function hasGithubIntegration(ctx: Ctx): boolean {
 function resolveInstallationConfiguration(
   opts: InitOptions,
   workspace: string,
-): { permissionProfile: PermissionProfile; integrations: Integration[] } {
+): {
+  permissionProfile: PermissionProfile;
+  integrations: Integration[];
+  migratedFromPackageVersion?: string;
+} {
   const configPath = resolve(workspace, ".specky/config.yml");
-  const workspaceConfig = existsSync(configPath) ? loadConfig(workspace) : null;
+  const prepared = existsSync(configPath)
+    ? prepareWorkspaceConfig(workspace, { write: !opts.dryRun })
+    : null;
+  const workspaceConfig = prepared?.config ?? null;
   return {
     permissionProfile: resolvePermissionProfile(
       opts.permissionProfile ?? workspaceConfig?.installation.permission_profile,
@@ -150,6 +158,7 @@ function resolveInstallationConfiguration(
       opts.integration === undefined
         ? (workspaceConfig?.installation.integrations ?? [])
         : resolveIntegrations(opts.integration),
+    migratedFromPackageVersion: prepared?.migratedFromPackageVersion,
   };
 }
 
@@ -387,10 +396,44 @@ function printFooter(resolvedTargets: HarnessTarget[]): void {
   console.log("  • Run `npx specky doctor` anytime to validate install integrity");
 }
 
+function printConfigMigration(
+  migratedFromPackageVersion: string | undefined,
+  dryRun: boolean,
+): void {
+  if (!migratedFromPackageVersion) return;
+  const action = dryRun ? "Would migrate" : "Migrated";
+  const detail = dryRun ? "without writing" : "using an atomic rewrite";
+  console.log(
+    `[specky init] ${action} workspace config from package v${migratedFromPackageVersion} to schema ${CONFIG_SCHEMA_VERSION} (${detail}).`,
+  );
+  console.log("");
+}
+
+function installTargets(ctx: Ctx, resolvedTargets: HarnessTarget[]): CopyResult[] {
+  const results: CopyResult[] = [];
+  if (resolvedTargets.includes("claude")) {
+    results.push(installClaude(ctx));
+  }
+  if (resolvedTargets.includes("copilot")) {
+    results.push(installCopilot(ctx));
+  }
+  if (resolvedTargets.includes("cursor")) {
+    results.push(installCursor(ctx));
+  }
+  if (resolvedTargets.includes("opencode")) {
+    results.push(installOpenCode(ctx));
+  }
+  if (resolvedTargets.includes("agent-skills")) {
+    results.push(installAgentSkills(ctx));
+  }
+  return results;
+}
+
 export async function runInit(opts: InitOptions): Promise<number> {
   const workspace = opts.workspace ?? process.cwd();
   const pkg = packageRoot();
-  const { permissionProfile, integrations } = resolveInstallationConfiguration(opts, workspace);
+  const { permissionProfile, integrations, migratedFromPackageVersion } =
+    resolveInstallationConfiguration(opts, workspace);
   const ctx: Ctx = {
     workspace,
     pkg,
@@ -416,23 +459,9 @@ export async function runInit(opts: InitOptions): Promise<number> {
     permissionProfile,
     integrations,
   );
+  printConfigMigration(migratedFromPackageVersion, opts.dryRun);
 
-  const results: CopyResult[] = [];
-  if (resolvedTargets.includes("claude")) {
-    results.push(installClaude(ctx));
-  }
-  if (resolvedTargets.includes("copilot")) {
-    results.push(installCopilot(ctx));
-  }
-  if (resolvedTargets.includes("cursor")) {
-    results.push(installCursor(ctx));
-  }
-  if (resolvedTargets.includes("opencode")) {
-    results.push(installOpenCode(ctx));
-  }
-  if (resolvedTargets.includes("agent-skills")) {
-    results.push(installAgentSkills(ctx));
-  }
+  const results = installTargets(ctx, resolvedTargets);
 
   // rc.14+: When Copilot is installed in this workspace, strip hooks from
   // .claude/settings.json to prevent Copilot from cross-reading Claude Code

@@ -9,7 +9,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parse, stringify } from "yaml";
 import { z } from "zod";
-import { VERSION } from "./constants.js";
+import { CONFIG_SCHEMA_VERSION } from "./constants.js";
 import { SUPPORTED_USE_CASE_CONTRACT_IDS, useCaseContractIdSchema } from "./contracts/use-case.js";
 
 const safeRelativePath = z
@@ -26,7 +26,7 @@ const safeRelativePath = z
 
 export const configSchema = z
   .object({
-    version: z.literal(VERSION),
+    schema_version: z.literal(CONFIG_SCHEMA_VERSION),
     profile: z.enum(["standard", "enterprise"]),
     spec_root: safeRelativePath.min(1),
     numbering: z
@@ -90,6 +90,16 @@ export class ConfigValidationError extends Error {
   }
 }
 
+export class ConfigCompatibilityError extends Error {
+  constructor(
+    readonly configPath: string,
+    message: string,
+  ) {
+    super(`Incompatible Specky workspace config at ${configPath}: ${message}`);
+    this.name = "ConfigCompatibilityError";
+  }
+}
+
 export interface ProfileOverrides {
   argv?: readonly string[];
   env?: Record<string, string | undefined>;
@@ -106,7 +116,7 @@ export function createWorkspaceConfig(options: CreateConfigOptions = {}): Specky
   const profile = options.profile ?? "standard";
   const enterprise = profile === "enterprise";
   return {
-    version: VERSION,
+    schema_version: CONFIG_SCHEMA_VERSION,
     profile,
     spec_root: ".specs",
     numbering: { strategy: "explicit" },
@@ -167,7 +177,18 @@ export function resolveProfile(
   );
 }
 
-export function loadConfig(workspaceRoot: string, overrides: ProfileOverrides = {}): SpeckyConfig {
+export interface WorkspaceConfigFile {
+  configPath: string;
+  parsed: unknown;
+}
+
+export function formatConfigIssues(error: z.ZodError): string {
+  return error.issues
+    .map((issue) => `${issue.path.join(".") || "config"}: ${issue.message}`)
+    .join("; ");
+}
+
+export function readWorkspaceConfigFile(workspaceRoot: string): WorkspaceConfigFile {
   const configPath = join(workspaceRoot, ".specky", "config.yml");
   if (!existsSync(configPath)) {
     throw new ConfigValidationError(
@@ -176,37 +197,64 @@ export function loadConfig(workspaceRoot: string, overrides: ProfileOverrides = 
     );
   }
 
-  let parsed: unknown;
   try {
-    parsed = parse(readFileSync(configPath, "utf-8"));
+    return { configPath, parsed: parse(readFileSync(configPath, "utf-8")) };
   } catch (error) {
     throw new ConfigValidationError(configPath, `malformed YAML: ${(error as Error).message}`);
+  }
+}
+
+export function parseCurrentWorkspaceConfig(parsed: unknown, configPath: string): SpeckyConfig {
+  if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+    const record = parsed as Record<string, unknown>;
+    if ("schema_version" in record && record["schema_version"] !== CONFIG_SCHEMA_VERSION) {
+      const found = record["schema_version"];
+      if (typeof found !== "number" || !Number.isInteger(found)) {
+        throw new ConfigCompatibilityError(
+          configPath,
+          `schema_version must be the integer ${CONFIG_SCHEMA_VERSION}; found ${JSON.stringify(found)}`,
+        );
+      }
+      const relation =
+        found > CONFIG_SCHEMA_VERSION
+          ? `schema version ${found} is newer than supported version ${CONFIG_SCHEMA_VERSION}; upgrade specky-sdd before using this workspace`
+          : `schema version ${found} is older than supported version ${CONFIG_SCHEMA_VERSION}, and no automatic migration path is available`;
+      throw new ConfigCompatibilityError(configPath, relation);
+    }
+    if (!("schema_version" in record) && "version" in record) {
+      throw new ConfigCompatibilityError(
+        configPath,
+        `legacy package-versioned format detected (version ${JSON.stringify(record["version"])}); run \`specky upgrade\` to migrate it to config schema ${CONFIG_SCHEMA_VERSION}`,
+      );
+    }
   }
 
   const result = configSchema.safeParse(parsed);
   if (!result.success) {
-    const issues = result.error.issues
-      .map((issue) => `${issue.path.join(".") || "config"}: ${issue.message}`)
-      .join("; ");
-    throw new ConfigValidationError(configPath, issues);
+    throw new ConfigValidationError(configPath, formatConfigIssues(result.error));
   }
+  return result.data;
+}
 
-  const profile = resolveProfile(result.data.profile, overrides);
-  if (profile === result.data.profile) return result.data;
+export function loadConfig(workspaceRoot: string, overrides: ProfileOverrides = {}): SpeckyConfig {
+  const { configPath, parsed } = readWorkspaceConfigFile(workspaceRoot);
+  const config = parseCurrentWorkspaceConfig(parsed, configPath);
+  const profile = resolveProfile(config.profile, overrides);
+  if (profile === config.profile) return config;
 
   const overridden = createWorkspaceConfig({
     profile,
-    permissionProfile: result.data.installation.permission_profile,
-    integrations: result.data.installation.integrations,
-    requireLgtm: result.data.pipeline.require_lgtm,
+    permissionProfile: config.installation.permission_profile,
+    integrations: config.installation.integrations,
+    requireLgtm: config.pipeline.require_lgtm,
   });
   return {
-    ...result.data,
+    ...config,
     profile,
     audit_enabled: overridden.audit_enabled,
-    rate_limit: { ...result.data.rate_limit, enabled: overridden.rate_limit.enabled },
-    audit: { ...result.data.audit, fail_closed: overridden.audit.fail_closed },
-    rbac: { ...result.data.rbac, enabled: overridden.rbac.enabled },
+    rate_limit: { ...config.rate_limit, enabled: overridden.rate_limit.enabled },
+    audit: { ...config.audit, fail_closed: overridden.audit.fail_closed },
+    rbac: { ...config.rbac, enabled: overridden.rbac.enabled },
   };
 }
 
@@ -216,6 +264,10 @@ interface ConfigCacheEntry {
 }
 
 const configCache = new Map<string, ConfigCacheEntry>();
+
+export function invalidateConfigCache(workspaceRoot: string): void {
+  configCache.delete(workspaceRoot);
+}
 
 /**
  * mtime-aware wrapper around loadConfig: the workspace config is re-read and

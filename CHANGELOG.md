@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Workspace `.specky/config.yml` now uses an independent integer `schema_version` instead of the npm package version.
+
+### Fixed
+
+- `specky install` and `specky upgrade` migrate compatible package-versioned workspace configs atomically while preserving every validated user setting.
+- Incompatible workspace schema versions now produce an actionable compatibility message instead of a raw Zod literal mismatch.
+
 ## [3.12.0] - 2026-07-20
 
 ### Added

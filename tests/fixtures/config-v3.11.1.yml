@@ -1,0 +1,30 @@
+# Valid package-versioned workspace config accepted by Specky v3.11.1.
+version: 3.11.1
+profile: enterprise
+spec_root: custom-specs
+numbering:
+  strategy: explicit
+contracts:
+  require_explicit_selection: true
+  enabled:
+    - greenfield-api-full
+templates_path: custom-templates
+update_check: false
+audit_enabled: false
+rate_limit:
+  enabled: false
+  max_requests_per_minute: 137
+  burst: 23
+audit:
+  export_format: otlp
+  max_file_size_mb: 42
+  fail_closed: false
+rbac:
+  enabled: false
+  default_role: admin
+installation:
+  permission_profile: prompt
+  integrations:
+    - github
+pipeline:
+  require_lgtm: true

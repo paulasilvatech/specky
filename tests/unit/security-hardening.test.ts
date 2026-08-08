@@ -99,7 +99,7 @@ describe("loadConfig (.specky/config.yml)", () => {
 
   it("rejects partial and unknown workspace configuration", () => {
     write("profile: standard\n");
-    expect(() => loadConfig(ws)).toThrow(/version: Invalid input/);
+    expect(() => loadConfig(ws)).toThrow(/schema_version: Invalid input/);
 
     write(serializeWorkspaceConfig(createWorkspaceConfig()) + "unexpected: true\n");
     expect(() => loadConfig(ws)).toThrow(/Unrecognized key/);

@@ -313,6 +313,8 @@ npm install --save-dev specky-sdd@latest && npx specky upgrade
 
 `specky upgrade` refreshes the installed assets (agents, prompts, skills, hooks, configs) **and re-pins MCP registration files** (`.mcp.json`, `.vscode/mcp.json`, `.cursor/mcp.json`, or `opencode.json`) to the new version — updating the npm package alone leaves the MCP registration pointing at the old version. It preserves `.specs/` (your active pipeline artifacts) and `.specky/profile.json` (onboarding answers).
 
+Workspace config compatibility is tracked independently through `schema_version` in `.specky/config.yml`. When an older package-versioned config has a supported migration path, `specky upgrade` validates it and replaces it atomically without resetting explicit profiles, controls, limits, integrations, paths, or pipeline choices. A newer unsupported schema is left unchanged and reported with an explicit instruction to upgrade the CLI.
+
 **No `--target` on upgrade** — targets are read from `.specky/install.json`. Use `specky install --target=...` only for a first install or when switching harness.
 
 ---

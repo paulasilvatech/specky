@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  ConfigCompatibilityError,
   ConfigValidationError,
   createWorkspaceConfig,
   loadConfig,
@@ -11,6 +12,7 @@ import {
   type SpeckyConfig,
   serializeWorkspaceConfig,
 } from "../../src/config.js";
+import { CONFIG_SCHEMA_VERSION } from "../../src/constants.js";
 import { SUPPORTED_USE_CASE_CONTRACT_IDS } from "../../src/contracts/use-case.js";
 
 const NO_OVERRIDES = { argv: [] as string[], env: {} as Record<string, string> };
@@ -45,6 +47,7 @@ describe("strict workspace configuration", () => {
     writeConfig(createWorkspaceConfig());
     const config = loadConfig(workspace, NO_OVERRIDES);
     expect(config).toMatchObject({
+      schema_version: CONFIG_SCHEMA_VERSION,
       profile: "standard",
       spec_root: ".specs",
       numbering: { strategy: "explicit" },
@@ -139,7 +142,7 @@ describe("strict workspace configuration", () => {
     expect(() => loadConfig(workspace, NO_OVERRIDES)).toThrow(/malformed YAML/);
 
     writeRaw("profile: standard\n");
-    expect(() => loadConfig(workspace, NO_OVERRIDES)).toThrow(/version: Invalid input/);
+    expect(() => loadConfig(workspace, NO_OVERRIDES)).toThrow(/schema_version: Invalid input/);
 
     const unknown = serializeWorkspaceConfig(createWorkspaceConfig()) + "unknown_field: true\n";
     writeRaw(unknown);
@@ -148,6 +151,20 @@ describe("strict workspace configuration", () => {
     const valid = serializeWorkspaceConfig(createWorkspaceConfig());
     writeRaw(valid.replace('templates_path: ""', "templates_path: ../../etc"));
     expect(() => loadConfig(workspace, NO_OVERRIDES)).toThrow(/workspace-relative/);
+  });
+
+  it("reports actionable compatibility errors for legacy and future configs", () => {
+    const current = serializeWorkspaceConfig(createWorkspaceConfig());
+
+    writeRaw(current.replace(`schema_version: ${CONFIG_SCHEMA_VERSION}`, "version: 3.11.1"));
+    expect(() => loadConfig(workspace, NO_OVERRIDES)).toThrow(ConfigCompatibilityError);
+    expect(() => loadConfig(workspace, NO_OVERRIDES)).toThrow(/run `specky upgrade`/);
+
+    writeRaw(current.replace(`schema_version: ${CONFIG_SCHEMA_VERSION}`, "schema_version: 2"));
+    expect(() => loadConfig(workspace, NO_OVERRIDES)).toThrow(ConfigCompatibilityError);
+    expect(() => loadConfig(workspace, NO_OVERRIDES)).toThrow(
+      /schema version 2 is newer than supported version 1/,
+    );
   });
 });
 
