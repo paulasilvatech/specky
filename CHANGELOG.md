@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - TDD amendments validate the complete resulting binding set against active `SPECIFICATION.md` requirement IDs, reject missing, unknown, duplicate requirement bindings and duplicate test names, recompute the use-case contract fingerprint, and persist the state/signature atomically while preserving phase, gate, and drift history.
+- Runtime and development dependencies were refreshed; CI now audits production dependencies directly and applies a fail-closed exact advisory policy to the unpatched build-only Nanoid 3.x finding.
 
 ## [3.12.0] - 2026-07-20
 
