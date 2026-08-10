@@ -7,7 +7,7 @@ description: "Use when starting or resuming Specky work, selecting lifecycle/wor
 
 ## 1. Validate Workspace
 
-1. Validate `.specky/config.yml`; an existing invalid/partial file blocks execution.
+1. Validate `.specky/config.yml`. Current schema must be complete and strict. A recognized generated Specky 3.x format requires `specky upgrade`; a future, ambiguous, invalid, or partial document blocks execution and must not be rewritten by the agent.
 2. Enumerate `.specs/NNN-name/` directories.
 3. Report signed v5 state per feature. Root `.specs/.sdd-state.json`, unsigned state, or older versions require `specky migrate-contracts --dry-run` before tools run.
 4. Never select the latest or first feature automatically.

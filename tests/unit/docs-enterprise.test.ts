@@ -45,8 +45,8 @@ describe("enterprise documentation baseline", () => {
 
   it("keeps dependency count aligned in public docs", () => {
     expect(read("README.md")).toContain("dependencies-3-9ca3af");
-    expect(read("README.md")).toContain("3 runtime dependencies");
-    expect(read("SECURITY.md")).toContain("Specky has only **3 runtime dependencies**");
+    expect(read("README.md")).toContain("3 direct runtime dependencies");
+    expect(read("SECURITY.md")).toContain("3 direct runtime dependencies");
   });
 
   it("documents Node 20 as the minimum install requirement", () => {
@@ -64,7 +64,7 @@ describe("enterprise documentation baseline", () => {
     expect(read("Dockerfile")).toContain("EXPOSE 3200");
     expect(read("Dockerfile")).toContain("COPY .cursor-plugin ./.cursor-plugin");
     expect(read("Dockerfile")).toContain("createWorkspaceConfig");
-    expect(read("Dockerfile")).toContain('/workspace/.specky/config.yml');
+    expect(read("Dockerfile")).toContain("/workspace/.specky/config.yml");
     expect(read(".github/workflows/publish.yml")).toContain("Smoke test published image");
   });
 });

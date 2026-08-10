@@ -60,7 +60,7 @@
 | **Enterprise** | [Compliance Frameworks](#compliance-frameworks) | HIPAA, SOC2, GDPR, PCI-DSS, ISO 27001 |
 | | [Enterprise Ready](#enterprise-ready) | Security, audit trail, quality gates |
 | **Platform** | [The SDD Platform](#the-spec-driven-development-platform) | Built on Spec-Kit, everything included |
-| | [Roadmap](#roadmap) | v3.12.0 current, future capabilities planned |
+| | [Roadmap](#roadmap) | v3.13.0 current, future capabilities planned |
 
 ## What is Specky?
 
@@ -143,7 +143,7 @@ npx specky upgrade
 
 **You do not need `--target` on upgrade.** `specky upgrade` reads the harness you already installed from `.specky/install.json` and refreshes the same targets — agents, prompts, skills, hooks, and MCP registration (`.mcp.json`, `.vscode/mcp.json`, `.cursor/mcp.json`, or `opencode.json`). It preserves `.specs/` (pipeline artifacts) and `.specky/profile.json` (onboarding answers).
 
-Updating only the npm package is not enough: without `specky upgrade`, MCP pins can still point at the old server version.
+The two commands have separate responsibilities: `npm install ...@latest` installs dependency and security fixes; `specky upgrade` then migrates supported legacy workspace configs atomically and refreshes assets and MCP pins. Running only `specky upgrade` does **not** update the installed npm package. Running only the npm update can leave project MCP pins on the old server version.
 
 Use `--target` only for a **first install** or when **switching harness** (e.g. Copilot → Cursor):
 
@@ -319,7 +319,7 @@ your-project/
 │   ├── 002-payment-gateway/      ← Feature #2
 │   └── 003-notification-system/  ← Feature #3
 ├── reports/                      ← Cross-feature analysis reports
-└── .specky/config.yml            ← Required runtime workspace contract
+└── .specky/config.yml            ← Required schema-versioned workspace contract
 ```
 
 **Naming convention:** `NNN-feature-name`, zero-padded number + kebab-case name. Each directory is independent; you can work on multiple features simultaneously.
@@ -890,7 +890,7 @@ All artifacts are saved in [`.specs/NNN-feature/`](#where-specifications-live). 
 | `sdd_get_template` | Get any template |
 | `sdd_scan_codebase` | Detect tech stack and structure |
 | `sdd_metrics` | Project metrics dashboard |
-| `sdd_amend` | Amend project constitution |
+| `sdd_amend` | Amend project constitution and optionally replace signed TDD bindings |
 | `sdd_write_bugfix` | Generate bugfix spec with root cause analysis and test plan |
 
 ### Testing (3)
@@ -995,24 +995,38 @@ Together they form the **SDD layer** of the GitHub + Microsoft enterprise platfo
 
 ## Project Configuration
 
-Create `.specky/config.yml` in your project root to customize Specky:
+`specky install` creates the complete `.specky/config.yml`; edit that generated file to customize Specky. Do not start from a partial document because runtime validation is strict. This is a minimal complete example with one enabled contract:
 
 ```yaml
 # .specky/config.yml
-profile: standard                    # standard | enterprise (flips security defaults ON)
-templates_path: ./my-templates       # Override built-in templates
-default_framework: vitest            # Default test framework
-compliance_frameworks: [hipaa, soc2] # Frameworks to check
-audit_enabled: true                  # Enable audit trail
-update_check: true                   # Once-daily CLI update check (set false to disable)
-rbac:
-  enabled: false                     # Role checks (viewer/contributor/admin)
-  default_role: contributor
+schema_version: 1
+profile: standard
+spec_root: .specs
+numbering:
+  strategy: explicit
+contracts:
+  require_explicit_selection: true
+  enabled:
+    - greenfield-api-full
+templates_path: ""
+update_check: true
+audit_enabled: false
 rate_limit:
-  enabled: false                     # HTTP token bucket (60 rpm, burst 10)
+  enabled: false
+  max_requests_per_minute: 60
+  burst: 10
+audit:
+  export_format: jsonl
+  max_file_size_mb: 10
+  fail_closed: false
+rbac:
+  enabled: false
+  default_role: contributor
+installation:
+  permission_profile: scoped
+  integrations: []
 pipeline:
-  require_lgtm: false                # Server-side LGTM: sdd_advance_phase refuses to pass
-                                     # the Specify/Design/Tasks gates unless lgtm: true
+  require_lgtm: false
 ```
 
 When `templates_path` is set, Specky uses your custom templates instead of the built-in ones. When `audit_enabled` is true, tool invocations are logged locally. `profile: enterprise` turns audit, RBAC, rate limiting, and fail-closed auditing on by default (explicit values win) — see [docs/ENTERPRISE-DEPLOYMENT.md](docs/ENTERPRISE-DEPLOYMENT.md). With `pipeline.require_lgtm: true`, the LGTM quality gates become server-enforced instead of an agent convention: advancing past Specify/Design/Tasks requires the explicit `lgtm: true` input on `sdd_advance_phase`.
@@ -1035,6 +1049,8 @@ Per-project installs: `npm install --save-dev specky-sdd@latest && npx specky up
 **No `--target` on upgrade** — Specky reuses the targets recorded in `.specky/install.json`. See [How to upgrade](#how-to-upgrade) for the full flow and when `--target` is still required (first install or harness switch).
 
 `specky upgrade` matters: it refreshes the installed agents, prompts, skills, and hooks **and re-pins `.mcp.json` / `.vscode/mcp.json` to the new version** — updating the npm package alone leaves the MCP registration pointing at the old pinned server.
+
+It also migrates Specky 3.x configs: workspaces without a config are bootstrapped, strict allowlisted unversioned 3.x configs preserve recognized settings, `v3.4.0–v3.11.0` generated package catalogs are reduced to validated runtime settings, and `v3.11.1–v3.12.0` package-versioned runtime configs move to independent `schema_version: 1`. Unsupported or ambiguous documents remain unchanged and produce an actionable error. Successful migrations retain the original config as a `.bak` file in `.specky/`.
 
 Teams pinning per-project (`npm install --save-dev specky-sdd`) should let [Renovate](https://docs.renovatebot.com/) or [Dependabot](https://docs.github.com/en/code-security/dependabot) propose the `package.json` bump. For release emails, use **Watch → Custom → Releases** on the [GitHub repo](https://github.com/paulasilvatech/specky).
 
@@ -1163,7 +1179,7 @@ Specky is 100% open source (MIT) — enterprise mode is just an opt-in configura
 
 ### Security Posture
 
-- **3 runtime dependencies** — minimal attack surface (`@modelcontextprotocol/sdk`, `zod`, `yaml`)
+- **3 direct runtime dependencies** — minimal direct surface (`@modelcontextprotocol/sdk`, `zod`, `yaml`), with transitives covered by audit and SBOM
 - **Zero outbound network requests from the MCP server** — all data stays local; the CLI's optional once-daily update check is the only network touch ([opt-out](#staying-up-to-date))
 - **Strict template rendering** — missing variables/loops raise `TemplateRenderError`; no TODO substitution or dynamic template execution
 - **Path traversal prevention**: FileManager sanitizes all paths, blocks `..` sequences
@@ -1190,7 +1206,7 @@ When using Specky, follow these practices to protect your data:
 | **Review source-backed artifacts before committing** | Transcript/document inputs and explicit source quotes may contain sensitive details | Review SPECIFICATION.md, DESIGN.md, and TRANSCRIPT.md before `git add` |
 | **Keep the specky-security-scan hook enabled** | Detects API keys, passwords, tokens in staged files | Comes pre-configured; don't disable `.claude/hooks/specky-security-scan.sh` |
 | **Use environment variables for secrets** | Specky never stores credentials, but your specs might reference them | Write `$DATABASE_URL` in specs, never the actual connection string |
-| **Run `npm audit` regularly** | Catches dependency vulnerabilities | `npm audit` — CI runs this automatically on every PR |
+| **Run dependency audits regularly** | Catches runtime and toolchain vulnerabilities | `npm run security:audit:runtime` blocks high/critical runtime findings; `npm run security:audit:all` reports the full graph and blocks critical findings |
 
 ### Data Sensitivity Guide
 
@@ -1261,9 +1277,9 @@ npm run dev
 echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | node dist/index.js 2>/dev/null
 
 # Run the published image from GHCR (multi-arch: linux/amd64 + linux/arm64)
-docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.12.0
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin a release: :3.13.0
 docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
-curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.12.0"}
+curl http://localhost:3200/health                       # -> {"status":"ok","version":"3.13.0"}
 
 # Or build and run locally from source
 docker build -t specky-sdd:dev .
@@ -1281,11 +1297,15 @@ profile, token auth, TLS proxy, private packages) see
 
 ## Roadmap
 
-### v3.12.0 (current)
+### v3.13.0 (current)
 
 | Capability | Status |
 |------------|--------|
 | 58 MCP tools driven by signed per-feature use-case contracts | Stable |
+| Independent workspace config schema with guarded Specky 3.x migration | Stable |
+| Atomic config backup and concurrent-edit conflict preservation | Stable |
+| Feature-scoped task IDs (`T-023-001`) with legacy ID compatibility | Stable |
+| Signed TDD binding amendments on existing v5 features | Stable |
 | Unified `specky` CLI: install, doctor, status, upgrade, hooks, serve | Stable |
 | Target-specific install: `--target=copilot`, `claude`, `cursor`, `opencode`, or `agent-skills` | Stable |
 | Copilot-safe hook manifests (no lifecycle event cross-read) | Stable |

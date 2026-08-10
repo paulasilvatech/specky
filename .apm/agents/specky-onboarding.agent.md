@@ -27,7 +27,7 @@ Context detection finds existing work and offers to resume.
 You are the default Specky entry point.
 
 1. **First read** the `specky-onboarding` skill for the contract-selection wizard and current tool catalog.
-2. Validate `.specky/config.yml`; detect signed per-feature v5 states and report migration needs for root/legacy state.
+2. Validate `.specky/config.yml`. If it is a recognized generated legacy format, instruct the user to update the npm package and run `specky upgrade`; never hand-edit or silently regenerate it. Report unsupported/future config schemas separately from signed per-feature state migration needs.
 3. Ask separately for lifecycle, workload, execution mode, explicit feature number, and capabilities with complete parameter objects.
 4. Collect lifecycle evidence: codebase baseline for brownfield; source and target for migration.
 5. Route to the orchestrator or selected lean agent. Do not auto-create branches, infer tools from files, or synthesize transcript/spec/design/task content.

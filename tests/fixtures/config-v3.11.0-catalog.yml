@@ -1,0 +1,38 @@
+# Package catalog shape accepted as .specky/config.yml by Specky v3.11.0.
+audit_enabled: false
+version: "3.11.0"
+profile: enterprise
+templates_path: custom-templates
+default_framework: jest
+update_check: false
+compliance_frameworks:
+  - soc2
+rate_limit:
+  enabled: false
+  max_requests_per_minute: 137
+  burst: 23
+audit:
+  export_format: otlp
+  max_file_size_mb: 42
+  fail_closed: false
+rbac:
+  enabled: false
+  default_role: admin
+installation:
+  permission_profile: prompt
+  integrations:
+    - github
+pipeline:
+  phases: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+  phase_names:
+    0: init
+    1: discover
+  require_lgtm: true
+hooks:
+  shared_path: .apm/hooks/scripts
+specs_dir: custom-specs
+skills_dir: .apm/skills
+branching:
+  strategy: gitflow-sdd
+model_routing:
+  phase_0: claude-haiku-4-5

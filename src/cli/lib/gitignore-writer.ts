@@ -14,7 +14,7 @@
  *   .github/hooks/specky/, .github/instructions/,
  *   .cursor/agents/, .cursor/commands/, .cursor/rules/, .cursor/hooks/,
  *   .opencode/agents/, .opencode/commands/, .agents/skills/,
- *   .specky/install.lock, .specky/install.json
+ *   .specky/install.lock, .specky/install.json, config migration backups
  *
  * What we keep (project-specific):
  *   .specky/config.yml   — pipeline config
@@ -49,6 +49,7 @@ const IGNORED_PATHS = [
   ".agents/skills/",
   ".specky/install.lock",
   ".specky/install.json",
+  ".specky/config.yml.before-schema-*.bak",
 ];
 
 const BLOCK_BODY = [
@@ -57,7 +58,7 @@ const BLOCK_BODY = [
   ...IGNORED_PATHS,
   "",
   "# KEEP in git (project-specific — do NOT add these):",
-  "#   .specky/config.yml       pipeline config",
+  "#   .specky/config.yml       schema-versioned workspace config",
   "#   .specky/profile.json     onboarding answers",
   "#   .specs/                  your pipeline artifacts",
   "#   .claude/settings.json    team-shared permissions + hooks",

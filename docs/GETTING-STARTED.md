@@ -66,7 +66,7 @@ npx -y specky-sdd@latest install --target=copilot
 | `.github/hooks/specky/sdd-hooks.json` | Copilot hook manifest | ❌ gitignored |
 | `.mcp.json`, `.vscode/mcp.json` | MCP server registration | ✅ **commit** |
 | `.vscode/settings.json` | Copilot MCP enablement | ✅ **commit** |
-| `.specky/config.yml` | Pipeline config | ✅ **commit** |
+| `.specky/config.yml` | Schema-versioned workspace runtime config | ✅ **commit** |
 | `.specky/install.lock` | SHA256 integrity manifest | ❌ gitignored |
 | `.gitignore` | Auto-appends managed block | ✅ **commit** |
 
@@ -83,7 +83,7 @@ Copilot agents and prompts are generated with GitHub Copilot-native frontmatter.
 | `.claude/hooks/scripts/specky-contract-context.{mjs,bash}` | Signed feature-contract hook support | ❌ gitignored |
 | `.claude/settings.json` | Hooks + 11 permission rules | ✅ **commit** (team-shared) |
 | `.mcp.json` | MCP server registration | ✅ **commit** |
-| `.specky/config.yml` | Pipeline config | ✅ **commit** |
+| `.specky/config.yml` | Schema-versioned workspace runtime config | ✅ **commit** |
 | `.specky/install.lock` | SHA256 integrity manifest | ❌ gitignored |
 | `.gitignore` | Auto-appends managed block | ✅ **commit** |
 

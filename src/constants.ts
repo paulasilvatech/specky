@@ -10,6 +10,9 @@ const _require = createRequire(import.meta.url);
 const _pkg = _require("../package.json") as { version: string };
 export const VERSION = _pkg.version;
 
+/** Workspace config schema version; increment only when its persisted shape changes. */
+export const CONFIG_SCHEMA_VERSION = 1 as const;
+
 /** Server name for MCP handshake */
 export const SERVER_NAME = "specky";
 

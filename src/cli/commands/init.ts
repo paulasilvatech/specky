@@ -3,8 +3,13 @@
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { createWorkspaceConfig, loadConfig, serializeWorkspaceConfig } from "../../config.js";
-import { VERSION } from "../../constants.js";
+import { createWorkspaceConfig, serializeWorkspaceConfig } from "../../config.js";
+import {
+  persistWorkspaceConfigMigration,
+  prepareWorkspaceConfig,
+  type WorkspaceConfigMigrationResult,
+} from "../../config-migrations.js";
+import { CONFIG_SCHEMA_VERSION, VERSION } from "../../constants.js";
 import {
   type CopyResult,
   copyToAgentSkills,
@@ -139,9 +144,14 @@ function hasGithubIntegration(ctx: Ctx): boolean {
 function resolveInstallationConfiguration(
   opts: InitOptions,
   workspace: string,
-): { permissionProfile: PermissionProfile; integrations: Integration[] } {
+): {
+  permissionProfile: PermissionProfile;
+  integrations: Integration[];
+  preparedConfig?: WorkspaceConfigMigrationResult;
+} {
   const configPath = resolve(workspace, ".specky/config.yml");
-  const workspaceConfig = existsSync(configPath) ? loadConfig(workspace) : null;
+  const prepared = existsSync(configPath) ? prepareWorkspaceConfig(workspace) : undefined;
+  const workspaceConfig = prepared?.config ?? null;
   return {
     permissionProfile: resolvePermissionProfile(
       opts.permissionProfile ?? workspaceConfig?.installation.permission_profile,
@@ -150,6 +160,7 @@ function resolveInstallationConfiguration(
       opts.integration === undefined
         ? (workspaceConfig?.installation.integrations ?? [])
         : resolveIntegrations(opts.integration),
+    preparedConfig: prepared,
   };
 }
 
@@ -387,36 +398,28 @@ function printFooter(resolvedTargets: HarnessTarget[]): void {
   console.log("  • Run `npx specky doctor` anytime to validate install integrity");
 }
 
-export async function runInit(opts: InitOptions): Promise<number> {
-  const workspace = opts.workspace ?? process.cwd();
-  const pkg = packageRoot();
-  const { permissionProfile, integrations } = resolveInstallationConfiguration(opts, workspace);
-  const ctx: Ctx = {
-    workspace,
-    pkg,
-    targets: targetPaths(workspace),
-    src: sourcePaths(pkg),
-    copyOpts: { force: opts.force, dryRun: opts.dryRun, integrations },
-    capabilities: collectAgentCapabilities(sourcePaths(pkg).agentsDir),
-    integrations,
-    permissionProfile,
-    dryRun: opts.dryRun,
-  };
-
-  const detected = detectIde(workspace);
-  const resolvedTargets = resolveInstallTargets(opts, detected);
-  const resolvedIde = legacyIdeFromTargets(resolvedTargets);
-
-  printHeader(
-    opts,
-    workspace,
-    resolvedTargets,
-    resolvedIde,
-    detected,
-    permissionProfile,
-    integrations,
+function printConfigMigration(
+  prepared: WorkspaceConfigMigrationResult | undefined,
+  dryRun: boolean,
+  backupPath?: string,
+): void {
+  if (!prepared?.migration) return;
+  const action = dryRun ? "Would migrate" : "Migrated";
+  const detail = dryRun ? "without writing" : "using an atomic rewrite";
+  console.log(
+    `[specky init] ${action} workspace config from ${prepared.migration.source} to schema ${CONFIG_SCHEMA_VERSION} (${detail}).`,
   );
+  if (prepared.migration.removedFields.length > 0) {
+    const removeAction = dryRun ? "Would remove" : "Removed";
+    console.log(
+      `[specky init] ${removeAction} obsolete config fields: ${prepared.migration.removedFields.join(", ")}.`,
+    );
+  }
+  if (backupPath) console.log(`[specky init] Original config backup: ${backupPath}`);
+  console.log("");
+}
 
+function installTargets(ctx: Ctx, resolvedTargets: HarnessTarget[]): CopyResult[] {
   const results: CopyResult[] = [];
   if (resolvedTargets.includes("claude")) {
     results.push(installClaude(ctx));
@@ -433,6 +436,42 @@ export async function runInit(opts: InitOptions): Promise<number> {
   if (resolvedTargets.includes("agent-skills")) {
     results.push(installAgentSkills(ctx));
   }
+  return results;
+}
+
+export async function runInit(opts: InitOptions): Promise<number> {
+  const workspace = opts.workspace ?? process.cwd();
+  const pkg = packageRoot();
+  const detected = detectIde(workspace);
+  const resolvedTargets = resolveInstallTargets(opts, detected);
+  const resolvedIde = legacyIdeFromTargets(resolvedTargets);
+  const { permissionProfile, integrations, preparedConfig } = resolveInstallationConfiguration(
+    opts,
+    workspace,
+  );
+  const ctx: Ctx = {
+    workspace,
+    pkg,
+    targets: targetPaths(workspace),
+    src: sourcePaths(pkg),
+    copyOpts: { force: opts.force, dryRun: opts.dryRun, integrations },
+    capabilities: collectAgentCapabilities(sourcePaths(pkg).agentsDir),
+    integrations,
+    permissionProfile,
+    dryRun: opts.dryRun,
+  };
+
+  printHeader(
+    opts,
+    workspace,
+    resolvedTargets,
+    resolvedIde,
+    detected,
+    permissionProfile,
+    integrations,
+  );
+
+  const results = installTargets(ctx, resolvedTargets);
 
   // rc.14+: When Copilot is installed in this workspace, strip hooks from
   // .claude/settings.json to prevent Copilot from cross-reading Claude Code
@@ -460,6 +499,11 @@ export async function runInit(opts: InitOptions): Promise<number> {
 
   const lockPath = writeInstallLock(ctx.targets, results, VERSION, ctx.copyOpts);
   console.log(`[specky init] Integrity manifest: ${lockPath}`);
+
+  const backupPath = ctx.dryRun
+    ? undefined
+    : persistWorkspaceConfigMigration(workspace, preparedConfig);
+  printConfigMigration(preparedConfig, ctx.dryRun, backupPath);
 
   printFooter(resolvedTargets);
   return 0;

@@ -14,7 +14,8 @@ import {
   writeBugfixInputSchema,
 } from "../schemas/utility.js";
 import type { CodebaseScanner } from "../services/codebase-scanner.js";
-import { requireExecutionContext } from "../services/execution-context.js";
+import { requireExecutionContext, requireFeatureContext } from "../services/execution-context.js";
+import { amendFeature } from "../services/feature-amendment.js";
 import type { FileManager } from "../services/file-manager.js";
 import type { IntentDriftEngine } from "../services/intent-drift-engine.js";
 import type { StateMachine } from "../services/state-machine.js";
@@ -348,7 +349,7 @@ export function registerUtilityTools(
     {
       title: "Amend Constitution",
       description:
-        "Appends an amendment entry to CONSTITUTION.md's changelog and updates the amendment_count in frontmatter.",
+        "Appends a constitutional amendment and can atomically replace fingerprinted TDD imports/bindings on an existing signed feature.",
       inputSchema: amendInputSchema,
       annotations: {
         readOnlyHint: false,
@@ -357,130 +358,22 @@ export function registerUtilityTools(
         openWorldHint: false,
       },
     },
-    async ({ rationale, articles_affected, changes_description, force }) => {
+    async ({ rationale, articles_affected, changes_description, tdd_amendment, force }) => {
       try {
-        const context = requireExecutionContext("sdd_amend");
-        const feature = context.feature!;
-        const stateDir = context.stateDir!;
-
-        // Read existing constitution
-        let constitution: string;
-        try {
-          constitution = await fileManager.readSpecFile(feature.directory, "CONSTITUTION.md");
-        } catch {
-          throw new Error(
-            `CONSTITUTION.md not found in ${feature.directory}.\n→ Fix: Run sdd_init first.`,
-          );
-        }
-
-        // Count existing amendments
-        const amendmentRegex = /^\| \d+ \|/gm;
-        const existingAmendments = constitution.match(amendmentRegex) || [];
-        const nextNumber = existingAmendments.length + 1;
-
-        // Build amendment row
-        const today = new Date().toISOString().split("T")[0];
-        const amendmentRow = `| ${nextNumber} | ${today} | SDD Pipeline | ${rationale} | ${articles_affected.join(", ")} |`;
-
-        // Append to amendment log
-        const amendmentLogMarker = "| — | — | — | Initial version | All |";
-        let updatedConstitution: string;
-
-        if (constitution.includes(amendmentLogMarker)) {
-          updatedConstitution = constitution.replace(
-            amendmentLogMarker,
-            `${amendmentLogMarker}\n${amendmentRow}`,
-          );
-        } else {
-          // Append to the end
-          updatedConstitution = constitution + `\n${amendmentRow}\n`;
-        }
-
-        // Update amendment_count in frontmatter
-        const countRegex = /amendment_count:\s*(\d+)/;
-        if (countRegex.test(updatedConstitution)) {
-          updatedConstitution = updatedConstitution.replace(
-            countRegex,
-            `amendment_count: ${nextNumber}`,
-          );
-        } else {
-          // Add amendment_count to frontmatter
-          updatedConstitution = updatedConstitution.replace(
-            /^(---\n)/m,
-            `---\namendment_count: ${nextNumber}\n`,
-          );
-        }
-
-        await fileManager.writeSpecFile(
-          feature.directory,
-          "CONSTITUTION.md",
-          updatedConstitution,
+        const context = requireFeatureContext("sdd_amend");
+        const result = await amendFeature(fileManager, stateMachine, intentDriftEngine, context, {
+          rationale,
+          articlesAffected: articles_affected,
+          changesDescription: changes_description,
           force,
-        );
-
-        // Update state
-        const state = await stateMachine.loadState(stateDir);
-        state.amendments.push({
-          number: nextNumber,
-          date: today,
-          author: "SDD Pipeline",
-          rationale,
-          articles_affected,
+          ...(tdd_amendment ? { tddAmendment: tdd_amendment } : {}),
         });
-        await stateMachine.saveState(stateDir, state);
-
-        // Drift-aware amendment suggestion
-        let driftAmendmentSuggestion: Record<string, unknown> | undefined;
-        if (intentDriftEngine) {
-          try {
-            const freshState = await stateMachine.loadState(stateDir);
-            const lastSnapshot = (freshState.drift_history ?? []).at(-1);
-            if (lastSnapshot && lastSnapshot.score > 40) {
-              const principles = intentDriftEngine.extractPrinciples(constitution);
-              let specContent = "";
-              try {
-                specContent = await fileManager.readSpecFile(feature.directory, "SPECIFICATION.md");
-              } catch {
-                /* ok */
-              }
-              let tasksContent = "";
-              try {
-                tasksContent = await fileManager.readSpecFile(feature.directory, "TASKS.md");
-              } catch {
-                /* ok */
-              }
-              const driftReport = intentDriftEngine.computeCoverage(
-                principles,
-                specContent,
-                tasksContent,
-              );
-              driftAmendmentSuggestion = {
-                current_drift_score: lastSnapshot.score,
-                drift_label: driftReport.intent_drift_label,
-                orphaned_principles: driftReport.orphaned_principles.map((p) => p.heading),
-                recommended_actions: driftReport.orphaned_principles.map(
-                  (p) => `Add requirement referencing "${p.heading}" to SPECIFICATION.md`,
-                ),
-                note: "High intent drift detected. Consider adding requirements that address orphaned constitutional principles.",
-              };
-            }
-          } catch {
-            /* non-critical */
-          }
-        }
-
-        const result = {
-          status: "amendment_added",
-          amendment_number: nextNumber,
-          rationale,
-          articles_affected,
-          changes_description,
-          ...(driftAmendmentSuggestion
-            ? { drift_amendment_suggestion: driftAmendmentSuggestion }
-            : {}),
-        };
-
-        const enriched = await enrichResponse("sdd_amend", result, stateMachine, stateDir);
+        const enriched = await enrichResponse(
+          "sdd_amend",
+          result as unknown as Record<string, unknown>,
+          stateMachine,
+          context.stateDir,
+        );
         return { content: [{ type: "text" as const, text: JSON.stringify(enriched, null, 2) }] };
       } catch (error) {
         return errorResult("sdd_amend", error);

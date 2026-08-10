@@ -12,6 +12,7 @@ describe("ID contracts", () => {
   it("normalizes canonical and legacy task IDs to T-001", () => {
     expect(normalizeTaskId("T-001")).toBe("T-001");
     expect(normalizeTaskId("T001")).toBe("T-001");
+    expect(normalizeTaskId("T-023-001")).toBe("T-023-001");
   });
 
   it("formats task IDs canonically", () => {
@@ -22,6 +23,7 @@ describe("ID contracts", () => {
 
   it("rejects invalid task IDs", () => {
     expect(() => normalizeTaskId("TASK-001")).toThrow("Invalid task ID");
+    expect(() => normalizeTaskId("T-023-1")).toThrow(/Expected T-001 or T-023-001/);
     expect(() => formatTaskId(0)).toThrow("Task sequence out of range");
   });
 
@@ -31,18 +33,23 @@ describe("ID contracts", () => {
   });
 
   it("extracts sorted unique task IDs across canonical and legacy formats", () => {
-    const text = "T002 depends on T-001 and T002";
-    expect(extractTaskIds(text)).toEqual(["T-001", "T-002"]);
+    const text = "T-023-010 depends on T-023-001, T-002, and T002";
+    expect(extractTaskIds(text)).toEqual(["T-002", "T-023-001", "T-023-010"]);
   });
 
   it("parses task lines with canonical task IDs", () => {
-    const tasks = "- [x] T-001: Implement parser REQ-CORE-001\n- [ ] T002 [P] Legacy task";
+    const tasks = [
+      "- [x] T-001: Implement parser REQ-CORE-001",
+      "- [ ] T002 [P] Legacy task",
+      "- [x] T-023-015: Verify feature-scoped task",
+    ].join("\n");
     const matches = [...tasks.matchAll(TASK_LINE_PATTERN)];
 
-    expect(matches).toHaveLength(2);
+    expect(matches).toHaveLength(3);
     expect(normalizeTaskId(matches[0][1])).toBe("T-001");
     expect(matches[0][3]).toContain("Implement parser");
     expect(normalizeTaskId(matches[1][1])).toBe("T-002");
+    expect(normalizeTaskId(matches[2][1])).toBe("T-023-015");
   });
 });
 

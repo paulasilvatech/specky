@@ -47,6 +47,7 @@ describe("writeGitignoreBlock — creating a new .gitignore", () => {
     expect(content).toContain(BLOCK_END);
     expect(content).toContain(".claude/agents/");
     expect(content).toContain(".specky/install.json");
+    expect(content).toContain(".specky/config.yml.before-schema-*.bak");
     expect(content.endsWith("\n")).toBe(true);
     // The created file is exactly the block plus a trailing newline.
     expect(result.linesAdded).toBe(content.trimEnd().split("\n").length);

@@ -58,15 +58,15 @@ deployments, use the published GHCR image instead of installing Node/npm on the
 host:
 
 ```bash
-docker pull ghcr.io/paulasilvatech/specky:latest        # or pin: :3.12.0
+docker pull ghcr.io/paulasilvatech/specky:latest        # or pin: :3.13.0
 docker run --rm -p 3200:3200 ghcr.io/paulasilvatech/specky:latest
-curl -s http://localhost:3200/health                    # -> {"status":"ok","version":"3.12.0"}
+curl -s http://localhost:3200/health                    # -> {"status":"ok","version":"3.13.0"}
 ```
 
 The image includes an ephemeral standard workspace contract for this unmounted
 health check. If you mount a host directory at `/workspace`, initialize that
 directory with `specky install` first; the mounted workspace must contain the
-mandatory `.specky/config.yml` runtime contract.
+mandatory schema-versioned `.specky/config.yml` runtime contract.
 
 Production deployments should pin an explicit version tag and enable token auth
 behind TLS. See [ENTERPRISE-DEPLOYMENT.md](ENTERPRISE-DEPLOYMENT.md) for the
@@ -312,6 +312,27 @@ npm install --save-dev specky-sdd@latest && npx specky upgrade
 ```
 
 `specky upgrade` refreshes the installed assets (agents, prompts, skills, hooks, configs) **and re-pins MCP registration files** (`.mcp.json`, `.vscode/mcp.json`, `.cursor/mcp.json`, or `opencode.json`) to the new version — updating the npm package alone leaves the MCP registration pointing at the old version. It preserves `.specs/` (your active pipeline artifacts) and `.specky/profile.json` (onboarding answers).
+
+Workspace config compatibility is tracked independently through `schema_version` in `.specky/config.yml`. When an older package-versioned config has a supported migration path, `specky upgrade` validates it and replaces it atomically without resetting explicit profiles, controls, limits, integrations, paths, or pipeline choices. A newer unsupported schema is left unchanged and reported with an explicit instruction to upgrade the CLI.
+
+| Existing workspace | Upgrade behavior |
+| --- | --- |
+| Workspace from any earlier release with no config | Writes the current complete config during upgrade |
+| Specky 3.x unversioned partial config | Preserves strict allowlisted runtime choices, reports obsolete fields, keeps the original as a `.bak`, and writes schema 1 atomically |
+| Specky `v3.4.0–v3.11.0` generated package catalog | Preserves version-supported runtime choices, maps `specs_dir` to `spec_root`, keeps a `.bak`, and writes schema 1 atomically |
+| Specky `v3.11.1–v3.12.0` package-versioned runtime config | Preserves every validated setting, keeps a `.bak`, and replaces package `version` with `schema_version: 1` atomically |
+| Current schema 1 | Leaves the config unchanged |
+| Future schema or ambiguous/custom legacy document | Leaves the file unchanged and exits with an explicit compatibility error |
+
+Successful migration backups match `.specky/config.yml.before-schema-*.bak` and are added to the Specky-managed `.gitignore` block. Conflict artifacts from an interrupted or concurrent migration are intentionally not ignored; inspect and reconcile them before retrying.
+
+Package security updates and workspace upgrades are separate operations:
+
+1. Install the latest trusted package version with npm. This is the step that changes Specky's code and dependency graph.
+2. Run `specky upgrade` in each workspace. This migrates config, refreshes installed assets, and re-pins MCP registration.
+3. Run `specky doctor` to verify the installed asset hashes.
+
+Do not use `npm audit fix --force` as an upgrade shortcut; npm documents that `--force` can install changes outside declared dependency ranges. Review the proposed dependency changes and run the Specky build and test gates instead. See [npm audit](https://docs.npmjs.com/cli/commands/npm-audit) and [npm config `force`](https://docs.npmjs.com/cli/using-npm/config#force).
 
 **No `--target` on upgrade** — targets are read from `.specky/install.json`. Use `specky install --target=...` only for a first install or when switching harness.
 

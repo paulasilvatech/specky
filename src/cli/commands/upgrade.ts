@@ -50,5 +50,8 @@ export async function runUpgrade(opts: UpgradeOptions): Promise<number> {
   }
 
   console.log(`[specky upgrade] .specs/ and .specky/profile.json will be preserved.`);
+  console.log(
+    `[specky upgrade] Supported legacy workspace configs will be migrated atomically; npm package updates must be installed separately.`,
+  );
   return runInit({ force: true, dryRun: false, ide, target, workspace });
 }

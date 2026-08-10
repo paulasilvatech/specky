@@ -443,7 +443,7 @@ function buildPhases(tasks: ParsedTask[], includeCheckpoints: boolean): Implemen
       id: t.id,
       title: t.title,
       file_path: t.file_path,
-      parallel: ready.length > 1,
+      parallel: t.parallel === true,
       dependencies: t.dependencies,
       traces_to: t.traces_to,
     }));

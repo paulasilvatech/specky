@@ -1,0 +1,15 @@
+# Optional unversioned workspace config documented by Specky v3.3.0.
+templates_path: custom-templates
+default_framework: jest
+compliance_frameworks: [soc2]
+audit_enabled: true
+rate_limit:
+  enabled: true
+  max_requests_per_minute: 137
+  burst: 23
+audit:
+  export_format: otlp
+  max_file_size_mb: 42
+rbac:
+  enabled: true
+  default_role: admin

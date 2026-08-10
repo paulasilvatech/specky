@@ -91,7 +91,7 @@ A root `.specs/.sdd-state.json` is legacy metadata, not runtime state.
 
 ## Strict Workspace Configuration
 
-Runtime requires a complete `.specky/config.yml`. Missing, partial, malformed, unknown-key, or path-escaping documents block startup. `specky install` is the only bootstrap path that creates the complete file.
+Runtime requires a complete `.specky/config.yml` with an integer `schema_version` independent of the npm release. Missing, partial, malformed, unknown-key, future-schema, or path-escaping documents block startup. `specky install` is the only bootstrap path that creates the complete file. `specky install` and `specky upgrade` can atomically migrate recognized generated 3.x formats; runtime loading never rewrites configuration.
 
 Configuration fixes:
 
