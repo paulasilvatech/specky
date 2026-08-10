@@ -1,11 +1,13 @@
 import {
   chmodSync,
+  closeSync,
+  fstatSync,
   mkdirSync,
   mkdtempSync,
+  openSync,
   readdirSync,
   readFileSync,
   rmSync,
-  statSync,
   unlinkSync,
   writeFileSync,
 } from "node:fs";
@@ -47,6 +49,18 @@ describe("workspace config migration internals", () => {
     writeFileSync(configPath, raw, "utf8");
   }
 
+  function snapshot(path: string): { content: string; mode: number } {
+    const descriptor = openSync(path, "r");
+    try {
+      return {
+        content: readFileSync(descriptor, "utf8"),
+        mode: fstatSync(descriptor).mode & 0o777,
+      };
+    } finally {
+      closeSync(descriptor);
+    }
+  }
+
   it("leaves a current schema config unchanged", () => {
     const raw = serializeWorkspaceConfig(createWorkspaceConfig());
     write(raw);
@@ -69,8 +83,7 @@ describe("workspace config migration internals", () => {
   it("migrates a minimal unversioned config with defaults", () => {
     write("audit_enabled: true\n");
     chmodSync(configPath, 0o660);
-    const original = readFileSync(configPath, "utf8");
-    const originalMode = statSync(configPath).mode & 0o777;
+    const originalSnapshot = snapshot(configPath);
 
     const prepared = prepareWorkspaceConfig(workspace);
     expect(prepared.config).toMatchObject({
@@ -86,9 +99,10 @@ describe("workspace config migration internals", () => {
 
     const backupPath = persistWorkspaceConfigMigration(workspace, prepared);
     expect(backupPath).toMatch(/\.bak$/);
-    expect(readFileSync(backupPath!, "utf8")).toBe(original);
-    expect(statSync(configPath).mode & 0o777).toBe(originalMode);
-    expect(parse(readFileSync(configPath, "utf8"))).toMatchObject({ schema_version: 1 });
+    expect(readFileSync(backupPath!, "utf8")).toBe(originalSnapshot.content);
+    const migratedSnapshot = snapshot(configPath);
+    expect(migratedSnapshot.mode).toBe(originalSnapshot.mode);
+    expect(parse(migratedSnapshot.content)).toMatchObject({ schema_version: 1 });
     expect(
       readdirSync(resolve(workspace, ".specky")).filter((name) =>
         /\.(tmp|probe|original)$/.test(name),

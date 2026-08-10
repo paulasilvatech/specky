@@ -1,9 +1,12 @@
 import { spawnSync } from "node:child_process";
 import {
   chmodSync,
+  closeSync,
   copyFileSync,
+  fstatSync,
   mkdirSync,
   mkdtempSync,
+  openSync,
   readdirSync,
   readFileSync,
   rmSync,
@@ -44,6 +47,18 @@ function runCli(workspace: string, ...args: string[]): ReturnType<typeof spawnSy
   });
 }
 
+function readFileSnapshot(path: string): { content: string; mode: number } {
+  const descriptor = openSync(path, "r");
+  try {
+    return {
+      content: readFileSync(descriptor, "utf8"),
+      mode: fstatSync(descriptor).mode & 0o777,
+    };
+  } finally {
+    closeSync(descriptor);
+  }
+}
+
 beforeAll(() => {
   const builtAt = statSync(CLI).mtimeMs;
   const newestSource = Math.max(...MIGRATION_SOURCES.map((path) => statSync(path).mtimeMs));
@@ -70,7 +85,7 @@ describe("workspace config migration", () => {
   it("migrates a complete v3.11.1 config and preserves every user choice", () => {
     copyFileSync(LEGACY_CONFIG, configPath);
     chmodSync(configPath, 0o660);
-    const originalMode = statSync(configPath).mode & 0o777;
+    const originalMode = readFileSnapshot(configPath).mode;
     writeFileSync(
       resolve(workspace, ".specky/install.json"),
       JSON.stringify({ version: "3.11.1", ide: "auto", targets: ["agent-skills"] }),
@@ -82,7 +97,8 @@ describe("workspace config migration", () => {
       "Migrated workspace config from package v3.11.1 to schema 1 (using an atomic rewrite).",
     );
 
-    const migrated = parse(readFileSync(configPath, "utf8")) as Record<string, unknown>;
+    const migratedSnapshot = readFileSnapshot(configPath);
+    const migrated = parse(migratedSnapshot.content) as Record<string, unknown>;
     expect(migrated).toEqual({
       schema_version: 1,
       profile: "enterprise",
@@ -116,7 +132,7 @@ describe("workspace config migration", () => {
       pipeline: { require_lgtm: true },
     });
     expect("version" in migrated).toBe(false);
-    expect(statSync(configPath).mode & 0o777).toBe(originalMode);
+    expect(migratedSnapshot.mode).toBe(originalMode);
     expect(
       readdirSync(resolve(workspace, ".specky")).filter((name) => name.endsWith(".tmp")),
     ).toEqual([]);
