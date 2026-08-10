@@ -70,6 +70,7 @@ describe("workspace config migration internals", () => {
     write("audit_enabled: true\n");
     chmodSync(configPath, 0o660);
     const original = readFileSync(configPath, "utf8");
+    const originalMode = statSync(configPath).mode & 0o777;
 
     const prepared = prepareWorkspaceConfig(workspace);
     expect(prepared.config).toMatchObject({
@@ -86,7 +87,7 @@ describe("workspace config migration internals", () => {
     const backupPath = persistWorkspaceConfigMigration(workspace, prepared);
     expect(backupPath).toMatch(/\.bak$/);
     expect(readFileSync(backupPath!, "utf8")).toBe(original);
-    expect(statSync(configPath).mode & 0o777).toBe(0o660);
+    expect(statSync(configPath).mode & 0o777).toBe(originalMode);
     expect(parse(readFileSync(configPath, "utf8"))).toMatchObject({ schema_version: 1 });
     expect(
       readdirSync(resolve(workspace, ".specky")).filter((name) =>
